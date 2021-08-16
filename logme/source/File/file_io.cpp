@@ -44,7 +44,7 @@ void FileIo::Close()
     {
       int rc = flock(File, LOCK_UN);
       if (rc < 0)
-        logmeE(CHINT, "FileIo(%s): flock(LOCK_UN) failed: %i", File, errno);
+        LogmeE(CHINT, "FileIo(%s): flock(LOCK_UN) failed: %i", File, errno);
 
       NeedUnlock = false;
     }
@@ -94,7 +94,7 @@ bool FileIo::Open(bool append, unsigned timeout, const char* fileName)
     if (fcntl(File, F_SETFD, FD_CLOEXEC) == -1)
     {
       int err = errno;
-      logmeE(CHINT, "FileIo(%s): flock(LOCK_EX) failed: %i", fileName, err);
+      LogmeE(CHINT, "FileIo(%s): flock(LOCK_EX) failed: %i", fileName, err);
 
       Close();
       return false;
@@ -111,7 +111,7 @@ bool FileIo::Open(bool append, unsigned timeout, const char* fileName)
       unsigned t = GetTimeInMillisec();
       if (t < start || t - start >= timeout)
       {
-        logmeE(CHINT, "FileIo(%s): flock(LOCK_EX) failed: %i", fileName, err);
+        LogmeE(CHINT, "FileIo(%s): flock(LOCK_EX) failed: %i", fileName, err);
 
         Close();
         return false;

@@ -14,7 +14,7 @@ DebugBackend::DebugBackend(ChannelPtr owner)
 
 void DebugBackend::Display(Context& context, const char* line)
 {
-#ifdef _DEBUG
+#ifdef _WIN32
   int nc;
   const char* buffer = context.Apply(Owner->GetFlags(), line, nc);
 

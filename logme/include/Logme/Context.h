@@ -48,9 +48,27 @@ namespace Logme
     char Buffer[OUTPUT_BUFFER_SIZE];
     std::vector<char> ExtBuffer;
 
+    struct Params
+    {
+      ID None;
+      const ID& Channel;
+      
+      Params() 
+        : None{0}
+        , Channel(None)
+      {
+      }
+
+      Params(const ID& ch)
+        : None{0}
+        , Channel(ch)
+      {
+      }
+    };
+
   public:
     Context(Level level, const ID* ch);
-    Context(Level level, const ID* chdef, const char* method, const char* module, int line, const ID& ch = ID{0});
+    Context(Level level, const ID* chdef, const char* method, const char* module, int line, const Params& params);
 
     void InitContext();
     void InitTimestamp(TimeFormat tf);
@@ -63,4 +81,4 @@ namespace Logme
 }
 
 #define LOGME_CONTEXT(level, ch, ...) \
-  Logme::Context(level, ch, __FUNCTION__, __FILE__, _LOGME_DROP_COMMA(__LINE__, ## __VA_ARGS__))  
+  Logme::Context(level, ch, __FUNCTION__, __FILE__, __LINE__, Logme::Context::Params(__VA_ARGS__))

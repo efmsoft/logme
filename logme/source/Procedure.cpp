@@ -1,4 +1,5 @@
 #include <Logme/Logger.h>
+#include <string.h>
 
 using namespace Logme;
 

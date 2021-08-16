@@ -8,6 +8,7 @@
 
 #include <cassert>
 #include <stdint.h>
+#include <string.h>
 #include <vector>
 
 #ifndef _WIN32

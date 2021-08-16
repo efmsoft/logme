@@ -2,6 +2,8 @@
 #include <Logme/Template.h>
 #include <Logme/Utils.h>
 
+#include <string.h>
+
 #if defined(__GNUC__) && !defined(__DJGPP__)
 #include <sys/time.h>
 #include <sys/types.h>

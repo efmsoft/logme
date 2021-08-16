@@ -1,6 +1,9 @@
 #pragma once
 #ifndef _WIN32
 
+#include <stdarg.h>
+#include <string.h>
+
 inline void strcpy_s(char* dst, size_t n, const char* src)
 {
   strcpy(dst, src);

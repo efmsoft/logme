@@ -2,6 +2,7 @@
 #include <Logme/Logger.h>
 #include <Logme/Backend/FileBackend.h>
 
+#include <string.h>
 #include <thread>
 
 void OutputToDefaultChannel()
@@ -176,5 +177,6 @@ int main()
 
   ProcReturningEnumValue();
   CppOutput();
+
   return 0;
 }

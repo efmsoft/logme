@@ -2,6 +2,7 @@
 #include "StringHelpers.h"
 
 #include <cassert>
+#include <string.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -30,9 +31,9 @@ Context::Context(
   , const char* method
   , const char* file
   , int line
-  , const ID& ch
+  , const Context::Params& params
 )
-  : Channel(&ch)
+  : Channel(&params.Channel)
   , ErrorLevel(level)
   , Method(method)
   , File(file)
@@ -41,7 +42,7 @@ Context::Context(
   , AppendContext(nullptr)
   , Signature(0)
 {
-  if (ch.Name == nullptr)
+  if (Channel->Name == nullptr)
     Channel = chdef;
 
   InitContext();

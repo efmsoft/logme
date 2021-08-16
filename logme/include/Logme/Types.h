@@ -44,7 +44,7 @@ namespace Logme
   typedef std::shared_ptr<Logger> LoggerPtr;
 }
 
-#define _LOGME_DROP_COMMA(a, ...) a , ## __VA_ARGS__
+#define _LOGME_DROP_COMMA(...) , ##__VA_ARGS__
 
 #if !defined(_DEBUG) && !defined(LOGME_INRELEASE)
 #define _LOGME_ACTIVE 0

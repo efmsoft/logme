@@ -4,9 +4,9 @@
 #include <stdarg.h>
 #include <string>
 
-#include "ID.h"
-#include "Printer.h"
-#include "Types.h"
+#include <Logme/ID.h>
+#include <Logme/Printer.h>
+#include <Logme/Types.h>
 
 namespace Logme
 {

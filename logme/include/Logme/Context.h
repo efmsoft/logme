@@ -1,9 +1,9 @@
 #pragma once
 
-#include "ID.h"
-#include "Module.h"
-#include "OutputFlags.h"
-#include "Types.h"
+#include <Logme/ID.h>
+#include <Logme/Module.h>
+#include <Logme/OutputFlags.h>
+#include <Logme/Types.h>
 
 #include <memory>
 #include <string>

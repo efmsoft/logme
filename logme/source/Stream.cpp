@@ -1,4 +1,5 @@
 #include <Logme/Logger.h>
+#include <Logme/Stream.h>
 #include <Logme/Convert.h>
 
 #if !defined(__GNUC__) && !defined(__GNUG__)

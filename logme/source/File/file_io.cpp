@@ -1,5 +1,5 @@
 #include <Logme/File/file_io.h>
-#include <Logme/Logger.h>
+#include <Logme/Logme.h>
 #include <Logme/Time/datetime.h>
 
 #include <cassert>

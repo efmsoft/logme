@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Backend/Backend.h"
-#include "Context.h"
-#include "OutputFlags.h"
-#include "Types.h"
+#include <Logme/Backend/Backend.h>
+#include <Logme/Context.h>
+#include <Logme/OutputFlags.h>
+#include <Logme/Types.h>
 
 #include <memory>
 #include <mutex>

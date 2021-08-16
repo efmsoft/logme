@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Context.h"
-#include "Types.h"
+#include <Logme/Context.h>
+#include <Logme/Types.h>
 
 #include <memory>
 #include <sstream>

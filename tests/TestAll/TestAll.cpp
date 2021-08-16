@@ -1,5 +1,5 @@
 #define LOGME_INRELEASE
-#include <Logme/Logger.h>
+#include <Logme/Logme.h>
 #include <Logme/Backend/FileBackend.h>
 
 #include <string.h>

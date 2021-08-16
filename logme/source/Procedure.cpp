@@ -1,4 +1,6 @@
+#include <Logme/Context.h>
 #include <Logme/Logger.h>
+#include <Logme/Procedure.h>
 #include <string.h>
 
 using namespace Logme;

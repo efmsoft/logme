@@ -1,4 +1,4 @@
-#include <Logme/Logger.h>
+#include <Logme/Logme.h>
 #include <Logme/Template.h>
 #include <Logme/Utils.h>
 
@@ -199,9 +199,7 @@ std::string Logme::ProcessTemplate(
     name += *p++;
   }
 
-  if (ftemplate)
-    LogmeE(CHINT, "ProcessTemplate: %s -> %s", tstr, name.c_str());
-  
+  LogmeE_If(ftemplate, CHINT, "ProcessTemplate: %s -> %s", tstr, name.c_str());
   return name;
 }
  

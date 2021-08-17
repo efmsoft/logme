@@ -104,11 +104,11 @@ void Context::InitThreadProcessID(OutputFlags flags)
 #endif
 
     if (flags.ProcessID && flags.ThreadID)
-      sprintf_s(ThreadProcessID, " [%X:%X]", process, thread);
+      sprintf_s(ThreadProcessID, "[%X:%X] ", process, thread);
     else if (flags.ProcessID)
-      sprintf_s(ThreadProcessID, " [%X]", process);
+      sprintf_s(ThreadProcessID, "[%X] ", process);
     else
-      sprintf_s(ThreadProcessID, " [:%X]", thread);
+      sprintf_s(ThreadProcessID, "[:%X] ", thread);
   }
   else
     *ThreadProcessID = '\0';
@@ -159,6 +159,22 @@ const char* Context::Apply(OutputFlags flags, const char* text, int& nc)
     nSignature = 2;
   }
 
+  int nID = 0;
+  if (flags.ProcessID || flags.ThreadID)
+  {
+    if (*ThreadProcessID == '\0')
+      InitThreadProcessID(flags);
+
+    nID = (int)strlen(ThreadProcessID);
+  }
+
+  int nChannel = 0;
+  if (flags.Channel)
+  {
+    int c = Channel->Name ? (int)strlen(Channel->Name) : 0;
+    nChannel = c + 3; // "{c} "
+  }
+
   int nFile = 0;
   char line[32] = {0};
   if (flags.Location)
@@ -206,7 +222,7 @@ const char* Context::Apply(OutputFlags flags, const char* text, int& nc)
   }
 
   char* buffer = Buffer;
-  int n = nTimestamp + nSignature + nFile + nError + nMethod + nLine + nAppend + nEol + 1;
+  int n = nTimestamp + nSignature + nID + nChannel + nFile + nError + nMethod + nLine + nAppend + nEol + 1;
   if (n > sizeof(Buffer))
   {
     if (ExtBuffer.size() < size_t(n))
@@ -227,6 +243,22 @@ const char* Context::Apply(OutputFlags flags, const char* text, int& nc)
     *p++ = Signature;
     *p++ = ' ';
     *p = '\0';
+  }
+
+  if (nID)
+  {
+    strcpy_s(p, n - (p - buffer), ThreadProcessID);
+    p += nID;
+  }
+
+  if (nChannel)
+  {
+    sprintf_s(p
+      , n - (p - buffer)
+      , "{%s} "
+      , Channel->Name ? Channel->Name : ""
+    );
+    p += nChannel;
   }
 
   if (nFile)

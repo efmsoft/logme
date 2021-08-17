@@ -20,6 +20,10 @@ if (${CMAKE_BUILD_TYPE} STREQUAL Debug)
     set_directory_properties(PROPERTIES COMPILE_DEFINITIONS "_DEBUG")
 endif ()
 
+enable_testing()
+
+include_directories(${CMAKE_SOURCE_DIR}/logme/include)
+
 add_subdirectory(logme ../out/Static)
 add_subdirectory(dynamic ../out/Dynamic)
 add_subdirectory(tests ../out/Tests)

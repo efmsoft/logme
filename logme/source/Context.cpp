@@ -104,11 +104,11 @@ void Context::InitThreadProcessID(OutputFlags flags)
 #endif
 
     if (flags.ProcessID && flags.ThreadID)
-      sprintf_s(ThreadProcessID, "[%X:%X] ", process, thread);
+      sprintf_s(ThreadProcessID, "[%X:%llX] ", process, (uint64_t)thread);
     else if (flags.ProcessID)
       sprintf_s(ThreadProcessID, "[%X] ", process);
     else
-      sprintf_s(ThreadProcessID, "[:%X] ", thread);
+      sprintf_s(ThreadProcessID, "[:%llX] ", (uint64_t)thread);
   }
   else
     *ThreadProcessID = '\0';

@@ -82,7 +82,21 @@ namespace Logme
   #define xuint64_t HexType<uint64_t>
 }
 
-#define _LOGME_DROP_COMMA(...) , ##__VA_ARGS__
+#define _LOGME_EMPTYFIRST(x,...) _LOGME_A x (_LOGME_B)
+#define _LOGME_A(x) x()
+#define _LOGME_B() ,
+
+#define _LOGME_EMPTY(...) _LOGME_C(_LOGME_EMPTYFIRST(__VA_ARGS__) _LOGME_SINGLE(__VA_ARGS__))
+#define _LOGME_C(...) _LOGME_D(__VA_ARGS__)
+#define _LOGME_D(x,...) __VA_ARGS__
+
+#define _LOGME_SINGLE(...) _LOGME_E(__VA_ARGS__, _LOGME_B)
+#define _LOGME_E(x,y,...) _LOGME_C(y(),)
+
+#define _LOGME_NONEMPTY(...) _LOGME_F(_LOGME_EMPTY(__VA_ARGS__) _LOGME_D, _LOGME_B)
+#define _LOGME_F(...) _LOGME_G(__VA_ARGS__)
+#define _LOGME_G(x,y,...) y()
+
 
 #if !defined(_DEBUG) && !defined(LOGME_INRELEASE)
 #define _LOGME_ACTIVE 0

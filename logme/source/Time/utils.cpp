@@ -122,9 +122,9 @@ unsigned Logme::GetTimeInMillisec()
   return now.tv_sec * 1000 + now.tv_usec / 1000;
 #elif defined(_WIN32) || defined(_WIN64)
   return ::GetTickCount();
-#elif (CLOCKS_PER_SEC == 1000)
-  return clock();
 #else
+  if (CLOCKS_PER_SEC == 1000)
+    return clock();
   unsigned clocks = clock();
   unsigned tmp = clocks * 1000;
   if (tmp > clocks)

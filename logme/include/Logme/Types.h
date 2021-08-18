@@ -82,6 +82,9 @@ namespace Logme
   #define xuint64_t HexType<uint64_t>
 }
 
+#ifdef _MSC_VER
+#define _LOGME_NONEMPTY(...) ,
+#else
 #define _LOGME_EMPTYFIRST(x,...) _LOGME_A x (_LOGME_B)
 #define _LOGME_A(x) x()
 #define _LOGME_B() ,
@@ -96,7 +99,7 @@ namespace Logme
 #define _LOGME_NONEMPTY(...) _LOGME_F(_LOGME_EMPTY(__VA_ARGS__) _LOGME_D, _LOGME_B)
 #define _LOGME_F(...) _LOGME_G(__VA_ARGS__)
 #define _LOGME_G(x,y,...) y()
-
+#endif
 
 #if !defined(_DEBUG) && !defined(LOGME_INRELEASE)
 #define _LOGME_ACTIVE 0

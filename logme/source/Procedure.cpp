@@ -101,9 +101,9 @@ const char* Procedure::AppendDuration(struct Context& context)
 
     char buffer[32];
 #ifdef _WIN32
-    sprintf_s(buffer, " [%lli ms]", ms.count());
+    sprintf_s(buffer, " [%i ms]", (int)ms.count());
 #else
-    sprintf(buffer, " [%lli ms]", ms.count());
+    sprintf(buffer, " [%i ms]", (int)ms.count());
 #endif
     self->Duration = buffer;
   }

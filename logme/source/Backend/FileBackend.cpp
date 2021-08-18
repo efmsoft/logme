@@ -95,7 +95,7 @@ void FileBackend::Truncate()
     return;
   }
 
-  if (rc < MaxSize)
+  if (rc < (long)MaxSize)
     return;
 
   uint32_t readPos = uint32_t(MaxSize / 2);

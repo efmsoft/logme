@@ -99,7 +99,7 @@ TEST(OutputFlags, Duration)
   bool f = std::regex_match(duration, m, r);
   EXPECT_EQ(f, true);
 
-  const int MAXDIFF = 5; // 5 ms
+  const int MAXDIFF = 50; // 50 ms
   int t = (unsigned int)atoi(m[1].str().c_str());
   int v = std::abs(int(d) - t);
   EXPECT_LE(v, MAXDIFF);

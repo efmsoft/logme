@@ -21,7 +21,10 @@ namespace Logme
     LEVEL_CRITICAL,
   };
 
+  #pragma warning(push)
+  #pragma warning(disable : 26812)
   static constexpr const Level DEFAULT_LEVEL = Level::LEVEL_INFO;
+  #pragma warning(pop)
 
   enum Detality
   {

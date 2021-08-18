@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <mutex>
+#include <stdint.h>
 
 namespace Logme
 {
@@ -37,11 +38,48 @@ namespace Logme
     TIME_FORMAT_UTC,
   };
 
+  enum ConsoleStream
+  {
+    STREAM_ALL2COUT,
+    STREAM_WARNCERR,
+    STREAM_ERRCERR,
+    STREAM_CERRCERR,
+    STREAM_ALL2CERR,
+  };
+
   typedef std::lock_guard<std::mutex> Guard;
   typedef void* HANDLE;
 
   class Logger;
   typedef std::shared_ptr<Logger> LoggerPtr;
+
+  template<typename T> struct HexType
+  {
+    T Value;
+
+    HexType(T v) : Value(v)
+    {
+    } 
+
+    operator T () const
+    {
+      return Value;
+    }
+
+    operator T& ()
+    {
+      return Value;
+    }
+  };
+
+  #define xint8_t HexType<int8_t>
+  #define xuint8_t HexType<uint8_t>
+  #define xint16_t HexType<int16_t>
+  #define xuint16_t HexType<uint16_t>
+  #define xint32_t HexType<int32_t>
+  #define xuint32_t HexType<uint32_t>
+  #define xint64_t HexType<int64_t>
+  #define xuint64_t HexType<uint64_t>
 }
 
 #define _LOGME_DROP_COMMA(...) , ##__VA_ARGS__

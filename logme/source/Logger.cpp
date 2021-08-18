@@ -10,6 +10,8 @@
 #include <functional>
 #include <stdarg.h>
 
+#pragma warning(disable : 6255)
+
 using namespace Logme;
 
 LoggerPtr Logme::Instance = std::make_shared<Logger>();
@@ -79,54 +81,70 @@ ChannelPtr Logger::CreateChannelInternal(
   return channel;
 }
 
-void Logger::Log(const Context& context, const ID& id, const char* format, ...)
+Stream Logger::Log(const Context& context)
 {
-  va_list args;
-  va_start(args, format);
+  return Stream(shared_from_this(), context);
+}
 
-  Context context2(context);
+Stream Logger::Log(const Context& context, const ID& id)
+{
+  Context& context2 = *(Context *)&context;
   context2.Channel = &id;
 
-  Log(context2, format, args);
-
-  va_end(args);
+  return Stream(shared_from_this(), context);
 }
 
-void Logger::Log(const Context& context, const char* format, ...)
+Stream Logger::Log(const Context& context, const ID& id, const char* format, ...)
 {
   va_list args;
   va_start(args, format);
 
-  Context context2(context);
-  Log(context2, format, args);
+  Context& context2 = *(Context *)&context;
+  context2.Channel = &id;
+
+  DoLog(context2, format, args);
 
   va_end(args);
+
+  return Stream(shared_from_this(), context);
 }
 
-void Logger::Log(Context& context, const char* format, va_list args)
+Stream Logger::Log(const Context& context, const char* format, ...)
+{
+  va_list args;
+  va_start(args, format);
+
+  DoLog(*(Context *)&context, format, args);
+
+  va_end(args);
+
+  return Stream(shared_from_this(), context);
+}
+
+Stream Logger::DoLog(Context& context, const char* format, va_list args)
 {
   ChannelPtr ch = GetChannel(*context.Channel);
+  
   if (ch == nullptr)
-    return;
+    return Stream(shared_from_this(), context);
 
-  size_t size = std::max(4096U, (unsigned int)(strlen(format) + 512));
-
-  char* buffer = (char*)alloca(size);
-  if (!buffer)
+  if (format)
   {
-    assert(!"_malloca failed!?!?");
-    return;
+    size_t size = std::max(4096U, (unsigned int)(strlen(format) + 512));
+
+    char* buffer = (char*)alloca(size);
+
+    buffer[0] = '\0';
+    buffer[size - 1] = '\0';
+
+    int rc = vsnprintf(buffer + strlen(buffer), size - 1, format, args);
+    if (rc == -1)
+      strcpy_s(buffer, size - 1, "[format error]");
+
+    ch->Display(context, buffer);
+
+    if (context.Output)
+      *context.Output = buffer;
   }
-
-  buffer[0] = '\0';
-  buffer[size - 1] = '\0';
-
-  int rc = vsnprintf(buffer + strlen(buffer), size - 1, format, args);
-  if (rc == -1)
-    strcpy_s(buffer, size - 1, "[format error]");
-
-  ch->Display(context, buffer);
-
-  if (context.Output)
-    *context.Output = buffer;
+  return Stream(shared_from_this(), context);
 }

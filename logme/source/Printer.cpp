@@ -1,109 +1,59 @@
 #include <Logme/Printer.h>
+#include <Logme/Types.h>
+
+#include <iomanip>
+#include <sstream>
 #include <stdint.h>
 
 using namespace Logme;
 
 Printer Logme::None;
  
-std::string FormatValue(const int8_t& v)
+template<typename T> std::string StdFormat(const T& v)
 {
-  return std::to_string(v);
+  std::stringstream ss;
+  ss << v;
+  return ss.str();
 }
 
-std::string FormatValue(const uint8_t& v)
+template<typename T> std::string StdXFormat(const T& v)
 {
-  return std::to_string(v);
+  std::stringstream ss;
+  ss << "0x" << std::hex << v;
+  return ss.str();
 }
 
-std::string FormatValue(const int16_t& v)
-{
-  return std::to_string(v);
-}
+#define GENERATE_TYPE_FORMATTER(T) \
+  std::string FormatValue(const T& v) { return StdFormat<T>(v); } \
+  std::string FormatValue(const x##T& v) { return StdXFormat<T>(v); } \
+  std::string FormatValue(const u##T& v) { return StdFormat<u##T>(v); } \
+  std::string FormatValue(const xu##T& v) { return StdXFormat<u##T>(v); }
 
-std::string FormatValue(const uint16_t& v)
-{
-  return std::to_string(v);
-}
+#define GENERATE_TYPE_FORMATTER0(T) \
+  std::string FormatValue(const T& v) { return StdFormat<T>(v); } \
+  std::string FormatValue(const unsigned T& v) { return StdFormat<unsigned T>(v); }
 
-std::string FormatValue(const int32_t& v)
-{
-  return std::to_string(v);
-}
+/////////////////////////////////////
 
-std::string FormatValue(const uint32_t& v)
-{
-  return std::to_string(v);
-}
+GENERATE_TYPE_FORMATTER(int8_t)
+GENERATE_TYPE_FORMATTER(int16_t)
+GENERATE_TYPE_FORMATTER(int32_t)
+GENERATE_TYPE_FORMATTER(int64_t)
+GENERATE_TYPE_FORMATTER0(long)
 
-std::string FormatValue(const int64_t& v)
-{
-  return std::to_string(v);
-}
-
-std::string FormatValue(const uint64_t& v)
-{
-  return std::to_string(v);
-}
-
-std::string FormatValue(const std::string& v)
-{
-  return v;
-}
-
-std::string FormatValue(char const* const& v)
-{
-  return v;
-}
+std::string FormatValue(const std::string& v) { return v; }
+std::string FormatValue(char const* const& v) { return v; }
+std::string FormatValue(char* const& v) { return v; }
 
 namespace Logme
 {
-  std::string FormatValue(const int8_t& v)
-  {
-    return ::FormatValue(v);
-  }
+  GENERATE_TYPE_FORMATTER(int8_t)
+  GENERATE_TYPE_FORMATTER(int16_t)
+  GENERATE_TYPE_FORMATTER(int32_t)
+  GENERATE_TYPE_FORMATTER(int64_t)
+  GENERATE_TYPE_FORMATTER0(long)
 
-  std::string FormatValue(const uint8_t& v)
-  {
-    return ::FormatValue(v);
-  }
-
-  std::string FormatValue(const int16_t& v)
-  {
-    return ::FormatValue(v);
-  }
-
-  std::string FormatValue(const uint16_t& v)
-  {
-    return ::FormatValue(v);
-  }
-
-  std::string FormatValue(const int32_t& v)
-  {
-    return ::FormatValue(v);
-  }
-
-  std::string FormatValue(const uint32_t& v)
-  {
-    return ::FormatValue(v);
-  }
-
-  std::string FormatValue(const int64_t& v)
-  {
-    return ::FormatValue(v);
-  }
-
-  std::string FormatValue(const uint64_t& v)
-  {
-    return ::FormatValue(v);
-  }
-
-  std::string FormatValue(const std::string& v)
-  {
-    return ::FormatValue(v);
-  }
-
-  std::string FormatValue(char const* const& v)
-  {
-    return ::FormatValue(v);
-  }
+  std::string FormatValue(const std::string& v) { return v; }
+  std::string FormatValue(char const* const& v) { return v; }
+  std::string FormatValue(char* const& v) { return v; }
 }

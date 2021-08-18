@@ -24,6 +24,7 @@ namespace Logme
       TID_BUFFER_SIZE = 32,
       PID_BUFFER_SIZE = 32,
       TZD_T_POS = 10,                       // YYYY-MM-DDThh:mm:ssTZD
+      TZD_E_POS = 19,
     }; 
 
     const ID* Channel;

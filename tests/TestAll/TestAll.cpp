@@ -32,7 +32,7 @@ void OutputToDefaultChannel()
 std::string OutputToChannel1()
 {
   std::string ret("str value");
-  LogmeProc(ret);
+  LogmeP(ret);
 
   LOGME_CHANNEL(CH1, "channel1");
 
@@ -52,7 +52,7 @@ std::string OutputToChannel1()
 int OutputToNamespaceChannel(int arg1, const char* argv, const std::string& str)
 {
   int rc = 8;
-  LogmeProcW(rc, "arg1=%i, argv=\"%s\", str=\"%s\"", arg1, argv, str.c_str());
+  LogmeP(rc, _ARGS3(arg1, argv, str));
 
   LOGME_CHANNEL(CH, "notdefault");
 
@@ -140,7 +140,7 @@ namespace Logme
 MyEnum ProcReturningEnumValue()
 {
   MyEnum value;
-  LogmeProc(value);
+  LogmeP(value);
 
   std::this_thread::sleep_for(std::chrono::milliseconds(122));
 
@@ -151,13 +151,11 @@ MyEnum ProcReturningEnumValue()
 const char* CppOutput()
 {
   const char* ret = "const string";
-  LogmeProc(ret);
+  LogmeP(ret);
 
   int value = 5;
   std::string str("std::string");
-  logme() << "value is " << value << ", ret=" << ret << ", str=" << str << _S(L" wstring");
-
-  wlogmeW() << L"it is line " << 2 << " and char* string and str=" << _WS(str);
+  LogmeI() << "value is " << value << ", ret=" << ret << ", str=" << str << _S(L" wstring");
 
   return ret;
 }

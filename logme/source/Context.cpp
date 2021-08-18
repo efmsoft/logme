@@ -1,4 +1,5 @@
 #include <Logme/Context.h>
+#include <Logme/Time/datetime.h>
 #include "StringHelpers.h"
 
 #include <cassert>
@@ -9,6 +10,8 @@
 #else
 #include <unistd.h>
 #endif
+
+#pragma warning(disable : 26812)
 
 using namespace Logme;
 
@@ -89,6 +92,46 @@ void Context::CreateTZD(char* tzd)
 
 void Context::InitTimestamp(TimeFormat tf)
 {
+  DateTime stamp;
+  
+  switch (tf)
+  {
+  case TimeFormat::TIME_FORMAT_LOCAL:
+  case TimeFormat::TIME_FORMAT_TZ:
+    stamp = DateTime::Now();
+    break;
+
+  case TimeFormat::TIME_FORMAT_UTC:
+    stamp = DateTime::NowUtc();
+    break;
+
+  default:
+    assert(!"unexpected TimeFormat");
+  }
+
+  snprintf(
+    Timestamp
+    , TIMESTAMP_BUFFER_SIZE - 1
+    , "%04i-%02i-%02i %02i:%02i:%02i:%03i "
+    , stamp.GetYear()
+    , stamp.GetMonth()
+    , stamp.GetDay()
+    , stamp.GetHour()
+    , stamp.GetMinute()
+    , stamp.GetSecond()
+    , stamp.GetMillisecond()
+  );
+
+  Timestamp[TIMESTAMP_BUFFER_SIZE - 1] = '\0';
+
+  if (tf == TimeFormat::TIME_FORMAT_TZ)
+  {
+    char tzd[TIMESTAMP_BUFFER_SIZE];
+    CreateTZD(tzd);
+
+    Timestamp[TZD_T_POS] = 'T';
+    strcpy_s(Timestamp + TZD_E_POS, TIMESTAMP_BUFFER_SIZE - TZD_E_POS, tzd);
+  }
 }
 
 void Context::InitThreadProcessID(OutputFlags flags)

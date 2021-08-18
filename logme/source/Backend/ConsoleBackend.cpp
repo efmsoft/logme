@@ -3,7 +3,16 @@
 #include <Logme/Channel.h>
 #include <Logme/Colorizer.h>
 
-#include <stdio.h>
+#include <iostream>
+#include <cstdio>
+
+#ifdef _WIN32
+#include <io.h>
+#else
+#include <unistd.h>
+#define _isatty isatty
+#define _fileno fileno
+#endif
 
 using namespace Logme;
 
@@ -23,24 +32,57 @@ const char* ConsoleBackend::GetEscapeSequence(enum Level level)
   return ANSI_LIGHT_RED;
 }
 
+std::ostream& ConsoleBackend::GetOutputStream(Context& context)
+{
+  auto flags = Owner->GetFlags();
+
+  switch (flags.Console)
+  {
+    case ConsoleStream::STREAM_ALL2COUT:
+      return std::cout;
+
+    case ConsoleStream::STREAM_ALL2CERR:
+      return std::cerr;
+
+    case ConsoleStream::STREAM_WARNCERR:
+      return context.ErrorLevel >= Level::LEVEL_WARN ? std::cerr : std::cout;
+
+    case ConsoleStream::STREAM_ERRCERR:
+      return context.ErrorLevel >= Level::LEVEL_ERROR? std::cerr : std::cout;
+
+    case ConsoleStream::STREAM_CERRCERR:
+      return context.ErrorLevel >= Level::LEVEL_CRITICAL? std::cerr : std::cout;
+  }
+  return std::cout;
+}
+
+static bool IsTerminalStream(std::ostream& stream)
+{
+  if (&stream == &std::cerr)
+    return !!_isatty(_fileno(stderr));
+
+  return !!_isatty(_fileno(stdout));
+}
+
 void ConsoleBackend::Display(Context& context, const char* line)
 {
   auto flags = Owner->GetFlags();
 
   int nc;
   const char* buffer = context.Apply(flags, line, nc);
-
   const char* escape = nullptr;
+
   if (flags.Highlight)
     escape = GetEscapeSequence(context.ErrorLevel);
 
-  if (escape)
+  auto& stream = GetOutputStream(context);
+  if (IsTerminalStream(stream) && escape)
   {
     Colorizer colorizer(false);
     colorizer.Escape(escape);
 
-    printf("%s", buffer);
+    stream << buffer;
   }
   else
-    printf("%s", buffer);
+    stream << buffer;
 }

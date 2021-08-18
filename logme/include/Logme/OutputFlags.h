@@ -16,12 +16,13 @@ namespace Logme
       uint32_t Method      : 1; // "MethodName(): "
       uint32_t Highlight   : 1; // Color highlighting in console
       uint32_t Eol         : 1; // Append \n
-      uint32_t ErrorPrefix : 1; // Append "Error: " / "Critical Error: "
+      uint32_t ErrorPrefix : 1; // Append "Error: " / "Critical: "
       uint32_t Duration    : 1; // Duration of procedures
       uint32_t ThreadID    : 1; // Thread ID
       uint32_t ProcessID   : 1; // Process ID
       uint32_t Channel     : 1; // Print name of channel
-      uint32_t             : 16;
+      uint32_t Console     : 3; // Cconsole output type (ConsoleStream enum)
+      uint32_t             : 13;
       uint32_t ProcPrint   : 1; // Working in the context of Procedure::xxx
       uint32_t ProcPrintIn : 1; // Input parameters
       uint32_t None        : 1; // Invalid flags bit

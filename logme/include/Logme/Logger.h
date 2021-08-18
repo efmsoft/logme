@@ -1,13 +1,15 @@
 #pragma once
 
 #include <Logme/Channel.h>
+#include <Logme/Stream.h>
 
+#include <memory>
 #include <mutex>
 #include <string>
 
 namespace Logme
 {
-  class Logger
+  class Logger : public std::enable_shared_from_this<Logger>
   {
     std::mutex DataLock;
 
@@ -19,10 +21,12 @@ namespace Logme
     Logger();
     virtual ~Logger();
 
-    virtual void Log(Context& context, const char* format, va_list args);
+    virtual Stream DoLog(Context& context, const char* format, va_list args);
 
-    void Log(const Context& context, const ID& id, const char* format, ...);
-    void Log(const Context& context, const char* format, ...);
+    Stream Log(const Context& context);
+    Stream Log(const Context& context, const ID& id);
+    Stream Log(const Context& context, const ID& id, const char* format, ...);
+    Stream Log(const Context& context, const char* format, ...);
 
     ChannelPtr GetChannel(const ID& id);
 

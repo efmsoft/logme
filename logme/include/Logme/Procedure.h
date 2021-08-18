@@ -47,22 +47,13 @@ namespace Logme
 #define NoRetval  Logme::None
 
 #if _LOGME_ACTIVE
-#define _LogmeProc(level, retval, ...) \
+#define _LogmeP(level, retval, ...) \
   unsigned char _procStorage[sizeof(Logme::PrinterT<int>)]; \
   const Logme::Context& _procContext = LOGME_CONTEXT(level, &CH); \
   Logme::Procedure logme_proc(_procContext, Logme::CreatePrinter(retval, _procStorage), ## __VA_ARGS__)
 #else
-#define _LogmeProc(level, retval, ...)
+#define _LogmeP(level, retval, ...)
 #endif
 
-#define LogmeProcD(retval, ...) \
-  _LogmeProc(Logme::Level::LEVEL_DEBUG, retval, ## __VA_ARGS__)
-
-#define LogmeProc(retval, ...) \
-  _LogmeProc(Logme::Level::LEVEL_INFO, retval, ## __VA_ARGS__)
-
-#define LogmeProcI(retval, ...) \
-  _LogmeProc(Logme::Level::LEVEL_INFO, retval, ## __VA_ARGS__)
-
-#define LogmeProcW(retval, ...) \
-  _LogmeProc(Logme::Level::LEVEL_WARN, retval, ## __VA_ARGS__)
+#define LogmeP(retval, ...) \
+  _LogmeP(Logme::Level::LEVEL_INFO, retval, ## __VA_ARGS__)

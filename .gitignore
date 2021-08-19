@@ -34,3 +34,5 @@
 out/
 build/
 .vscode/
+bin/
+*.user

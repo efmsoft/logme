@@ -46,7 +46,7 @@ bool Logme::UnixTimeToSystemTime(const uni_time_t& time, SystemTime& stime)
 {
   FILETIME ft;
   BOOLEAN success = FALSE;
-  HINSTANCE hinstLib = GetModuleHandle("Ntdll.dll");
+  HINSTANCE hinstLib = GetModuleHandleA("Ntdll.dll");
   if (hinstLib)
   {
     typedef VOID (WINAPI *RtlSecondsSince1970ToTime)(ULONG, PLARGE_INTEGER);
@@ -74,7 +74,7 @@ bool Logme::SystemTimeToUnixTime(const SystemTime& stime, uni_time_t& time)
   {
     return false;
   }
-  HINSTANCE hinstLib = GetModuleHandle("Ntdll.dll");
+  HINSTANCE hinstLib = GetModuleHandleA("Ntdll.dll");
   if (hinstLib)
   {
     typedef BOOLEAN (WINAPI *RtlTimeToSecondsSince1970)(PLARGE_INTEGER, PULONG);

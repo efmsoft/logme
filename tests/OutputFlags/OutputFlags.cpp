@@ -1,43 +1,15 @@
+#include <Common/TestBackend.h>
+#include <Common/TestData.h>
+
 #include <gtest/gtest.h>
 
 #include <Logme/Logme.h>
-#include <Logme/Backend/Backend.h>
 #include <Logme/Time/datetime.h>
 #include <Logme/Utils.h>
 
 #include <regex>
-#include <string>
-#include <vector>
 
 using namespace Logme;
-
-const char* Lorem = "lorem ipsum";
-
-struct TestBackend : public Backend
-{
-  std::string Line;
-  std::vector<std::string> History;
-
-  TestBackend(ChannelPtr owner)
-    : Backend(owner)
-  {
-  }
-
-  void Clear()
-  {
-    Line.clear();
-    History.clear();
-  }
-
-  void Display(Context& context, const char* line) override
-  {
-    auto flags = Owner->GetFlags();
-
-    int nc;
-    Line = context.Apply(flags, line, nc);
-    History.push_back(Line);
-  }
-};
 
 ID CHT{ "test_channel" };
 std::shared_ptr<TestBackend> Be;

@@ -1,6 +1,8 @@
 message("CMAKE_CXX_COMPILER_ID = ${CMAKE_CXX_COMPILER_ID}")
 message("CMAKE_CXX_COMPILER_VERSION = ${CMAKE_CXX_COMPILER_VERSION}")
 
+include_directories(${CMAKE_SOURCE_DIR}/tests)
+
 set(GTEST true)
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "5.0.0")
@@ -20,6 +22,7 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 add_subdirectory(OutputFlags)
+add_subdirectory(LevelFilter)
 endif()
 
 add_subdirectory(TestAll)

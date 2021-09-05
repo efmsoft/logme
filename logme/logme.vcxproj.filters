@@ -30,6 +30,9 @@
     <Filter Include="source\Time">
       <UniqueIdentifier>{7607289a-8101-41d8-907a-72721cbcc038}</UniqueIdentifier>
     </Filter>
+    <Filter Include="include\Logme\Json">
+      <UniqueIdentifier>{467d3898-83ef-4929-a943-91f997276057}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Logme\Backend\Backend.h">
@@ -115,6 +118,9 @@
     </ClInclude>
     <ClInclude Include="source\Time\utils.h">
       <Filter>source\Time</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\Json\RSJparser.hpp">
+      <Filter>include\Logme\Json</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

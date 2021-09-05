@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -22,6 +22,34 @@
     <ProjectReference Include="..\logme\logme.vcxproj">
       <Project>{2d2f28fc-d182-4717-836f-1c012026393c}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\logme\source\Backend\Backend.cpp" />
+    <ClCompile Include="..\logme\source\Backend\ConsoleBackend.cpp" />
+    <ClCompile Include="..\logme\source\Backend\DebugBackend.cpp" />
+    <ClCompile Include="..\logme\source\Backend\FileBackend.cpp" />
+    <ClCompile Include="..\logme\source\Channel.cpp" />
+    <ClCompile Include="..\logme\source\Colorizer.cpp" />
+    <ClCompile Include="..\logme\source\Context.cpp" />
+    <ClCompile Include="..\logme\source\Convert.cpp" />
+    <ClCompile Include="..\logme\source\Environment.cpp" />
+    <ClCompile Include="..\logme\source\File\exe_path.cpp" />
+    <ClCompile Include="..\logme\source\File\file_io.cpp" />
+    <ClCompile Include="..\logme\source\Logger.cpp" />
+    <ClCompile Include="..\logme\source\Module.cpp" />
+    <ClCompile Include="..\logme\source\OutputFlags.cpp" />
+    <ClCompile Include="..\logme\source\Printer.cpp" />
+    <ClCompile Include="..\logme\source\Procedure.cpp" />
+    <ClCompile Include="..\logme\source\Stream.cpp" />
+    <ClCompile Include="..\logme\source\Template.cpp" />
+    <ClCompile Include="..\logme\source\Time\datetime_common.cpp" />
+    <ClCompile Include="..\logme\source\Time\datetime_lx.cpp" />
+    <ClCompile Include="..\logme\source\Time\datetime_utils.cpp" />
+    <ClCompile Include="..\logme\source\Time\datetime_win.cpp" />
+    <ClCompile Include="..\logme\source\Utils.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\logme\source\StringHelpers.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -101,8 +129,9 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;LOGMED_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -118,8 +147,9 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;LOGMED_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -135,8 +165,9 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;LOGMED_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -152,8 +183,9 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;LOGMED_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

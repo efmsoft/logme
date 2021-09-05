@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\logme\source\Backend\Backend.cpp" />
+    <ClCompile Include="..\logme\source\Backend\ConsoleBackend.cpp" />
+    <ClCompile Include="..\logme\source\Backend\DebugBackend.cpp" />
+    <ClCompile Include="..\logme\source\Backend\FileBackend.cpp" />
+    <ClCompile Include="..\logme\source\Channel.cpp" />
+    <ClCompile Include="..\logme\source\Colorizer.cpp" />
+    <ClCompile Include="..\logme\source\Context.cpp" />
+    <ClCompile Include="..\logme\source\Convert.cpp" />
+    <ClCompile Include="..\logme\source\Environment.cpp" />
+    <ClCompile Include="..\logme\source\File\exe_path.cpp" />
+    <ClCompile Include="..\logme\source\File\file_io.cpp" />
+    <ClCompile Include="..\logme\source\Logger.cpp" />
+    <ClCompile Include="..\logme\source\Module.cpp" />
+    <ClCompile Include="..\logme\source\OutputFlags.cpp" />
+    <ClCompile Include="..\logme\source\Printer.cpp" />
+    <ClCompile Include="..\logme\source\Procedure.cpp" />
+    <ClCompile Include="..\logme\source\Stream.cpp" />
+    <ClCompile Include="..\logme\source\Template.cpp" />
+    <ClCompile Include="..\logme\source\Time\datetime_common.cpp" />
+    <ClCompile Include="..\logme\source\Time\datetime_lx.cpp" />
+    <ClCompile Include="..\logme\source\Time\datetime_utils.cpp" />
+    <ClCompile Include="..\logme\source\Time\datetime_win.cpp" />
+    <ClCompile Include="..\logme\source\Utils.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\logme\source\StringHelpers.h" />
+  </ItemGroup>
+</Project>

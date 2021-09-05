@@ -26,3 +26,8 @@ add_subdirectory(LevelFilter)
 endif()
 
 add_subdirectory(TestAll)
+
+set_target_properties(gmock PROPERTIES FOLDER "Tests/gtest")
+set_target_properties(gmock_main PROPERTIES FOLDER "Tests/gtest")
+set_target_properties(gtest PROPERTIES FOLDER "Tests/gtest")
+set_target_properties(gtest_main PROPERTIES FOLDER "Tests/gtest")

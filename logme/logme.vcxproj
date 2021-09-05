@@ -168,6 +168,7 @@
     <ClInclude Include="include\Logme\File\exe_path.h" />
     <ClInclude Include="include\Logme\File\file_io.h" />
     <ClInclude Include="include\Logme\ID.h" />
+    <ClInclude Include="include\Logme\Json\RSJparser.hpp" />
     <ClInclude Include="include\Logme\Logger.h" />
     <ClInclude Include="include\Logme\Logme.h" />
     <ClInclude Include="include\Logme\Module.h" />

@@ -3,3 +3,4 @@ target_link_libraries(LevelFilter LINK_PUBLIC logme gtest_main)
 
 include(GoogleTest)
 gtest_discover_tests(LevelFilter)
+set_target_properties(LevelFilter PROPERTIES FOLDER "Tests")

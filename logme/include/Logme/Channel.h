@@ -31,6 +31,7 @@ namespace Logme
       , const OutputFlags& flags
       , Level level
     );
+    ~Channel();
 
     bool operator==(const char* name) const;
     void Display(Context& context, const char* line);
@@ -42,6 +43,7 @@ namespace Logme
     void SetFilterLevel(Level level);
 
     void AddBackend(BackendPtr backend);
+    void RemoveBackends();
 
     Logger* GetOwner() const;
     std::string GetName();

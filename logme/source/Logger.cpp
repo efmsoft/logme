@@ -30,6 +30,13 @@ Logger::Logger()
 
 Logger::~Logger()
 {
+  // Backends keep shared_ptr to owner. We have to clear it to delete channel!
+  Default->RemoveBackends();
+  for (auto c : Channels)
+    c->RemoveBackends();
+  
+  Channels.clear();
+  Default.reset();
 }
 
 const std::string& Logger::GetHomeDirectory() const

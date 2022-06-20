@@ -18,6 +18,11 @@ Channel::Channel(
 {
 }
 
+Channel::~Channel()
+{
+  Backends.clear();
+}
+
 bool Channel::operator==(const char* name) const
 {
   assert(name);
@@ -47,6 +52,12 @@ const OutputFlags& Channel::GetFlags() const
 void Channel::SetFlags(const OutputFlags& flags)
 {
   Flags = flags;
+}
+
+void Channel::RemoveBackends()
+{
+  Guard guars(DataLock);
+  Backends.clear();
 }
 
 void Channel::AddBackend(BackendPtr backend)

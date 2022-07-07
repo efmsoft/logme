@@ -17,6 +17,7 @@ using namespace Logme;
 LoggerPtr Logme::Instance = std::make_shared<Logger>();
 
 Logger::Logger()
+  : IDGenerator(1)
 {
   Default = std::make_shared<Channel>(this, nullptr, OutputFlags(), DEFAULT_LEVEL);
 
@@ -33,7 +34,10 @@ Logger::~Logger()
   // Backends keep shared_ptr to owner. We have to clear it to delete channel!
   Default->RemoveBackends();
   for (auto c : Channels)
+  {
+    c->RemoveLink();
     c->RemoveBackends();
+  }
   
   Channels.clear();
   Default.reset();
@@ -58,6 +62,53 @@ ChannelPtr Logger::GetChannel(const ID& id)
       return v;
   }
   return CreateChannelInternal(id, OutputFlags());
+}
+
+void Logger::DeleteChannel(const ID& id)
+{
+  Guard guard(DataLock);
+  for (auto it = Channels.begin(); it != Channels.end(); ++it)
+  {
+    auto& v = *it;
+    if (*v == id.Name)
+    {
+      v->RemoveBackends();
+      v->RemoveLink();
+
+      Channels.erase(it);
+    }
+  }
+}
+
+ChannelPtr Logger::CreateChannel(
+  const OutputFlags& flags
+  , Level level
+)
+{
+  ID id{};
+  std::string name;
+
+  Guard guard(DataLock);
+  for (;;)
+  {
+    name = "#" + std::to_string(++IDGenerator);
+    id.Name = name.c_str();
+
+    bool found = false;
+    for (auto it = Channels.begin(); it != Channels.end(); ++it)
+    {
+      auto& v = *it;
+      if (*v == id.Name)
+      {
+        found = true;
+        break;
+      }
+    }
+
+    if (found == false)
+      return CreateChannelInternal(id, flags, level);
+  }
+  return ChannelPtr();
 }
 
 ChannelPtr Logger::CreateChannel(

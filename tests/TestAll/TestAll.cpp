@@ -155,7 +155,7 @@ const char* CppOutput()
 
   int value = 5;
   std::string str("std::string");
-  LogmeI() << "value is " << value << ", ret=" << ret << ", str=" << str << _S(L" wstring");
+  LogmeI() << "value is " << value << ", ret=" << ret << ", str=" << str << Logme::ToStdString(L" wstring");
 
   return ret;
 }

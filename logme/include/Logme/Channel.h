@@ -24,6 +24,8 @@ namespace Logme
     BackendArray Backends;
     uint64_t AccessCount;
 
+    IDPtr Link;
+
   public:
     Channel(
       Logger* owner
@@ -48,6 +50,12 @@ namespace Logme
     Logger* GetOwner() const;
     std::string GetName();
     uint64_t GetAccessCount() const;
+
+    void AddLink(const ID& to);
+    void RemoveLink();
+    bool IsLinked() const;
+
+    const ID GetID() const;
   };
 
   typedef std::shared_ptr<Channel> ChannelPtr;

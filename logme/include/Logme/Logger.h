@@ -17,6 +17,8 @@ namespace Logme
     ChannelPtr Default;
     std::string HomeDirectory;
 
+    int IDGenerator;
+
   public:
     Logger();
     virtual ~Logger();
@@ -35,6 +37,11 @@ namespace Logme
       , const OutputFlags& flags = OutputFlags()
       , Level level = DEFAULT_LEVEL
     );
+    ChannelPtr CreateChannel(
+      const OutputFlags& flags = OutputFlags()
+      , Level level = DEFAULT_LEVEL
+    );
+    void DeleteChannel(const ID& id);
 
     const std::string& GetHomeDirectory() const;
 

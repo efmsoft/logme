@@ -1,4 +1,5 @@
 #include <Logme/Channel.h>
+#include <Logme/Logger.h>
 
 #include <cassert>
 
@@ -23,10 +24,34 @@ Channel::~Channel()
   Backends.clear();
 }
 
+const ID Channel::GetID() const
+{
+  return ID{ Name.c_str() };
+}
+
 bool Channel::operator==(const char* name) const
 {
   assert(name);
   return Name == name;
+}
+
+void Channel::AddLink(const ID& to)
+{
+  Guard guard(DataLock);
+
+  IDPtr p = std::make_shared<ID>(to);
+  Link.swap(p);
+}
+
+void Channel::RemoveLink()
+{
+  Guard guard(DataLock);
+  Link.reset();
+}
+
+bool Channel::IsLinked() const
+{
+  return Link != nullptr;
 }
 
 void Channel::Display(Context& context, const char* line)
@@ -36,6 +61,14 @@ void Channel::Display(Context& context, const char* line)
 
   if (context.ErrorLevel < LevelFilter)
     return;
+
+  if (Link)
+  {
+    ChannelPtr ch = Owner->GetChannel(*Link);
+
+    if (ch)
+      ch->Display(context, line);
+  }
 
   for (auto it = Backends.begin(); it != Backends.end(); ++it)
   {

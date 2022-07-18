@@ -52,7 +52,7 @@ ChannelPtr Logger::GetChannel(const ID& id)
 {
   Guard guard(DataLock);
 
-  if (*id.Name == '\0')
+  if (id.Name == nullptr || *id.Name == '\0')
     return Default;
 
   for (auto it = Channels.begin(); it != Channels.end(); ++it)

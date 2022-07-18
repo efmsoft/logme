@@ -76,6 +76,7 @@ void Logger::DeleteChannel(const ID& id)
       v->RemoveLink();
 
       Channels.erase(it);
+      break;
     }
   }
 }

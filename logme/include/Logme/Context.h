@@ -78,6 +78,7 @@ namespace Logme
     void CreateTZD(char* tzd);
 
     const char* Apply(OutputFlags flags, const char* text, int& nc);
+    void ApplyOverride(OutputFlags& flags);
   };
 }
 

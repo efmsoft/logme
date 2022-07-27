@@ -15,6 +15,11 @@
 
 using namespace Logme;
 
+#ifndef _WIN32
+#define strtok_s strtok_r
+#define _stricmp strcasecmp
+#endif
+
 Context::Context(Level level, const ID* ch)
   : Channel(ch)
   , ErrorLevel(level)
@@ -169,8 +174,72 @@ void Context::InitSignature()
   }
 }
 
+void Context::ApplyOverride(OutputFlags& flags)
+{
+  if (!Channel || !Channel->Name || *Channel->Name != '[')
+    return;
+
+  // "[Method=false, Eol=true]#22"
+  const char* p = strchr(Channel->Name, ']');
+  if (!p)
+    return;
+
+  const size_t maxlen = 256;
+  char buffer[maxlen];
+
+  size_t n = p - Channel->Name;
+  if (n > maxlen)
+    return;
+
+  memcpy(buffer, Channel->Name + 1, n - 1);
+  buffer[n - 1] = '\0';
+
+  char* ctx1 = nullptr;
+  char* p1 = strtok_s(buffer, ", ", &ctx1);
+  for (; p1; p1 = strtok_s(nullptr, ", ", &ctx1))
+  {
+    char* ctx2 = nullptr;
+    char* n = strtok_s(p1, "=", &ctx2);
+    char* v = strtok_s(nullptr, "=", &ctx2);
+
+    if (n && v)
+    {
+      bool f = true;
+      if (!_stricmp(v, "false") || !_stricmp(v, "0") || !_stricmp(v, "no"))
+        f = false;
+
+      if (!_stricmp(n, "Timestamp"))
+        flags.Timestamp = f;
+      else if (!_stricmp(n, "Signature"))
+        flags.Signature = f;
+      else if (!_stricmp(n, "Location"))
+        flags.Location = f;
+      else if (!_stricmp(n, "Method"))
+        flags.Method = f;
+      else if (!_stricmp(n, "Eol"))
+        flags.Eol = f;
+      else if (!_stricmp(n, "ErrorPrefix"))
+        flags.ErrorPrefix = f;
+      else if (!_stricmp(n, "Duration"))
+        flags.Duration = f;
+      else if (!_stricmp(n, "ThreadID"))
+        flags.ThreadID = f;
+      else if (!_stricmp(n, "ProcessID"))
+        flags.ProcessID = f;
+      else if (!_stricmp(n, "Channel"))
+        flags.Channel = f;
+      else if (!_stricmp(n, "Highlight"))
+        flags.Highlight = f;
+      else if (!_stricmp(n, "Console"))
+        flags.Console = f;
+    }
+  }
+}
+
 const char* Context::Apply(OutputFlags flags, const char* text, int& nc)
 {
+  ApplyOverride(flags);
+
   // Copy control flags
   flags.ProcPrint = Applied.ProcPrint;
   flags.ProcPrintIn = Applied.ProcPrintIn;

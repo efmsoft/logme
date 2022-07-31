@@ -50,15 +50,25 @@ const std::string& Logger::GetHomeDirectory() const
 
 ChannelPtr Logger::GetChannel(const ID& id)
 {
-  Guard guard(DataLock);
-
-  if (id.Name == nullptr || *id.Name == '\0')
+  if (id.Name == nullptr)
     return Default;
 
+  const char* name = id.Name;
+  if (*name == '[')
+  {
+    const char* e = strchr(name, ']');
+    if (e)
+      name = e + 1;
+  }
+
+  if (*name == '\0')
+    return Default;
+
+  Guard guard(DataLock);
   for (auto it = Channels.begin(); it != Channels.end(); ++it)
   {
     auto& v = *it;
-    if (*v == id.Name)
+    if (*v == id.Name || *v == name)
       return v;
   }
   return CreateChannelInternal(id, OutputFlags());

@@ -199,7 +199,7 @@ Stream Logger::DoLog(Context& context, const char* format, va_list args)
 
   if (format)
   {
-    size_t size = std::max(4096U, (unsigned int)(strlen(format) + 512));
+    size_t size = std::max(16384U, (unsigned int)(strlen(format) + 512));
 
     char* buffer = (char*)alloca(size);
 

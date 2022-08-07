@@ -56,18 +56,27 @@ bool Channel::IsLinked() const
 
 void Channel::Display(Context& context, const char* line)
 {
-  Guard guars(DataLock);
+  DataLock.lock();
   AccessCount++;
 
   if (context.ErrorLevel < LevelFilter)
+  {
+    DataLock.unlock();
     return;
+  }
 
   if (Link)
   {
-    ChannelPtr ch = Owner->GetChannel(*Link);
+    IDPtr link = Link;
+    DataLock.unlock();
+
+    // Owner->GetChannel /  ch->Display have to be called w/o acquired lock!!
+    ChannelPtr ch = Owner->GetChannel(*link);
 
     if (ch)
       ch->Display(context, line);
+
+    DataLock.lock();
   }
 
   for (auto it = Backends.begin(); it != Backends.end(); ++it)
@@ -75,6 +84,8 @@ void Channel::Display(Context& context, const char* line)
     auto& p = *it;
     p->Display(context, line);
   }
+
+  DataLock.unlock();
 }
 
 const OutputFlags& Channel::GetFlags() const

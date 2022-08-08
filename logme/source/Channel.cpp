@@ -65,7 +65,11 @@ void Channel::Display(Context& context, const char* line)
     return;
   }
 
-  if (Link)
+  OutputFlags flags = Flags;
+  flags.Value |= context.Ovr.Add.Value;
+  flags.Value &= ~context.Ovr.Remove.Value;
+
+  if (Link && !flags.DisableLink)
   {
     IDPtr link = Link;
     DataLock.unlock();

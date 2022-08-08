@@ -26,8 +26,15 @@ namespace Logme
     virtual Stream DoLog(Context& context, const char* format, va_list args);
 
     Stream Log(const Context& context);
+
+    Stream Log(const Context& context, const Override& ovr);
     Stream Log(const Context& context, const ID& id);
+    Stream Log(const Context& context, const ID& id, const Override& ovr);
+
     Stream Log(const Context& context, const ID& id, const char* format, ...);
+    Stream Log(const Context& context, const Override& ovr, const char* format, ...);
+    Stream Log(const Context& context, const ID& id, const Override& ovr, const char* format, ...);
+
     Stream Log(const Context& context, const char* format, ...);
 
     ChannelPtr GetChannel(const ID& id);

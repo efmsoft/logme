@@ -3,6 +3,7 @@
 #include <Logme/ID.h>
 #include <Logme/Module.h>
 #include <Logme/OutputFlags.h>
+#include <Logme/Override.h>
 #include <Logme/Types.h>
 
 #include <memory>
@@ -36,6 +37,7 @@ namespace Logme
     PfnAppend AppendProc;
     void* AppendContext;
 
+    Override Ovr;
     StringPtr Output;
 
     char Timestamp[TIMESTAMP_BUFFER_SIZE];
@@ -78,7 +80,6 @@ namespace Logme
     void CreateTZD(char* tzd);
 
     const char* Apply(OutputFlags flags, const char* text, int& nc);
-    void ApplyOverride(OutputFlags& flags);
   };
 }
 

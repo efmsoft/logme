@@ -2,6 +2,8 @@
 #include <Logme/Backend/FileManager.h>
 #include <Logme/Time/datetime.h> 
 
+#include <cassert>
+
 using namespace Logme;
 
 std::mutex FileManager::ListLock;
@@ -10,7 +12,6 @@ volatile bool FileManager::Wake;
 
 FileManager::FileManager()
   : ShutdownFlag(false)
-  , Worker(&FileManager::ManagementThread, this)
 {
 }
 
@@ -27,7 +28,11 @@ void FileManager::Add(FileBackend* backend)
   ListLock.lock();
 
   if (Instance == nullptr)
+  {
     Instance = std::make_shared<FileManager>();
+    Instance->Worker = std::thread(&FileManager::ManagementThread, Instance.get());
+    assert(Instance->Worker.joinable());
+  }
 
   Instance->Backend.push_back(backend);
   ListLock.unlock();

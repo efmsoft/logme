@@ -65,18 +65,30 @@ ChannelPtr Logger::GetChannel(const ID& id)
 
 void Logger::DeleteChannel(const ID& id)
 {
-  Guard guard(DataLock);
-  for (auto it = Channels.begin(); it != Channels.end(); ++it)
-  {
-    auto& v = *it;
-    if (*v == id.Name)
-    {
-      v->RemoveBackends();
-      v->RemoveLink();
+  ChannelPtr ch;
 
-      Channels.erase(it);
-      break;
+  do
+  {
+    Guard guard(DataLock);
+    for (auto it = Channels.begin(); it != Channels.end(); ++it)
+    {
+      auto& v = *it;
+      if (*v == id.Name)
+      {
+        ch = v;
+        Channels.erase(it);
+
+        break;
+      }
     }
+  } while (false);
+
+  // Do it without acquired mutex!
+
+  if (ch)
+  {
+    ch->RemoveBackends();
+    ch->RemoveLink();
   }
 }
 

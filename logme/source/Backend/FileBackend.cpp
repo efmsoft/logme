@@ -13,6 +13,9 @@
 #include <string.h>
 #include <vector>
 
+#include <chrono>
+using namespace std::chrono_literals;
+
 #ifndef _WIN32
 #include <sys/file.h>
 #include <unistd.h>
@@ -55,11 +58,14 @@ FileBackend::~FileBackend()
 
 void FileBackend::WaitForShutdown()
 {
-  if (!ShutdownCalled)
-  {
-    std::unique_lock<std::mutex> locker(BufferLock);
-    Shutdown.wait(locker);
-  }
+  std::unique_lock<std::mutex> locker(BufferLock);
+
+  Shutdown.wait_until(
+    locker
+    , std::chrono::time_point<std::chrono::system_clock>::max()
+    , [this]() {return ShutdownCalled;}
+  );
+  assert(ShutdownCalled);
 }
 
 void FileBackend::SetMaxSize(size_t size)

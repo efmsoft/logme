@@ -58,14 +58,16 @@ FileBackend::~FileBackend()
 
 void FileBackend::WaitForShutdown()
 {
-  std::unique_lock<std::mutex> locker(BufferLock);
+  while (ShutdownCalled == false)
+  {
+    std::unique_lock<std::mutex> locker(BufferLock);
 
-  Shutdown.wait_until(
-    locker
-    , std::chrono::time_point<std::chrono::system_clock>::max()
-    , [this]() {return ShutdownCalled;}
-  );
-  assert(ShutdownCalled);
+    Shutdown.wait_for(
+      locker
+      , std::chrono::milliseconds(50)
+      , [this]() {return ShutdownCalled; }
+    );
+  }
 }
 
 void FileBackend::SetMaxSize(size_t size)

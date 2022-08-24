@@ -108,6 +108,21 @@ void Channel::RemoveBackends()
   Backends.clear();
 }
 
+bool Channel::RemoveBackend(BackendPtr backend)
+{
+  Guard guars(DataLock);
+  for (auto it = Backends.begin(); it != Backends.end(); ++it)
+  {
+    auto& p = *it;
+    if (p.get() == backend.get())
+    {
+      Backends.erase(it);
+      return true;
+    }
+  }
+  return false;
+}
+
 void Channel::AddBackend(BackendPtr backend)
 {
   assert(backend);

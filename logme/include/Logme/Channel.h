@@ -45,6 +45,7 @@ namespace Logme
     void SetFilterLevel(Level level);
 
     void AddBackend(BackendPtr backend);
+    bool RemoveBackend(BackendPtr backend);
     void RemoveBackends();
 
     Logger* GetOwner() const;

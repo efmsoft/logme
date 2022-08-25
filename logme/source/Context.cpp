@@ -21,7 +21,8 @@ using namespace Logme;
 #endif
 
 Context::Context(Level level, const ID* ch)
-  : Channel(ch)
+  : ChannelStg{}
+  , Channel(ch)
   , ErrorLevel(level)
   , Method(nullptr)
   , File(nullptr)
@@ -41,7 +42,8 @@ Context::Context(
   , int line
   , const Context::Params& params
 )
-  : Channel(&params.Channel)
+  : ChannelStg{}
+  , Channel(&params.Channel)
   , ErrorLevel(level)
   , Method(method)
   , File(file)

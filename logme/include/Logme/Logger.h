@@ -3,6 +3,7 @@
 #include <Logme/Channel.h>
 #include <Logme/Stream.h>
 
+#include <map>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -19,9 +20,14 @@ namespace Logme
 
     int IDGenerator;
 
+    std::map<uint64_t, ID> ThreadChannel;
+
   public:
     Logger();
     virtual ~Logger();
+
+    void SetThreadChannel(const ID* id);
+    ID GetDefaultChannel();
 
     virtual Stream DoLog(Context& context, const char* format, va_list args);
 
@@ -58,6 +64,8 @@ namespace Logme
       , const OutputFlags& flags
       , Level level = DEFAULT_LEVEL
     );
+
+    void ApplyThreadChannel(Context& context);
   };
 
   typedef std::shared_ptr<Logger> LoggerPtr;

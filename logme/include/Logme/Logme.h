@@ -5,6 +5,7 @@
 #include <Logme/Convert.h>
 #include <Logme/Logger.h>
 #include <Logme/Procedure.h>
+#include <Logme/ThreadChannel.h>
 #include <Logme/Stream.h>
 
 // String conversion
@@ -85,3 +86,6 @@
 
 #define LogmeC_Ifg(condition, ...) \
   Logme_Ifg(condition, Logme::Instance, Logme::Level::LEVEL_CRITICAL, ## __VA_ARGS__)
+
+#define LogmeThreadChannel(ch) \
+  Logme::ThreadChannel _logme_thread_channel(Logme::Instance, ch)

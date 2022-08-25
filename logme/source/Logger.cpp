@@ -2,6 +2,7 @@
 #include <Logme/Backend/ConsoleBackend.h>
 #include <Logme/Backend/DebugBackend.h>
 #include <Logme/File/exe_path.h>
+#include <Logme/Utils.h>
 
 #include "StringHelpers.h"
 
@@ -46,6 +47,48 @@ Logger::~Logger()
 const std::string& Logger::GetHomeDirectory() const
 {
   return HomeDirectory;
+}
+
+void Logger::SetThreadChannel(const ID* id)
+{
+  uint64_t tid = GetCurrentThreadId();
+  
+  Guard guard(DataLock);
+
+  if (id == nullptr)
+  {
+    auto it = ThreadChannel.find(tid);
+    if (it != ThreadChannel.end())
+      ThreadChannel.erase(it);
+  }
+  else
+    ThreadChannel[tid] = *id;
+}
+
+void Logger::ApplyThreadChannel(Context& context)
+{
+  uint64_t tid = GetCurrentThreadId();
+  
+  Guard guard(DataLock);
+  auto it = ThreadChannel.find(tid);
+  if (it != ThreadChannel.end())
+  {
+    context.ChannelStg = it->second;
+    context.Channel = &context.ChannelStg;
+  }
+}
+
+ID Logger::GetDefaultChannel()
+{
+  uint64_t tid = GetCurrentThreadId();
+
+  Guard guard(DataLock);
+
+  auto it = ThreadChannel.find(tid);
+  if (it != ThreadChannel.end())
+    return it->second;
+
+  return ::CH;
 }
 
 ChannelPtr Logger::GetChannel(const ID& id)
@@ -153,6 +196,9 @@ ChannelPtr Logger::CreateChannelInternal(
 
 Stream Logger::Log(const Context& context)
 {
+  Context& context2 = *(Context*)&context;
+  ApplyThreadChannel(context2);
+
   return Stream(shared_from_this(), context);
 }
 
@@ -178,16 +224,18 @@ Stream Logger::Log(const Context& context, const Override& ovr)
   Context& context2 = *(Context*)&context;
   context2.Ovr = ovr;
 
+  ApplyThreadChannel(context2);
+
   return Stream(shared_from_this(), context);
 }
 
 Stream Logger::Log(const Context& context, const ID& id, const char* format, ...)
 {
+  Context& context2 = *(Context*)&context;
+  context2.Channel = &id;
+
   va_list args;
   va_start(args, format);
-
-  Context& context2 = *(Context *)&context;
-  context2.Channel = &id;
 
   DoLog(context2, format, args);
 
@@ -204,12 +252,12 @@ Stream Logger::Log(
   , ...
 )
 {
-  va_list args;
-  va_start(args, format);
-
   Context& context2 = *(Context*)&context;
   context2.Channel = &id;
   context2.Ovr = ovr;
+
+  va_list args;
+  va_start(args, format);
 
   DoLog(context2, format, args);
 
@@ -225,11 +273,12 @@ Stream Logger::Log(
   , ...
 )
 {
-  va_list args;
-  va_start(args, format);
-
   Context& context2 = *(Context*)&context;
   context2.Ovr = ovr;
+  ApplyThreadChannel(context2);
+
+  va_list args;
+  va_start(args, format);
 
   DoLog(context2, format, args);
 
@@ -240,10 +289,13 @@ Stream Logger::Log(
 
 Stream Logger::Log(const Context& context, const char* format, ...)
 {
+  Context& context2 = *(Context*)&context;
+  ApplyThreadChannel(context2);
+
   va_list args;
   va_start(args, format);
 
-  DoLog(*(Context *)&context, format, args);
+  DoLog(context2, format, args);
 
   va_end(args);
 

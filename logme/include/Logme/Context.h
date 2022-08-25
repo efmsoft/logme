@@ -28,6 +28,7 @@ namespace Logme
       TZD_E_POS = 19,
     }; 
 
+    ID ChannelStg;
     const ID* Channel;
     Level ErrorLevel;
     const char* Method;

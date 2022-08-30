@@ -8,7 +8,8 @@
 using namespace Logme;
 
 Printer Logme::None;
- 
+std::string FormatValue(const Printer& v) { return std::string(); }
+
 template<typename T> std::string StdFormat(const T& v)
 {
   std::stringstream ss;
@@ -47,6 +48,7 @@ GENERATE_TYPE_FORMATTER0(long)
 std::string FormatValue(const std::string& v) { return v; }
 std::string FormatValue(char const* const& v) { return v; }
 std::string FormatValue(char* const& v) { return v; }
+std::string FormatValue(bool const& v) { return v ? "true" : "false"; }
 
 namespace Logme
 {

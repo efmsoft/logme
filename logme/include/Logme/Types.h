@@ -104,8 +104,10 @@ namespace Logme
 #define _LOGME_G(x,y,...) y()
 #endif
 
-#if !defined(_DEBUG) && !defined(LOGME_INRELEASE)
-#define _LOGME_ACTIVE 0
-#else
-#define _LOGME_ACTIVE 1
+#ifndef _LOGME_ACTIVE
+  #if !defined(_DEBUG) && !defined(LOGME_INRELEASE)
+    #define _LOGME_ACTIVE 0
+  #else
+    #define _LOGME_ACTIVE 1
+  #endif
 #endif

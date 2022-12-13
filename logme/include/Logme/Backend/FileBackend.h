@@ -4,6 +4,7 @@
 #include <Logme/File/file_io.h>
 #include <Logme/Types.h>
 
+#include <condition_variable>
 #include <mutex>
 
 namespace Logme

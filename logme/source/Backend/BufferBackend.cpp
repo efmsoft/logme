@@ -1,6 +1,8 @@
 #include <Logme/Backend/BufferBackend.h>
 #include <Logme/Channel.h>
 
+#include <cstring>
+
 using namespace Logme;
 
 BufferBackend::BufferBackend(Logme::ChannelPtr owner)

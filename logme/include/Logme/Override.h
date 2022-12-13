@@ -1,6 +1,6 @@
 #pragma once
 
-#include <logme/OutputFlags.h>
+#include <Logme/OutputFlags.h>
 
 namespace Logme
 {

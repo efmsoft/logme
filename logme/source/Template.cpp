@@ -35,7 +35,7 @@
 using namespace Logme;
 
 #if defined(__linux__) || defined(__APPLE__) || defined(__sun__)
-int GetModuleFileNameA(int, char* buff, size_t maxLen)
+static int GetModuleFileNameA(int, char* buff, size_t maxLen)
 {
 #if defined(__linux__)
   int count = readlink("/proc/self/exe", buff, maxLen - 1);
@@ -58,7 +58,7 @@ int GetModuleFileNameA(int, char* buff, size_t maxLen)
 }
 #endif
 
-std::string GetExeDirectory()
+static std::string GetExeDirectory()
 {
   char buff[MAX_PATH + 1];
   GetModuleFileNameA(0, buff, MAX_PATH);
@@ -71,7 +71,7 @@ std::string GetExeDirectory()
   return buff;
 }
 
-std::string GetExeName()
+static std::string GetExeName()
 {
   char buff[MAX_PATH + 1];
   GetModuleFileNameA(0, buff, MAX_PATH);
@@ -157,7 +157,7 @@ std::string Logme::ProcessTemplate(
 
           const time_t now = time(0);
 #ifdef _WIN32
-          struct tm tmstg;
+          struct tm tmstg{};
           struct tm* t = &tmstg;
           localtime_s(t, &now);
 #else

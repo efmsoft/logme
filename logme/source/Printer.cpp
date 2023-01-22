@@ -41,10 +41,6 @@ GENERATE_TYPE_FORMATTER(int16_t)
 GENERATE_TYPE_FORMATTER(int32_t)
 GENERATE_TYPE_FORMATTER(int64_t)
 
-#if  !defined(__GNUC__) || defined(__clang__)
-GENERATE_TYPE_FORMATTER0(long)
-#endif
-
 std::string FormatValue(const std::string& v) { return v; }
 std::string FormatValue(char const* const& v) { return v; }
 std::string FormatValue(char* const& v) { return v; }
@@ -56,9 +52,6 @@ namespace Logme
   GENERATE_TYPE_FORMATTER(int16_t)
   GENERATE_TYPE_FORMATTER(int32_t)
   GENERATE_TYPE_FORMATTER(int64_t)
-#if  !defined(__GNUC__) || defined(__clang__)
-  GENERATE_TYPE_FORMATTER0(long)
-#endif
 
   std::string FormatValue(const std::string& v) { return v; }
   std::string FormatValue(char const* const& v) { return v; }

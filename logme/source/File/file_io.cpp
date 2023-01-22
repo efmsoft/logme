@@ -25,6 +25,7 @@ using namespace Logme;
 
 FileIo::FileIo()
   : File(-1)
+  , Error(0)
   , NeedUnlock(false)
   , WriteTimeAtOpen(0)
 {
@@ -37,29 +38,45 @@ FileIo::~FileIo()
 
 void FileIo::Close()
 {
+  std::lock_guard<std::recursive_mutex> guard(IoLock);
+
   if (File != -1)
   {
 #if !defined(_WIN32) && !defined(__sun__)
     if (NeedUnlock)
-    {
+    {      
       int rc = flock(File, LOCK_UN);
       if (rc < 0)
-        LogmeE(CHINT, "FileIo(%s): flock(LOCK_UN) failed: %i", File, errno);
+      {
+        Error = errno;
+        std::string pathName = GetPathName();
+        LogmeE(CHINT, "FileIo(%s): flock(LOCK_UN) failed: %i", pathName.c_str(), Error);
+      }
 
       NeedUnlock = false;
     }
 #endif
 
-    _close(File);
+    int h = File;
     File = -1;
+
+    int rc = _close(h);
+    if (rc < 0)
+    {
+      Error = errno;
+      std::string pathName = GetPathName();
+      LogmeE(CHINT, "FileIo(%s): close(%i) failed: %i", pathName.c_str(), h, Error);
+    }
   }
 }
 
 bool FileIo::Open(bool append, unsigned timeout, const char* fileName)
 {
+  std::lock_guard<std::recursive_mutex> guard(IoLock);
   assert(File == -1);
 
   std::string pathName;
+
   if (fileName == 0)
   {
     pathName = GetPathName();
@@ -77,14 +94,15 @@ bool FileIo::Open(bool append, unsigned timeout, const char* fileName)
 #else
     const int pmode = S_IROTH | S_IWOTH | S_IWGRP | S_IRGRP | S_IWUSR | S_IRUSR;
     File = open(fileName, mode, pmode);
-    int err = errno;
 #endif
+    Error = errno;
+
     if (File < 0)
     {
       unsigned t = GetTimeInMillisec();
       if (t < start || t - start >= timeout)
       {
-        LogmeE(CHINT, "FileIo(%s): open failed. Error %i", fileName, err);
+        LogmeE(CHINT, "FileIo(%s): open failed. Error %i", fileName, Error);
         return false;
       }
       continue;
@@ -93,8 +111,8 @@ bool FileIo::Open(bool append, unsigned timeout, const char* fileName)
 #ifndef _WIN32
     if (fcntl(File, F_SETFD, FD_CLOEXEC) == -1)
     {
-      int err = errno;
-      LogmeE(CHINT, "FileIo(%s): flock(LOCK_EX) failed: %i", fileName, err);
+      Error = errno;
+      LogmeE(CHINT, "FileIo(%s): flock(LOCK_EX) failed: %i", fileName, Error);
 
       Close();
       return false;
@@ -106,12 +124,12 @@ bool FileIo::Open(bool append, unsigned timeout, const char* fileName)
     int rc = flock(File, LOCK_EX | LOCK_NB);
     if (rc < 0)
     {
-      int err = errno;
+      Error = errno;
 
       unsigned t = GetTimeInMillisec();
       if (t < start || t - start >= timeout)
       {
-        LogmeE(CHINT, "FileIo(%s): flock(LOCK_EX) failed: %i", fileName, err);
+        LogmeE(CHINT, "FileIo(%s): flock(LOCK_EX) failed: %i", fileName, Error);
 
         Close();
         return false;
@@ -131,6 +149,9 @@ bool FileIo::Open(bool append, unsigned timeout, const char* fileName)
 
 time_t FileIo::GetLastWriteTime(int fd)
 {
+  std::lock_guard<std::recursive_mutex> guard(IoLock);
+  assert(File != -1);
+
 #ifdef _WIN32
   struct _stat st;
   int rc = _fstat(fd, &st);
@@ -141,27 +162,84 @@ time_t FileIo::GetLastWriteTime(int fd)
 
   if (rc < 0)
   {
-    int e = errno;
-
-    LogmeE(CHINT, "fstat() failed: %i", e);
+    Error = errno;
+    std::string pathName = GetPathName();
+    LogmeE(CHINT, "fstat(%s) failed: %i", pathName.c_str(), Error);
     return time(0);
   }
 
   return st.st_mtime;
 }
 
-void FileIo::Write(const void* p, size_t size)
+int FileIo::Seek(size_t offs, int whence)
 {
+  std::lock_guard<std::recursive_mutex> guard(IoLock);
   assert(File != -1);
 
-  _lseek(File, 0, SEEK_END);
-
-  int rc = _write(File, p, (unsigned)size);
+  int rc = (int)_lseek(File, offs, whence);
   if (rc < 0)
   {
+    Error = errno;
+
     std::string pathName = GetPathName();
-    LogmeE(CHINT, "FileIo(%s): write() failed: %i", pathName.c_str(), errno);
+    LogmeE(CHINT, "FileIo(%s): lseek() failed: %i", pathName.c_str(), Error);
   }
+  return rc;
+}
+
+int FileIo::Truncate(size_t offs)
+{
+  std::lock_guard<std::recursive_mutex> guard(IoLock);
+  assert(File != -1);
+
+  int rc = ftruncate(File, offs);
+  if (rc < 0)
+  {
+    Error = errno;
+
+    std::string pathName = GetPathName();
+    LogmeE(CHINT, "FileIo(%s): ftruncate() failed: %i", pathName.c_str(), Error);
+  }
+
+  return rc;
+}
+
+int FileIo::Write(const void* p, size_t size)
+{
+  std::lock_guard<std::recursive_mutex> guard(IoLock);
+  assert(File != -1);
+
+  int rc = Seek(0, SEEK_END);
+  if (rc == 0)
+  {
+    rc = _write(File, p, (unsigned)size);
+    if (rc < 0)
+    {
+      Error = errno;
+
+      std::string pathName = GetPathName();
+      LogmeE(CHINT, "FileIo(%s): write() failed: %i", pathName.c_str(), Error);
+    }
+  }
+
+  return rc;
+}
+
+int FileIo::Read(void* p, size_t size)
+{
+  std::lock_guard<std::recursive_mutex> guard(IoLock);
+  assert(File != -1);
+
+  int rc = _read(File, p, (unsigned)size);
+  if (rc < 0)
+  {
+    Error = errno;
+
+    std::string pathName = GetPathName();
+    LogmeE(CHINT, "FileIo(%s): read() failed: %i", pathName.c_str(), Error);
+  }
+
+  return rc;
 }
 
 unsigned FileIo::Read(int maxLines, std::string& content, int part)

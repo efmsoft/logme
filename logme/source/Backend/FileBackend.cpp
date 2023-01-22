@@ -99,6 +99,8 @@ void FileBackend::CloseLog()
 
 void FileBackend::Write(CharBuffer& data, SizeArray& msgSize)
 {
+  std::lock_guard<std::recursive_mutex> guard(IoLock);
+
   char* head = &data[0];
   char* tail = head + data.size();
 
@@ -128,12 +130,9 @@ void FileBackend::Truncate()
   if (File == -1)
     return;
 
-  auto rc = _lseek(File, 0, SEEK_END);
+  auto rc = Seek(0, SEEK_END);
   if (rc == -1)
-  {
-    assert(!"FileBackend::Truncate(): lseek failed");
     return;
-  }
 
   if (rc < (long)MaxSize)
     return;
@@ -142,18 +141,12 @@ void FileBackend::Truncate()
   uint32_t readSize = rc - readPos;
 
   std::vector<char> data(readSize);
-  rc = _lseek(File, readPos, SEEK_SET);
+  rc = Seek(readPos, SEEK_SET);
   if (rc == -1)
-  {
-    assert(!"FileBackend::Truncate(): lseek failed");
     return;
-  }
 
-  if (_read(File, &data[0], readSize) == -1)
-  {
-    assert(!"FileBackend::Truncate(): read failed");
+  if (Read(&data[0], readSize) < 0)
     return;
-  }
 
   const char* p = &data[0];
   while (*p && *p != '\n')
@@ -163,25 +156,29 @@ void FileBackend::Truncate()
   {
     uint32_t n = uint32_t(p - &data[0]);
 
-    rc = _lseek(File, 0, SEEK_SET);
-    if (rc == -1)
-      assert(!"FileBackend::Truncate(): lseek failed");
+    rc = Seek(0, SEEK_SET);
+    if (rc < 0)
+      return;
 
     char buffer[128];
     sprintf_s(buffer, "--- dropped %i characters\n", readPos + n);
-    if (_write(File, buffer, (int)strlen(buffer)) == -1)
-      assert(!"FileBackend::Truncate(): write failed");
+    if (FileIo::Write(buffer, (int)strlen(buffer)) < 0)
+      return;
 
-    if (_write(File, p, readSize - n) == -1)
-      assert(!"FileBackend::Truncate(): write failed");
+    if (FileIo::Write(p, readSize - n) < 0)
+      return;
 
-    if (ftruncate(File, _lseek(File, 0, SEEK_CUR)) == -1)
-      assert(!"FileBackend::Truncate(): ftruncate failed");
+    int nbytes = Seek(0, SEEK_CUR);
+    if (nbytes < 0)
+      return;
+
+    if (FileIo::Truncate(nbytes) == -1)
+      return;
   }
 
-  rc = _lseek(File, 0, SEEK_END);
-  if (rc == -1)
-    assert(!"FileBackend::Truncate(): SetFilePointer failed");
+  rc = Seek(0, SEEK_END);
+  if (rc < 0)
+    return;
 }
 
 std::string FileBackend::GetPathName(int index)

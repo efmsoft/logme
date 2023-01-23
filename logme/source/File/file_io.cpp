@@ -19,6 +19,7 @@
 #define _O_BINARY 0
 #else
 #include <io.h>
+#define ftruncate _chsize
 #endif
 
 using namespace Logme;
@@ -176,7 +177,7 @@ int FileIo::Seek(size_t offs, int whence)
   std::lock_guard<std::recursive_mutex> guard(IoLock);
   assert(File != -1);
 
-  int rc = (int)_lseek(File, offs, whence);
+  int rc = (int)_lseek(File, (long)offs, whence);
   if (rc < 0)
   {
     Error = errno;
@@ -192,7 +193,7 @@ int FileIo::Truncate(size_t offs)
   std::lock_guard<std::recursive_mutex> guard(IoLock);
   assert(File != -1);
 
-  int rc = ftruncate(File, offs);
+  int rc = ftruncate(File, (long)offs);
   if (rc < 0)
   {
     Error = errno;

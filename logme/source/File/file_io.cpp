@@ -22,6 +22,10 @@
 #define ftruncate _chsize
 #endif
 
+#ifdef ENABLE_CLOSE_HOOK
+#include <hook_api.h>
+#endif
+
 using namespace Logme;
 
 #define IO_ERROR(op) \
@@ -50,7 +54,7 @@ void FileIo::Close()
   {
 #if !defined(_WIN32) && !defined(__sun__)
     if (NeedUnlock)
-    {      
+    {
       int rc = flock(File, LOCK_UN);
       if (rc < 0)
         IO_ERROR(flock(LOCK_UN));
@@ -61,6 +65,10 @@ void FileIo::Close()
 
     int h = File;
     File = -1;
+
+#ifdef ENABLE_CLOSE_HOOK
+    CloseHookUnprotect(h);
+#endif
 
     int rc = _close(h);
     if (rc < 0)
@@ -105,6 +113,10 @@ bool FileIo::Open(bool append, unsigned timeout, const char* fileName)
       }
       continue;
     }
+
+#ifdef ENABLE_CLOSE_HOOK
+    CloseHookProtect(File);
+#endif
 
 #ifndef _WIN32
     if (fcntl(File, F_SETFD, FD_CLOEXEC) == -1)

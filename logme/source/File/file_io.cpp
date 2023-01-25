@@ -24,6 +24,11 @@
 
 using namespace Logme;
 
+#define IO_ERROR(op) \
+  {Error = errno; \
+  std::string pathName = GetPathName(); \
+  LogmeE(CHINT, "FileIo(%s): " #op " failed: %s", pathName.c_str(), ERRNO_STR(Error)); }
+
 FileIo::FileIo()
   : File(-1)
   , Error(0)
@@ -48,11 +53,7 @@ void FileIo::Close()
     {      
       int rc = flock(File, LOCK_UN);
       if (rc < 0)
-      {
-        Error = errno;
-        std::string pathName = GetPathName();
-        LogmeE(CHINT, "FileIo(%s): flock(LOCK_UN) failed: %i", pathName.c_str(), Error);
-      }
+        IO_ERROR(flock(LOCK_UN));
 
       NeedUnlock = false;
     }
@@ -63,11 +64,7 @@ void FileIo::Close()
 
     int rc = _close(h);
     if (rc < 0)
-    {
-      Error = errno;
-      std::string pathName = GetPathName();
-      LogmeE(CHINT, "FileIo(%s): close(%i) failed: %i", pathName.c_str(), h, Error);
-    }
+      IO_ERROR(close());
   }
 }
 
@@ -103,7 +100,7 @@ bool FileIo::Open(bool append, unsigned timeout, const char* fileName)
       unsigned t = GetTimeInMillisec();
       if (t < start || t - start >= timeout)
       {
-        LogmeE(CHINT, "FileIo(%s): open failed. Error %i", fileName, Error);
+        IO_ERROR(open);
         return false;
       }
       continue;
@@ -112,8 +109,7 @@ bool FileIo::Open(bool append, unsigned timeout, const char* fileName)
 #ifndef _WIN32
     if (fcntl(File, F_SETFD, FD_CLOEXEC) == -1)
     {
-      Error = errno;
-      LogmeE(CHINT, "FileIo(%s): flock(LOCK_EX) failed: %i", fileName, Error);
+      IO_ERROR(flock(LOCK_EX));
 
       Close();
       return false;
@@ -130,7 +126,7 @@ bool FileIo::Open(bool append, unsigned timeout, const char* fileName)
       unsigned t = GetTimeInMillisec();
       if (t < start || t - start >= timeout)
       {
-        LogmeE(CHINT, "FileIo(%s): flock(LOCK_EX) failed: %i", fileName, Error);
+        IO_ERROR(flock(LOCK_EX));
 
         Close();
         return false;
@@ -163,9 +159,7 @@ time_t FileIo::GetLastWriteTime(int fd)
 
   if (rc < 0)
   {
-    Error = errno;
-    std::string pathName = GetPathName();
-    LogmeE(CHINT, "fstat(%s) failed: %i", pathName.c_str(), Error);
+    IO_ERROR(fstat());
     return time(0);
   }
 
@@ -179,12 +173,8 @@ int FileIo::Seek(size_t offs, int whence)
 
   int rc = (int)_lseek(File, (long)offs, whence);
   if (rc < 0)
-  {
-    Error = errno;
+    IO_ERROR(lseek());
 
-    std::string pathName = GetPathName();
-    LogmeE(CHINT, "FileIo(%s): lseek() failed: %i", pathName.c_str(), Error);
-  }
   return rc;
 }
 
@@ -195,12 +185,7 @@ int FileIo::Truncate(size_t offs)
 
   int rc = ftruncate(File, (long)offs);
   if (rc < 0)
-  {
-    Error = errno;
-
-    std::string pathName = GetPathName();
-    LogmeE(CHINT, "FileIo(%s): ftruncate() failed: %i", pathName.c_str(), Error);
-  }
+    IO_ERROR(ftruncate());
 
   return rc;
 }
@@ -211,16 +196,11 @@ int FileIo::Write(const void* p, size_t size)
   assert(File != -1);
 
   int rc = Seek(0, SEEK_END);
-  if (rc == 0)
+  if (rc >= 0)
   {
     rc = _write(File, p, (unsigned)size);
     if (rc < 0)
-    {
-      Error = errno;
-
-      std::string pathName = GetPathName();
-      LogmeE(CHINT, "FileIo(%s): write() failed: %i", pathName.c_str(), Error);
-    }
+      IO_ERROR(write());
   }
 
   return rc;
@@ -233,12 +213,7 @@ int FileIo::Read(void* p, size_t size)
 
   int rc = _read(File, p, (unsigned)size);
   if (rc < 0)
-  {
-    Error = errno;
-
-    std::string pathName = GetPathName();
-    LogmeE(CHINT, "FileIo(%s): read() failed: %i", pathName.c_str(), Error);
-  }
+    IO_ERROR(read());
 
   return rc;
 }

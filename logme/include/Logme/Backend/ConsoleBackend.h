@@ -7,6 +7,8 @@ namespace Logme
 {
   struct ConsoleBackend : public Backend
   {
+    constexpr static const char* TYPE_ID = "ConsoleBackend";
+
     ConsoleBackend(ChannelPtr owner);
 
     void Display(Context& context, const char* line) override;

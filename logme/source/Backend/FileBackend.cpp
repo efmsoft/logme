@@ -32,7 +32,7 @@ using namespace std::chrono_literals;
 using namespace Logme;
 
 FileBackend::FileBackend(ChannelPtr owner)
-  : Backend(owner)
+  : Backend(owner, TYPE_ID)
   , Append(true)
   , MaxSize(MAX_SIZE_DEFAULT)
   , DataReady(false)

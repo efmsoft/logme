@@ -13,6 +13,8 @@ namespace Logme
     enum { GROW = 4 * 1024 };
     std::vector<char> Buffer;
 
+    constexpr static const char* TYPE_ID = "BufferBackend";
+
   public:
     BufferBackend(Logme::ChannelPtr owner);
 

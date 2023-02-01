@@ -47,6 +47,12 @@ namespace Logme
     void AddBackend(BackendPtr backend);
     bool RemoveBackend(BackendPtr backend);
     void RemoveBackends();
+    
+    BackendPtr GetBackend(size_t index);
+    size_t NumberOfBackends();
+
+    BackendPtr FindFirstBackend(const char* type, int& context);
+    BackendPtr FindNextBackend(const char* type, int& context);
 
     Logger* GetOwner() const;
     std::string GetName();

@@ -8,7 +8,7 @@
 using namespace Logme;
 
 DebugBackend::DebugBackend(ChannelPtr owner)
-  : Backend(owner)
+  : Backend(owner, TYPE_ID)
 {
 }
 

@@ -104,13 +104,13 @@ void Channel::SetFlags(const OutputFlags& flags)
 
 void Channel::RemoveBackends()
 {
-  Guard guars(DataLock);
+  Guard guard(DataLock);
   Backends.clear();
 }
 
 bool Channel::RemoveBackend(BackendPtr backend)
 {
-  Guard guars(DataLock);
+  Guard guard(DataLock);
   for (auto it = Backends.begin(); it != Backends.end(); ++it)
   {
     auto& p = *it;
@@ -127,7 +127,7 @@ void Channel::AddBackend(BackendPtr backend)
 {
   assert(backend);
 
-  Guard guars(DataLock);
+  Guard guard(DataLock);
   for (auto it = Backends.begin(); it != Backends.end(); ++it)
   {
     auto& p = *it;
@@ -138,9 +138,50 @@ void Channel::AddBackend(BackendPtr backend)
   Backends.push_back(backend);
 }
 
+BackendPtr Channel::GetBackend(size_t index)
+{
+  Guard guard(DataLock);
+
+  if (index < Backends.size())
+    return Backends[index];
+
+  return BackendPtr();
+}
+
+size_t Channel::NumberOfBackends()
+{
+  Guard guard(DataLock);
+  return Backends.size();
+}
+
+BackendPtr Channel::FindFirstBackend(const char* type, int& context)
+{
+  context = -1;
+  return FindNextBackend(type, context);
+}
+
+BackendPtr Channel::FindNextBackend(const char* type, int& context)
+{
+  assert(type);
+  std::string stype(type);
+
+  Guard guard(DataLock);
+  size_t pos = size_t(context + 1);
+  for (; pos < Backends.size(); pos++)
+  {
+    auto& b = Backends[pos];
+    if (b->GetType() == stype)
+    {
+      context = int(pos);
+      return b;
+    }
+  }
+  return BackendPtr();
+}
+
 std::string Channel::GetName()
 {
-  Guard guars(DataLock);
+  Guard guard(DataLock);
   return Name;
 }
 

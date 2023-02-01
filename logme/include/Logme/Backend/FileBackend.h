@@ -46,6 +46,8 @@ namespace Logme
       STAT_OUTPUT_PERIOD = 10 * 60 * 1000,  // 10 min
     };
 
+    constexpr static const char* TYPE_ID = "FileBackend";
+
     FileBackend(ChannelPtr owner);
     ~FileBackend();
 

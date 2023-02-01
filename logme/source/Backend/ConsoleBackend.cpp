@@ -17,7 +17,7 @@
 using namespace Logme;
 
 ConsoleBackend::ConsoleBackend(ChannelPtr owner)
-  : Backend(owner)
+  : Backend(owner, TYPE_ID)
 {
 }
 

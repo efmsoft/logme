@@ -6,7 +6,7 @@
 using namespace Logme;
 
 BufferBackend::BufferBackend(Logme::ChannelPtr owner)
-  : Backend(owner)
+  : Backend(owner, TYPE_ID)
 {
 }
 

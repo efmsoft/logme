@@ -1,12 +1,13 @@
 #pragma once
 
-#include <Logme/Channel.h>
-#include <Logme/Stream.h>
-
 #include <map>
 #include <memory>
 #include <mutex>
 #include <string>
+
+#include <Logme/Channel.h>
+#include <Logme/File/FileManagerFactory.h>
+#include <Logme/Stream.h>
 
 namespace Logme
 {
@@ -21,6 +22,7 @@ namespace Logme
     int IDGenerator;
 
     std::map<uint64_t, ID> ThreadChannel;
+    FileManagerFactory Factory;
 
   public:
     Logger();
@@ -57,6 +59,7 @@ namespace Logme
     void DeleteChannel(const ID& id);
 
     const std::string& GetHomeDirectory() const;
+    FileManagerFactory& GetFileManagerFactory();
 
   protected:
     ChannelPtr CreateChannelInternal(

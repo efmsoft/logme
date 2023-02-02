@@ -34,7 +34,7 @@ Logger::~Logger()
 {
   // Backends keep shared_ptr to owner. We have to clear it to delete channel!
   Default->RemoveBackends();
-  for (auto c : Channels)
+  for (auto& c : Channels)
   {
     c->RemoveLink();
     c->RemoveBackends();
@@ -47,6 +47,11 @@ Logger::~Logger()
 const std::string& Logger::GetHomeDirectory() const
 {
   return HomeDirectory;
+}
+
+FileManagerFactory& Logger::GetFileManagerFactory()
+{
+  return Factory;
 }
 
 void Logger::SetThreadChannel(const ID* id)

@@ -1,19 +1,19 @@
+#include <cassert>
+#include <chrono>
+#include <stdint.h>
+#include <string.h>
+#include <vector>
+
 #include <Logme/Backend/FileBackend.h>
-#include <Logme/Backend/FileManager.h>
 #include <Logme/Channel.h>
 #include <Logme/Context.h>
 #include <Logme/File/exe_path.h>
+#include <Logme/File/FileManagerFactory.h>
 #include <Logme/Logger.h>
 #include <Logme/Template.h>
 #include <Logme/Time/datetime.h> 
 #include <Logme/Types.h>
 
-#include <cassert>
-#include <stdint.h>
-#include <string.h>
-#include <vector>
-
-#include <chrono>
 using namespace std::chrono_literals;
 
 #ifndef _WIN32
@@ -42,7 +42,7 @@ FileBackend::FileBackend(ChannelPtr owner)
   , LastFlush(0)
   , MaxBufferSize(0)
 {
-  FileManager::Add(this);
+  GetFactory().Add(this);
 }
 
 FileBackend::~FileBackend()
@@ -52,7 +52,7 @@ FileBackend::~FileBackend()
 
   WaitForShutdown();
 
-  FileManager::Remove(this);
+  GetFactory().Remove(this);
   CloseLog();
 }
 
@@ -165,7 +165,7 @@ void FileBackend::Truncate()
     if (FileIo::Write(buffer, (int)strlen(buffer)) < 0)
       return;
 
-    if (FileIo::Write(p, readSize - n) < 0)
+    if (FileIo::Write(p, size_t(readSize) - n) < 0)
       return;
 
     int nbytes = Seek(0, SEEK_CUR);
@@ -249,7 +249,13 @@ void FileBackend::AppendOutputData(const CharBuffer& append)
 void FileBackend::RequestFlush()
 {
   Flush = true;
-  FileManager::WakeUp();
+  GetFactory().WakeUp();
+}
+
+FileManagerFactory& FileBackend::GetFactory()
+{
+  auto logger = Owner->GetOwner();
+  return logger->GetFileManagerFactory();
 }
 
 void FileBackend::GetOutputData(CharBuffer& data, SizeArray& size)

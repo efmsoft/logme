@@ -1,18 +1,18 @@
-#include <Logme/Backend/FileBackend.h>
-#include <Logme/Backend/FileManager.h>
-#include <Logme/Time/datetime.h> 
-
 #include <cassert>
+
+#include <Logme/Backend/FileBackend.h>
+#include <Logme/File/FileManager.h>
+#include <Logme/Time/datetime.h> 
 
 using namespace Logme;
 
-std::mutex FileManager::ListLock;
-std::shared_ptr<FileManager> FileManager::Instance;
-volatile bool FileManager::Wake;
-
-FileManager::FileManager()
-  : ShutdownFlag(false)
+FileManager::FileManager(std::mutex& listLock)
+  : ListLock(listLock)
+  , Wake(false)
+  , ShutdownFlag(false)
 {
+  Worker = std::thread(&FileManager::ManagementThread, this);
+  assert(Worker.joinable());
 }
 
 FileManager::~FileManager()
@@ -25,34 +25,20 @@ FileManager::~FileManager()
 
 void FileManager::Add(FileBackend* backend)
 {
-  ListLock.lock();
-
-  if (Instance == nullptr)
-  {
-    Instance = std::make_shared<FileManager>();
-    Instance->Worker = std::thread(&FileManager::ManagementThread, Instance.get());
-    assert(Instance->Worker.joinable());
-  }
-
-  Instance->Backend.push_back(backend);
-  ListLock.unlock();
-}
-
-void FileManager::Remove(FileBackend* backend)
-{
-  std::shared_ptr<FileManager> instance;
-
-  ListLock.lock();
-
-  if (Instance && !Instance->Backend.size())
-    Instance.swap(instance);
-
-  ListLock.unlock();
+  // This method is called with acquired ListLock!!!
+  Backend.push_back(backend);
 }
 
 void FileManager::WakeUp()
 {
+  // This method is called with acquired ListLock!!!
   Wake = true;
+}
+
+bool FileManager::Empty() const
+{
+  // This method is called with acquired ListLock!!!
+  return Backend.empty();
 }
 
 bool FileManager::DispatchEvents(size_t index, bool force)

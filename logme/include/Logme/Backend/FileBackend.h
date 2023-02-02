@@ -61,6 +61,8 @@ namespace Logme
     std::string GetPathName(int index = 0) override;
 
   private:
+    class FileManagerFactory& GetFactory();
+
     void Truncate();
     void ConditionalFlush();
 

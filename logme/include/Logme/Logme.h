@@ -1,16 +1,13 @@
 #pragma once
 
+#include <Logme/AllStatI.h>
 #include <Logme/ArgumentList.h>
 #include <Logme/Channel.h>
 #include <Logme/Convert.h>
 #include <Logme/Logger.h>
 #include <Logme/Procedure.h>
-#include <Logme/ThreadChannel.h>
 #include <Logme/Stream.h>
-
-#ifdef USE_ALLSTAT
-#include <AllStat/AllStat.h>
-#endif
+#include <Logme/ThreadChannel.h>
 
 // String conversion
 
@@ -93,15 +90,3 @@
 
 #define LogmeThreadChannel(ch) \
   Logme::ThreadChannel _logme_thread_channel(Logme::Instance, ch)
-
-std::string ErrnoStr(int e);
-std::string LresultStr(int e);
-
-#define ERRNO_STR(e) ErrnoStr(e).c_str()
-#define LRESULT_STR(e) LresultStr(e).c_str()
-
-#ifdef _WIN32
-#define OSERR_STR(e) LRESULT_STR(e)
-#else
-#define OSERR_STR(e) ERRNO_STR_STR(e)
-#endif

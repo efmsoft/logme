@@ -19,6 +19,6 @@ namespace Logme
 #define OSERR(e) LRESULT_STR(e)
 #define OSERR2 LRESULT_STR(::GetLastError())
 #else
-#define OSERR(e) ERRNO_STR_STR(e)
-#define OSERR2 ERRNO_STR_STR(errno)
+#define OSERR(e) ERRNO_STR(e)
+#define OSERR2 ERRNO_STR(errno)
 #endif

@@ -14,7 +14,7 @@
 
 get_filename_component(LOGME_ROOT "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE) 
 
-set(LOGME_INCLUDE_DIR ${LOGME_ROOT}/lib/include)
+set(LOGME_INCLUDE_DIR ${LOGME_ROOT}/logme/include)
 set(LOGME_LIBRARIES logme)
 
 add_subdirectory(${LOGME_ROOT}/logme)

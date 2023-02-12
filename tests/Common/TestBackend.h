@@ -12,7 +12,7 @@ struct TestBackend : public Logme::Backend
   std::vector<std::string> History;
 
   TestBackend(Logme::ChannelPtr owner)
-    : Backend(owner)
+    : Backend(owner, "TestBackend")
   {
   }
 

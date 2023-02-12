@@ -166,7 +166,7 @@ BackendPtr Channel::FindNextBackend(const char* type, int& context)
   std::string stype(type);
 
   Guard guard(DataLock);
-  size_t pos = size_t(context + 1);
+  size_t pos = size_t(context) + 1;
   for (; pos < Backends.size(); pos++)
   {
     auto& b = Backends[pos];

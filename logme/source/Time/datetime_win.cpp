@@ -38,8 +38,12 @@ namespace
     static FuncType func = 0;
     if (!func)
     {
-      FuncType f = reinterpret_cast<FuncType>(GetProcAddress(GetModuleHandleA("kernel32.dll"), "TzSpecificLocalTimeToSystemTime"));
-      func = f ? f : TzSpecificLocalTimeToSystemTimeFake;
+      auto h = GetModuleHandleA("kernel32.dll");
+      if (h)
+      {
+        FuncType f = reinterpret_cast<FuncType>(GetProcAddress(h, "TzSpecificLocalTimeToSystemTime"));
+        func = f ? f : TzSpecificLocalTimeToSystemTimeFake;
+      }
     }
 
     return func;

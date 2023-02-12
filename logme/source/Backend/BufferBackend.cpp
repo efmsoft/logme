@@ -17,7 +17,7 @@ void BufferBackend::Clear()
 
 void BufferBackend::Display(Logme::Context& context, const char* line)
 {
-  auto flags = Owner->GetFlags();
+  OutputFlags flags = Owner->GetFlags();
 
   int nc;
   const char* str = context.Apply(flags, line, nc);
@@ -36,6 +36,6 @@ void BufferBackend::Display(Logme::Context& context, const char* line)
   }
 
   Buffer.resize(s);
-  memcpy(&Buffer[pos], str, nc + 1);
+  memcpy(&Buffer[pos], str, size_t(nc) + 1);
 }
 

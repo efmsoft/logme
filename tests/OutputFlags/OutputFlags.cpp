@@ -1,7 +1,10 @@
 #include <Common/TestBackend.h>
 #include <Common/TestData.h>
 
+#pragma warning(push)
+#pragma warning(disable : 26495)
 #include <gtest/gtest.h>
+#pragma warning(pop)
 
 #include <Logme/Logme.h>
 #include <Logme/Time/datetime.h>
@@ -27,9 +30,9 @@ TEST(OutputFlags, Channel)
   EXPECT_EQ(Be->Line, std::string("E {") + CHT.Name + "} " + Lorem + " 3");
 }
 
-long MyFunction(xint64_t p1, const char* p2)
+int MyFunction(xint64_t p1, const char* p2)
 {
-  long rc = 8;
+  int rc = 8;
   LogmeP(rc, CHT, _ARGS2(p1, p2));
 
   Logme::Sleep(100);

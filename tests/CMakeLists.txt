@@ -19,6 +19,7 @@ FetchContent_Declare(
 )
 
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+set(gtest_disable_pthreads OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 add_subdirectory(OutputFlags)

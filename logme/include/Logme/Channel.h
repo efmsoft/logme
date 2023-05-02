@@ -12,6 +12,18 @@
 
 namespace Logme
 {
+  struct ChannelConfig
+  {
+    std::string Name;
+    OutputFlags Flags;
+    Level Filter;
+    BackendConfigArray Backend;
+
+    ChannelConfig() : Filter(DEFAULT_LEVEL) {}
+  };
+
+  typedef std::vector<ChannelConfig> ChannelConfigArray;
+
   class Channel
   {
     std::mutex DataLock;

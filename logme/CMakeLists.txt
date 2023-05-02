@@ -6,3 +6,5 @@ target_include_directories(logme PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${ALLSTAT_INCLUDE_DIR}
 )
+
+target_compile_definitions(logme PRIVATE _WINSOCK_DEPRECATED_NO_WARNINGS)

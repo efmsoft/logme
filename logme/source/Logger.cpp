@@ -20,26 +20,44 @@ LoggerPtr Logme::Instance = std::make_shared<Logger>();
 Logger::Logger()
   : IDGenerator(1)
 {
-  Default = std::make_shared<Channel>(this, nullptr, OutputFlags(), DEFAULT_LEVEL);
-
-  Default->AddBackend(std::make_shared<ConsoleBackend>(Default));
-#ifdef _DEBUG
-  Default->AddBackend(std::make_shared<DebugBackend>(Default));
-#endif
+  CreateDefaultChannelLayout();
 
   HomeDirectory = GetExecutablePath();
 }
 
 Logger::~Logger()
 {
+  DeleteAllChannels();
+}
+
+void Logger::CreateDefaultChannelLayout(bool delete_all)
+{
+  if (delete_all)
+    DeleteAllChannels();
+
+  if (Default == nullptr)
+  {
+    Default = std::make_shared<Channel>(this, nullptr, OutputFlags(), DEFAULT_LEVEL);
+
+    Default->AddBackend(std::make_shared<ConsoleBackend>(Default));
+#ifdef _DEBUG
+    Default->AddBackend(std::make_shared<DebugBackend>(Default));
+#endif
+  }
+}
+
+void Logger::DeleteAllChannels()
+{
   // Backends keep shared_ptr to owner. We have to clear it to delete channel!
-  Default->RemoveBackends();
+  if (Default)
+    Default->RemoveBackends();
+
   for (auto& c : Channels)
   {
     c->RemoveLink();
     c->RemoveBackends();
   }
-  
+
   Channels.clear();
   Default.reset();
 }

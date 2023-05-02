@@ -1,0 +1,61 @@
+{
+  "control": {
+    "enable": true,
+    "port": 1234,
+    "interface": "loopback"
+  },
+
+  "flags": {
+    "default": {
+      "Timestamp": "local", // "none" | "local" | "tz" | "utc". default: "local"
+      "Signature": true, // true | false. default: "true"
+      "Location": "none", // none | short | full
+      "Method": true, // true | false. default: "true"
+      "Eol": true, // true | false. default: "true"
+      "ErrorPrefix": true, // true | false. default: "true"
+      "Duration": false, // true | false. default: "false"
+      "ThreadID": false, // true | false. default: "false"
+      "ProcessID": false, // true | false. default: "false"
+      "Channel": false, // true | false. default: "false"
+      "Highlight": true, // true | false. default: "true"
+      "Console": "cout", // "cout" | "warncerr" | "errcerr" | "cerrcerr" | "cerr". defaulf: "cout"
+      "DisableLink": false // true | false. default: "false"
+    },
+    "internal": {
+      "Inherit": "default",
+      "DisableLink": false
+    }
+  },
+
+  "channels": [
+    {
+      "name": "",
+      "level": "info",
+      "flags": "default",
+      "backends": [
+        {
+          "type": "ConsoleBackend",
+          "build": "any" // "none" | "any" | "debug" | "release"
+        },
+        {
+          "type": "DebugBackend",
+          "platform": "windows", // "none" | "any" | "windows" | "linux"
+          "build": "debug"
+        },
+        {
+          "type": "FileBackend",
+          "append": true,
+          "max-size": 1024,
+          "file": "log.txt"
+        }
+      ]
+    },
+    {
+      "name": "logme",
+      "level": "info",
+      "flags": "internal",
+      "link": "", // Link to default channel
+      "build": "none" // Disable internal debug channel
+    }
+  ]
+}

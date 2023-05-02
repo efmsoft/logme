@@ -9,6 +9,18 @@
 
 namespace Logme
 {
+  struct FileBackendConfig : public BackendConfig
+  {
+    bool Append;
+    size_t MaxSize;
+    std::string Filename;
+
+    FileBackendConfig();
+    ~FileBackendConfig();
+
+    bool Parse(const Json::Value* po) override;
+  };
+
   class FileBackend 
     : public Backend
     , public FileIo
@@ -59,6 +71,9 @@ namespace Logme
 
     void Display(Context& context, const char* line) override;
     std::string GetPathName(int index = 0) override;
+
+    BackendConfigPtr CreateConfig() override;
+    bool ApplyConfig(BackendConfigPtr c) override;
 
   private:
     class FileManagerFactory& GetFactory();

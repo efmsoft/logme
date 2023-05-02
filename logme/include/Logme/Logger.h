@@ -31,6 +31,10 @@ namespace Logme
     void SetThreadChannel(const ID* id);
     ID GetDefaultChannel();
 
+    bool LoadConfigurationFile(const std::wstring& config_file, const std::string& section = std::string());
+    bool LoadConfigurationFile(const std::string& config_file, const std::string& section = std::string());
+    bool LoadConfiguration(const std::string& config_data, const std::string& section = std::string());
+
     virtual Stream DoLog(Context& context, const char* format, va_list args);
 
     Stream Log(const Context& context);
@@ -57,6 +61,7 @@ namespace Logme
       , Level level = DEFAULT_LEVEL
     );
     void DeleteChannel(const ID& id);
+    void CreateDefaultChannelLayout(bool delete_all = true);
 
     const std::string& GetHomeDirectory() const;
     FileManagerFactory& GetFileManagerFactory();
@@ -69,6 +74,9 @@ namespace Logme
     );
 
     void ApplyThreadChannel(Context& context);
+    void DeleteAllChannels();
+
+    bool CreateChannels(ChannelConfigArray& arr);
   };
 
   typedef std::shared_ptr<Logger> LoggerPtr;

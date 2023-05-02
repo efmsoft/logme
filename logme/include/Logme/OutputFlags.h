@@ -1,6 +1,8 @@
 #pragma once
 
+#include <map>
 #include <stdint.h>
+#include <string>
 
 namespace Logme
 {
@@ -31,4 +33,6 @@ namespace Logme
 
     OutputFlags();
   };
+
+  typedef std::map<std::string, OutputFlags> OutputFlagsMap;
 }

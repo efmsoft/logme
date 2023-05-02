@@ -38,11 +38,12 @@ FileBackend::FileBackend(ChannelPtr owner)
   , DataReady(false)
   , Flush(false)
   , ShutdownFlag(false)
-  , ShutdownCalled(false)
+  , ShutdownCalled(owner == nullptr)
   , LastFlush(0)
   , MaxBufferSize(0)
 {
-  GetFactory().Add(this);
+  if (Owner)
+    GetFactory().Add(this);
 }
 
 FileBackend::~FileBackend()
@@ -52,8 +53,25 @@ FileBackend::~FileBackend()
 
   WaitForShutdown();
 
-  GetFactory().Remove(this);
+  if (Owner)
+    GetFactory().Remove(this);
+
   CloseLog();
+}
+
+BackendConfigPtr FileBackend::CreateConfig()
+{
+  return std::make_shared<FileBackendConfig>();
+}
+
+bool FileBackend::ApplyConfig(BackendConfigPtr c)
+{
+  FileBackendConfig* p = (FileBackendConfig*)c.get();
+
+  SetAppend(p->Append);
+  SetMaxSize(p->MaxSize);
+
+  return CreateLog(p->Filename.c_str());
 }
 
 void FileBackend::WaitForShutdown()
@@ -249,7 +267,9 @@ void FileBackend::AppendOutputData(const CharBuffer& append)
 void FileBackend::RequestFlush()
 {
   Flush = true;
-  GetFactory().WakeUp();
+
+  if (Owner)
+    GetFactory().WakeUp();
 }
 
 FileManagerFactory& FileBackend::GetFactory()

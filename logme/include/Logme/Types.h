@@ -50,6 +50,19 @@ namespace Logme
     STREAM_ALL2CERR,
   };
 
+  struct ControlConfig
+  {
+    bool Enable;
+    int Port;
+    uint32_t Interface;
+  };
+
+  struct NAMED_VALUE
+  {
+    const char* Name;
+    int Value;
+  };
+
   typedef std::lock_guard<std::mutex> Guard;
   typedef void* HANDLE;
 

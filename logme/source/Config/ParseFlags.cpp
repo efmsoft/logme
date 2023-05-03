@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include <Logme/Logme.h>
 
 #include "Helper.h"

@@ -66,7 +66,9 @@ static bool IsTerminalStream(std::ostream& stream)
 
 void ConsoleBackend::Display(Context& context, const char* line)
 {
-  auto flags = Owner->GetFlags();
+  OutputFlags flags = Owner->GetFlags();
+  flags.Value |= context.Ovr.Add.Value;
+  flags.Value &= ~context.Ovr.Remove.Value;
 
   int nc;
   const char* buffer = context.Apply(flags, line, nc);

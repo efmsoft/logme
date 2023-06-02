@@ -2,10 +2,10 @@
 
 #include "Helper.h"
 
+using namespace Logme;
+
 #ifdef USE_JSONCPP
 #include <json/json.h>
-
-using namespace Logme;
 
 static NAMED_VALUE LevelValues[] =
 {

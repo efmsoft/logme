@@ -7,10 +7,10 @@
 #include <netinet/in.h>
 #endif
 
+using namespace Logme;
+
 #ifdef USE_JSONCPP
 #include <json/json.h>
-
-using namespace Logme;
 
 bool ParseControlConfig(const Json::Value& root, ControlConfig& cc)
 {

@@ -9,16 +9,16 @@ static std::string FromWideString(const wchar_t* src)
 {
   size_t n;
 #ifdef _WIN32
-  auto e = wcstombs_s(&n, nullptr, 0, src, 0) + 1;
+  auto e = wcstombs_s(&n, nullptr, 0, src, 0);
   if (e)
     n = -1;
 #else
-  n = wcstombs(nullptr, src, 0) + 1;
+  n = wcstombs(nullptr, src, 0);
 #endif
   if (n == -1)
     return "";
 
-  std::vector<char> buffer(n);
+  std::vector<char> buffer(++n);
 #ifdef _WIN32
   e = wcstombs_s(&n, &buffer[0], n, src, n);
   if (e)

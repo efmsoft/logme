@@ -36,17 +36,17 @@ static std::wstring FromString(const char* src)
 {
   size_t n;
 #ifdef _WIN32
-  auto e = mbstowcs_s(&n, nullptr, 0, src, 0) + 1;
+  auto e = mbstowcs_s(&n, nullptr, 0, src, 0);
   if (e)
     n = -1;
 #else
-  n = mbstowcs(nullptr, src, 0) + 1;
+  n = mbstowcs(nullptr, src, 0);
 #endif
 
   if (n == -1)
     return L"";
 
-  std::vector<wchar_t> buffer(n);
+  std::vector<wchar_t> buffer(++n);
 #ifdef _WIN32
   e = mbstowcs_s(&n, &buffer[0], n, src, n);
   if (e)

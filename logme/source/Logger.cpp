@@ -72,6 +72,32 @@ FileManagerFactory& Logger::GetFileManagerFactory()
   return Factory;
 }
 
+StringPtr Logger::GetErrorChannel()
+{
+  Guard guard(ErrorLock);
+  return ErrorChannel;
+}
+
+void Logger::SetErrorChannel(const char* name)
+{
+  Guard guard(ErrorLock);
+
+  if (ErrorChannel == nullptr)
+    ErrorChannel = std::make_shared<std::string>(name);
+  else
+    *ErrorChannel = name;
+}
+
+void Logger::SetErrorChannel(const std::string& name)
+{
+  SetErrorChannel(name.c_str());
+}
+
+void Logger::SetErrorChannel(const ID& ch)
+{
+  SetErrorChannel(ch.Name);
+}
+
 void Logger::SetThreadChannel(const ID* id)
 {
   uint64_t tid = GetCurrentThreadId();
@@ -114,7 +140,7 @@ ID Logger::GetDefaultChannel()
   return ::CH;
 }
 
-ChannelPtr Logger::GetChannel(const ID& id)
+ChannelPtr Logger::GetExistingChannel(const ID& id)
 {
   if (id.Name == nullptr || *id.Name == '\0')
     return Default;
@@ -126,6 +152,17 @@ ChannelPtr Logger::GetChannel(const ID& id)
     if (*v == id.Name)
       return v;
   }
+
+  return ChannelPtr();
+}
+
+ChannelPtr Logger::GetChannel(const ID& id)
+{
+  ChannelPtr v = GetExistingChannel(id);
+  if (v)
+    return v;
+
+  Guard guard(DataLock);
   return CreateChannelInternal(id, OutputFlags());
 }
 
@@ -211,6 +248,13 @@ ChannelPtr Logger::CreateChannelInternal(
   , Level level
 )
 {
+  for (auto it = Channels.begin(); it != Channels.end(); ++it)
+  {
+    auto& v = *it;
+    if (*v == id.Name)
+      return v;
+  }
+
   ChannelPtr channel = std::make_shared<Channel>(this, id.Name, flags, level);
   Channels.push_back(channel);
 
@@ -346,6 +390,19 @@ Stream Logger::DoLog(Context& context, const char* format, va_list args)
       strcpy_s(buffer, size - 1, "[format error]");
 
     ch->Display(context, buffer);
+
+    if (context.ErrorLevel >= Level::LEVEL_ERROR)
+    {
+      StringPtr errorChannel = GetErrorChannel();
+      if (errorChannel != nullptr)
+      {
+        ID id{ errorChannel->c_str() };
+        ChannelPtr chError = GetExistingChannel(id);
+
+        if (chError != nullptr)
+          chError->Display(context, buffer);
+      }
+    }
 
     if (context.Output)
       *context.Output = buffer;

@@ -11,6 +11,8 @@
 
 namespace Logme
 {
+  typedef std::shared_ptr<std::string> StringPtr;
+
   class Logger : public std::enable_shared_from_this<Logger>
   {
     std::mutex DataLock;
@@ -23,6 +25,9 @@ namespace Logme
 
     std::map<uint64_t, ID> ThreadChannel;
     FileManagerFactory Factory;
+
+    std::mutex ErrorLock;
+    StringPtr ErrorChannel;
 
   public:
     Logger();
@@ -50,6 +55,7 @@ namespace Logme
     Stream Log(const Context& context, const char* format, ...);
 
     ChannelPtr GetChannel(const ID& id);
+    ChannelPtr GetExistingChannel(const ID& id);
 
     ChannelPtr CreateChannel(
       const ID& id
@@ -65,6 +71,11 @@ namespace Logme
 
     const std::string& GetHomeDirectory() const;
     FileManagerFactory& GetFileManagerFactory();
+
+    StringPtr GetErrorChannel();
+    void SetErrorChannel(const std::string& name);
+    void SetErrorChannel(const char* name);
+    void SetErrorChannel(const ID& ch);
 
   protected:
     ChannelPtr CreateChannelInternal(

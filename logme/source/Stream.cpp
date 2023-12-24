@@ -17,6 +17,8 @@ Stream::Stream(const Stream& src)
 
 Stream::~Stream()
 {
-  if (!str().empty())
-    Destination->Log(OutputContext, str().c_str());
+  const std::string& data = str();
+
+  if (data.length())
+    Destination->Log(OutputContext, "%s", data.c_str());
 }

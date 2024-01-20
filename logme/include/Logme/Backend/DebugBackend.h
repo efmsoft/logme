@@ -9,8 +9,8 @@ namespace Logme
   {
     constexpr static const char* TYPE_ID = "DebugBackend";
 
-    DebugBackend(ChannelPtr owner);
+    LOGMELNK DebugBackend(ChannelPtr owner);
 
-    void Display(Context& context, const char* line) override;
+    LOGMELNK void Display(Context& context, const char* line) override;
   };
 }

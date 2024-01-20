@@ -124,3 +124,13 @@ namespace Logme
     #define _LOGME_ACTIVE 1
   #endif
 #endif
+
+#if defined(_WIN32) && !defined(_LOGME_STATIC_BUILD_)
+#ifdef _LOGME_DLL_BUILD_
+#define LOGMELNK __declspec(dllexport)
+#else
+#define LOGMELNK __declspec(dllimport)
+#endif
+#else
+#define LOGMELNK
+#endif

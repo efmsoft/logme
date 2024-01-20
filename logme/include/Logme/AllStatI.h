@@ -6,10 +6,12 @@
 #include <AllStat/AllStat.h>
 #endif
 
+#include <Logme/Types.h>
+
 namespace Logme
 {
-  std::string Errno2Str(int e);
-  std::string Winerr2Str(int e);
+  LOGMELNK std::string Errno2Str(int e);
+  LOGMELNK std::string Winerr2Str(int e);
 }
 
 #define ERRNO_STR(e) Logme::Errno2Str(e).c_str()

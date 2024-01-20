@@ -19,7 +19,7 @@ namespace Logme
     Level Filter;
     BackendConfigArray Backend;
 
-    ChannelConfig() : Filter(DEFAULT_LEVEL) {}
+    LOGMELNK ChannelConfig() : Filter(DEFAULT_LEVEL) {}
   };
 
   typedef std::vector<ChannelConfig> ChannelConfigArray;
@@ -39,42 +39,42 @@ namespace Logme
     IDPtr Link;
 
   public:
-    Channel(
+    LOGMELNK Channel(
       Logger* owner
       , const char* name
       , const OutputFlags& flags
       , Level level
     );
-    ~Channel();
+    LOGMELNK ~Channel();
 
-    bool operator==(const char* name) const;
-    void Display(Context& context, const char* line);
+    LOGMELNK bool operator==(const char* name) const;
+    LOGMELNK void Display(Context& context, const char* line);
 
-    const OutputFlags& GetFlags() const;
-    void SetFlags(const OutputFlags& flags);
+    LOGMELNK const OutputFlags& GetFlags() const;
+    LOGMELNK void SetFlags(const OutputFlags& flags);
 
-    Level GetFilterLevel() const;
-    void SetFilterLevel(Level level);
+    LOGMELNK Level GetFilterLevel() const;
+    LOGMELNK void SetFilterLevel(Level level);
 
-    void AddBackend(BackendPtr backend);
-    bool RemoveBackend(BackendPtr backend);
-    void RemoveBackends();
+    LOGMELNK void AddBackend(BackendPtr backend);
+    LOGMELNK bool RemoveBackend(BackendPtr backend);
+    LOGMELNK void RemoveBackends();
     
-    BackendPtr GetBackend(size_t index);
-    size_t NumberOfBackends();
+    LOGMELNK BackendPtr GetBackend(size_t index);
+    LOGMELNK size_t NumberOfBackends();
 
-    BackendPtr FindFirstBackend(const char* type, int& context);
-    BackendPtr FindNextBackend(const char* type, int& context);
+    LOGMELNK BackendPtr FindFirstBackend(const char* type, int& context);
+    LOGMELNK BackendPtr FindNextBackend(const char* type, int& context);
 
-    Logger* GetOwner() const;
-    std::string GetName();
-    uint64_t GetAccessCount() const;
+    LOGMELNK Logger* GetOwner() const;
+    LOGMELNK std::string GetName();
+    LOGMELNK uint64_t GetAccessCount() const;
 
-    void AddLink(const ID& to);
-    void RemoveLink();
-    bool IsLinked() const;
+    LOGMELNK void AddLink(const ID& to);
+    LOGMELNK void RemoveLink();
+    LOGMELNK bool IsLinked() const;
 
-    const ID GetID() const;
+    LOGMELNK const ID GetID() const;
   };
 
   typedef std::shared_ptr<Channel> ChannelPtr;

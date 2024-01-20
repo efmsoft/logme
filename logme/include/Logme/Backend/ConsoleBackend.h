@@ -9,11 +9,11 @@ namespace Logme
   {
     constexpr static const char* TYPE_ID = "ConsoleBackend";
 
-    ConsoleBackend(ChannelPtr owner);
+    LOGMELNK ConsoleBackend(ChannelPtr owner);
 
-    void Display(Context& context, const char* line) override;
-    const char* GetEscapeSequence(Level level);
+    LOGMELNK void Display(Context& context, const char* line) override;
+    LOGMELNK const char* GetEscapeSequence(Level level);
 
-    std::ostream& GetOutputStream(Context& context);
+    LOGMELNK std::ostream& GetOutputStream(Context& context);
   };
 }

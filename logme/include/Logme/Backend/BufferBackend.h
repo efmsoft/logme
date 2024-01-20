@@ -16,9 +16,9 @@ namespace Logme
     constexpr static const char* TYPE_ID = "BufferBackend";
 
   public:
-    BufferBackend(Logme::ChannelPtr owner);
+    LOGMELNK BufferBackend(Logme::ChannelPtr owner);
 
-    void Clear();
-    void Display(Logme::Context& context, const char* line) override;
+    LOGMELNK void Clear();
+    LOGMELNK void Display(Logme::Context& context, const char* line) override;
   };
 }

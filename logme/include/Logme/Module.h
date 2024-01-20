@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Logme/Types.h>
+
 namespace Logme
 {
   struct Module
@@ -8,6 +10,6 @@ namespace Logme
     const char* ShortName;
 
   public:
-    Module(const char* file);
+    LOGMELNK Module(const char* file);
   };
 }

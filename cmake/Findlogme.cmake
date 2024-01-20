@@ -12,9 +12,18 @@
 # list(APPEND CMAKE_MODULE_PATH <location_of_lib_in_your_project>/cmake) 
 # find_package(logme MODULE) 
 
+if(NOT DEFINED USE_LOGME_SHARED)
+  set(USE_LOGME_SHARED OFF)
+endif()
+
 get_filename_component(LOGME_ROOT "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE) 
 
 set(LOGME_INCLUDE_DIR ${LOGME_ROOT}/logme/include)
-set(LOGME_LIBRARIES logme)
 
-add_subdirectory(${LOGME_ROOT}/logme)
+if(${USE_LOGME_SHARED})
+  add_subdirectory(${LOGME_ROOT}/dynamic)
+  set(LOGME_LIBRARIES logmed)
+else()
+  add_subdirectory(${LOGME_ROOT}/logme)
+  set(LOGME_LIBRARIES logme)
+endif()

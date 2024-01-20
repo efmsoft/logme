@@ -21,7 +21,7 @@ namespace Logme
     std::chrono::time_point<std::chrono::system_clock> Begin;
 
   public:
-    Procedure(
+    LOGMELNK Procedure(
       const Context& context
       , Printer* printer
       , const ID& ch
@@ -29,18 +29,18 @@ namespace Logme
       , ...
     );
 
-    Procedure(
+    LOGMELNK Procedure(
       const Context& context
       , Printer* printer
       , const char* format = nullptr
       , ...
     );
 
-    virtual ~Procedure();
+    LOGMELNK virtual ~Procedure();
 
-    void Print(bool begin, const char* text = nullptr);
-    static std::string Format(const char* format, va_list args);
-    static const char* AppendDuration(struct Context& context);
+    LOGMELNK void Print(bool begin, const char* text = nullptr);
+    LOGMELNK static std::string Format(const char* format, va_list args);
+    LOGMELNK static const char* AppendDuration(struct Context& context);
   };
 }
 

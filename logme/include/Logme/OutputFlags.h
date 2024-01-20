@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <string>
 
+#include <Logme/Types.h>
+
 #pragma warning(push)
 #pragma warning(disable : 4201)
 
@@ -34,7 +36,7 @@ namespace Logme
       uint32_t None : 1; // Invalid flags bit
     };
 
-    OutputFlags();
+    LOGMELNK OutputFlags();
   };
 
   typedef std::map<std::string, OutputFlags> OutputFlagsMap;

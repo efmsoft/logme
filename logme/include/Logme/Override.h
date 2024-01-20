@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Logme/OutputFlags.h>
+#include <Logme/Types.h>
 
 namespace Logme
 {
@@ -9,6 +10,6 @@ namespace Logme
     OutputFlags Add;
     OutputFlags Remove;
 
-    Override();
+    LOGMELNK Override();
   };
 }

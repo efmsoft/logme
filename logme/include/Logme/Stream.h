@@ -14,8 +14,8 @@ namespace Logme
     const Context& OutputContext;
 
   public:
-    Stream(LoggerPtr logger, const Context& context);
-    Stream(const Stream& src);
-    ~Stream();
+    LOGMELNK Stream(LoggerPtr logger, const Context& context);
+    LOGMELNK Stream(const Stream& src);
+    LOGMELNK ~Stream();
   };
 }

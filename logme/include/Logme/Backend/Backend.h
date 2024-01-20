@@ -22,8 +22,8 @@ namespace Logme
   {
     std::string Type;
 
-    virtual ~BackendConfig();
-    virtual bool Parse(const Json::Value* po);
+    LOGMELNK virtual ~BackendConfig();
+    LOGMELNK virtual bool Parse(const Json::Value* po);
   };
 
   typedef std::shared_ptr<BackendConfig> BackendConfigPtr;
@@ -39,15 +39,15 @@ namespace Logme
     const char* Type;
 
   public:
-    Backend(ChannelPtr owner, const char* type);
-    virtual ~Backend();
+    LOGMELNK Backend(ChannelPtr owner, const char* type);
+    LOGMELNK virtual ~Backend();
 
-    virtual void Display(Context& context, const char* line) = 0;
-    virtual BackendConfigPtr CreateConfig();
-    virtual bool ApplyConfig(BackendConfigPtr c);
+    LOGMELNK virtual void Display(Context& context, const char* line) = 0;
+    LOGMELNK virtual BackendConfigPtr CreateConfig();
+    LOGMELNK virtual bool ApplyConfig(BackendConfigPtr c);
 
-    const char* GetType() const;
+    LOGMELNK const char* GetType() const;
 
-    static BackendPtr Create(const char* type, ChannelPtr owner);
+    LOGMELNK static BackendPtr Create(const char* type, ChannelPtr owner);
   };
 }

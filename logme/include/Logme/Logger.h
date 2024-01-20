@@ -30,52 +30,52 @@ namespace Logme
     StringPtr ErrorChannel;
 
   public:
-    Logger();
-    virtual ~Logger();
+    LOGMELNK Logger();
+    LOGMELNK virtual ~Logger();
 
-    void SetThreadChannel(const ID* id);
-    ID GetDefaultChannel();
+    LOGMELNK void SetThreadChannel(const ID* id);
+    LOGMELNK ID GetDefaultChannel();
 
-    bool LoadConfigurationFile(const std::wstring& config_file, const std::string& section = std::string());
-    bool LoadConfigurationFile(const std::string& config_file, const std::string& section = std::string());
-    bool LoadConfiguration(const std::string& config_data, const std::string& section = std::string());
+    LOGMELNK bool LoadConfigurationFile(const std::wstring& config_file, const std::string& section = std::string());
+    LOGMELNK bool LoadConfigurationFile(const std::string& config_file, const std::string& section = std::string());
+    LOGMELNK bool LoadConfiguration(const std::string& config_data, const std::string& section = std::string());
 
-    virtual Stream DoLog(Context& context, const char* format, va_list args);
+    LOGMELNK virtual Stream DoLog(Context& context, const char* format, va_list args);
 
-    Stream Log(const Context& context);
+    LOGMELNK Stream Log(const Context& context);
 
-    Stream Log(const Context& context, const Override& ovr);
-    Stream Log(const Context& context, const ID& id);
-    Stream Log(const Context& context, const ID& id, const Override& ovr);
+    LOGMELNK Stream Log(const Context& context, const Override& ovr);
+    LOGMELNK Stream Log(const Context& context, const ID& id);
+    LOGMELNK Stream Log(const Context& context, const ID& id, const Override& ovr);
 
-    Stream Log(const Context& context, const ID& id, const char* format, ...);
-    Stream Log(const Context& context, const Override& ovr, const char* format, ...);
-    Stream Log(const Context& context, const ID& id, const Override& ovr, const char* format, ...);
+    LOGMELNK Stream Log(const Context& context, const ID& id, const char* format, ...);
+    LOGMELNK Stream Log(const Context& context, const Override& ovr, const char* format, ...);
+    LOGMELNK Stream Log(const Context& context, const ID& id, const Override& ovr, const char* format, ...);
 
-    Stream Log(const Context& context, const char* format, ...);
+    LOGMELNK Stream Log(const Context& context, const char* format, ...);
 
-    ChannelPtr GetChannel(const ID& id);
-    ChannelPtr GetExistingChannel(const ID& id);
+    LOGMELNK ChannelPtr GetChannel(const ID& id);
+    LOGMELNK ChannelPtr GetExistingChannel(const ID& id);
 
-    ChannelPtr CreateChannel(
+    LOGMELNK ChannelPtr CreateChannel(
       const ID& id
       , const OutputFlags& flags = OutputFlags()
       , Level level = DEFAULT_LEVEL
     );
-    ChannelPtr CreateChannel(
+    LOGMELNK ChannelPtr CreateChannel(
       const OutputFlags& flags = OutputFlags()
       , Level level = DEFAULT_LEVEL
     );
-    void DeleteChannel(const ID& id);
-    void CreateDefaultChannelLayout(bool delete_all = true);
+    LOGMELNK void DeleteChannel(const ID& id);
+    LOGMELNK void CreateDefaultChannelLayout(bool delete_all = true);
 
-    const std::string& GetHomeDirectory() const;
-    FileManagerFactory& GetFileManagerFactory();
+    LOGMELNK const std::string& GetHomeDirectory() const;
+    LOGMELNK FileManagerFactory& GetFileManagerFactory();
 
-    StringPtr GetErrorChannel();
-    void SetErrorChannel(const std::string& name);
-    void SetErrorChannel(const char* name);
-    void SetErrorChannel(const ID& ch);
+    LOGMELNK StringPtr GetErrorChannel();
+    LOGMELNK void SetErrorChannel(const std::string& name);
+    LOGMELNK void SetErrorChannel(const char* name);
+    LOGMELNK void SetErrorChannel(const ID& ch);
 
   protected:
     ChannelPtr CreateChannelInternal(
@@ -91,6 +91,6 @@ namespace Logme
   };
 
   typedef std::shared_ptr<Logger> LoggerPtr;
-  extern LoggerPtr Instance;
+  LOGMELNK extern LoggerPtr Instance;
 }
 

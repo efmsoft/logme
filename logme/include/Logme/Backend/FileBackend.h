@@ -15,10 +15,10 @@ namespace Logme
     size_t MaxSize;
     std::string Filename;
 
-    FileBackendConfig();
-    ~FileBackendConfig();
+    LOGMELNK FileBackendConfig();
+    LOGMELNK ~FileBackendConfig();
 
-    bool Parse(const Json::Value* po) override;
+    LOGMELNK bool Parse(const Json::Value* po) override;
   };
 
   class FileBackend 
@@ -50,7 +50,7 @@ namespace Logme
   public:
     enum 
     { 
-      MAX_SIZE_DEFAULT = 8 * 1024 * 1024 ,
+      MAX_SIZE_DEFAULT = 8 * 1024 * 1024,
       
       FLUSH_PERIOD = 3000,                  // 3 sec
       QUEUE_SIZE_LIMIT = 8 * 1024 * 1024,   // force processing if queue size >= limit
@@ -60,20 +60,20 @@ namespace Logme
 
     constexpr static const char* TYPE_ID = "FileBackend";
 
-    FileBackend(ChannelPtr owner);
-    ~FileBackend();
+    LOGMELNK FileBackend(ChannelPtr owner);
+    LOGMELNK ~FileBackend();
 
-    void SetAppend(bool append);
-    void SetMaxSize(size_t size);
+    LOGMELNK void SetAppend(bool append);
+    LOGMELNK void SetMaxSize(size_t size);
 
-    bool CreateLog(const char* name);
-    void CloseLog();
+    LOGMELNK bool CreateLog(const char* name);
+    LOGMELNK void CloseLog();
 
-    void Display(Context& context, const char* line) override;
-    std::string GetPathName(int index = 0) override;
+    LOGMELNK void Display(Context& context, const char* line) override;
+    LOGMELNK std::string GetPathName(int index = 0) override;
 
-    BackendConfigPtr CreateConfig() override;
-    bool ApplyConfig(BackendConfigPtr c) override;
+    LOGMELNK BackendConfigPtr CreateConfig() override;
+    LOGMELNK bool ApplyConfig(BackendConfigPtr c) override;
 
   private:
     class FileManagerFactory& GetFactory();

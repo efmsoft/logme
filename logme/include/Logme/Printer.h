@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include <Logme/Types.h>
+
 namespace Logme
 {
   struct Printer
@@ -23,7 +25,7 @@ namespace Logme
 
     std::string Format() override
     {
-      std::string FormatValue(const T&);
+      LOGMELNK std::string FormatValue(const T&);
       return FormatValue(RetVal);
     }
   };
@@ -33,5 +35,5 @@ namespace Logme
     return new (storage) PrinterT<T>(retVal);
   }
 
-  extern Printer None;
+  LOGMELNK extern Printer None;
 }

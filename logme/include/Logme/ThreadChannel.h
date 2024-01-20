@@ -13,7 +13,7 @@ namespace Logme
     ID PrevChannel;
 
   public:
-    ThreadChannel(LoggerPtr logger, const ID& ch);
-    ~ThreadChannel();
+    LOGMELNK ThreadChannel(LoggerPtr logger, const ID& ch);
+    LOGMELNK ~ThreadChannel();
   };
 }

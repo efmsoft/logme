@@ -2,10 +2,12 @@
 
 #include <string>
 
+#include <Logme/Types.h>
+
 namespace Logme
 {
-  std::string GetExecutablePath();
-  std::string AppendSlash(const std::string& folder);
+  LOGMELNK std::string GetExecutablePath();
+  LOGMELNK std::string AppendSlash(const std::string& folder);
 
   inline bool IsAbsolutePath(const std::string& path)
   {

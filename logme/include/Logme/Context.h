@@ -71,16 +71,16 @@ namespace Logme
     };
 
   public:
-    Context(Level level, const ID* ch);
-    Context(Level level, const ID* chdef, const char* method, const char* module, int line, const Params& params);
+    LOGMELNK Context(Level level, const ID* ch);
+    LOGMELNK Context(Level level, const ID* chdef, const char* method, const char* module, int line, const Params& params);
 
-    void InitContext();
-    void InitTimestamp(TimeFormat tf);
-    void InitSignature();
-    void InitThreadProcessID(OutputFlags flags);
-    void CreateTZD(char* tzd);
+    LOGMELNK void InitContext();
+    LOGMELNK void InitTimestamp(TimeFormat tf);
+    LOGMELNK void InitSignature();
+    LOGMELNK void InitThreadProcessID(OutputFlags flags);
+    LOGMELNK void CreateTZD(char* tzd);
 
-    const char* Apply(OutputFlags flags, const char* text, int& nc);
+    LOGMELNK const char* Apply(OutputFlags flags, const char* text, int& nc);
   };
 }
 

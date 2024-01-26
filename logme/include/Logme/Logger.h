@@ -77,6 +77,8 @@ namespace Logme
     LOGMELNK void SetErrorChannel(const char* name);
     LOGMELNK void SetErrorChannel(const ID& ch);
 
+    LOGMELNK void DeleteAllChannels();
+
   protected:
     ChannelPtr CreateChannelInternal(
       const ID& id
@@ -85,7 +87,6 @@ namespace Logme
     );
 
     void ApplyThreadChannel(Context& context);
-    void DeleteAllChannels();
 
     bool CreateChannels(ChannelConfigArray& arr);
   };

@@ -17,7 +17,7 @@ namespace Logme
   {
     std::mutex DataLock;
 
-    ChannelArray Channels;
+    ChannelMap Channels;
     ChannelPtr Default;
     std::string HomeDirectory;
 

@@ -54,8 +54,8 @@ void Logger::DeleteAllChannels()
 
   for (auto& c : Channels)
   {
-    c->RemoveLink();
-    c->RemoveBackends();
+    c.second->RemoveLink();
+    c.second->RemoveBackends();
   }
 
   Channels.clear();
@@ -146,12 +146,10 @@ ChannelPtr Logger::GetExistingChannel(const ID& id)
     return Default;
 
   Guard guard(DataLock);
-  for (auto it = Channels.begin(); it != Channels.end(); ++it)
-  {
-    auto& v = *it;
-    if (*v == id.Name)
-      return v;
-  }
+
+  auto it = Channels.find(id.Name);
+  if (it != Channels.end())
+    return it->second;
 
   return ChannelPtr();
 }
@@ -173,17 +171,14 @@ void Logger::DeleteChannel(const ID& id)
   do
   {
     Guard guard(DataLock);
-    for (auto it = Channels.begin(); it != Channels.end(); ++it)
-    {
-      auto& v = *it;
-      if (*v == id.Name)
-      {
-        ch = v;
-        Channels.erase(it);
 
-        break;
-      }
+    auto it = Channels.find(id.Name);
+    if (it != Channels.end())
+    {
+      ch = it->second;
+      Channels.erase(it);
     }
+
   } while (false);
 
   // Do it without acquired mutex!
@@ -204,26 +199,16 @@ ChannelPtr Logger::CreateChannel(
   std::string name;
 
   Guard guard(DataLock);
+
   for (;;)
   {
     name = "#" + std::to_string(++IDGenerator);
     id.Name = name.c_str();
 
-    bool found = false;
-    for (auto it = Channels.begin(); it != Channels.end(); ++it)
-    {
-      auto& v = *it;
-      if (*v == id.Name)
-      {
-        found = true;
-        break;
-      }
-    }
-
-    if (found == false)
+    auto it = Channels.find(id.Name);
+    if (it == Channels.end())
       return CreateChannelInternal(id, flags, level);
   }
-  return ChannelPtr();
 }
 
 ChannelPtr Logger::CreateChannel(
@@ -233,12 +218,11 @@ ChannelPtr Logger::CreateChannel(
 )
 {
   Guard guard(DataLock);
-  for (auto it = Channels.begin(); it != Channels.end(); ++it)
-  {
-    auto& v = *it;
-    if (*v == id.Name)
-      return v;
-  }
+
+  auto it = Channels.find(id.Name);
+  if (it != Channels.end())
+    return it->second;
+
   return CreateChannelInternal(id, flags, level);
 }
 
@@ -248,15 +232,12 @@ ChannelPtr Logger::CreateChannelInternal(
   , Level level
 )
 {
-  for (auto it = Channels.begin(); it != Channels.end(); ++it)
-  {
-    auto& v = *it;
-    if (*v == id.Name)
-      return v;
-  }
+  auto it = Channels.find(id.Name);
+  if (it != Channels.end())
+    return it->second;
 
   ChannelPtr channel = std::make_shared<Channel>(this, id.Name, flags, level);
-  Channels.push_back(channel);
+  Channels[id.Name] = channel;
 
   return channel;
 }

@@ -9,6 +9,7 @@
 #include <mutex>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 namespace Logme
 {
@@ -79,4 +80,5 @@ namespace Logme
 
   typedef std::shared_ptr<Channel> ChannelPtr;
   typedef std::vector<ChannelPtr> ChannelArray;
+  typedef std::unordered_map<std::string, ChannelPtr> ChannelMap;
 }

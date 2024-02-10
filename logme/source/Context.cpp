@@ -94,23 +94,56 @@ void Context::CreateTZD(char* tzd)
   time_t m = abs(d) % 60;
   time_t h = (d / (60 * 60)) % 60;
 
-  snprintf(tzd, TZD_BUFFER_SIZE - 1, "%+.02i:%02i ", (int)h, (int)m);
+  snprintf(tzd, size_t(TZD_BUFFER_SIZE) - 1, "%+.02i:%02i ", (int)h, (int)m);
 } 
 
 void Context::InitTimestamp(TimeFormat tf)
 {
   DateTime stamp;
-  
+  auto n = GetTimeInMillisec();
+
   switch (tf)
   {
   case TimeFormat::TIME_FORMAT_LOCAL:
   case TimeFormat::TIME_FORMAT_TZ:
-    stamp = DateTime::Now();
+  {
+    static std::mutex Lock;
+    static DateTime LastStamp{};
+    static unsigned int LastStampTicks = 0;
+
+    std::lock_guard lock(Lock);
+
+    if (n == LastStampTicks)
+      stamp = LastStamp;
+    else
+    {
+      stamp = DateTime::Now();
+
+      LastStamp = stamp;
+      LastStampTicks = n;
+    }
     break;
+  }
 
   case TimeFormat::TIME_FORMAT_UTC:
-    stamp = DateTime::NowUtc();
+  {
+    static std::mutex Lock;
+    static DateTime LastStamp;
+    static unsigned int LastStampTicks{};
+
+    std::lock_guard lock(Lock);
+
+    if (n == LastStampTicks)
+      stamp = LastStamp;
+    else
+    {
+      stamp = DateTime::NowUtc();
+
+      LastStamp = stamp;
+      LastStampTicks = n;
+    }
     break;
+  }
 
   default:
     assert(!"unexpected TimeFormat");
@@ -118,7 +151,7 @@ void Context::InitTimestamp(TimeFormat tf)
 
   snprintf(
     Timestamp
-    , TIMESTAMP_BUFFER_SIZE - 1
+    , size_t(TIMESTAMP_BUFFER_SIZE) - 1
     , "%04i-%02i-%02i %02i:%02i:%02i:%03i "
     , stamp.GetYear()
     , stamp.GetMonth()
@@ -137,7 +170,7 @@ void Context::InitTimestamp(TimeFormat tf)
     CreateTZD(tzd);
 
     Timestamp[TZD_T_POS] = 'T';
-    strcpy_s(Timestamp + TZD_E_POS, TIMESTAMP_BUFFER_SIZE - TZD_E_POS, tzd);
+    strcpy_s(Timestamp + TZD_E_POS, size_t(TIMESTAMP_BUFFER_SIZE) - TZD_E_POS, tzd);
   }
 }
 

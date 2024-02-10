@@ -180,10 +180,10 @@ void Context::InitThreadProcessID(OutputFlags flags)
   {
 #ifdef _WIN32
     auto thread = GetCurrentThreadId();
-    auto process = GetCurrentProcessId();
+    static auto process = GetCurrentProcessId();
 #else
     auto thread = pthread_self();
-    auto process = getpid();
+    static auto process = getpid();
 #endif
 
     if (flags.ProcessID && flags.ThreadID)

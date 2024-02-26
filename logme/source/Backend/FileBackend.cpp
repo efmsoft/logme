@@ -272,7 +272,7 @@ void FileBackend::RequestFlush()
     GetFactory().WakeUp();
 }
 
-FileManagerFactory& FileBackend::GetFactory()
+FileManagerFactory& FileBackend::GetFactory() const
 {
   auto logger = Owner->GetOwner();
   return logger->GetFileManagerFactory();

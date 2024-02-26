@@ -76,7 +76,7 @@ namespace Logme
     LOGMELNK bool ApplyConfig(BackendConfigPtr c) override;
 
   private:
-    class FileManagerFactory& GetFactory();
+    class FileManagerFactory& GetFactory() const;
 
     void Truncate();
     void ConditionalFlush();

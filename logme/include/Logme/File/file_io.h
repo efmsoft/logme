@@ -20,8 +20,9 @@ namespace Logme
     void Close();
     bool Open(bool append, unsigned timeout = 0, const char* fileName = 0);
     int Write(const void* p, size_t size);
+    int WriteRaw(const void* p, size_t size);
     int Read(void* p, size_t size);
-    int Seek(size_t offs, int whence);
+    long long Seek(size_t offs, int whence);
     int Truncate(size_t offs);
 
     unsigned Read(int maxLines, std::string& content, int part);

@@ -178,12 +178,12 @@ time_t FileIo::GetLastWriteTime(int fd)
   return st.st_mtime;
 }
 
-int FileIo::Seek(size_t offs, int whence)
+long long FileIo::Seek(size_t offs, int whence)
 {
   std::lock_guard<std::recursive_mutex> guard(IoLock);
   assert(File != -1);
 
-  int rc = (int)_lseek(File, (long)offs, whence);
+  long long rc = _lseek(File, (long)offs, whence);
   if (rc < 0)
     IO_ERROR(lseek());
 
@@ -207,13 +207,23 @@ int FileIo::Write(const void* p, size_t size)
   std::lock_guard<std::recursive_mutex> guard(IoLock);
   assert(File != -1);
 
-  int rc = Seek(0, SEEK_END);
+  long long rc = Seek(0, SEEK_END);
   if (rc >= 0)
   {
-    rc = _write(File, p, (unsigned)size);
-    if (rc < 0)
-      IO_ERROR(write());
+    return WriteRaw(p, size);
   }
+
+  return (int) rc;
+}
+
+int FileIo::WriteRaw(const void* p, size_t size)
+{
+  std::lock_guard<std::recursive_mutex> guard(IoLock);
+  assert(File != -1);
+
+  int rc = _write(File, p, (unsigned int) size);
+  if (rc < 0)
+    IO_ERROR(write());
 
   return rc;
 }

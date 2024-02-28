@@ -179,14 +179,14 @@ void FileBackend::Truncate()
       return;
 
     char buffer[128];
-    sprintf_s(buffer, "--- dropped %i characters\n", readPos + n);
-    if (FileIo::Write(buffer, (int)strlen(buffer)) < 0)
+    sprintf_s(buffer, "--- dropped %u characters\n", readPos + n);
+    if (FileIo::WriteRaw(buffer, (int)strlen(buffer)) < 0)
       return;
 
-    if (FileIo::Write(p, size_t(readSize) - n) < 0)
+    if (FileIo::WriteRaw(p, size_t(readSize) - n) < 0)
       return;
 
-    int nbytes = Seek(0, SEEK_CUR);
+    long long nbytes = Seek(0, SEEK_CUR);
     if (nbytes < 0)
       return;
 

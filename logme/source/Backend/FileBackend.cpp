@@ -156,7 +156,7 @@ void FileBackend::Truncate()
     return;
 
   uint32_t readPos = uint32_t(MaxSize / 2);
-  uint32_t readSize = rc - readPos;
+  uint32_t readSize = uint32_t(rc - readPos);
 
   std::vector<char> data(readSize);
   rc = Seek(readPos, SEEK_SET);

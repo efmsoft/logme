@@ -31,10 +31,12 @@ using namespace std::chrono_literals;
 
 using namespace Logme;
 
+size_t FileBackend::MaxSizeDefault = FileBackend::MAX_SIZE_DEFAULT;
+
 FileBackend::FileBackend(ChannelPtr owner)
   : Backend(owner, TYPE_ID)
   , Append(true)
-  , MaxSize(MAX_SIZE_DEFAULT)
+  , MaxSize(MaxSizeDefault)
   , DataReady(false)
   , Flush(false)
   , ShutdownFlag(false)
@@ -57,6 +59,16 @@ FileBackend::~FileBackend()
     GetFactory().Remove(this);
 
   CloseLog();
+}
+
+void FileBackend::SetMaxSizeDefault(size_t size)
+{
+  MaxSizeDefault = size;
+}
+
+size_t FileBackend::GetMaxSizeDefault()
+{
+  return MaxSizeDefault;
 }
 
 BackendConfigPtr FileBackend::CreateConfig()

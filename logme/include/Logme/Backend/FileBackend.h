@@ -46,6 +46,8 @@ namespace Logme
 
     std::condition_variable Done;
     std::condition_variable Shutdown;
+
+    static size_t MaxSizeDefault;
   
   public:
     enum 
@@ -74,6 +76,9 @@ namespace Logme
 
     LOGMELNK BackendConfigPtr CreateConfig() override;
     LOGMELNK bool ApplyConfig(BackendConfigPtr c) override;
+
+    LOGMELNK static size_t GetMaxSizeDefault();
+    LOGMELNK static void SetMaxSizeDefault(size_t size);
 
   private:
     class FileManagerFactory& GetFactory() const;

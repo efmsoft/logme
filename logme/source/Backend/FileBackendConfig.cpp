@@ -9,7 +9,7 @@ using namespace Logme;
 
 FileBackendConfig::FileBackendConfig()
   : Append(true)
-  , MaxSize(FileBackend::MAX_SIZE_DEFAULT)
+  , MaxSize(FileBackend::GetMaxSizeDefault())
 {
 }
 

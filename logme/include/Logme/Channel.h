@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -19,6 +20,7 @@ namespace Logme
     OutputFlags Flags;
     Level Filter;
     BackendConfigArray Backend;
+    std::optional<std::string> Link;
 
     LOGMELNK ChannelConfig() : Filter(DEFAULT_LEVEL) {}
   };

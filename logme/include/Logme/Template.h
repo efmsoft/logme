@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <string>
 
+#include <Logme/Types.h>
+
 namespace Logme
 {
   enum TemplateFlags
@@ -28,8 +30,12 @@ namespace Logme
     const char* TargetChannel;
   }; 
 
-  std::string ProcessTemplate(const char* p, const ProcessTemplateParam& param, uint32_t* notProcessed = 0);
+  LOGMELNK std::string ProcessTemplate(
+    const char* p
+    , const ProcessTemplateParam& param
+    , uint32_t* notProcessed = 0
+  );
 
-  void EnvSetVar(const char* name, const char* value);
-  std::string EnvGetVar(const char* name); 
+  LOGMELNK void EnvSetVar(const char* name, const char* value);
+  LOGMELNK std::string EnvGetVar(const char* name);
 }

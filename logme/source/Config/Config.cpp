@@ -63,7 +63,7 @@ bool Logger::LoadConfiguration(
     return false;
 
   ChannelConfigArray arr;
-  if (!PraseChannels(config, flags, arr))
+  if (!ParseChannels(config, flags, arr))
     return false;
 
   DeleteAllChannels();

@@ -1,4 +1,5 @@
 #include <Logme/Logme.h>
+#include <Logme/SafeID.h>
 
 #include "Helper.h"
 
@@ -85,6 +86,22 @@ static bool GetChannelFlags(const Json::Value& o, int i, OutputFlagsMap& m, Outp
   }
 
   f = m[flags_name];
+
+  return true;
+}
+
+static bool GetLink(const Json::Value& o, int i, std::string& link)
+{
+  if (!o.isMember("link"))
+    return false;
+
+  if (!o["link"].isString())
+  {
+    LogmeE(CHINT, "\"channels[%i].link\" is not a string", i);
+    return false;
+  }
+
+  link = o["link"].asString();
 
   return true;
 }
@@ -216,7 +233,7 @@ static bool GetBackends(const Json::Value& o, int i, BackendConfigArray& arr)
   return true;
 }
 
-bool PraseChannels(
+bool ParseChannels(
   const Json::Value& root
   , OutputFlagsMap& m
   , ChannelConfigArray& arr
@@ -268,6 +285,10 @@ bool PraseChannels(
     if (!GetBackends(o, i, c.Backend))
       return false;
 
+    std::string link;
+    if (GetLink(o, i, link))
+      c.Link = link;
+
     arr.push_back(c);
   }
 
@@ -307,5 +328,20 @@ bool Logger::CreateChannels(ChannelConfigArray& arr)
     }
   }
 
+  for (auto& c : arr)
+  {
+    if (c.Link.has_value())
+    {
+      SafeID ch1(c.Name.c_str());
+      SafeID ch2(c.Link.value().c_str());
+
+      auto p1 = GetExistingChannel(ch1);
+      auto p2 = GetExistingChannel(ch2);
+
+      if (p1 && p2)
+        p1->AddLink(ch2);
+    }
+  }
+  
   return true;
 }

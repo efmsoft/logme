@@ -111,13 +111,15 @@ void FileBackend::SetAppend(bool append)
   Append = append;
 }
 
-bool FileBackend::CreateLog(const char* name)
+bool FileBackend::CreateLog(const char* v)
 {
+  ProcessTemplateParam param;
+  std::string name = ProcessTemplate(v, param);
+
   CloseLog();
   Name.clear();
 
-  if (name)
-    Name = name;
+  Name = name;
 
   return Open(Append);
 }

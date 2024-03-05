@@ -12,7 +12,7 @@
 
 bool ParseControlConfig(const Json::Value& root, Logme::ControlConfig& cc);
 bool ParseFlags(const Json::Value& root, Logme::OutputFlagsMap& m);
-bool PraseChannels(const Json::Value& root, Logme::OutputFlagsMap& m, Logme::ChannelConfigArray& arr);
+bool ParseChannels(const Json::Value& root, Logme::OutputFlagsMap& m, Logme::ChannelConfigArray& arr);
 bool GetConfigSection(const Json::Value& root, const std::string& section, Json::Value& config);
 
 #endif

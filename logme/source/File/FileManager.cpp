@@ -3,6 +3,7 @@
 #include <Logme/Backend/FileBackend.h>
 #include <Logme/File/FileManager.h>
 #include <Logme/Time/datetime.h> 
+#include <Logme/Utils.h> 
 
 using namespace Logme;
 
@@ -54,6 +55,8 @@ bool FileManager::DispatchEvents(size_t index, bool force)
 
 void FileManager::ManagementThread()
 {
+  RenameThread(-1, "FileManager::ManagementThread");
+
   // Used to combine data from several consecutive Log() calls
   const unsigned delay = 100;
   for (unsigned t0 = GetTimeInMillisec();; Sleep(10))

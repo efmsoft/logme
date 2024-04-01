@@ -19,6 +19,7 @@ LoggerPtr Logme::Instance = std::make_shared<Logger>();
 
 Logger::Logger()
   : IDGenerator(1)
+  , ControlSocket(-1)
 {
   CreateDefaultChannelLayout();
 
@@ -27,6 +28,7 @@ Logger::Logger()
 
 Logger::~Logger()
 {
+  StopControlServer();
   DeleteAllChannels();
 }
 

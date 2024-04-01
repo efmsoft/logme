@@ -74,7 +74,8 @@ bool Logger::LoadConfiguration(
   }
 
   CreateDefaultChannelLayout(false);
-  return true;
+
+  return StartControlServer(cc);
 #else
   return false;
 #endif

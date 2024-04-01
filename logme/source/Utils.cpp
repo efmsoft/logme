@@ -12,6 +12,19 @@
 #include <time.h>
 #endif 
 
+Logme::PRENAMETHREAD RenameThreadCallback;
+
+void Logme::SetRenameThreadCallback(Logme::PRENAMETHREAD p)
+{
+  RenameThreadCallback = p;
+}
+
+void Logme::RenameThread(uint64_t threadID, const char* threadName)
+{
+  if (RenameThreadCallback)
+    RenameThreadCallback(threadID, threadName);
+}
+
 std::string Logme::dword2str(uint32_t value)
 {
   char buff[32];

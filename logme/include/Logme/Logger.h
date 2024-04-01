@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -12,6 +13,7 @@
 namespace Logme
 {
   typedef std::shared_ptr<std::string> StringPtr;
+  typedef std::function<bool(const std::string&, std::string&)> ControlHandler;
 
   class Logger : public std::enable_shared_from_this<Logger>
   {
@@ -28,6 +30,25 @@ namespace Logme
 
     std::mutex ErrorLock;
     StringPtr ErrorChannel;
+
+    int ControlSocket;
+    ControlHandler ControlExtension;
+    
+    typedef std::shared_ptr<std::thread> ThreadPtr;
+    ThreadPtr ListenerThread;
+
+    struct ControlThread
+    {
+      ThreadPtr Thread;
+      bool Stopped;
+
+      ControlThread() : Stopped(false)
+      {
+      }
+    };
+
+    typedef std::map<int, ControlThread> ThreadMap;
+    ThreadMap ControlThreads;
 
   public:
     LOGMELNK Logger();
@@ -78,6 +99,11 @@ namespace Logme
     LOGMELNK void SetErrorChannel(const ID& ch);
 
     LOGMELNK void DeleteAllChannels();
+    LOGMELNK bool StartControlServer(const ControlConfig& c);
+    LOGMELNK void StopControlServer();
+
+    LOGMELNK std::string Control(const std::string& command);
+    LOGMELNK void SetControlExtension(ControlHandler handler);
 
   protected:
     ChannelPtr CreateChannelInternal(
@@ -87,8 +113,10 @@ namespace Logme
     );
 
     void ApplyThreadChannel(Context& context);
-
     bool CreateChannels(ChannelConfigArray& arr);
+
+    void ControlListener();
+    void ControlHandler(int socket);
   };
 
   typedef std::shared_ptr<Logger> LoggerPtr;

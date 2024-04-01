@@ -5,6 +5,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <thread>
 
 #include <Logme/Channel.h>
 #include <Logme/File/FileManagerFactory.h>
@@ -13,7 +14,7 @@
 namespace Logme
 {
   typedef std::shared_ptr<std::string> StringPtr;
-  typedef std::function<bool(const std::string&, std::string&)> ControlHandler;
+  typedef std::function<bool(const std::string&, std::string&)> TControlHandler;
 
   class Logger : public std::enable_shared_from_this<Logger>
   {
@@ -32,7 +33,7 @@ namespace Logme
     StringPtr ErrorChannel;
 
     int ControlSocket;
-    ControlHandler ControlExtension;
+    TControlHandler ControlExtension;
     
     typedef std::shared_ptr<std::thread> ThreadPtr;
     ThreadPtr ListenerThread;
@@ -103,7 +104,7 @@ namespace Logme
     LOGMELNK void StopControlServer();
 
     LOGMELNK std::string Control(const std::string& command);
-    LOGMELNK void SetControlExtension(ControlHandler handler);
+    LOGMELNK void SetControlExtension(TControlHandler handler);
 
   protected:
     ChannelPtr CreateChannelInternal(

@@ -215,7 +215,7 @@ void Logger::ControlHandler(int socket)
     it->second.Stopped = true;
 }
 
-void Logger::SetControlExtension(Logme::ControlHandler handler)
+void Logger::SetControlExtension(Logme::TControlHandler handler)
 {
   std::lock_guard<std::mutex> guard(DataLock);
   ControlExtension = handler;

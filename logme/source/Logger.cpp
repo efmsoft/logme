@@ -20,6 +20,7 @@ LoggerPtr Logme::Instance = std::make_shared<Logger>();
 Logger::Logger()
   : IDGenerator(1)
   , ControlSocket(-1)
+  , Condition(&Logger::DefaultCondition)
 {
   CreateDefaultChannelLayout();
 
@@ -30,6 +31,16 @@ Logger::~Logger()
 {
   StopControlServer();
   DeleteAllChannels();
+}
+
+void Logger::SetCondition(TCondition cond)
+{
+  Condition = cond == nullptr ? &Logger::DefaultCondition : cond;
+}
+
+bool Logger::DefaultCondition()
+{
+  return true;
 }
 
 void Logger::CreateDefaultChannelLayout(bool delete_all)

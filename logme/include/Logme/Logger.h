@@ -15,6 +15,7 @@ namespace Logme
 {
   typedef std::shared_ptr<std::string> StringPtr;
   typedef std::function<bool(const std::string&, std::string&)> TControlHandler;
+  typedef bool (*TCondition)();
 
   class Logger : public std::enable_shared_from_this<Logger>
   {
@@ -50,6 +51,9 @@ namespace Logme
 
     typedef std::map<int, ControlThread> ThreadMap;
     ThreadMap ControlThreads;
+
+  public:
+    TCondition Condition;
 
   public:
     LOGMELNK Logger();
@@ -105,6 +109,9 @@ namespace Logme
 
     LOGMELNK std::string Control(const std::string& command);
     LOGMELNK void SetControlExtension(TControlHandler handler);
+
+    LOGMELNK void SetCondition(TCondition cond);
+    LOGMELNK static bool DefaultCondition();
 
   protected:
     ChannelPtr CreateChannelInternal(

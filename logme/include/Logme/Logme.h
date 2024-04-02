@@ -38,61 +38,61 @@
 #endif
 
 #define LogmeD(...) \
-  Logme_If(true, Logme::Instance, Logme::Level::LEVEL_DEBUG, ## __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, ## __VA_ARGS__)
 
 #define LogmeD_If(condition, ...) \
   Logme_If(condition, Logme::Instance, Logme::Level::LEVEL_DEBUG, ## __VA_ARGS__)
 
 #define LogmeI(...) \
-  Logme_If(true, Logme::Instance, Logme::Level::LEVEL_INFO, ## __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, ## __VA_ARGS__)
 
 #define LogmeI_If(condition, ...) \
   Logme_If(condition, Logme::Instance, Logme::Level::LEVEL_INFO, ## __VA_ARGS__)
 
 #define LogmeW(...) \
-  Logme_If(true, Logme::Instance, Logme::Level::LEVEL_WARN, ## __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, ## __VA_ARGS__)
 
 #define LogmeW_If(condition, ...) \
   Logme_If(condition, Logme::Instance, Logme::Level::LEVEL_WARN, ## __VA_ARGS__)
 
 #define LogmeE(...) \
-  Logme_If(true, Logme::Instance, Logme::Level::LEVEL_ERROR, ## __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, ## __VA_ARGS__)
 
 #define LogmeE_If(condition, ...) \
   Logme_If(condition, Logme::Instance, Logme::Level::LEVEL_ERROR, ## __VA_ARGS__)
 
 #define LogmeC(...) \
-  Logme_If(true, Logme::Instance, Logme::Level::LEVEL_CRITICAL, ## __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, ## __VA_ARGS__)
 
 #define LogmeC_If(condition, ...) \
   Logme_If(condition, Logme::Instance, Logme::Level::LEVEL_CRITICAL, ## __VA_ARGS__)
 
 #define LogmeDg(...) \
-  Logme_Ifg(true, Logme::Instance, Logme::Level::LEVEL_DEBUG, ## __VA_ARGS__)
+  Logme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, ## __VA_ARGS__)
 
 #define LogmeDg_If(condition, ...) \
   Logme_Ifg(condition, Logme::Instance, Logme::Level::LEVEL_DEBUG, ## __VA_ARGS__)
 
 #define LogmeIg(...) \
-  Logme_Ifg(true, Logme::Instance, Logme::Level::LEVEL_INFO, ## __VA_ARGS__)
+  Logme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, ## __VA_ARGS__)
 
 #define LogmeI_Ifg(condition, ...) \
   Logme_Ifg(condition, Logme::Instance, Logme::Level::LEVEL_INFO, ## __VA_ARGS__)
 
 #define LogmeWg(...) \
-  Logme_Ifg(true, Logme::Instance, Logme::Level::LEVEL_WARN, ## __VA_ARGS__)
+  Logme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, ## __VA_ARGS__)
 
 #define LogmeW_Ifg(condition, ...) \
   Logme_Ifg(condition, Logme::Instance, Logme::Level::LEVEL_WARN, ## __VA_ARGS__)
 
 #define LogmeEg(...) \
-  Logme_Ifg(true, Logme::Instance, Logme::Level::LEVEL_ERROR, ## __VA_ARGS__)
+  Logme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, ## __VA_ARGS__)
 
 #define LogmeE_Ifg(condition, ...) \
   Logme_Ifg(condition, Logme::Instance, Logme::Level::LEVEL_ERROR, ## __VA_ARGS__)
 
 #define LogmeCg(...) \
-  Logme_Ifg(true, Logme::Instance, Logme::Level::LEVEL_CRITICAL, ## __VA_ARGS__)
+  Logme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, ## __VA_ARGS__)
 
 #define LogmeC_Ifg(condition, ...) \
   Logme_Ifg(condition, Logme::Instance, Logme::Level::LEVEL_CRITICAL, ## __VA_ARGS__)

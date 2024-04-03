@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <string>
+#include <vector>
 
 #include <Logme/Types.h>
 
@@ -15,4 +16,16 @@ namespace Logme
   typedef void (*PRENAMETHREAD)(uint64_t threadID, const char* threadName);
   LOGMELNK void SetRenameThreadCallback(PRENAMETHREAD p);
   LOGMELNK void RenameThread(uint64_t threadID, const char* threadName);
+
+  typedef std::vector<std::string> StringArray;
+
+  LOGMELNK size_t WordSplit(
+    const std::string& s
+    , StringArray& words
+    , const char* delimiters = " \t"
+    , bool trim = true
+    , bool ignoreEmpty = true
+  );
+
+  LOGMELNK void SortLines(std::string& s);
 }

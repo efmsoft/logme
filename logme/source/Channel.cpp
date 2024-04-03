@@ -1,5 +1,6 @@
 #include <Logme/Channel.h>
 #include <Logme/Logger.h>
+#include <Logme/SafeID.h>
 
 #include <cassert>
 
@@ -39,7 +40,7 @@ void Channel::AddLink(const ID& to)
 {
   Guard guard(DataLock);
 
-  IDPtr p = std::make_shared<ID>(to);
+  IDPtr p = std::make_shared<SafeID>(to);
   Link.swap(p);
 }
 

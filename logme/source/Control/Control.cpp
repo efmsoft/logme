@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #ifdef _WIN32
 #include <io.h> 
 #include <winsock2.h>
@@ -30,6 +32,8 @@
 
 #include <Logme/Logme.h>
 #include <Logme/Utils.h>
+
+#include "CommandDescriptor.h"
 
 using namespace Logme;
 
@@ -222,13 +226,34 @@ void Logger::SetControlExtension(Logme::TControlHandler handler)
 
 std::string Logger::Control(const std::string& command)
 {
-  std::string response;
+  std::string k(command);
+  std::transform(k.begin(), k.end(), k.begin(), ::tolower);
 
+  StringArray items;
+  size_t n = WordSplit(k, items);
+
+  std::string response;
   if (ControlExtension)
   {
     if (ControlExtension(command, response))
-      return response;
+    {
+      if (!n || items[0] != "help")
+        return response;
+    }
   }
 
-  return response;
+  if (n)
+  {
+    const std::string& c = items[0];
+    for (CommandDescriptor* d = CommandDescriptor::Head; d; d = d->Next)
+    {
+      if (d->Command != c)
+        continue;
+
+      if (d->Handler(items, response))
+        return response;
+    }
+  }
+
+  return std::string("unsupported command: ") + (n ? items[0] : "<empty>");
 }

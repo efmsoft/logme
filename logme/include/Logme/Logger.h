@@ -10,6 +10,7 @@
 #include <Logme/Channel.h>
 #include <Logme/File/FileManagerFactory.h>
 #include <Logme/Stream.h>
+#include <Logme/Utils.h>
 
 namespace Logme
 {
@@ -125,6 +126,9 @@ namespace Logme
 
     void ControlListener();
     void ControlHandler(int socket);
+
+  public:
+    static bool CommandList(StringArray& arr, std::string& response);
   };
 
   typedef std::shared_ptr<Logger> LoggerPtr;

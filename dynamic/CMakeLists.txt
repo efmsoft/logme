@@ -2,8 +2,9 @@ get_filename_component(LOGME_ROOT "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
 
 file(TO_CMAKE_PATH ${LOGME_ROOT}/logme/source SRCROOT)
 file(GLOB_RECURSE SOURCES ${SRCROOT}/*.cpp)
+file(GLOB_RECURSE HEADERS ${SRCROOT}/*.h)
 
-add_library(logmed SHARED ${SOURCES})
+add_library(logmed SHARED ${SOURCES} ${HEADERS})
 
 target_include_directories(logmed PRIVATE 
   ${LOGME_INCLUDE_DIR}

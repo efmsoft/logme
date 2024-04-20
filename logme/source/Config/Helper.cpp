@@ -144,7 +144,7 @@ bool GetConfigSection(
 
     if (!config.isMember(member))
     {
-      LogmeE(CHINT, "No such member: \"%i\"", member.c_str());
+      LogmeE(CHINT, "No such member: \"%s\"", member.c_str());
       return false;
     }
 

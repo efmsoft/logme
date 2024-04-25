@@ -144,7 +144,11 @@ void Logger::ControlListener()
       std::lock_guard<std::mutex> guard(DataLock);
       ControlThreads[accept_sock] = ct;
 
-      ControlThreads[accept_sock].Thread = std::make_shared<std::thread>(&Logger::ControlHandler, this, accept_sock);
+      ControlThreads[accept_sock].Thread = std::make_shared<std::thread>(
+        &Logger::ControlHandler
+        , this
+        , accept_sock
+      );
     }
 
     // Remove items for closed connections
@@ -197,7 +201,7 @@ void Logger::ControlHandler(int socket)
   for (;;)
   {
     char buff[4096]{};
-    int n = (int)read(socket, buff, sizeof(buff));
+    int n = (int)recv(socket, buff, sizeof(buff), 0);
     if (n == -1)
       break;
 
@@ -206,7 +210,7 @@ void Logger::ControlHandler(int socket)
 
     if (!response.empty())
     {
-      n = (int)write(socket, response.c_str(), (int)response.size());
+      n = (int)send(socket, response.c_str(), (int)response.size(), 0);
       if (n == -1)
         break;
     }

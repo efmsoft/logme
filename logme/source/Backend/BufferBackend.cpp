@@ -1,3 +1,6 @@
+#include <algorithm>
+#include <iterator>
+
 #include <Logme/Backend/BufferBackend.h>
 #include <Logme/Channel.h>
 
@@ -13,6 +16,13 @@ BufferBackend::BufferBackend(Logme::ChannelPtr owner)
 void BufferBackend::Clear()
 {
   Buffer.clear();
+}
+
+void BufferBackend::Insert(const std::vector<char>& buffer)
+{
+  std::vector<char> data(buffer);
+  std::copy(Buffer.begin(), Buffer.end(), std::back_inserter(data));
+  std::swap(Buffer, data);
 }
 
 void BufferBackend::Display(Logme::Context& context, const char* line)

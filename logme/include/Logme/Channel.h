@@ -41,6 +41,8 @@ namespace Logme
 
     IDPtr Link;
 
+    std::map<std::string, std::string> ShortenerMap;
+
   public:
     LOGMELNK Channel(
       Logger* owner
@@ -78,6 +80,9 @@ namespace Logme
     LOGMELNK bool IsLinked() const;
 
     LOGMELNK const ID GetID() const;
+
+    LOGMELNK void ShortenerAdd(const char* what, const char* replace_on);
+    LOGMELNK const char* ShortenerRun(const char* value, ShortenerContext& context);
   };
 
   typedef std::shared_ptr<Channel> ChannelPtr;

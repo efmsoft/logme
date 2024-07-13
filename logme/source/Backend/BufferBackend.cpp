@@ -30,7 +30,7 @@ void BufferBackend::Display(Logme::Context& context, const char* line)
   OutputFlags flags = Owner->GetFlags();
 
   int nc;
-  const char* str = context.Apply(flags, line, nc);
+  const char* str = context.Apply(Owner, flags, line, nc);
 
   size_t pos = Buffer.size();
   if (pos)

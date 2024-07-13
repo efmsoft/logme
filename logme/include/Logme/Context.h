@@ -15,6 +15,14 @@ namespace Logme
   typedef std::shared_ptr<std::string> StringPtr;
   typedef const char* (*PfnAppend)(struct Context& context);
 
+  class Channel;
+  typedef std::shared_ptr<Channel> ChannelPtr;
+
+  struct ShortenerContext
+  {
+    std::string Buffer;
+  };
+
   struct Context
   {
     enum
@@ -52,6 +60,8 @@ namespace Logme
     char Buffer[OUTPUT_BUFFER_SIZE];
     std::vector<char> ExtBuffer;
 
+    ShortenerContext MethodShortener;
+
     struct Params
     {
       ID None;
@@ -80,7 +90,7 @@ namespace Logme
     LOGMELNK void InitThreadProcessID(OutputFlags flags);
     LOGMELNK void CreateTZD(char* tzd);
 
-    LOGMELNK const char* Apply(OutputFlags flags, const char* text, int& nc);
+    LOGMELNK const char* Apply(ChannelPtr ch, OutputFlags flags, const char* text, int& nc);
   };
 }
 

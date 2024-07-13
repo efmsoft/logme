@@ -149,7 +149,7 @@ void FileBackend::Write(CharBuffer& data, SizeArray& msgSize)
 void FileBackend::Display(Context& context, const char* line)
 {
   int nc;
-  const char* buffer = context.Apply(Owner->GetFlags(), line, nc);
+  const char* buffer = context.Apply(Owner, Owner->GetFlags(), line, nc);
   AppendString(buffer, nc);
 }
 

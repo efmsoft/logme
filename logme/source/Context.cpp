@@ -1,3 +1,4 @@
+#include <Logme/Channel.h>
 #include <Logme/Context.h>
 #include <Logme/Time/datetime.h>
 #include "StringHelpers.h"
@@ -209,7 +210,7 @@ void Context::InitSignature()
   }
 }
 
-const char* Context::Apply(OutputFlags flags, const char* text, int& nc)
+const char* Context::Apply(ChannelPtr ch, OutputFlags flags, const char* text, int& nc)
 {
   flags.Value |= Ovr.Add.Value;
   flags.Value &= ~Ovr.Remove.Value;
@@ -288,6 +289,7 @@ const char* Context::Apply(OutputFlags flags, const char* text, int& nc)
   int nMethod = 0;
   if (flags.Method && Method && !flags.ProcPrint)
   {
+    Method = ch->ShortenerRun(Method, MethodShortener);
     nMethod = (int)strlen(Method) + 4; // "Method(): "
   }
 

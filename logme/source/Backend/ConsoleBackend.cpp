@@ -71,7 +71,7 @@ void ConsoleBackend::Display(Context& context, const char* line)
   flags.Value &= ~context.Ovr.Remove.Value;
 
   int nc;
-  const char* buffer = context.Apply(flags, line, nc);
+  const char* buffer = context.Apply(Owner, flags, line, nc);
   const char* escape = nullptr;
 
   if (flags.Highlight)

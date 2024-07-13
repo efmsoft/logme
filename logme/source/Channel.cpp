@@ -205,3 +205,38 @@ Logger* Channel::GetOwner() const
 {
   return Owner;
 }
+
+void Channel::ShortenerAdd(const char* what, const char* replace_on)
+{
+  auto it = ShortenerMap.find(what);
+  if (it != ShortenerMap.end())
+    it->second = replace_on ? replace_on : "";
+  else
+  {
+    ShortenerMap[what] = replace_on;
+  }
+}
+
+const char* Channel::ShortenerRun(
+  const char* value
+  , ShortenerContext& context
+)
+{
+  auto n = strlen(value);
+  for (auto& v : ShortenerMap)
+  {
+    if (n < v.first.length())
+      continue;
+
+    if (strncmp(value, v.first.c_str(), v.first.length()))
+      continue;
+
+    if (v.second.empty())
+      return value + v.first.length();
+
+    context.Buffer = v.second + (value + v.first.length());
+    return context.Buffer.c_str();
+  }
+
+  return value;
+}

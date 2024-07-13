@@ -3,6 +3,7 @@
 #include <Logme/SafeID.h>
 
 #include <cassert>
+#include <string.h>
 
 using namespace Logme;
 

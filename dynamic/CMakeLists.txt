@@ -4,7 +4,11 @@ file(TO_CMAKE_PATH ${LOGME_ROOT}/logme/source SRCROOT)
 file(GLOB_RECURSE SOURCES ${SRCROOT}/*.cpp)
 file(GLOB_RECURSE HEADERS ${SRCROOT}/*.h)
 
-add_library(logmed SHARED ${SOURCES} ${HEADERS})
+if (DEFINED LOGME_VERSION_RC)
+  add_library(logmed SHARED ${SOURCES} ${HEADERS} ${LOGME_VERSION_RC})
+else()
+  add_library(logmed SHARED ${SOURCES} ${HEADERS})
+endif()
 
 target_include_directories(logmed PRIVATE 
   ${LOGME_INCLUDE_DIR}

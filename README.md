@@ -91,6 +91,22 @@ Any aspect of the configuration can be changed from the code. But a simpler solu
 ```cpp
 #include <Logme/Logme.h>
 ...
+// Config file can contain references to environment variables. In the
+// config.json we are using ROOT_LOG variable to set name of log file.
+// In the lines below we are defining ROOT_LOG
+time_t now = time(nullptr);
+
+struct tm tstruct;
+#ifdef _WIN32
+localtime_s(&tstruct, &now);
+#else
+localtime_r(&now, &tstruct);
+#endif  
+
+char buf[80];
+strftime(buf, sizeof(buf), "%Y-%m-%d.%X", &tstruct);
+Logme::EnvSetVar("RDS_LOG", buf);
+
 // Load configuration from "logger" section of config file
 Logme::Instance->LoadConfigurationFile("config.json", "logger");
 ```

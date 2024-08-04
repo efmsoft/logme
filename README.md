@@ -151,3 +151,31 @@ Logme::Instance->LoadConfigurationFile("config.json", "logger");
   }
 }
 ```
+
+## Output flags
+For each channel, Output Flags are set. These flags determine the format of messages that are sent to the log. In particular, these flags determine the format of the timestamp, include the addition of the name of the method in which the macro was called for output to the log, and whether or not line feed characters are added automatically.
+
+The **OutputFlags** structure is used to set the flags. It can be specified as a parameter when creating a channel. You can also change the flags for an already created channel by calling its **SetFlags()** method.
+
+In some cases, you do not want to change the flags on a permanent basis and you only need to change the flags for one or several messages. In this case, it is convenient to use **Override**.
+
+In the example below, a channel is created with an explicitly specified set of flags. Then changes are made to the set of flags. And at the end of the example, output to the log occurs using **Override**.
+
+```cpp
+OutputFlags flags;
+flsgs.Eol = false;
+
+Logme::ID newch{"newch"};
+auto ch = Logme::Instance->CreateChannel(newch, flags);
+
+ch->AddLink(CH);
+LogmeI(newch, "some message with eol\n");
+
+flags.ErrorPrefix = true;
+ch->SetFlags(flags);
+
+Logme::Override ovr;
+ovr.Remove.Eol = true;
+LogmeI(newch, ovr, "message w/o eol");
+```
+

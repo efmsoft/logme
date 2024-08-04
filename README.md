@@ -179,3 +179,23 @@ ovr.Remove.Eol = true;
 LogmeI(newch, ovr, "message w/o eol");
 ```
 
+## Thread Channel
+There are situations when the channel name cannot (or cannot be) passed to the called code. But at the same time, you want the messages to go to the desired log.
+
+For example, there is a subsystem that writes messages to channel A. At some point in time, the subsystem code calls a shared library. The library does not know who called it and where the messages need to be written. In this case, setting a channel for a thread is a good option. If the channel is set for a thread, then all calls to the macro for writing to the log without explicitly specifying the channel name will go to the **Thread Channel**. To set a channel for a thread, you can use the **LogmeThreadChannel(A)** macro. This macro creates a temporary object whose demstructor will return the **Thread Channel** that was set before.
+
+```cpp
+#include <Logme/Logme.h>
+
+void myfunc()
+{
+  LogmeThreadChannel(A);
+  
+  func2();
+}
+
+void func2()
+{
+  LogmeI("this message will be written to A");
+}
+```

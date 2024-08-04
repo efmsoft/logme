@@ -72,8 +72,66 @@ As mentioned above, to start using the library you only need to add inclusion of
 In many cases, this configuration is enough for work. If changes are required, they can be easily made in the initialization code. For example, like this:
 
 ```cpp
+#include <Logme/Logme.h>
+#include <Logme/Backend/FileBackend.h>
+
+...
+
 // Add a record of logged messages to a file
 auto ch = Logme::Instance->GetExistingChannel(CH);
 auto backend = std::make_shared<FileBackend>(ch);
-if (backend->CreateLog("logfile.log")) ch->AddBackend(backend);
+if (backend->CreateLog("logfile.log")) 
+  ch->AddBackend(backend);
+```
+
+Any aspect of the configuration can be changed from the code. But a simpler solution is to use a configuration file. An example of such a file and the code for loading it is given below.
+
+**main.cpp**:
+
+```cpp
+#include <Logme/Logme.h>
+...
+// Load configuration from "logger" section of config file
+Logme::Instance->LoadConfigurationFile("config.json", "logger");
+```
+
+**config.json**:
+```json
+{
+  "my__app__option1": 1,
+  "any_other_values": {
+  },
+  "logger": {
+    "flags": {
+      "default": {
+        "Timestamp": "local",
+        "Signature": true,
+        "Method": true,
+        "ErrorPrefix": true,
+        "ThreadID": true,
+        "Highlight": true,
+        "eol": true
+      }
+    },
+    "channels": [
+      {
+        "name": "",
+        "level": "info",
+        "flags": "default",
+        "backends": [
+          {
+            "type": "ConsoleBackend",
+            "build": "any"
+          },
+          {
+            "type": "FileBackend",
+            "append": true,
+            "max-size": 134217728,
+            "file": "{%ROOT_LOG}"
+          }
+        ]
+      }
+    ]
+  }
+}
 ```

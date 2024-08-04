@@ -43,7 +43,7 @@ Channels can be created, deleted, enabled, the filtering level can be changed, a
 
 ## Logging macros
 
-To start using the library, simply include the Logme/Logme.h file and call one of the following macros: LogmeD(), LogmeI(), LogmeW(), LogmeE(), LogmeC(). The last letter in the macro name defines the level/type of the message: D - debug, I - information (usually the most frequently used type), W - warning, E - error, C - critical error. Each of these macros takes a variable number of arguments. They can define the name of the channel to which the record should be made, as well as Override parameters, format string, substitution parameters.
+To start using the library, simply include the **Logme/Logme.h** file and call one of the following macros: **LogmeD()**, **LogmeI()**, **LogmeW()**, **LogmeE()**, **LogmeC()**. The last letter in the macro name defines the level/type of the message: **D** - debug, **I** - information (usually the most frequently used type), **W** - warning, **E** - error, **C** - critical error. Each of these macros takes a variable number of arguments. They can define the name of the channel to which the record should be made, as well as **Override** parameters, format string, substitution parameters.
 
 Examples of use:
 ```cpp
@@ -63,4 +63,17 @@ LogmeD(ch) << "something" << 123;
 // Specify both channels and override Logme::Override ovr;
 ovr.Remove.Method = false;
 LogmeC(ch, ovr, "something went wrong");
+```
+
+## Default configuration
+
+As mentioned above, to start using the library you only need to add inclusion of **Logme/Logme.h**. You can log messages right after that. This uses the default configuration, which creates a default channel (the variable for it is defined as global and is always available as ::CH). Backends are added to the default channel depending on whether it is a debug or release build. In both cases, a backend is added for output to the console. In the case of a debug build for **Windows**, a backend is also added for outputting messages to the **Output window** of the debugger.
+
+In many cases, this configuration is enough for work. If changes are required, they can be easily made in the initialization code. For example, like this:
+
+```cpp
+// Add a record of logged messages to a file
+auto ch = Logme::Instance->GetExistingChannel(CH);
+auto backend = std::make_shared<FileBackend>(ch);
+if (backend->CreateLog("logfile.log")) ch->AddBackend(backend);
 ```

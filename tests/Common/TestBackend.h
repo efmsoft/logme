@@ -24,10 +24,10 @@ struct TestBackend : public Logme::Backend
 
   void Display(Logme::Context& context, const char* line) override
   {
-    auto flags = Owner->GetFlags();
+    auto& flags = Owner->GetFlags();
 
-    int nc;
-    Line = context.Apply(flags, line, nc);
+    int nc{};
+    Line = context.Apply(Owner, flags, line, nc);
     History.push_back(Line);
   }
 };

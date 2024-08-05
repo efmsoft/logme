@@ -25,7 +25,7 @@ namespace Logme
 
     std::string Format() override
     {
-      LOGMELNK std::string FormatValue(const T&);
+      std::string FormatValue(const T&);
       return FormatValue(RetVal);
     }
   };

@@ -5,7 +5,7 @@ Compact cross-platform logging framework for C &amp; C++. Implements the concept
 
 # Table of Contents
 1. [Introduction](#introduction)
-2. [Compatibility & Build](#compatibility-build)
+2. [Compatibility & Build](#compatibility--build)
 3. [Logging macros](#logging-macros)
 4. [Default configuration](#default-configuration)
 5. [Output flags](#output-flags)

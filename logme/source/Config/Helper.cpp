@@ -69,7 +69,7 @@ std::string ReadFile(const fs::path& path)
 
   const auto sz = fs::file_size(path);
 
-  std::string result(sz, '\0');
+  std::string result((unsigned int)sz, '\0');
   f.read(result.data(), sz);
 
   return result;

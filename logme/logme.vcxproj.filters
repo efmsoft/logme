@@ -33,6 +33,15 @@
     <Filter Include="include\Logme\Json">
       <UniqueIdentifier>{467d3898-83ef-4929-a943-91f997276057}</UniqueIdentifier>
     </Filter>
+    <Filter Include="source\Config">
+      <UniqueIdentifier>{039bf344-b554-441a-b625-523ba27ddbf9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source\Control">
+      <UniqueIdentifier>{b260eae8-cc00-42a1-ba20-aa94d03b5447}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source\Control\Command">
+      <UniqueIdentifier>{8d0718b4-6906-4bec-8aae-3095fc24f5fd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Logme\Backend\Backend.h">
@@ -113,17 +122,41 @@
     <ClInclude Include="include\Logme\Utils.h">
       <Filter>include\Logme</Filter>
     </ClInclude>
-    <ClInclude Include="source\StringHelpers.h">
-      <Filter>source</Filter>
-    </ClInclude>
     <ClInclude Include="source\Time\utils.h">
       <Filter>source\Time</Filter>
     </ClInclude>
     <ClInclude Include="include\Logme\Json\RSJparser.hpp">
       <Filter>include\Logme\Json</Filter>
     </ClInclude>
+    <ClInclude Include="source\StringHelpers.h">
+      <Filter>source</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Config\Helper.h">
+      <Filter>source\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Control\CommandDescriptor.h">
+      <Filter>source\Control</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Control\CommandRegistrar.h">
+      <Filter>source\Control</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\Time\datetime_common.cpp">
+      <Filter>source\Time</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Time\datetime_lx.cpp">
+      <Filter>source\Time</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Time\datetime_win.cpp">
+      <Filter>source\Time</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Time\datetime_utils.cpp">
+      <Filter>source\Time</Filter>
+    </ClCompile>
+    <ClCompile Include="source\BindAllStat.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
     <ClCompile Include="source\Channel.cpp">
       <Filter>source</Filter>
     </ClCompile>
@@ -148,10 +181,16 @@
     <ClCompile Include="source\OutputFlags.cpp">
       <Filter>source</Filter>
     </ClCompile>
+    <ClCompile Include="source\Override.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
     <ClCompile Include="source\Printer.cpp">
       <Filter>source</Filter>
     </ClCompile>
     <ClCompile Include="source\Procedure.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\SafeID.cpp">
       <Filter>source</Filter>
     </ClCompile>
     <ClCompile Include="source\Stream.cpp">
@@ -160,28 +199,19 @@
     <ClCompile Include="source\Template.cpp">
       <Filter>source</Filter>
     </ClCompile>
+    <ClCompile Include="source\ThreadChannel.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
     <ClCompile Include="source\Utils.cpp">
       <Filter>source</Filter>
     </ClCompile>
-    <ClCompile Include="source\Time\datetime_common.cpp">
-      <Filter>source\Time</Filter>
-    </ClCompile>
-    <ClCompile Include="source\Time\datetime_lx.cpp">
-      <Filter>source\Time</Filter>
-    </ClCompile>
-    <ClCompile Include="source\Time\datetime_win.cpp">
-      <Filter>source\Time</Filter>
-    </ClCompile>
-    <ClCompile Include="source\Time\datetime_utils.cpp">
-      <Filter>source\Time</Filter>
-    </ClCompile>
-    <ClCompile Include="source\File\exe_path.cpp">
-      <Filter>source\File</Filter>
-    </ClCompile>
-    <ClCompile Include="source\File\file_io.cpp">
-      <Filter>source\File</Filter>
-    </ClCompile>
     <ClCompile Include="source\Backend\Backend.cpp">
+      <Filter>source\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Backend\BackendConfig.cpp">
+      <Filter>source\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Backend\BufferBackend.cpp">
       <Filter>source\Backend</Filter>
     </ClCompile>
     <ClCompile Include="source\Backend\ConsoleBackend.cpp">
@@ -192,6 +222,51 @@
     </ClCompile>
     <ClCompile Include="source\Backend\FileBackend.cpp">
       <Filter>source\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Backend\FileBackendConfig.cpp">
+      <Filter>source\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="source\File\exe_path.cpp">
+      <Filter>source\File</Filter>
+    </ClCompile>
+    <ClCompile Include="source\File\file_io.cpp">
+      <Filter>source\File</Filter>
+    </ClCompile>
+    <ClCompile Include="source\File\FileManager.cpp">
+      <Filter>source\File</Filter>
+    </ClCompile>
+    <ClCompile Include="source\File\FileManagerFactory.cpp">
+      <Filter>source\File</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Config\Config.cpp">
+      <Filter>source\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Config\Helper.cpp">
+      <Filter>source\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Config\ParseChannel.cpp">
+      <Filter>source\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Config\ParseControl.cpp">
+      <Filter>source\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Config\ParseFlags.cpp">
+      <Filter>source\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Control\CommandDescriptor.cpp">
+      <Filter>source\Control</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Control\CommandRegistrar.cpp">
+      <Filter>source\Control</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Control\Control.cpp">
+      <Filter>source\Control</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Control\Command\Help.cpp">
+      <Filter>source\Control\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Control\Command\List.cpp">
+      <Filter>source\Control\Command</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

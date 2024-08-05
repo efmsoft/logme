@@ -1,31 +1,132 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\logme\source\Backend\Backend.cpp" />
-    <ClCompile Include="..\logme\source\Backend\ConsoleBackend.cpp" />
-    <ClCompile Include="..\logme\source\Backend\DebugBackend.cpp" />
-    <ClCompile Include="..\logme\source\Backend\FileBackend.cpp" />
+    <Filter Include="Backend">
+      <UniqueIdentifier>{165cf686-0036-424f-bc03-93ba57b84c3a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="File">
+      <UniqueIdentifier>{8e006ff7-3d0b-49f6-b427-c7c369994b9a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Time">
+      <UniqueIdentifier>{1d24ef1f-460e-4a79-8d80-b02cae133c82}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Config">
+      <UniqueIdentifier>{61e4695a-ebe6-4486-9942-27d7b64527e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Control">
+      <UniqueIdentifier>{2c5ed8ac-2191-465e-8d83-c060619003fb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Control\Command">
+      <UniqueIdentifier>{116cab6f-6ae4-46b1-82d6-b9270e1d3e7b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\logme\source\BindAllStat.cpp" />
     <ClCompile Include="..\logme\source\Channel.cpp" />
     <ClCompile Include="..\logme\source\Colorizer.cpp" />
     <ClCompile Include="..\logme\source\Context.cpp" />
     <ClCompile Include="..\logme\source\Convert.cpp" />
     <ClCompile Include="..\logme\source\Environment.cpp" />
-    <ClCompile Include="..\logme\source\File\exe_path.cpp" />
-    <ClCompile Include="..\logme\source\File\file_io.cpp" />
     <ClCompile Include="..\logme\source\Logger.cpp" />
     <ClCompile Include="..\logme\source\Module.cpp" />
     <ClCompile Include="..\logme\source\OutputFlags.cpp" />
+    <ClCompile Include="..\logme\source\Override.cpp" />
     <ClCompile Include="..\logme\source\Printer.cpp" />
     <ClCompile Include="..\logme\source\Procedure.cpp" />
+    <ClCompile Include="..\logme\source\SafeID.cpp" />
     <ClCompile Include="..\logme\source\Stream.cpp" />
     <ClCompile Include="..\logme\source\Template.cpp" />
-    <ClCompile Include="..\logme\source\Time\datetime_common.cpp" />
-    <ClCompile Include="..\logme\source\Time\datetime_lx.cpp" />
-    <ClCompile Include="..\logme\source\Time\datetime_utils.cpp" />
-    <ClCompile Include="..\logme\source\Time\datetime_win.cpp" />
+    <ClCompile Include="..\logme\source\ThreadChannel.cpp" />
     <ClCompile Include="..\logme\source\Utils.cpp" />
+    <ClCompile Include="..\logme\source\Backend\Backend.cpp">
+      <Filter>Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Backend\BackendConfig.cpp">
+      <Filter>Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Backend\BufferBackend.cpp">
+      <Filter>Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Backend\ConsoleBackend.cpp">
+      <Filter>Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Backend\DebugBackend.cpp">
+      <Filter>Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Backend\FileBackend.cpp">
+      <Filter>Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Backend\FileBackendConfig.cpp">
+      <Filter>Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\File\exe_path.cpp">
+      <Filter>File</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\File\file_io.cpp">
+      <Filter>File</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\File\FileManager.cpp">
+      <Filter>File</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\File\FileManagerFactory.cpp">
+      <Filter>File</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Time\datetime_common.cpp">
+      <Filter>Time</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Time\datetime_lx.cpp">
+      <Filter>Time</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Time\datetime_utils.cpp">
+      <Filter>Time</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Time\datetime_win.cpp">
+      <Filter>Time</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Config\Config.cpp">
+      <Filter>Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Config\Helper.cpp">
+      <Filter>Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Config\ParseChannel.cpp">
+      <Filter>Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Config\ParseControl.cpp">
+      <Filter>Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Config\ParseFlags.cpp">
+      <Filter>Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Control\CommandDescriptor.cpp">
+      <Filter>Control</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Control\CommandRegistrar.cpp">
+      <Filter>Control</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Control\Control.cpp">
+      <Filter>Control</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Control\Command\Help.cpp">
+      <Filter>Control\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Control\Command\List.cpp">
+      <Filter>Control\Command</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\logme\source\StringHelpers.h" />
+    <ClInclude Include="..\logme\source\Time\utils.h">
+      <Filter>Time</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\source\Config\Helper.h">
+      <Filter>Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\source\Control\CommandDescriptor.h">
+      <Filter>Control</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\source\Control\CommandRegistrar.h">
+      <Filter>Control</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

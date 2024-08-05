@@ -19,29 +19,43 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\logme\logme.vcxproj">
-      <Project>{2d2f28fc-d182-4717-836f-1c012026393c}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="..\logme\source\Backend\Backend.cpp" />
+    <ClCompile Include="..\logme\source\Backend\BackendConfig.cpp" />
+    <ClCompile Include="..\logme\source\Backend\BufferBackend.cpp" />
     <ClCompile Include="..\logme\source\Backend\ConsoleBackend.cpp" />
     <ClCompile Include="..\logme\source\Backend\DebugBackend.cpp" />
     <ClCompile Include="..\logme\source\Backend\FileBackend.cpp" />
+    <ClCompile Include="..\logme\source\Backend\FileBackendConfig.cpp" />
+    <ClCompile Include="..\logme\source\BindAllStat.cpp" />
     <ClCompile Include="..\logme\source\Channel.cpp" />
     <ClCompile Include="..\logme\source\Colorizer.cpp" />
+    <ClCompile Include="..\logme\source\Config\Config.cpp" />
+    <ClCompile Include="..\logme\source\Config\Helper.cpp" />
+    <ClCompile Include="..\logme\source\Config\ParseChannel.cpp" />
+    <ClCompile Include="..\logme\source\Config\ParseControl.cpp" />
+    <ClCompile Include="..\logme\source\Config\ParseFlags.cpp" />
     <ClCompile Include="..\logme\source\Context.cpp" />
+    <ClCompile Include="..\logme\source\Control\CommandDescriptor.cpp" />
+    <ClCompile Include="..\logme\source\Control\CommandRegistrar.cpp" />
+    <ClCompile Include="..\logme\source\Control\Command\Help.cpp" />
+    <ClCompile Include="..\logme\source\Control\Command\List.cpp" />
+    <ClCompile Include="..\logme\source\Control\Control.cpp" />
     <ClCompile Include="..\logme\source\Convert.cpp" />
     <ClCompile Include="..\logme\source\Environment.cpp" />
     <ClCompile Include="..\logme\source\File\exe_path.cpp" />
+    <ClCompile Include="..\logme\source\File\FileManager.cpp" />
+    <ClCompile Include="..\logme\source\File\FileManagerFactory.cpp" />
     <ClCompile Include="..\logme\source\File\file_io.cpp" />
     <ClCompile Include="..\logme\source\Logger.cpp" />
     <ClCompile Include="..\logme\source\Module.cpp" />
     <ClCompile Include="..\logme\source\OutputFlags.cpp" />
+    <ClCompile Include="..\logme\source\Override.cpp" />
     <ClCompile Include="..\logme\source\Printer.cpp" />
     <ClCompile Include="..\logme\source\Procedure.cpp" />
+    <ClCompile Include="..\logme\source\SafeID.cpp" />
     <ClCompile Include="..\logme\source\Stream.cpp" />
     <ClCompile Include="..\logme\source\Template.cpp" />
+    <ClCompile Include="..\logme\source\ThreadChannel.cpp" />
     <ClCompile Include="..\logme\source\Time\datetime_common.cpp" />
     <ClCompile Include="..\logme\source\Time\datetime_lx.cpp" />
     <ClCompile Include="..\logme\source\Time\datetime_utils.cpp" />
@@ -49,7 +63,11 @@
     <ClCompile Include="..\logme\source\Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\logme\source\Config\Helper.h" />
+    <ClInclude Include="..\logme\source\Control\CommandDescriptor.h" />
+    <ClInclude Include="..\logme\source\Control\CommandRegistrar.h" />
     <ClInclude Include="..\logme\source\StringHelpers.h" />
+    <ClInclude Include="..\logme\source\Time\utils.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -62,26 +80,26 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -127,16 +145,18 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;LOGMED_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_LOGME_DLL_BUILD_;WIN32;_DEBUG;LOGMED_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../logme/include</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
+      <AdditionalDependencies>Ws2_32.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -145,11 +165,12 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;LOGMED_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_LOGME_DLL_BUILD_;WIN32;NDEBUG;LOGMED_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../logme/include</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -157,22 +178,25 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
+      <AdditionalDependencies>Ws2_32.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;LOGMED_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_LOGME_DLL_BUILD_;_DEBUG;LOGMED_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../logme/include</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
+      <AdditionalDependencies>Ws2_32.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -181,11 +205,12 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;LOGMED_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_LOGME_DLL_BUILD_;NDEBUG;LOGMED_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../logme/include</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -193,6 +218,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
+      <AdditionalDependencies>Ws2_32.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

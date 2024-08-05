@@ -204,7 +204,7 @@ void FileBackend::Truncate()
     if (nbytes < 0)
       return;
 
-    if (FileIo::Truncate(nbytes) == -1)
+    if (FileIo::Truncate((size_t)nbytes) == -1)
       return;
   }
 

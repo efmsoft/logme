@@ -216,7 +216,7 @@ int main(int argc, char* argv[])
   HANDLE h = CreateFileA(
     "non-existent file"
 	, GENERIC_READ
-	, SHARE_READ
+	, FILE_SHARE_READ
 	, nullptr
 	, OPEN_EXISTING
 	, 0
@@ -230,5 +230,5 @@ int main(int argc, char* argv[])
 }
 ```
 Running this code will print the following error message:
-![](./doc/error1.svg)
+![example screen](./doc/error1.png)
 

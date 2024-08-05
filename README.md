@@ -228,4 +228,5 @@ int main(int argc, char* argv[])
 }
 ```
 Running this code will print the following error message:
-<span style="color:red;">Unable to open file. Error: ERROR_FILE_NOT_FOUND</span>
+![](./doc/error1.svg)
+

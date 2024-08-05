@@ -1,5 +1,7 @@
 <svg width="100" height="100" xmlns="http://www.w3.org/2000/svg">
 <foreignObject width="100" height="100">
-  <span style="color: red">text</span>
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <span style="color:read">Error text</span>
+  </div>
 </foreignObject>
 </svg>

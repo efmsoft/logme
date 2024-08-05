@@ -1,6 +1,8 @@
 # logme library
 Compact cross-platform logging framework for C &amp; C++. Implements the concept of Channels. Supports dynamic creation of Channels, modifying channel configuration, messages redirection. Supports logging to console, files on disk, buffer, debugger window, VT100 message highlighting.
 
+![example screen](./doc/example.png)
+
 ## Introduction
 It would seem that what could be simpler than logging? And indeed, for small projects it is enough to have code that, for example, uses **printf** to output messages to the console, or writes messages to a file using **fprintf**. But this is not enough in large projects. These projects are usually cross-platform, have many subsystems, and require high performance from the logging system.
 

@@ -199,3 +199,33 @@ void func2()
   LogmeI("this message will be written to A");
 }
 ```
+
+## Integration with AllStat
+The **logme** has built-in integration with the **AllStat** library. If **AllStat** is connected to the project and **USE_ALLSTAT** is declared, the **OSERR**(e) and **OSERR2** macros are defined. They can be used as parameters in a LogmeX macro call to print the error code mnemonic. In the case of calling **OSERR**, the error code must be specified as a parameter. The **OSERR2** macro itself gets the error code using the default method for the current operating system (from **errno** or by calling **GetLastError**())
+
+The example below prints an error message that specifies not the error code, but its name defined in **winerror.h**
+
+```cpp
+#include <windows.h>
+#include <Logme/Logme.h>
+
+int main(int argc, char* argv[])
+{
+  HANDLE h = CreateFileA(
+    "non-existent file"
+	, GENERIC_READ
+	, SHARE_READ
+	, nullptr
+	, OPEN_EXISTING
+	, 0
+	, nullptr
+  );
+  if (h == INVALID_HANDLE_VALUE)
+  {
+    LogmeE("Unable to open file. Error: %s", OSERR2);
+  }
+  return 1;
+}
+```
+Running this code will print the following error message:
+<span style="color:red;">Unable to open file. Error: ERROR_FILE_NOT_FOUND</span>

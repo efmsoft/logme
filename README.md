@@ -5,11 +5,12 @@ Compact cross-platform logging framework for C &amp; C++. Implements the concept
 
 # Table of Contents
 1. [Introduction](#introduction)
-2. [Logging macros](#logging-macros)
-3. [Default configuration](#default-configuration)
-4. [Output flags](#output-flags)
-5. [Thread Channel](#thread-channel)
-6. [Integration with AllStat](#integration-with-allstat)
+2. [Compatibility & Build](#compatibility-build)
+3. [Logging macros](#logging-macros)
+4. [Default configuration](#default-configuration)
+5. [Output flags](#output-flags)
+6. [Thread Channel](#thread-channel)
+7. [Integration with AllStat](#integration-with-allstat)
 
 ## Introduction <a name="introduction"></a>
 It would seem that what could be simpler than logging? And indeed, for small projects it is enough to have code that, for example, uses **printf** to output messages to the console, or writes messages to a file using **fprintf**. But this is not enough in large projects. These projects are usually cross-platform, have many subsystems, and require high performance from the logging system.
@@ -50,6 +51,11 @@ int DoSomething()
 Then the log will only contain the error message "DoSomething() failed...". Having seen it, you can change the filtering level and get all messages written to channel **A**. Or create channel **B** in search of the reason why **DoSomething** returned an error.
 
 Channels can be created, deleted, enabled, the filtering level can be changed, and they can be redirected to other channels. The latter can be very useful if, for example, your project has a central log that collects all messages (or only errors from all subsystems) and separate logs with messages about the operation of subsystems. Then, by linking the subsystem channel to the central log channel, you can write to the subsystem channel and at the same time duplicate everything in the central channel.
+
+## Compatibility & Build
+The library uses the C++ 20 standard and can be built for **Windows**, **Linux** and **MacOS**. **CMake** is used for building. For **Windows**, there are also .sln files for **Visual Studio 2022**
+
+The library does not use additional libraries. There is an optional ability to use the allstat library to print extended error information. The **gtest** library is used to build tests
 
 ## Logging macros
 

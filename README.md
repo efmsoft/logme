@@ -3,7 +3,15 @@ Compact cross-platform logging framework for C &amp; C++. Implements the concept
 
 ![example screen](./doc/example.png)
 
-## Introduction
+# Table of Contents
+1. [Introduction](#introduction)
+2. [Logging macros](#logging-macros)
+3. [Default configuration](#default-configuration)
+4. [Output flags](#output-flags)
+5. [Thread Channel](#thread-channel)
+6. [Integration with AllStat](#integration-with-allstat)
+
+## Introduction <a name="introduction"></a>
 It would seem that what could be simpler than logging? And indeed, for small projects it is enough to have code that, for example, uses **printf** to output messages to the console, or writes messages to a file using **fprintf**. But this is not enough in large projects. These projects are usually cross-platform, have many subsystems, and require high performance from the logging system.
 
 Generally speaking, when creating a logging system in a project, there is always a struggle between two extremes: 1) nothing is logged and if the system fails, it is not clear what happened 2) logging is too detailed and it is very difficult to find the necessary information in hundreds and thousands of log lines.

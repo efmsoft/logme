@@ -195,6 +195,60 @@ ovr.Remove.Eol = true;
 LogmeI(newch, ovr, "message w/o eol");
 ```
 
+Each of the bit groups in **OutputFlags** enables or disables adding information to the lines output to the log. Below is an overview of what can be enabled in the log lines. The location of each of the flag-controlled groups is shown in the diagram below
+
+<**Timestamp**><**Signature**>[<**ProcessId**>:<**ThreadId**>]<**Channel**><**Location**><**ErrorPrefix**><**Method**><**Message**><**Eol**>
+
+#### Timestamp
+Enables or disables adding a timestamp. If the parameter is set to **TIME_FORMAT_NONE**, the timestamp is not added. By specifying **TIME_FORMAT_LOCAL**, **TIME_FORMAT_TZ**, **TIME_FORMAT_UTC** you can select the timestamp format.
+
+#### Signature
+The signature is an uppercase character indicating the message level (debug message - **D**, information, warning - **W**, error - **E**, critical error - **C**). For information messages, the character is not specified.
+
+#### ProcessId
+If the flag is enabled, the current process ID is specified in the corresponding field as a hexadecimal number
+
+#### ThreadId
+If the flag is enabled, the current thread ID is specified in the corresponding field as a hexadecimal number. If neither **ProcessId** nor **ThreadId** are enabled, then square brackets are not added to the log. A colon is printed in any case if **ThreadId** display is enabled
+
+#### Channel
+The name of the channel to which the message was sent is added to the log. The channel name is enclosed in curly brackets
+
+#### Location
+If the value is set to **DETALITY_NONE** (this is the default value), then information about the module is not added. Depending on **DETALITY_SHORT** or **DETALITY_FULL**, either only the module name with the extension or a line with the full path to the module is added to the log. The line number is added in parentheses after the mindle name. The location information is terminated by a colon
+
+#### ErrorPrefix
+If this information type is enabled, then **"Error: "** or **"Critical Error: "** is added to error messages. By default, this information type is disabled
+
+#### Method
+If adding this information is enabled (by default), then the name of the function that issued the message to the log is also printed to the log. This is the function name in short form, followed by parentheses and a final colon
+
+#### Message
+This is the actual text of the message output to the log. Always enabled
+
+#### Eol
+If enabled (by default), a line feed is added to the line output to the log - '**\n**'
+
+**Default flag value**:
+Timestamp: **TIME_FORMAT_LOCAL**  
+Signature: **true**  
+ProcessId: false  
+ThreadId: false  
+Channel: false  
+Location: false  
+ErrorPrefix: **true**  
+Method: **true**  
+Eol: **true**  
+
+#### Control flags
+Some flags have special meanings.
+
+The **Highlight** flag enables color highlighting when outputting to the console. Errors are highlighted in red, warnings in yellow, and debug messages in gray. Color highlighting is enabled by default.
+
+The **Duration**, **ProcPrint**, and **ProcPrintIn** flags are set automatically if the LogmeP() macro is used to print the execution time of functions. You should not change them manually
+
+The **DisableLink** flag can be used to temporarily disable redirection to a linked channel. This is usually done using **Override**
+
 ## Thread Channel
 There are situations when the channel name cannot (or cannot be) passed to the called code. But at the same time, you want the messages to go to the desired log.
 

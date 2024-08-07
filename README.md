@@ -249,6 +249,8 @@ The **Duration**, **ProcPrint**, and **ProcPrintIn** flags are set automatically
 
 The **DisableLink** flag can be used to temporarily disable redirection to a linked channel. This is usually done using **Override**
 
+The **Console** flag defines the stream to which messages are output when printing in the console backend. By default, the **STREAM_ALL2COUT** value is used and everything printed to the console is written to **stdout**. In the case of the **STREAM_WARNCERR** value, messages starting with the **Warning** level (**warning**, **error**, **critical error**) are printed to **stderr**. Similarly, for **STREAM_ERRCERR**, all messages starting with an error are printed to **stderr**. In the case of **STREAM_ALL2CERR**, all messages are written to **stderr**
+
 ## Thread Channel
 There are situations when the channel name cannot (or cannot be) passed to the called code. But at the same time, you want the messages to go to the desired log.
 

@@ -390,16 +390,23 @@ Stream Logger::DoLog(Context& context, const char* format, va_list args)
       StringPtr errorChannel = GetErrorChannel();
       if (errorChannel != nullptr)
       {
-        ID id{ errorChannel->c_str() };
-        ChannelPtr chError = GetExistingChannel(id);
+        if (ch->GetName() != *errorChannel)
+        {
+          ID id{ errorChannel->c_str() };
+          ChannelPtr chError = GetExistingChannel(id);
 
-        if (chError != nullptr)
-          chError->Display(context, buffer);
+          if (chError != nullptr)
+          {
+            context.Ovr.Add.DisableLink = true;
+            chError->Display(context, buffer);
+          }
+        }
       }
     }
 
     if (context.Output)
       *context.Output = buffer;
   }
+
   return Stream(shared_from_this(), context);
 }

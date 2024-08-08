@@ -11,6 +11,7 @@ Compact cross-platform logging framework for C &amp; C++. Implements the concept
 5. [Output flags](#output-flags)
 6. [Thread Channel](#thread-channel)
 7. [Integration with AllStat](#integration-with-allstat)
+8. [Channel for collecting errors](#channel-for-collecting-errors)
 
 ## Introduction <a name="introduction"></a>
 It would seem that what could be simpler than logging? And indeed, for small projects it is enough to have code that, for example, uses **printf** to output messages to the console, or writes messages to a file using **fprintf**. But this is not enough in large projects. These projects are usually cross-platform, have many subsystems, and require high performance from the logging system.
@@ -302,3 +303,7 @@ int main(int argc, char* argv[])
 Running this code will print the following error message:
 ![example screen](./doc/error1.png)
 
+## Channel for collecting errors
+The library has the ability to collect errors in one of the channels. If such a channel is specified by calling the **SetErrorChannel** method, then if a message is written to any other channel and it has the **Error** or **CriticalError** level, it will also be duplicated in this channel. 
+
+This can be convenient, for example, if the channel for collecting errors is configured to output to the console, and the other channels write to log files. Then, when duplicating an error to the console, you can visually track the fact that some errors are occurring

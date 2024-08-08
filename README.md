@@ -56,7 +56,26 @@ Channels can be created, deleted, enabled, the filtering level can be changed, a
 ## Compatibility & Build
 The library uses the C++ 20 standard and can be built for **Windows**, **Linux** and **MacOS**. **CMake** is used for building. For **Windows**, there are also .sln files for **Visual Studio 2022**
 
-The library does not use additional libraries. There is an optional ability to use the allstat library to print extended error information. The **gtest** library is used to build tests
+The library does not use additional libraries. There is an optional ability to use the allstat library to print extended error information. The **gtest** library is used to build tests.
+
+The library can be built both as static and shared library. Your project should define **\_LOGME_STATIC_BUILD_** if static version of library is used.
+
+You can use cmake/Findlogme.cmake in your project to add logme to your CMake project. For example, if logme is clonned to Module subdirectory of your project you can use following block of code to add logme
+
+```cmake
+set(ENABLE_LOGME ON)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/Modules/logme/cmake)
+find_package(logme MODULE)
+# Now you can use LOGME_LIBRARIES and LOGME_INCLUDE_DIR macros  
+```
+
+You can use following commands to build the library using **CMake**
+```shell
+git clone https://github.com/efmsoft/logme.git
+cd logme
+cmake .
+make
+```
 
 ## Logging macros
 

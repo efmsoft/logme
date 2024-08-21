@@ -31,6 +31,7 @@ namespace Logme
   private:
     bool Append;
     size_t MaxSize;
+    size_t QueueSizeLimit;
     std::string Name;
 
     volatile bool DataReady;
@@ -48,6 +49,7 @@ namespace Logme
     std::condition_variable Shutdown;
 
     static size_t MaxSizeDefault;
+    static size_t QueueSizeLimitDefault;
   
   public:
     enum 
@@ -67,6 +69,7 @@ namespace Logme
 
     LOGMELNK void SetAppend(bool append);
     LOGMELNK void SetMaxSize(size_t size);
+    LOGMELNK void SetQueueLimit(size_t size);
 
     LOGMELNK bool CreateLog(const char* name);
     LOGMELNK void CloseLog();
@@ -79,6 +82,9 @@ namespace Logme
 
     LOGMELNK static size_t GetMaxSizeDefault();
     LOGMELNK static void SetMaxSizeDefault(size_t size);
+
+    LOGMELNK static size_t GetQueueSizeLimitDefault();
+    LOGMELNK static void SetQueueSizeLimitDefault(size_t size);
 
   private:
     class FileManagerFactory& GetFactory() const;

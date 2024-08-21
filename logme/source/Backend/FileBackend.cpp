@@ -32,11 +32,13 @@ using namespace std::chrono_literals;
 using namespace Logme;
 
 size_t FileBackend::MaxSizeDefault = FileBackend::MAX_SIZE_DEFAULT;
+size_t FileBackend::QueueSizeLimitDefault = FileBackend::QUEUE_SIZE_LIMIT;
 
 FileBackend::FileBackend(ChannelPtr owner)
   : Backend(owner, TYPE_ID)
   , Append(true)
   , MaxSize(MaxSizeDefault)
+  , QueueSizeLimit(QueueSizeLimitDefault)
   , DataReady(false)
   , Flush(false)
   , ShutdownFlag(false)
@@ -69,6 +71,19 @@ void FileBackend::SetMaxSizeDefault(size_t size)
 size_t FileBackend::GetMaxSizeDefault()
 {
   return MaxSizeDefault;
+}
+
+size_t FileBackend::GetQueueSizeLimitDefault()
+{
+  return QueueSizeLimitDefault;
+}
+
+void FileBackend::SetQueueSizeLimitDefault(size_t size)
+{
+  if (size < 4ULL * 1024)
+    size = 4ULL * 1024;
+
+  QueueSizeLimitDefault = size;
 }
 
 BackendConfigPtr FileBackend::CreateConfig()
@@ -104,6 +119,12 @@ void FileBackend::SetMaxSize(size_t size)
 {
   assert(size > 1024);
   MaxSize = size;
+}
+
+void FileBackend::SetQueueLimit(size_t size)
+{
+  assert(size > 1024);
+  QueueSizeLimit = size;
 }
 
 void FileBackend::SetAppend(bool append)
@@ -274,7 +295,7 @@ void FileBackend::AppendOutputData(const CharBuffer& append)
     }
   }
 
-  if (queued >= QUEUE_SIZE_LIMIT)
+  if (queued >= QueueSizeLimit)
     RequestFlush();                         // Speed up data processing
 }
 
@@ -319,7 +340,7 @@ void FileBackend::WriteData()
 
   if (OutBuffer.size() == 0)
   {
-    if (data.capacity() < QUEUE_SIZE_LIMIT)
+    if (data.capacity() < QueueSizeLimit)
     {
       data.resize(0);
       size.resize(0);

@@ -110,7 +110,7 @@ Each channel has a unique name. The case of the name is important when defining 
 
 struct Test
 {
-  SafeID CH;
+  Logme::SafeID CH;
 
   Test(cont std::string& name)
     : CH(name.c_str())

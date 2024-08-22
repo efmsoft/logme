@@ -101,6 +101,38 @@ ovr.Remove.Method = false;
 LogmeC(ch, ovr, "something went wrong");
 ```
 
+## Channel name
+
+Each channel has a unique name. The case of the name is important when defining the channel name. The channel name is passed to the macros for output to the log and to the methods of the **Logger** class as the **Logme::ID** structure. This structure can be used if the name string is a static string. If the name is constructed in dynamically allocated memory, then the **Logme::SafeID** class can be used. The example below shows examples of using both data types.
+
+```cpp
+#include <Logme/Logme.h>
+
+struct Test
+{
+  SafeID CH;
+
+  Test(cont std::string& name)
+    : CH(name.c_str())
+  {
+  }
+
+  void Print()
+  {
+    LogmeI(CH, "that's also possible");
+  }
+};
+...
+Logme::ID ch1{"test"};
+LogmeD(ch1) << "something" << 123;
+
+std::string name("abc");
+name += "def";
+...
+std::shared_ptr<Test> p = std::make_shared<Test>(name);
+p->Print();
+```
+
 ## Default configuration
 
 As mentioned above, to start using the library you only need to add inclusion of **Logme/Logme.h**. You can log messages right after that. This uses the default configuration, which creates a default channel (the variable for it is defined as global and is always available as ::CH). Backends are added to the default channel depending on whether it is a debug or release build. In both cases, a backend is added for output to the console. In the case of a debug build for **Windows**, a backend is also added for outputting messages to the **Output window** of the debugger.

@@ -67,7 +67,7 @@ namespace Logme
     LOGMELNK bool LoadConfigurationFile(const std::string& config_file, const std::string& section = std::string());
     LOGMELNK bool LoadConfiguration(const std::string& config_data, const std::string& section = std::string());
 
-    LOGMELNK virtual Stream DoLog(Context& context, const char* format, va_list args);
+    LOGMELNK virtual void DoLog(Context& context, const char* format, va_list args);
 
     LOGMELNK Stream Log(const Context& context);
 
@@ -75,11 +75,11 @@ namespace Logme
     LOGMELNK Stream Log(const Context& context, const ID& id);
     LOGMELNK Stream Log(const Context& context, const ID& id, const Override& ovr);
 
-    LOGMELNK Stream Log(const Context& context, const ID& id, const char* format, ...);
-    LOGMELNK Stream Log(const Context& context, const Override& ovr, const char* format, ...);
-    LOGMELNK Stream Log(const Context& context, const ID& id, const Override& ovr, const char* format, ...);
+    LOGMELNK void Log(const Context& context, const ID& id, const char* format, ...);
+    LOGMELNK void Log(const Context& context, const Override& ovr, const char* format, ...);
+    LOGMELNK void Log(const Context& context, const ID& id, const Override& ovr, const char* format, ...);
 
-    LOGMELNK Stream Log(const Context& context, const char* format, ...);
+    LOGMELNK void Log(const Context& context, const char* format, ...);
 
     LOGMELNK ChannelPtr GetChannel(const ID& id);
     LOGMELNK ChannelPtr GetExistingChannel(const ID& id);

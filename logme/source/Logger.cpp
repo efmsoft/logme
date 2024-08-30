@@ -290,7 +290,12 @@ Stream Logger::Log(const Context& context, const Override& ovr)
   return Stream(shared_from_this(), context);
 }
 
-Stream Logger::Log(const Context& context, const ID& id, const char* format, ...)
+void Logger::Log(
+  const Context& context
+  , const ID& id
+  , const char* format
+  , ...
+)
 {
   Context& context2 = *(Context*)&context;
   context2.Channel = &id;
@@ -301,11 +306,9 @@ Stream Logger::Log(const Context& context, const ID& id, const char* format, ...
   DoLog(context2, format, args);
 
   va_end(args);
-
-  return Stream(shared_from_this(), context);
 }
 
-Stream Logger::Log(
+void Logger::Log(
   const Context& context
   , const ID& id
   , const Override& ovr
@@ -323,11 +326,9 @@ Stream Logger::Log(
   DoLog(context2, format, args);
 
   va_end(args);
-
-  return Stream(shared_from_this(), context);
 }
 
-Stream Logger::Log(
+void Logger::Log(
   const Context& context
   , const Override& ovr
   , const char* format
@@ -344,11 +345,9 @@ Stream Logger::Log(
   DoLog(context2, format, args);
 
   va_end(args);
-
-  return Stream(shared_from_this(), context);
 }
 
-Stream Logger::Log(const Context& context, const char* format, ...)
+void Logger::Log(const Context& context, const char* format, ...)
 {
   Context& context2 = *(Context*)&context;
   ApplyThreadChannel(context2);
@@ -359,16 +358,14 @@ Stream Logger::Log(const Context& context, const char* format, ...)
   DoLog(context2, format, args);
 
   va_end(args);
-
-  return Stream(shared_from_this(), context);
 }
 
-Stream Logger::DoLog(Context& context, const char* format, va_list args)
+void Logger::DoLog(Context& context, const char* format, va_list args)
 {
   ChannelPtr ch = GetChannel(*context.Channel);
   
   if (ch == nullptr)
-    return Stream(shared_from_this(), context);
+    return;
 
   if (format)
   {
@@ -407,6 +404,4 @@ Stream Logger::DoLog(Context& context, const char* format, va_list args)
     if (context.Output)
       *context.Output = buffer;
   }
-
-  return Stream(shared_from_this(), context);
 }

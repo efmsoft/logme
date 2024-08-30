@@ -100,7 +100,6 @@ void Context::CreateTZD(char* tzd)
 
 void Context::InitTimestamp(TimeFormat tf)
 {
-  DateTime stamp;
   auto n = GetTimeInMillisec();
 
   switch (tf)
@@ -111,18 +110,34 @@ void Context::InitTimestamp(TimeFormat tf)
     static std::mutex Lock;
     static DateTime LastStamp{};
     static unsigned int LastStampTicks = 0;
+    static char timestamp[TIMESTAMP_BUFFER_SIZE]{};
 
     std::lock_guard lock(Lock);
 
-    if (n == LastStampTicks)
-      stamp = LastStamp;
-    else
+    if (n != LastStampTicks)
     {
-      stamp = DateTime::Now();
+      DateTime stamp = DateTime::Now();
 
       LastStamp = stamp;
       LastStampTicks = n;
+
+      snprintf(
+        timestamp
+        , size_t(TIMESTAMP_BUFFER_SIZE) - 1
+        , "%04i-%02i-%02i %02i:%02i:%02i:%03i "
+        , stamp.GetYear()
+        , stamp.GetMonth()
+        , stamp.GetDay()
+        , stamp.GetHour()
+        , stamp.GetMinute()
+        , stamp.GetSecond()
+        , stamp.GetMillisecond()
+      );
+
+      timestamp[TIMESTAMP_BUFFER_SIZE - 1] = '\0';
     }
+
+    memcpy(Timestamp, timestamp, TIMESTAMP_BUFFER_SIZE);
     break;
   }
 
@@ -131,39 +146,40 @@ void Context::InitTimestamp(TimeFormat tf)
     static std::mutex Lock;
     static DateTime LastStamp;
     static unsigned int LastStampTicks{};
+    static char timestamp[TIMESTAMP_BUFFER_SIZE]{};
 
     std::lock_guard lock(Lock);
 
-    if (n == LastStampTicks)
-      stamp = LastStamp;
-    else
+    if (n != LastStampTicks)
     {
-      stamp = DateTime::NowUtc();
+      DateTime stamp = DateTime::NowUtc();
 
       LastStamp = stamp;
       LastStampTicks = n;
+
+      snprintf(
+        timestamp
+        , size_t(TIMESTAMP_BUFFER_SIZE) - 1
+        , "%04i-%02i-%02i %02i:%02i:%02i:%03i "
+        , stamp.GetYear()
+        , stamp.GetMonth()
+        , stamp.GetDay()
+        , stamp.GetHour()
+        , stamp.GetMinute()
+        , stamp.GetSecond()
+        , stamp.GetMillisecond()
+      );
+
+      timestamp[TIMESTAMP_BUFFER_SIZE - 1] = '\0';
     }
+
+    memcpy(Timestamp, timestamp, TIMESTAMP_BUFFER_SIZE);
     break;
   }
 
   default:
     assert(!"unexpected TimeFormat");
   }
-
-  snprintf(
-    Timestamp
-    , size_t(TIMESTAMP_BUFFER_SIZE) - 1
-    , "%04i-%02i-%02i %02i:%02i:%02i:%03i "
-    , stamp.GetYear()
-    , stamp.GetMonth()
-    , stamp.GetDay()
-    , stamp.GetHour()
-    , stamp.GetMinute()
-    , stamp.GetSecond()
-    , stamp.GetMillisecond()
-  );
-
-  Timestamp[TIMESTAMP_BUFFER_SIZE - 1] = '\0';
 
   if (tf == TimeFormat::TIME_FORMAT_TZ)
   {

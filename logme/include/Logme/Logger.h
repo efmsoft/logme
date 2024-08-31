@@ -1,5 +1,6 @@
 #pragma once
 
+#include <format>
 #include <functional>
 #include <map>
 #include <memory>
@@ -17,6 +18,8 @@ namespace Logme
   typedef std::shared_ptr<std::string> StringPtr;
   typedef std::function<bool(const std::string&, std::string&)> TControlHandler;
   typedef bool (*TCondition)();
+
+  struct StdFormat{};
 
   class Logger : public std::enable_shared_from_this<Logger>
   {
@@ -80,6 +83,13 @@ namespace Logme
     LOGMELNK void Log(const Context& context, const ID& id, const Override& ovr, const char* format, ...);
 
     LOGMELNK void Log(const Context& context, const char* format, ...);
+    
+    template<typename... Args>
+    void Log(const Context& context, const StdFormat*, const char* fmt, Args&&... args)
+    {
+      std::string out = std::vformat(fmt, std::make_format_args(args...));
+      Log(context, "%s", out.c_str());
+    }
 
     LOGMELNK ChannelPtr GetChannel(const ID& id);
     LOGMELNK ChannelPtr GetExistingChannel(const ID& id);
@@ -133,5 +143,10 @@ namespace Logme
 
   typedef std::shared_ptr<Logger> LoggerPtr;
   LOGMELNK extern LoggerPtr Instance;
+
+  inline StdFormat* GetStdFormat()
+  {
+    return nullptr;
+  }
 }
 

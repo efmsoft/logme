@@ -160,6 +160,11 @@ const char* CppOutput()
   return ret;
 }
 
+void FormattedOutput()
+{
+  fLogmeI("Some {} string. Integer: {}", "format", 123);
+}
+
 int main()
 {
   OutputToDefaultChannel();
@@ -175,6 +180,7 @@ int main()
 
   ProcReturningEnumValue();
   CppOutput();
+  FormattedOutput();
 
   return 0;
 }

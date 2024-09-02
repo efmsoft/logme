@@ -67,13 +67,13 @@ namespace Logme
       ID None;
       const ID& Channel;
       
-      Params() 
+      Params(...) 
         : None{0}
         , Channel(None)
       {
       }
 
-      Params(const ID& ch)
+      Params(const ID& ch, ...)
         : None{0}
         , Channel(ch)
       {

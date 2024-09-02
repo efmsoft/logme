@@ -260,7 +260,7 @@ Stream Logger::Log(const Context& context)
   Context& context2 = *(Context*)&context;
   ApplyThreadChannel(context2);
 
-  return Stream(shared_from_this(), context);
+  return Stream(shared_from_this(), context2);
 }
 
 Stream Logger::Log(const Context& context, const ID& id)
@@ -268,7 +268,7 @@ Stream Logger::Log(const Context& context, const ID& id)
   Context& context2 = *(Context *)&context;
   context2.Channel = &id;
 
-  return Stream(shared_from_this(), context);
+  return Stream(shared_from_this(), context2);
 }
 
 Stream Logger::Log(const Context& context, const ID& id, const Override& ovr)
@@ -277,7 +277,7 @@ Stream Logger::Log(const Context& context, const ID& id, const Override& ovr)
   context2.Channel = &id;
   context2.Ovr = ovr;
 
-  return Stream(shared_from_this(), context);
+  return Stream(shared_from_this(), context2);
 }
 
 Stream Logger::Log(const Context& context, const Override& ovr)
@@ -287,7 +287,7 @@ Stream Logger::Log(const Context& context, const Override& ovr)
 
   ApplyThreadChannel(context2);
 
-  return Stream(shared_from_this(), context);
+  return Stream(shared_from_this(), context2);
 }
 
 void Logger::Log(

@@ -20,5 +20,12 @@ Stream::~Stream()
   const std::string& data = str();
 
   if (data.length())
-    Destination->Log(OutputContext, "%s", data.c_str());
+  {
+    if (OutputContext.Channel)
+    {
+      Destination->Log(OutputContext, *OutputContext.Channel, "%s", data.c_str());
+    }
+    else
+      Destination->Log(OutputContext, "%s", data.c_str());
+  }
 }

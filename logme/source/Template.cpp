@@ -87,10 +87,15 @@ std::string Logme::ProcessTemplate(
   , uint32_t* notProcessed
 )
 {
-  const char* pPid = "{pid}";
-  const char* pPName = "{pname}";
-  const char* pDate = "{date}";
-  const char* pTarget = "{target}";
+  constexpr const char* pPid = "{pid}";
+  constexpr const char* pPName = "{pname}";
+  constexpr const char* pDate = "{date}";
+  constexpr const char* pTarget = "{target}";
+
+  static const size_t pidl = strlen(pPid);
+  static const size_t pnamel = strlen(pPName);
+  static const size_t pdatel = strlen(pDate);
+  static const size_t ptargetl = strlen(pTarget);
 
   bool ftemplate = false;
   const char* tstr = p;
@@ -109,19 +114,30 @@ std::string Logme::ProcessTemplate(
         p += 2;                             // {%
 
         std::string var(p, e - p);
-        std::string v = EnvGetVar(var.c_str());
-        name += v;
+        if (var.find('%') != std::string::npos)
+        {
+          name += "{%";
+          name += var;
+          name += "}";
+        }
+        else
+        {
+          std::string v = EnvGetVar(var.c_str());
 
+          if (v.empty())
+            ftemplate = true;
+          
+          name += v;
+        }
+          
         p = e + 1;                          // next char after }
-        ftemplate = true;
         continue;
       }
-      else
-      if (strstr(p, pPid) == p)
+      else if (strncmp(p, pPid, pidl) == 0)
       {
         if (param.Flags & TEMPLATE_PID)
         {
-          p += strlen(pPid);
+          p += pidl;
           name += dword2str(GetCurrentProcessId());
           continue;
         }
@@ -131,12 +147,11 @@ std::string Logme::ProcessTemplate(
 
         ftemplate = true;
       }
-
-      if (strstr(p, pPName) == p)
+      else if (strncmp(p, pPName, pnamel) == 0)
       {
         if (param.Flags & TEMPLATE_PNAME)
         {
-          p += strlen(pPName);
+          p += pnamel;
 
           std::string exe = GetExeName();
           name += exe.substr(0, exe.find_last_of('.'));
@@ -148,12 +163,11 @@ std::string Logme::ProcessTemplate(
       
         ftemplate = true;
       }
-
-      if (strstr(p, pDate) == p)
+      else if (strncmp(p, pDate, pdatel) == 0)
       {
         if (param.Flags & TEMPLATE_PDATE)
         {
-          p += strlen(pDate);
+          p += pdatel;
 
           const time_t now = time(0);
 #ifdef _WIN32
@@ -169,18 +183,17 @@ std::string Logme::ProcessTemplate(
           name += buffer;
           continue;
         }
-
-        if (notProcessed)
+        else if (notProcessed)
           *notProcessed |= TEMPLATE_PDATE;
         
         ftemplate = true;
       }
-
-      if (strstr(p, pTarget) == p)
+      else if (strncmp(p, pTarget, ptargetl) == 0)
       {
         if (param.Flags & TEMPLATE_TARGET)
         {
-          p += strlen(pTarget);
+          p += ptargetl;
+
           if (!param.TargetChannel)
             name += "0";
           else

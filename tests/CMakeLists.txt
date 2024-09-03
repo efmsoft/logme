@@ -22,8 +22,9 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 set(gtest_disable_pthreads OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-add_subdirectory(OutputFlags)
+add_subdirectory(ChannelRedirect)
 add_subdirectory(LevelFilter)
+add_subdirectory(OutputFlags)
 
 set_target_properties(gmock PROPERTIES FOLDER "Tests/gtest")
 set_target_properties(gmock_main PROPERTIES FOLDER "Tests/gtest")

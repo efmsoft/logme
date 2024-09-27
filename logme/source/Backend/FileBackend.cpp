@@ -53,9 +53,12 @@ FileBackend::FileBackend(ChannelPtr owner)
 FileBackend::~FileBackend()
 {
   ShutdownFlag = true;
-  RequestFlush();
 
-  WaitForShutdown();
+  if (ShutdownCalled == false)
+  {
+    RequestFlush();
+    WaitForShutdown();
+  }
 
   if (Owner)
     GetFactory().Remove(this);
@@ -89,6 +92,18 @@ void FileBackend::SetQueueSizeLimitDefault(size_t size)
 BackendConfigPtr FileBackend::CreateConfig()
 {
   return std::make_shared<FileBackendConfig>();
+}
+
+void FileBackend::Freeze()
+{
+  ShutdownFlag = true;
+
+  Backend::Freeze();
+}
+
+bool FileBackend::IsIdle() const
+{
+  return DataReady == false;
 }
 
 bool FileBackend::ApplyConfig(BackendConfigPtr c)

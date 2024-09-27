@@ -65,6 +65,8 @@ void Logger::DeleteAllChannels()
   if (Default)
     Default->RemoveBackends();
 
+  DoAutodelete(true);
+
   for (auto& c : Channels)
   {
     c.second->RemoveLink();
@@ -175,6 +177,52 @@ ChannelPtr Logger::GetChannel(const ID& id)
 
   Guard guard(DataLock);
   return CreateChannelInternal(id, OutputFlags());
+}
+
+void Logger::DoAutodelete(bool force)
+{
+  ChannelPtr ch;
+  for (bool cont = true; cont;)
+  {
+    cont = false;
+
+    if (ch)
+    {
+      ch->RemoveBackends();
+      ch->RemoveLink();
+      
+      ch.reset();
+    }
+
+    Guard guard(DataLock);
+    for (auto it = ToDelete.begin(); it != ToDelete.end(); ++it)
+    {
+      auto& p = *it;
+      if (force || p->IsIdle())
+      {
+        ch = p;
+        ToDelete.erase(it);
+
+        cont = true;
+        break;
+      }
+    }
+  }
+}
+
+void Logger::Autodelete(const ID& id)
+{
+  Guard guard(DataLock);
+
+  auto it = Channels.find(id.Name);
+  if (it != Channels.end())
+  {
+    ChannelPtr ch = it->second;
+    Channels.erase(it);
+
+    ch->Freeze();
+    ToDelete.push_back(ch);
+  }
 }
 
 void Logger::DeleteChannel(const ID& id)
@@ -362,6 +410,8 @@ void Logger::Log(const Context& context, const char* format, ...)
 
 void Logger::DoLog(Context& context, const char* format, va_list args)
 {
+  DoAutodelete(false);
+
   ChannelPtr ch = GetChannel(*context.Channel);
   
   if (ch == nullptr)

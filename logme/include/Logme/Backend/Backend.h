@@ -37,6 +37,7 @@ namespace Logme
   {
     ChannelPtr Owner;
     const char* Type;
+    bool Freezed;
 
   public:
     LOGMELNK Backend(ChannelPtr owner, const char* type);
@@ -45,6 +46,8 @@ namespace Logme
     LOGMELNK virtual void Display(Context& context, const char* line) = 0;
     LOGMELNK virtual BackendConfigPtr CreateConfig();
     LOGMELNK virtual bool ApplyConfig(BackendConfigPtr c);
+    LOGMELNK virtual bool IsIdle() const;
+    LOGMELNK virtual void Freeze();
 
     LOGMELNK const char* GetType() const;
 

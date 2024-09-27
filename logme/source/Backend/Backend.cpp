@@ -12,6 +12,7 @@ using namespace Logme;
 Backend::Backend(ChannelPtr owner, const char* type)
   : Owner(owner)
   , Type(type)
+  , Freezed(false)
 {
 }
 
@@ -22,6 +23,16 @@ Backend::~Backend()
 const char* Backend::GetType() const
 {
   return Type;
+}
+
+void Backend::Freeze()
+{
+  Freezed = true;
+}
+
+bool Backend::IsIdle() const
+{
+  return true;
 }
 
 BackendConfigPtr Backend::CreateConfig()

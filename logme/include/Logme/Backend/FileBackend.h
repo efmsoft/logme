@@ -79,6 +79,8 @@ namespace Logme
 
     LOGMELNK BackendConfigPtr CreateConfig() override;
     LOGMELNK bool ApplyConfig(BackendConfigPtr c) override;
+    LOGMELNK bool IsIdle() const override;
+    LOGMELNK void Freeze();
 
     LOGMELNK static size_t GetMaxSizeDefault();
     LOGMELNK static void SetMaxSizeDefault(size_t size);

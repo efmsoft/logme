@@ -80,6 +80,9 @@ namespace Logme
     LOGMELNK bool IsLinked() const;
 
     LOGMELNK const ID GetID() const;
+    
+    LOGMELNK void Freeze();
+    LOGMELNK bool IsIdle();
 
     LOGMELNK void ShortenerAdd(const char* what, const char* replace_on);
     LOGMELNK const char* ShortenerRun(const char* value, ShortenerContext& context);

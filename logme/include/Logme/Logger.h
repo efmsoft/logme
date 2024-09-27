@@ -26,6 +26,7 @@ namespace Logme
     std::mutex DataLock;
 
     ChannelMap Channels;
+    ChannelArray ToDelete;
     ChannelPtr Default;
     std::string HomeDirectory;
 
@@ -123,6 +124,7 @@ namespace Logme
       , Level level = DEFAULT_LEVEL
     );
     LOGMELNK void DeleteChannel(const ID& id);
+    LOGMELNK void Autodelete(const ID& id);
     LOGMELNK void CreateDefaultChannelLayout(bool delete_all = true);
 
     LOGMELNK const std::string& GetHomeDirectory() const;
@@ -155,6 +157,8 @@ namespace Logme
 
     void ControlListener();
     void ControlHandler(int socket);
+
+    void DoAutodelete(bool force);
 
   public:
     static bool CommandList(StringArray& arr, std::string& response);

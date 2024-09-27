@@ -88,7 +88,42 @@ void Channel::Display(Context& context, const char* line)
   for (auto it = Backends.begin(); it != Backends.end(); ++it)
   {
     auto& p = *it;
-    p->Display(context, line);
+
+    if (p->Freezed == false)
+      p->Display(context, line);
+  }
+
+  DataLock.unlock();
+}
+
+bool Channel::IsIdle()
+{
+  bool idle = true;
+  DataLock.lock();
+
+  for (auto it = Backends.begin(); it != Backends.end(); ++it)
+  {
+    auto& p = *it;
+    if (p->IsIdle() == false)
+    {
+      idle = false;
+      break;
+    }
+  }
+
+  DataLock.unlock();
+  return idle;
+}
+
+void Channel::Freeze()
+{
+  DataLock.lock();
+
+  for (auto it = Backends.begin(); it != Backends.end(); ++it)
+  {
+    auto& p = *it;
+    
+    p->Freeze();
   }
 
   DataLock.unlock();

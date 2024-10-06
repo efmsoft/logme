@@ -2,6 +2,7 @@
 #include <Logme/Backend/ConsoleBackend.h>
 #include <Logme/Backend/DebugBackend.h>
 #include <Logme/File/exe_path.h>
+#include <Logme/Time/datetime.h>
 #include <Logme/Utils.h>
 
 #include "StringHelpers.h"
@@ -19,8 +20,9 @@ LoggerPtr Logme::Instance = std::make_shared<Logger>();
 
 Logger::Logger()
   : IDGenerator(1)
-  , NumDeleting(0)
   , ControlSocket(-1)
+  , LastDoAutodelete(0)
+  , NumDeleting(0)
   , Condition(&Logger::DefaultCondition)
 {
   CreateDefaultChannelLayout();
@@ -184,6 +186,14 @@ void Logger::DoAutodelete(bool force)
 {
   if (NumDeleting == 0 && force == false)
     return;
+
+  static const unsigned periodicity = 100;
+  
+  auto n = GetTimeInMillisec();
+  if (n - LastDoAutodelete < periodicity)
+    return;
+
+  LastDoAutodelete = GetTimeInMillisec();
 
   ChannelPtr ch;
   for (bool cont = true; cont;)

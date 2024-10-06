@@ -26,12 +26,10 @@ namespace Logme
     std::mutex DataLock;
 
     ChannelMap Channels;
-    ChannelArray ToDelete;
     ChannelPtr Default;
     std::string HomeDirectory;
 
     int IDGenerator;
-    int NumDeleting;
 
     std::map<uint64_t, ID> ThreadChannel;
     FileManagerFactory Factory;
@@ -44,6 +42,10 @@ namespace Logme
     
     typedef std::shared_ptr<std::thread> ThreadPtr;
     ThreadPtr ListenerThread;
+
+    ChannelArray ToDelete;
+    unsigned LastDoAutodelete;
+    int NumDeleting;
 
     struct ControlThread
     {

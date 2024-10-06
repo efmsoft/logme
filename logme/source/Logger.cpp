@@ -19,6 +19,7 @@ LoggerPtr Logme::Instance = std::make_shared<Logger>();
 
 Logger::Logger()
   : IDGenerator(1)
+  , NumDeleting(0)
   , ControlSocket(-1)
   , Condition(&Logger::DefaultCondition)
 {
@@ -181,6 +182,9 @@ ChannelPtr Logger::GetChannel(const ID& id)
 
 void Logger::DoAutodelete(bool force)
 {
+  if (NumDeleting == 0 && force == false)
+    return;
+
   ChannelPtr ch;
   for (bool cont = true; cont;)
   {
@@ -202,6 +206,7 @@ void Logger::DoAutodelete(bool force)
       {
         ch = p;
         ToDelete.erase(it);
+        NumDeleting--;
 
         cont = true;
         break;
@@ -222,6 +227,7 @@ void Logger::Autodelete(const ID& id)
 
     ch->Freeze();
     ToDelete.push_back(ch);
+    NumDeleting++;
   }
 }
 
@@ -319,10 +325,27 @@ Stream Logger::Log(const Context& context, const ID& id)
   return Stream(shared_from_this(), context2);
 }
 
+Stream Logger::Log(const Context& context, ChannelPtr ch)
+{
+  Context& context2 = *(Context*)&context;
+  context2.Ch = ch;
+
+  return Stream(shared_from_this(), context2);
+}
+
 Stream Logger::Log(const Context& context, const ID& id, const Override& ovr)
 {
   Context& context2 = *(Context*)&context;
   context2.Channel = &id;
+  context2.Ovr = ovr;
+
+  return Stream(shared_from_this(), context2);
+}
+
+Stream Logger::Log(const Context& context, ChannelPtr ch, const Override& ovr)
+{
+  Context& context2 = *(Context*)&context;
+  context2.Ch = ch;
   context2.Ovr = ovr;
 
   return Stream(shared_from_this(), context2);
@@ -358,6 +381,24 @@ void Logger::Log(
 
 void Logger::Log(
   const Context& context
+  , ChannelPtr ch
+  , const char* format
+  , ...
+)
+{
+  Context& context2 = *(Context*)&context;
+  context2.Ch = ch;
+
+  va_list args;
+  va_start(args, format);
+
+  DoLog(context2, format, args);
+
+  va_end(args);
+}
+
+void Logger::Log(
+  const Context& context
   , const ID& id
   , const Override& ovr
   , const char* format
@@ -366,6 +407,26 @@ void Logger::Log(
 {
   Context& context2 = *(Context*)&context;
   context2.Channel = &id;
+  context2.Ovr = ovr;
+
+  va_list args;
+  va_start(args, format);
+
+  DoLog(context2, format, args);
+
+  va_end(args);
+}
+
+void Logger::Log(
+  const Context& context
+  , ChannelPtr ch
+  , const Override& ovr
+  , const char* format
+  , ...
+)
+{
+  Context& context2 = *(Context*)&context;
+  context2.Ch = ch;
   context2.Ovr = ovr;
 
   va_list args;
@@ -412,10 +473,19 @@ void Logger::DoLog(Context& context, const char* format, va_list args)
 {
   DoAutodelete(false);
 
-  ChannelPtr ch = GetChannel(*context.Channel);
-  
+  ChannelPtr ch = context.Ch ? context.Ch : GetChannel(*context.Channel);  
   if (ch == nullptr)
     return;
+
+  if (context.ErrorLevel < ch->GetFilterLevel() && !ch->IsLinked())
+  {
+    if (context.ErrorLevel < Level::LEVEL_ERROR)
+      return;
+
+    StringPtr errorChannel = GetErrorChannel();
+    if (errorChannel == nullptr || ch->GetName() == *errorChannel)
+      return;
+  }
 
   if (format)
   {

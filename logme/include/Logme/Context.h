@@ -42,6 +42,7 @@ namespace Logme
     const char* Method;
     Module File;
     int Line;
+    ChannelPtr Ch;
 
     PfnAppend AppendProc;
     void* AppendContext;

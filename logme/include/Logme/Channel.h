@@ -40,6 +40,7 @@ namespace Logme
     uint64_t AccessCount;
 
     IDPtr Link;
+    ChannelPtr LinkTo;
 
     std::map<std::string, std::string> ShortenerMap;
 
@@ -76,6 +77,7 @@ namespace Logme
     LOGMELNK uint64_t GetAccessCount() const;
 
     LOGMELNK void AddLink(const ID& to);
+    LOGMELNK void AddLink(ChannelPtr to);
     LOGMELNK void RemoveLink();
     LOGMELNK bool IsLinked() const;
 

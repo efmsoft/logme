@@ -45,15 +45,24 @@ void Channel::AddLink(const ID& to)
   Link.swap(p);
 }
 
+void Channel::AddLink(ChannelPtr to)
+{
+  Guard guard(DataLock);
+
+  LinkTo = to;
+}
+
 void Channel::RemoveLink()
 {
   Guard guard(DataLock);
+
   Link.reset();
+  LinkTo.reset();
 }
 
 bool Channel::IsLinked() const
 {
-  return Link != nullptr;
+  return Link != nullptr || LinkTo != nullptr;
 }
 
 void Channel::Display(Context& context, const char* line)
@@ -71,13 +80,13 @@ void Channel::Display(Context& context, const char* line)
   flags.Value |= context.Ovr.Add.Value;
   flags.Value &= ~context.Ovr.Remove.Value;
 
-  if (Link && !flags.DisableLink)
+  if ((Link || LinkTo) && !flags.DisableLink)
   {
     IDPtr link = Link;
     DataLock.unlock();
 
     // Owner->GetChannel /  ch->Display have to be called w/o acquired lock!!
-    ChannelPtr ch = Owner->GetChannel(*link);
+    ChannelPtr ch = LinkTo ? LinkTo : Owner->GetChannel(*link);
 
     if (ch)
       ch->Display(context, line);

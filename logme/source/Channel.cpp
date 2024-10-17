@@ -65,6 +65,12 @@ bool Channel::IsLinked() const
   return Link != nullptr || LinkTo != nullptr;
 }
 
+ChannelPtr Channel::GetLinkPtr()
+{
+  Guard guard(DataLock);
+  return LinkTo;
+}
+
 void Channel::Display(Context& context, const char* line)
 {
   DataLock.lock();

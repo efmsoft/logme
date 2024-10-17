@@ -80,6 +80,7 @@ namespace Logme
     LOGMELNK void AddLink(ChannelPtr to);
     LOGMELNK void RemoveLink();
     LOGMELNK bool IsLinked() const;
+    LOGMELNK ChannelPtr GetLinkPtr();
 
     LOGMELNK const ID GetID() const;
     

@@ -191,7 +191,7 @@ void Context::InitTimestamp(TimeFormat tf)
   }
 }
 
-void Context::InitThreadProcessID(OutputFlags flags)
+void Context::InitThreadProcessID(ChannelPtr ch, OutputFlags flags)
 {
   if ((flags.ProcessID || flags.ThreadID) && *ThreadProcessID == '\0')
   {
@@ -199,16 +199,33 @@ void Context::InitThreadProcessID(OutputFlags flags)
     auto thread = GetCurrentThreadId();
     static auto process = GetCurrentProcessId();
 #else
-    auto thread = pthread_self();
+    auto thread = getid();
     static auto process = getpid();
 #endif
 
-    if (flags.ProcessID && flags.ThreadID)
-      sprintf_s(ThreadProcessID, "[%X:%llX] ", process, (uint64_t)thread);
-    else if (flags.ProcessID)
-      sprintf_s(ThreadProcessID, "[%X] ", process);
-    else
-      sprintf_s(ThreadProcessID, "[:%llX] ", (uint64_t)thread);
+    char* p = ThreadProcessID;
+    *p++ = '[';
+
+    if (flags.ProcessID)
+      p += sprintf(p, "%X", process);
+
+    if (flags.ThreadID)
+    {
+      *p++ = ':';
+
+      auto name = ch->GetThreadName(thread);
+      if (name)
+      {
+        strcpy(p, name);
+        p += strlen(name);
+      }
+      else
+        p += sprintf(p, "%llX", (uint64_t)thread);
+    }
+
+    *p++ = ']';
+    *p++ = ' ';
+    *p = '\0';
   }
   else
     *ThreadProcessID = '\0';
@@ -266,7 +283,7 @@ const char* Context::Apply(ChannelPtr ch, OutputFlags flags, const char* text, i
   if (flags.ProcessID || flags.ThreadID)
   {
     if (*ThreadProcessID == '\0')
-      InitThreadProcessID(flags);
+      InitThreadProcessID(ch, flags);
 
     nID = (int)strlen(ThreadProcessID);
   }

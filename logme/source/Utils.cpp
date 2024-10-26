@@ -108,7 +108,7 @@ uint32_t Logme::GetCurrentProcessId()
 
 uint64_t Logme::GetCurrentThreadId()
 {
-  return (uint64_t)pthread_self();
+  return (uint64_t)getid();
 }   
 
 #endif

@@ -43,6 +43,7 @@ namespace Logme
     ChannelPtr LinkTo;
 
     std::map<std::string, std::string> ShortenerMap;
+    std::map<uint64_t, std::string> ThreadName;
 
   public:
     LOGMELNK Channel(
@@ -89,6 +90,9 @@ namespace Logme
 
     LOGMELNK void ShortenerAdd(const char* what, const char* replace_on);
     LOGMELNK const char* ShortenerRun(const char* value, ShortenerContext& context);
+
+    LOGMELNK void SetThreadName(uint64_t id, const char* name);
+    LOGMELNK const char* GetThreadName(uint64_t id);
   };
 
   typedef std::shared_ptr<Channel> ChannelPtr;

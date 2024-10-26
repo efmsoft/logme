@@ -291,3 +291,29 @@ const char* Channel::ShortenerRun(
 
   return value;
 }
+
+void Channel::SetThreadName(uint64_t id, const char* name)
+{
+  auto it = ThreadName.find(id);
+  if (it != ThreadName.end())
+  {
+    if (name)
+      it->second = name;
+    else
+      ThreadName.erase(it);
+  }
+  else
+  {
+    if (name)
+      ThreadName[id] = name;
+  }
+}
+
+const char* Channel::GetThreadName(uint64_t id)
+{
+  auto it = ThreadName.find(id);
+  if (it != ThreadName.end())
+    return it->second.c_str();
+
+  return nullptr;
+}

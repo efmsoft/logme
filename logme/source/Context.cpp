@@ -21,6 +21,12 @@ using namespace Logme;
 #define _stricmp strcasecmp
 #endif
 
+#ifdef _WIN32
+#  define LLX "%llX"
+#else
+#  define LLX "%lX"
+#endif
+
 Context::Context(Level level, const ID* ch)
   : ChannelStg{}
   , Channel(ch)
@@ -220,7 +226,7 @@ void Context::InitThreadProcessID(ChannelPtr ch, OutputFlags flags)
         p += strlen(name);
       }
       else
-        p += sprintf(p, "%lX", (uint64_t)thread);
+        p += sprintf(p, LLX, (uint64_t)thread);
     }
 
     *p++ = ']';

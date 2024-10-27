@@ -199,7 +199,7 @@ void Context::InitThreadProcessID(ChannelPtr ch, OutputFlags flags)
     auto thread = GetCurrentThreadId();
     static auto process = GetCurrentProcessId();
 #else
-    auto thread = getid();
+    auto thread = gettid();
     static auto process = getpid();
 #endif
 

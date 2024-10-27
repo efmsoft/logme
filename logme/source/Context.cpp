@@ -220,7 +220,7 @@ void Context::InitThreadProcessID(ChannelPtr ch, OutputFlags flags)
         p += strlen(name);
       }
       else
-        p += sprintf(p, "%llX", (uint64_t)thread);
+        p += sprintf(p, "%lX", (uint64_t)thread);
     }
 
     *p++ = ']';

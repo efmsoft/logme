@@ -499,16 +499,25 @@ void Logger::DoLog(Context& context, const char* format, va_list args)
 
   if (format)
   {
-    size_t size = std::max(16384U, (unsigned int)(strlen(format) + 512));
+    char* buffer = nullptr;
+    
+    if (strcmp(format, "%s") == 0)
+    { 
+      buffer = va_arg(args, char*);
+    }
+    else
+    {
+      size_t size = std::max(16384U, (unsigned int)(strlen(format) + 512));
 
-    char* buffer = (char*)alloca(size);
+      buffer = (char*)alloca(size);
 
-    buffer[0] = '\0';
-    buffer[size - 1] = '\0';
+      buffer[0] = '\0';
+      buffer[size - 1] = '\0';
 
-    int rc = vsnprintf(buffer + strlen(buffer), size - 1, format, args);
-    if (rc == -1)
-      strcpy_s(buffer, size - 1, "[format error]");
+      int rc = vsnprintf(buffer + strlen(buffer), size - 1, format, args);
+      if (rc == -1)
+        strcpy_s(buffer, size - 1, "[format error]");
+    }
 
     ch->Display(context, buffer);
 

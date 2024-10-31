@@ -407,7 +407,8 @@ const char* Context::Apply(ChannelPtr ch, OutputFlags flags, const char* text, i
 
   if (nMethod)
   {
-    sprintf_s(p, n - (p - buffer), "%s(): ", Method);
+    strcpy(p, Method);    
+    strcpy(p + nMethod - 4, "(): ");
     p += nMethod;
   }
 

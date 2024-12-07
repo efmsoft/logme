@@ -41,9 +41,9 @@ void Logger::StopControlServer()
 {
   ThreadPtr thread;
 
-  if (true)
+  if (ControlSocket != -1)
   {
-    std::lock_guard<std::mutex> guard(DataLock);
+    std::lock_guard guard(DataLock);
 
     if (ControlSocket != -1)
     {
@@ -72,7 +72,7 @@ bool Logger::StartControlServer(const ControlConfig& c)
   if (!c.Enable)
     return true;
 
-  std::lock_guard<std::mutex> guard(DataLock);
+  std::lock_guard guard(DataLock);
 
   ControlSocket = (int)socket(AF_INET, SOCK_STREAM, 0);
   if (ControlSocket == -1)
@@ -141,7 +141,7 @@ void Logger::ControlListener()
       ControlThread ct{};
       ct.Stopped = false;
 
-      std::lock_guard<std::mutex> guard(DataLock);
+      std::lock_guard guard(DataLock);
       ControlThreads[accept_sock] = ct;
 
       ControlThreads[accept_sock].Thread = std::make_shared<std::thread>(
@@ -152,7 +152,7 @@ void Logger::ControlListener()
     }
 
     // Remove items for closed connections
-    std::lock_guard<std::mutex> guard(DataLock);
+    std::lock_guard guard(DataLock);
     for (auto it = ControlThreads.begin(); it != ControlThreads.end();)
     {
       if (!it->second.Stopped)
@@ -174,7 +174,7 @@ void Logger::ControlListener()
   // Shutdown action connections
   if (true)
   {
-    std::lock_guard<std::mutex> guard(DataLock);
+    std::lock_guard guard(DataLock);
     for (auto& t : ControlThreads)
     {
       shutdown(t.first, SD_RECEIVE);
@@ -183,7 +183,7 @@ void Logger::ControlListener()
   }
 
   // Join connection threads
-  std::lock_guard<std::mutex> guard(DataLock);
+  std::lock_guard guard(DataLock);
   for (auto it = ControlThreads.begin(); it != ControlThreads.end();)
   {
     if (it->second.Thread->joinable())
@@ -216,7 +216,7 @@ void Logger::ControlHandler(int socket)
     }
   }
 
-  std::lock_guard<std::mutex> guard(DataLock);
+  std::lock_guard guard(DataLock);
   auto it = ControlThreads.find(socket);
   if (it != ControlThreads.end())
     it->second.Stopped = true;
@@ -224,7 +224,7 @@ void Logger::ControlHandler(int socket)
 
 void Logger::SetControlExtension(Logme::TControlHandler handler)
 {
-  std::lock_guard<std::mutex> guard(DataLock);
+  std::lock_guard guard(DataLock);
   ControlExtension = handler;
 }
 

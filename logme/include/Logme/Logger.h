@@ -23,7 +23,7 @@ namespace Logme
 
   class Logger : public std::enable_shared_from_this<Logger>
   {
-    std::mutex DataLock;
+    std::recursive_mutex DataLock;
 
     ChannelMap Channels;
     ChannelPtr Default;
@@ -66,6 +66,8 @@ namespace Logme
   public:
     LOGMELNK Logger();
     LOGMELNK virtual ~Logger();
+
+    LOGMELNK static void Shutdown();
 
     LOGMELNK void SetThreadChannel(const ID* id);
     LOGMELNK ID GetDefaultChannel();

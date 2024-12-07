@@ -63,7 +63,7 @@ namespace Logme
     int Value;
   };
 
-  typedef std::lock_guard<std::mutex> Guard;
+  #define Guard std::lock_guard
   typedef void* HANDLE;
 
   class Logger;

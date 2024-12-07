@@ -36,6 +36,15 @@ Logger::~Logger()
   DeleteAllChannels();
 }
 
+void Logger::Shutdown()
+{
+  if (Instance)
+  {
+    Instance->StopControlServer();
+    Instance->DeleteAllChannels();
+  }
+}
+
 void Logger::SetCondition(TCondition cond)
 {
   Condition = cond == nullptr ? &Logger::DefaultCondition : cond;

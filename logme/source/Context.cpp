@@ -216,7 +216,7 @@ void Context::InitThreadProcessID(ChannelPtr ch, OutputFlags flags)
     *p++ = '[';
 
     if (flags.ProcessID)
-      p += sprintf(p, "%X", process);
+      p += sprintf(p, "%lX", process);
 
     if (flags.ThreadID)
     {

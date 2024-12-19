@@ -103,7 +103,8 @@ uint64_t Logme::GetCurrentThreadId()
 
 uint32_t Logme::GetCurrentProcessId()
 {
-  return getpid();
+  static uint64_t pid = getpid();
+  return pid;
 }
 
 uint64_t Logme::GetCurrentThreadId()

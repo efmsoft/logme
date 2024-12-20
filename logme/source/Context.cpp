@@ -209,7 +209,7 @@ void Context::InitThreadProcessID(ChannelPtr ch, OutputFlags flags)
     static uint64_t pid = getpid();
 
     auto thread = tid;
-    static auto process = pid;
+    auto process = pid;
 #endif
 
     char* p = ThreadProcessID;

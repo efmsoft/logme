@@ -71,10 +71,27 @@ ChannelPtr Channel::GetLinkPtr()
   return LinkTo;
 }
 
+void Channel::SetDisplayFilter(TDisplayFilter filter)
+{
+  Guard guard(DataLock);
+  DisplayFilter = filter;
+}
+
 void Channel::Display(Context& context, const char* line)
 {
   DataLock.lock();
   AccessCount++;
+
+  if (DisplayFilter)
+  {
+    TDisplayFilter f = DisplayFilter;
+    DataLock.unlock();
+
+    if (f(context, line) == false)
+      return;
+
+    DataLock.lock();
+  }
 
   if (context.ErrorLevel < LevelFilter)
   {

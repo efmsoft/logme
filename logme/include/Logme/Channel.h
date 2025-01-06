@@ -5,6 +5,7 @@
 #include <Logme/OutputFlags.h>
 #include <Logme/Types.h>
 
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -26,6 +27,7 @@ namespace Logme
   };
 
   typedef std::vector<ChannelConfig> ChannelConfigArray;
+  typedef std::function<bool(Context&, const char*)> TDisplayFilter;
 
   class Channel
   {
@@ -45,6 +47,8 @@ namespace Logme
     std::map<std::string, std::string> ShortenerMap;
     std::map<uint64_t, std::string> ThreadName;
 
+    TDisplayFilter DisplayFilter;
+
   public:
     LOGMELNK Channel(
       Logger* owner
@@ -56,6 +60,7 @@ namespace Logme
 
     LOGMELNK bool operator==(const char* name) const;
     LOGMELNK void Display(Context& context, const char* line);
+    LOGMELNK void SetDisplayFilter(TDisplayFilter filter = TDisplayFilter());
 
     LOGMELNK const OutputFlags& GetFlags() const;
     LOGMELNK void SetFlags(const OutputFlags& flags);

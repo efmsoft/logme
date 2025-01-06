@@ -553,3 +553,14 @@ void Logger::DoLog(Context& context, const char* format, va_list args)
       *context.Output = buffer;
   }
 }
+
+void Logger::IterateChannels(const TChannelCallback& callback)
+{
+  Guard guard(DataLock);
+
+  if (Default)
+    callback("", Default);
+
+  for (const auto& [name, channel] : Channels)
+    callback(name, channel);
+}

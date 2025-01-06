@@ -18,6 +18,7 @@ namespace Logme
   typedef std::shared_ptr<std::string> StringPtr;
   typedef std::function<bool(const std::string&, std::string&)> TControlHandler;
   typedef bool (*TCondition)();
+  typedef std::function<void(const std::string&, const ChannelPtr&)> TChannelCallback;
 
   struct StdFormat{};
 
@@ -165,6 +166,8 @@ namespace Logme
 
     LOGMELNK void SetCondition(TCondition cond);
     LOGMELNK static bool DefaultCondition();
+
+    LOGMELNK void IterateChannels(const TChannelCallback& callback);
 
   protected:
     ChannelPtr CreateChannelInternal(

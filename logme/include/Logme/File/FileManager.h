@@ -7,7 +7,7 @@ namespace Logme
 {
   class FileManager
   {
-    std::mutex& ListLock;
+    std::recursive_mutex& ListLock;
     volatile bool Wake;
 
     typedef std::vector<class FileBackend*> BackendList;
@@ -17,7 +17,7 @@ namespace Logme
     volatile bool ShutdownFlag;
 
   public:
-    FileManager(std::mutex& listLock);
+    FileManager(std::recursive_mutex& listLock);
     ~FileManager();
 
     void Add(FileBackend* backend);

@@ -14,33 +14,27 @@ FileManagerFactory::~FileManagerFactory()
 
 void FileManagerFactory::Add(FileBackend* backend)
 {
-  ListLock.lock();
+  std::lock_guard guard(ListLock);
 
   if (Instance == nullptr)
     Instance = std::make_shared<FileManager>(ListLock);
 
   Instance->Add(backend);
-  ListLock.unlock();
 }
 
 void FileManagerFactory::Remove(FileBackend* backend)
 {
   std::shared_ptr<FileManager> instance;
-
-  ListLock.lock();
+  std::lock_guard guard(ListLock);
 
   if (Instance && Instance->Empty())
     Instance.swap(instance);
-
-  ListLock.unlock();
 }
 
 void FileManagerFactory::WakeUp()
 {
-  ListLock.lock();
+  std::lock_guard guard(ListLock);
 
   if (Instance)
     Instance->WakeUp();
-
-  ListLock.unlock();
 }

@@ -7,7 +7,7 @@ namespace Logme
 
   class FileManagerFactory
   {
-    std::mutex ListLock;
+    std::recursive_mutex ListLock;
     std::shared_ptr<FileManager> Instance;
 
   public:

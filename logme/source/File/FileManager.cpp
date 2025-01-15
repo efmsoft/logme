@@ -7,7 +7,7 @@
 
 using namespace Logme;
 
-FileManager::FileManager(std::mutex& listLock)
+FileManager::FileManager(std::recursive_mutex& listLock)
   : ListLock(listLock)
   , Wake(false)
   , ShutdownFlag(false)

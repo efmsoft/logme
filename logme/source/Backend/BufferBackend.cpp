@@ -18,19 +18,15 @@ void BufferBackend::Clear()
   Buffer.clear();
 }
 
-void BufferBackend::Insert(const std::vector<char>& buffer)
+void BufferBackend::Append(const BufferBackend& bb)
 {
-  std::vector<char> data(buffer);
-  std::copy(Buffer.begin(), Buffer.end(), std::back_inserter(data));
-  std::swap(Buffer, data);
+  Append((const char*)bb.Buffer.data(), -1);
 }
 
-void BufferBackend::Display(Logme::Context& context, const char* line)
+void BufferBackend::Append(const char* str, int nc)
 {
-  OutputFlags flags = Owner->GetFlags();
-
-  int nc;
-  const char* str = context.Apply(Owner, flags, line, nc);
+  if (nc == -1)
+    nc = strlen(str);
 
   size_t pos = Buffer.size();
   if (pos)
@@ -47,5 +43,15 @@ void BufferBackend::Display(Logme::Context& context, const char* line)
 
   Buffer.resize(s);
   memcpy(&Buffer[pos], str, size_t(nc) + 1);
+}
+
+void BufferBackend::Display(Logme::Context& context, const char* line)
+{
+  OutputFlags flags = Owner->GetFlags();
+
+  int nc;
+  const char* str = context.Apply(Owner, flags, line, nc);
+
+  Append(str, nc);
 }
 

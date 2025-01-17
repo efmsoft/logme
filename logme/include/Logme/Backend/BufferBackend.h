@@ -20,6 +20,7 @@ namespace Logme
 
     LOGMELNK void Clear();
     LOGMELNK void Display(Logme::Context& context, const char* line) override;
-    LOGMELNK void Insert(const std::vector<char>& buffer);
+    LOGMELNK void Append(const BufferBackend& bb);
+    LOGMELNK void Append(const char* str, int nc);
   };
 }

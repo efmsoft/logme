@@ -125,6 +125,35 @@ void Logger::SetErrorChannel(const ID& ch)
   SetErrorChannel(ch.Name);
 }
 
+void Logger::SetThreadOverride(const Override* ovr)
+{
+  uint64_t tid = GetCurrentThreadId();
+
+  Guard guard(DataLock);
+
+  if (ovr == nullptr)
+  {
+    auto it = ThreadOverride.find(tid);
+    if (it != ThreadOverride.end())
+      ThreadOverride.erase(it);
+  }
+  else
+    ThreadOverride[tid] = *ovr;
+}
+
+Override Logger::GetThreadOverride()
+{
+  uint64_t tid = GetCurrentThreadId();
+
+  Guard guard(DataLock);
+
+  auto it = ThreadOverride.find(tid);
+  if (it != ThreadOverride.end())
+    return it->second;
+
+  return Override();
+}
+
 void Logger::SetThreadChannel(const ID* id)
 {
   uint64_t tid = GetCurrentThreadId();
@@ -331,6 +360,7 @@ ChannelPtr Logger::CreateChannelInternal(
 Stream Logger::Log(const Context& context)
 {
   Context& context2 = *(Context*)&context;
+  context2.Ovr = GetThreadOverride();
   ApplyThreadChannel(context2);
 
   return Stream(shared_from_this(), context2);
@@ -340,6 +370,7 @@ Stream Logger::Log(const Context& context, const ID& id)
 {
   Context& context2 = *(Context *)&context;
   context2.Channel = &id;
+  context2.Ovr = GetThreadOverride();
 
   return Stream(shared_from_this(), context2);
 }
@@ -348,6 +379,7 @@ Stream Logger::Log(const Context& context, ChannelPtr ch)
 {
   Context& context2 = *(Context*)&context;
   context2.Ch = ch;
+  context2.Ovr = GetThreadOverride();
 
   return Stream(shared_from_this(), context2);
 }
@@ -389,6 +421,7 @@ void Logger::Log(
 {
   Context& context2 = *(Context*)&context;
   context2.Channel = &id;
+  context2.Ovr = GetThreadOverride();
 
   va_list args;
   va_start(args, format);
@@ -407,6 +440,7 @@ void Logger::Log(
 {
   Context& context2 = *(Context*)&context;
   context2.Ch = ch;
+  context2.Ovr = GetThreadOverride();
 
   va_list args;
   va_start(args, format);
@@ -478,6 +512,7 @@ void Logger::Log(
 void Logger::Log(const Context& context, const char* format, ...)
 {
   Context& context2 = *(Context*)&context;
+  context2.Ovr = GetThreadOverride();
   ApplyThreadChannel(context2);
 
   va_list args;

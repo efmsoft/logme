@@ -8,6 +8,7 @@
 #include <Logme/Procedure.h>
 #include <Logme/Stream.h>
 #include <Logme/ThreadChannel.h>
+#include <Logme/ThreadOverride.h>
 
 // String conversion
 
@@ -163,3 +164,8 @@
 
 #define LogmeThreadChannel(ch) \
   Logme::ThreadChannel _logme_thread_channel(Logme::Instance, ch)
+
+// Thread override
+
+#define LogmeThreadOverride(ovr) \
+  Logme::ThreadOverride _logme_thread_override(Logme::Instance, ovr)

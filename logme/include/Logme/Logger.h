@@ -33,6 +33,7 @@ namespace Logme
     int IDGenerator;
 
     std::map<uint64_t, ID> ThreadChannel;
+    std::map<uint64_t, Override> ThreadOverride;
     FileManagerFactory Factory;
 
     std::mutex ErrorLock;
@@ -72,6 +73,9 @@ namespace Logme
 
     LOGMELNK void SetThreadChannel(const ID* id);
     LOGMELNK ID GetDefaultChannel();
+
+    LOGMELNK void SetThreadOverride(const Override* ovr);
+    LOGMELNK Override GetThreadOverride();
 
     LOGMELNK bool LoadConfigurationFile(const std::wstring& config_file, const std::string& section = std::string());
     LOGMELNK bool LoadConfigurationFile(const std::string& config_file, const std::string& section = std::string());

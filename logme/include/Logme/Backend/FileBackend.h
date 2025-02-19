@@ -95,7 +95,7 @@ namespace Logme
     void ConditionalFlush();
 
     void AppendString(const char* text, size_t len);
-    void AppendOutputData(const CharBuffer& append);
+    void AppendOutputData(const char* text, size_t add);
     void RequestFlush();
     void GetOutputData(CharBuffer& data, SizeArray& size);
     void WriteData();

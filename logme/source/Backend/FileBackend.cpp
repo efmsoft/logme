@@ -271,15 +271,11 @@ void FileBackend::AppendString(const char* text, size_t len)
     if (len == (size_t)-1)
       len = strlen(text);
 
-    CharBuffer data;
-    data.resize(len);
-    memcpy(&data[0], text, len);
-
-    AppendOutputData(data);
+    AppendOutputData(text, len);
   }
 }
 
-void FileBackend::AppendOutputData(const CharBuffer& append)
+void FileBackend::AppendOutputData(const char* text, size_t add)
 {
   size_t queued = 0;
 
@@ -289,7 +285,6 @@ void FileBackend::AppendOutputData(const CharBuffer& append)
     
     if (!ShutdownFlag)
     {
-      size_t add = append.size();
       size_t pos = OutBuffer.size();
       queued = pos + add;
 
@@ -301,8 +296,8 @@ void FileBackend::AppendOutputData(const CharBuffer& append)
       }
 
       OutBuffer.resize(queued);
+      memcpy(&OutBuffer[pos], text, add);
 
-      memcpy(&OutBuffer[pos], &append[0], add);
       if (MaxBufferSize < queued)
         MaxBufferSize = (uint32_t)queued;
 

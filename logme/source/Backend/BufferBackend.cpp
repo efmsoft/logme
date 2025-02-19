@@ -20,8 +20,11 @@ void BufferBackend::Clear()
 
 void BufferBackend::Append(const BufferBackend& bb)
 {
+  if (bb.Buffer.empty())
+    return;
+
   Append((const char*)bb.Buffer.data(), -1);
-}
+} 
 
 void BufferBackend::Append(const char* str, int nc)
 {

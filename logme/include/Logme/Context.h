@@ -21,6 +21,12 @@ namespace Logme
   struct ShortenerContext
   {
     std::string Buffer;
+    char StaticBuffer[256];
+
+    ShortenerContext()
+      : StaticBuffer{0}
+    {
+    }
   };
 
   struct Context

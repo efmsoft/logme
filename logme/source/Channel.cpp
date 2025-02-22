@@ -302,6 +302,14 @@ const char* Channel::ShortenerRun(
     if (v.second.empty())
       return value + v.first.length();
 
+    size_t cb = v.second.length() + n - v.first.length();
+    if (cb < sizeof(context.StaticBuffer))
+    {
+      strcpy(context.StaticBuffer, v.second.c_str());
+      strcpy(context.StaticBuffer + v.second.size(), value + v.first.length());
+      return context.StaticBuffer;
+    }
+
     context.Buffer = v.second + (value + v.first.length());
     return context.Buffer.c_str();
   }

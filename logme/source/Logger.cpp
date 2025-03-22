@@ -527,6 +527,26 @@ void Logger::DoLog(Context& context, const char* format, va_list args)
 {
   DoAutodelete(false);
 
+  if (context.Ovr.MaxFrequency)
+  {
+    auto ticks = GetTimeInMillisec();
+
+    Guard guard(DataLock);
+    if (context.Ovr.LastTime && ticks - context.Ovr.LastTime < context.Ovr.MaxFrequency)
+      return;
+
+    context.Ovr.LastTime = ticks;
+  }
+
+  if (context.Ovr.MaxRepetitions != -1)
+  {
+    Guard guard(DataLock);
+    if (context.Ovr.Repetitions >= context.Ovr.MaxRepetitions)
+      return;
+
+    context.Ovr.Repetitions++;
+  }
+
   ChannelPtr ch = context.Ch ? context.Ch : GetChannel(*context.Channel);  
   if (ch == nullptr)
     return;

@@ -3,9 +3,6 @@
 #include <Logme/OutputFlags.h>
 #include <Logme/Types.h>
 
-#define LOGME_ONCE 1
-#define LOGME_ALWAYS -1
-
 namespace Logme
 {
   struct Override
@@ -20,8 +17,28 @@ namespace Logme
     uint64_t LastTime;
 
     LOGMELNK Override(
-      int reps = LOGME_ALWAYS
+      int reps = -1
       , uint64_t noMoreThanOnceEveryXMillisec = 0
     );
   };
+
+  struct OneTimeMessage : public Override
+  {
+    LOGMELNK OneTimeMessage();
+  };
+
+  struct OneTimeOverrideGenerator
+  {
+    std::map<std::string, Override> Overrides;
+
+    LOGMELNK OneTimeOverrideGenerator();
+
+    LOGMELNK Override& GetOneTimeOverride(
+      const char* func
+      , int line
+    );
+  };
 }
+
+// This macro can ve used to get a one-time message override unique for this object
+#define LOGME_ONCE4THIS GetOneTimeOverride(__func__, __LINE__)

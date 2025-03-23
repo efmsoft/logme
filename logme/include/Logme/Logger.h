@@ -85,11 +85,11 @@ namespace Logme
 
     LOGMELNK Stream Log(const Context& context);
 
-    LOGMELNK Stream Log(const Context& context, const Override& ovr);
+    LOGMELNK Stream Log(const Context& context, Override& ovr);
     LOGMELNK Stream Log(const Context& context, const ID& id);
     LOGMELNK Stream Log(const Context& context, ChannelPtr ch);
-    LOGMELNK Stream Log(const Context& context, const ID& id, const Override& ovr);
-    LOGMELNK Stream Log(const Context& context, ChannelPtr ch, const Override& ovr);
+    LOGMELNK Stream Log(const Context& context, const ID& id, Override& ovr);
+    LOGMELNK Stream Log(const Context& context, ChannelPtr ch, Override& ovr);
 
     template<typename... Args>
     void Log(const Context& context, const StdFormat*, const ID& id, const char* fmt, Args&&... args)
@@ -107,27 +107,27 @@ namespace Logme
     LOGMELNK void Log(const Context& context, ChannelPtr ch, const char* format, ...);
 
     template<typename... Args>
-    void Log(const Context& context, const StdFormat*, const Override& ovr, const char* fmt, Args&&... args)
+    void Log(const Context& context, const StdFormat*, Override& ovr, const char* fmt, Args&&... args)
     {
       std::string out = std::vformat(fmt, std::make_format_args(args...));
       Log(context, ovr, "%s", out.c_str());
     }
-    LOGMELNK void Log(const Context& context, const Override& ovr, const char* format, ...);
+    LOGMELNK void Log(const Context& context, Override& ovr, const char* format, ...);
 
     template<typename... Args>
-    void Log(const Context& context, const StdFormat*, const ID& id, const Override& ovr, const char* fmt, Args&&... args)
+    void Log(const Context& context, const StdFormat*, const ID& id, Override& ovr, const char* fmt, Args&&... args)
     {
       std::string out = std::vformat(fmt, std::make_format_args(args...));
       Log(context, id, ovr, "%s", out.c_str());
     }
     template<typename... Args>
-    void Log(const Context& context, const StdFormat*, ChannelPtr ch, const Override& ovr, const char* fmt, Args&&... args)
+    void Log(const Context& context, const StdFormat*, ChannelPtr ch, Override& ovr, const char* fmt, Args&&... args)
     {
       std::string out = std::vformat(fmt, std::make_format_args(args...));
       Log(context, ch, ovr, "%s", out.c_str());
     }
-    LOGMELNK void Log(const Context& context, const ID& id, const Override& ovr, const char* format, ...);
-    LOGMELNK void Log(const Context& context, ChannelPtr ch, const Override& ovr, const char* format, ...);
+    LOGMELNK void Log(const Context& context, const ID& id, Override& ovr, const char* format, ...);
+    LOGMELNK void Log(const Context& context, ChannelPtr ch, Override& ovr, const char* format, ...);
 
     template<typename... Args>
     void Log(const Context& context, const StdFormat*, const char* fmt, Args&&... args)

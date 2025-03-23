@@ -100,8 +100,11 @@ void Channel::Display(Context& context, const char* line)
   }
 
   OutputFlags flags = Flags;
-  flags.Value |= context.Ovr.Add.Value;
-  flags.Value &= ~context.Ovr.Remove.Value;
+  if (context.Ovr)
+  {
+    flags.Value |= context.Ovr->Add.Value;
+    flags.Value &= ~context.Ovr->Remove.Value;
+  }
 
   if ((Link || LinkTo) && !flags.DisableLink)
   {

@@ -360,7 +360,10 @@ ChannelPtr Logger::CreateChannelInternal(
 Stream Logger::Log(const Context& context)
 {
   Context& context2 = *(Context*)&context;
-  context2.Ovr = GetThreadOverride();
+
+  auto ovr = GetThreadOverride();
+  context2.Ovr = &ovr;
+
   ApplyThreadChannel(context2);
 
   return Stream(shared_from_this(), context2);
@@ -370,7 +373,9 @@ Stream Logger::Log(const Context& context, const ID& id)
 {
   Context& context2 = *(Context *)&context;
   context2.Channel = &id;
-  context2.Ovr = GetThreadOverride();
+
+  auto ovr = GetThreadOverride();
+  context2.Ovr = &ovr;
 
   return Stream(shared_from_this(), context2);
 }
@@ -379,33 +384,35 @@ Stream Logger::Log(const Context& context, ChannelPtr ch)
 {
   Context& context2 = *(Context*)&context;
   context2.Ch = ch;
-  context2.Ovr = GetThreadOverride();
+
+  auto ovr = GetThreadOverride();
+  context2.Ovr = &ovr;
 
   return Stream(shared_from_this(), context2);
 }
 
-Stream Logger::Log(const Context& context, const ID& id, const Override& ovr)
+Stream Logger::Log(const Context& context, const ID& id, Override& ovr)
 {
   Context& context2 = *(Context*)&context;
   context2.Channel = &id;
-  context2.Ovr = ovr;
+  context2.Ovr = &ovr;
 
   return Stream(shared_from_this(), context2);
 }
 
-Stream Logger::Log(const Context& context, ChannelPtr ch, const Override& ovr)
+Stream Logger::Log(const Context& context, ChannelPtr ch, Override& ovr)
 {
   Context& context2 = *(Context*)&context;
   context2.Ch = ch;
-  context2.Ovr = ovr;
+  context2.Ovr = &ovr;
 
   return Stream(shared_from_this(), context2);
 }
 
-Stream Logger::Log(const Context& context, const Override& ovr)
+Stream Logger::Log(const Context& context, Override& ovr)
 {
   Context& context2 = *(Context*)&context;
-  context2.Ovr = ovr;
+  context2.Ovr = &ovr;
 
   ApplyThreadChannel(context2);
 
@@ -421,7 +428,9 @@ void Logger::Log(
 {
   Context& context2 = *(Context*)&context;
   context2.Channel = &id;
-  context2.Ovr = GetThreadOverride();
+
+  auto ovr = GetThreadOverride();
+  context2.Ovr = &ovr;
 
   va_list args;
   va_start(args, format);
@@ -440,7 +449,9 @@ void Logger::Log(
 {
   Context& context2 = *(Context*)&context;
   context2.Ch = ch;
-  context2.Ovr = GetThreadOverride();
+
+  auto ovr = GetThreadOverride();
+  context2.Ovr = &ovr;
 
   va_list args;
   va_start(args, format);
@@ -453,14 +464,14 @@ void Logger::Log(
 void Logger::Log(
   const Context& context
   , const ID& id
-  , const Override& ovr
+  , Override& ovr
   , const char* format
   , ...
 )
 {
   Context& context2 = *(Context*)&context;
   context2.Channel = &id;
-  context2.Ovr = ovr;
+  context2.Ovr = &ovr;
 
   va_list args;
   va_start(args, format);
@@ -473,14 +484,14 @@ void Logger::Log(
 void Logger::Log(
   const Context& context
   , ChannelPtr ch
-  , const Override& ovr
+  , Override& ovr
   , const char* format
   , ...
 )
 {
   Context& context2 = *(Context*)&context;
   context2.Ch = ch;
-  context2.Ovr = ovr;
+  context2.Ovr = &ovr;
 
   va_list args;
   va_start(args, format);
@@ -492,13 +503,13 @@ void Logger::Log(
 
 void Logger::Log(
   const Context& context
-  , const Override& ovr
+  , Override& ovr
   , const char* format
   , ...
 )
 {
   Context& context2 = *(Context*)&context;
-  context2.Ovr = ovr;
+  context2.Ovr = &ovr;
   ApplyThreadChannel(context2);
 
   va_list args;
@@ -512,7 +523,10 @@ void Logger::Log(
 void Logger::Log(const Context& context, const char* format, ...)
 {
   Context& context2 = *(Context*)&context;
-  context2.Ovr = GetThreadOverride();
+
+  auto ovr = GetThreadOverride();
+  context2.Ovr = &ovr;
+
   ApplyThreadChannel(context2);
 
   va_list args;
@@ -527,24 +541,24 @@ void Logger::DoLog(Context& context, const char* format, va_list args)
 {
   DoAutodelete(false);
 
-  if (context.Ovr.MaxFrequency)
+  if (context.Ovr && context.Ovr->MaxFrequency)
   {
     auto ticks = GetTimeInMillisec();
 
     Guard guard(DataLock);
-    if (context.Ovr.LastTime && ticks - context.Ovr.LastTime < context.Ovr.MaxFrequency)
+    if (context.Ovr->LastTime && ticks - context.Ovr->LastTime < context.Ovr->MaxFrequency)
       return;
 
-    context.Ovr.LastTime = ticks;
+    context.Ovr->LastTime = ticks;
   }
 
-  if (context.Ovr.MaxRepetitions != -1)
+  if (context.Ovr && context.Ovr->MaxRepetitions != -1)
   {
     Guard guard(DataLock);
-    if (context.Ovr.Repetitions >= context.Ovr.MaxRepetitions)
+    if (context.Ovr->Repetitions >= context.Ovr->MaxRepetitions)
       return;
 
-    context.Ovr.Repetitions++;
+    context.Ovr->Repetitions++;
   }
 
   ChannelPtr ch = context.Ch ? context.Ch : GetChannel(*context.Channel);  
@@ -597,8 +611,18 @@ void Logger::DoLog(Context& context, const char* format, va_list args)
 
           if (chError != nullptr)
           {
-            context.Ovr.Add.DisableLink = true;
+            Override ovr;
+            if (context.Ovr)
+              ovr = *context.Ovr;
+
+            ovr.Add.DisableLink = true;
+
+            Override* ovrbk = context.Ovr;
+            context.Ovr = &ovr;
+
             chError->Display(context, buffer);
+            
+            context.Ovr = ovrbk;
           }
         }
       }

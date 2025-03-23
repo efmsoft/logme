@@ -36,6 +36,7 @@ Context::Context(Level level, const ID* ch)
   , Line(0)
   , AppendProc(nullptr)
   , AppendContext(nullptr)
+  , Ovr(nullptr)
   , Signature(0)
 {
   InitContext();
@@ -57,6 +58,7 @@ Context::Context(
   , Line(line)
   , AppendProc(nullptr)
   , AppendContext(nullptr)
+  , Ovr(nullptr)
   , Signature(0)
 {
   if (Channel->Name == nullptr)
@@ -254,8 +256,11 @@ void Context::InitSignature()
 
 const char* Context::Apply(ChannelPtr ch, OutputFlags flags, const char* text, int& nc)
 {
-  flags.Value |= Ovr.Add.Value;
-  flags.Value &= ~Ovr.Remove.Value;
+  if (Ovr)
+  {
+    flags.Value |= Ovr->Add.Value;
+    flags.Value &= ~Ovr->Remove.Value;
+  }
 
   // Copy control flags
   flags.ProcPrint = Applied.ProcPrint;

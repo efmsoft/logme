@@ -13,3 +13,25 @@ Override::Override(int reps, uint64_t noMoreThanOnceEveryXMillisec)
   MaxFrequency = noMoreThanOnceEveryXMillisec;
   LastTime = 0;
 }
+
+OneTimeMessage::OneTimeMessage()
+  : Override(1)
+{
+}
+
+OneTimeOverrideGenerator::OneTimeOverrideGenerator()
+{ }
+
+Override& OneTimeOverrideGenerator::GetOneTimeOverride(
+  const char* func
+  , int line
+)
+{
+  std::string key(func);
+  key += std::to_string(line);
+
+  if (Overrides.find(key) == Overrides.end())
+    Overrides[key] = OneTimeMessage();
+  
+  return Overrides[key];
+}

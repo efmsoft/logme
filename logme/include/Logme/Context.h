@@ -53,7 +53,7 @@ namespace Logme
     PfnAppend AppendProc;
     void* AppendContext;
 
-    Override Ovr;
+    Override* Ovr;
     StringPtr Output;
 
     char Timestamp[TIMESTAMP_BUFFER_SIZE];

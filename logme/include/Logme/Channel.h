@@ -95,6 +95,7 @@ namespace Logme
 
     LOGMELNK void ShortenerAdd(const char* what, const char* replace_on);
     LOGMELNK const char* ShortenerRun(const char* value, ShortenerContext& context);
+    LOGMELNK const char* ShortenerRun(const char* value, ShortenerContext& context, Override& ovr);
 
     LOGMELNK void SetThreadName(uint64_t id, const char* name);
     LOGMELNK const char* GetThreadName(uint64_t id);

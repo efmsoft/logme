@@ -337,6 +337,10 @@ const char* Context::Apply(ChannelPtr ch, OutputFlags flags, const char* text, i
   if (flags.Method && Method && !flags.ProcPrint)
   {
     Method = ch->ShortenerRun(Method, MethodShortener);
+
+    if (Ovr != nullptr)
+      Method = ch->ShortenerRun(Method, MethodShortener, *Ovr);
+
     nMethod = (int)strlen(Method) + 4; // "Method(): "
   }
 

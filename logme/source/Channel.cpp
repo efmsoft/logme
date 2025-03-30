@@ -291,6 +291,51 @@ void Channel::ShortenerAdd(const char* what, const char* replace_on)
 const char* Channel::ShortenerRun(
   const char* value
   , ShortenerContext& context
+  , Override& ovr
+)
+{
+  if (ovr.Shortener == nullptr)
+    return value;
+
+  if (value == context.StaticBuffer)
+    return value;
+
+  if (value == context.Buffer.c_str())
+    return value;
+
+  auto n = strlen(value);
+  for (ShortenerPair* pair = ovr.Shortener; pair->SerachFor && pair->ReplaceOn; pair++)
+  {
+    auto ls = strlen(pair->SerachFor);
+    auto lr = strlen(pair->ReplaceOn);
+
+    if (n < ls)
+      continue;
+
+    if (strncmp(value, pair->SerachFor, ls))
+      continue;
+
+    if (lr == 0)
+      return value + ls;
+
+    size_t cb = lr + n - ls;
+    if (cb < sizeof(context.StaticBuffer))
+    {
+      strcpy(context.StaticBuffer, pair->ReplaceOn);
+      strcpy(context.StaticBuffer + lr, value + ls);
+      return context.StaticBuffer;
+    }
+
+    context.Buffer = std::string(pair->ReplaceOn) + (value + ls);
+    return context.Buffer.c_str();
+  }
+  
+  return value;
+}
+
+const char* Channel::ShortenerRun(
+  const char* value
+  , ShortenerContext& context
 )
 {
   auto n = strlen(value);

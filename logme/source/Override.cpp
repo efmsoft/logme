@@ -12,6 +12,8 @@ Override::Override(int reps, uint64_t noMoreThanOnceEveryXMillisec)
   
   MaxFrequency = noMoreThanOnceEveryXMillisec;
   LastTime = 0;
+
+  Shortener = nullptr;
 }
 
 OneTimeMessage::OneTimeMessage()

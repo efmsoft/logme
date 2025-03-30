@@ -5,6 +5,12 @@
 
 namespace Logme
 {
+  struct ShortenerPair
+  {
+    const char* SerachFor;
+    const char* ReplaceOn;
+  };
+
   struct Override
   {
     OutputFlags Add;
@@ -15,6 +21,8 @@ namespace Logme
 
     uint64_t MaxFrequency;
     uint64_t LastTime;
+
+    ShortenerPair* Shortener;
 
     LOGMELNK Override(
       int reps = -1

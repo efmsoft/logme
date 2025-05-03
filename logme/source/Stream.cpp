@@ -23,9 +23,34 @@ Stream::~Stream()
   {
     if (OutputContext.Channel)
     {
-      Destination->Log(OutputContext, *OutputContext.Channel, "%s", data.c_str());
+      if (OutputContext.Ovr)
+      {
+        Destination->Log(
+          OutputContext
+          , *OutputContext.Channel
+          , *OutputContext.Ovr
+          , "%s"
+          , data.c_str()
+        );
+      }
+      else
+      {
+        Destination->Log(
+          OutputContext
+          , *OutputContext.Channel
+          , "%s"
+          , data.c_str()
+        );
+      }
     }
     else
-      Destination->Log(OutputContext, "%s", data.c_str());
+    {
+      if (OutputContext.Ovr)
+      {
+        Destination->Log(OutputContext, *OutputContext.Ovr, "%s", data.c_str());
+      }
+      else
+        Destination->Log(OutputContext, "%s", data.c_str());
+    }
   }
 }

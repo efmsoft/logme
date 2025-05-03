@@ -41,7 +41,7 @@ namespace Logme
 
     LOGMELNK OneTimeOverrideGenerator();
 
-    LOGMELNK Override& GetOneTimeOverride(
+    LOGMELNK virtual Override& GetOneTimeOverride(
       const char* func
       , int line
     );

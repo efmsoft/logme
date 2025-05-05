@@ -361,12 +361,12 @@ Stream Logger::Log(const Context& context)
 {
   Context& context2 = *(Context*)&context;
 
-  auto ovr = GetThreadOverride();
-  context2.Ovr = &ovr;
+  OverridePtr ovr = std::make_shared<Override>(GetThreadOverride());
+  context2.Ovr = ovr.get();
 
   ApplyThreadChannel(context2);
 
-  return Stream(shared_from_this(), context2);
+  return Stream(shared_from_this(), context2, ovr);
 }
 
 Stream Logger::Log(const Context& context, const ID& id)
@@ -374,10 +374,10 @@ Stream Logger::Log(const Context& context, const ID& id)
   Context& context2 = *(Context *)&context;
   context2.Channel = &id;
 
-  auto ovr = GetThreadOverride();
-  context2.Ovr = &ovr;
+  OverridePtr ovr = std::make_shared<Override>(GetThreadOverride());
+  context2.Ovr = ovr.get();
 
-  return Stream(shared_from_this(), context2);
+  return Stream(shared_from_this(), context2, ovr);
 }
 
 Stream Logger::Log(const Context& context, ChannelPtr ch)
@@ -385,10 +385,10 @@ Stream Logger::Log(const Context& context, ChannelPtr ch)
   Context& context2 = *(Context*)&context;
   context2.Ch = ch;
 
-  auto ovr = GetThreadOverride();
-  context2.Ovr = &ovr;
+  OverridePtr ovr = std::make_shared<Override>(GetThreadOverride());
+  context2.Ovr = ovr.get();
 
-  return Stream(shared_from_this(), context2);
+  return Stream(shared_from_this(), context2, ovr);
 }
 
 Stream Logger::Log(const Context& context, const ID& id, Override& ovr)

@@ -12,9 +12,10 @@ namespace Logme
   {
     LoggerPtr Destination;
     const Context& OutputContext;
+    OverridePtr Ovr;
 
   public:
-    LOGMELNK Stream(LoggerPtr logger, const Context& context);
+    LOGMELNK Stream(LoggerPtr logger, const Context& context, OverridePtr ovr = OverridePtr());
     LOGMELNK Stream(const Stream& src);
     LOGMELNK ~Stream();
   };

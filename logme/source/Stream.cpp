@@ -3,15 +3,17 @@
 
 using namespace Logme;
 
-Stream::Stream(LoggerPtr logger, const Context& context)
+Stream::Stream(LoggerPtr logger, const Context& context, OverridePtr ovr)
   : Destination(logger)
   , OutputContext(context)
+  , Ovr(ovr)
 {
 }
 
 Stream::Stream(const Stream& src)
   : Destination(src.Destination)
   , OutputContext(src.OutputContext)
+  , Ovr(src.Ovr)
 {
 }
 

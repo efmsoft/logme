@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include <Logme/OutputFlags.h>
 #include <Logme/Types.h>
 
@@ -29,6 +31,8 @@ namespace Logme
       , uint64_t noMoreThanOnceEveryXMillisec = 0
     );
   };
+
+  typedef std::shared_ptr<Override> OverridePtr;
 
   struct OneTimeMessage : public Override
   {

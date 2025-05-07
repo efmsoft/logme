@@ -1,11 +1,17 @@
 #include <Logme/Channel.h>
-#include <Logme/Logger.h>
+#include <Logme/Logme.h>
 #include <Logme/SafeID.h>
 
 #include <cassert>
 #include <string.h>
 
 using namespace Logme;
+
+#ifdef _WIN32
+#  define LLX "%llX"
+#else
+#  define LLX "%lX"
+#endif
 
 Channel::Channel(
   Logger* owner
@@ -18,6 +24,7 @@ Channel::Channel(
   , Flags(flags)
   , LevelFilter(level)
   , AccessCount(0)
+  , ShortenerList(nullptr)
 {
 }
 
@@ -115,8 +122,14 @@ void Channel::Display(Context& context, const char* line)
     ChannelPtr ch = LinkTo ? LinkTo : Owner->GetChannel(*link);
 
     if (ch)
-      ch->Display(context, line);
+    {
+      // We have to apply context right now to use this channel settings
 
+      int nc = 0;
+      context.Apply(shared_from_this(), flags, line, nc);
+
+      ch->Display(context, line);
+    }
     DataLock.lock();
   }
 
@@ -277,6 +290,11 @@ Logger* Channel::GetOwner() const
   return Owner;
 }
 
+void Channel::SetShortenerPair(const ShortenerPair* pair)
+{
+  ShortenerList = pair;
+}
+
 void Channel::ShortenerAdd(const char* what, const char* replace_on)
 {
   auto it = ShortenerMap.find(what);
@@ -288,15 +306,12 @@ void Channel::ShortenerAdd(const char* what, const char* replace_on)
   }
 }
 
-const char* Channel::ShortenerRun(
+const char* Channel::ShortenerPairRun(
   const char* value
   , ShortenerContext& context
-  , Override& ovr
+  , const ShortenerPair* pair
 )
 {
-  if (ovr.Shortener == nullptr)
-    return value;
-
   if (value == context.StaticBuffer)
     return value;
 
@@ -304,16 +319,17 @@ const char* Channel::ShortenerRun(
     return value;
 
   auto n = strlen(value);
-  for (ShortenerPair* pair = ovr.Shortener; pair->SerachFor && pair->ReplaceOn; pair++)
+  for (; pair->SerachFor && pair->ReplaceOn; pair++)
   {
     auto ls = strlen(pair->SerachFor);
-    auto lr = strlen(pair->ReplaceOn);
 
     if (n < ls)
       continue;
 
     if (strncmp(value, pair->SerachFor, ls))
       continue;
+
+    auto lr = strlen(pair->ReplaceOn);
 
     if (lr == 0)
       return value + ls;
@@ -329,8 +345,20 @@ const char* Channel::ShortenerRun(
     context.Buffer = std::string(pair->ReplaceOn) + (value + ls);
     return context.Buffer.c_str();
   }
-  
+
   return value;
+}
+
+const char* Channel::ShortenerRun(
+  const char* value
+  , ShortenerContext& context
+  , Override& ovr
+)
+{
+  if (ovr.Shortener == nullptr)
+    return value;
+
+  return ShortenerPairRun(value, context, ovr.Shortener);
 }
 
 const char* Channel::ShortenerRun(
@@ -338,6 +366,15 @@ const char* Channel::ShortenerRun(
   , ShortenerContext& context
 )
 {
+  if (ShortenerList)
+    value = ShortenerPairRun(value, context, ShortenerList);
+
+  if (value == context.StaticBuffer)
+    return value;
+
+  if (value == context.Buffer.c_str())
+    return value;
+
   auto n = strlen(value);
   for (auto& v : ShortenerMap)
   {
@@ -365,28 +402,82 @@ const char* Channel::ShortenerRun(
   return value;
 }
 
-void Channel::SetThreadName(uint64_t id, const char* name)
+void Channel::SetThreadName(uint64_t id, const char* name, bool log)
 {
+  std::lock_guard guard(DataLock);
+
   auto it = ThreadName.find(id);
   if (it != ThreadName.end())
   {
-    if (name)
-      it->second = name;
+    if (log)
+      it->second.Prev = it->second.Name;
     else
+      it->second.Prev.reset();
+
+    if (name)
+      it->second.Name = name;
+    else if (log == false)
       ThreadName.erase(it);
+    else 
+      it->second.Name.reset();
   }
   else
   {
     if (name)
-      ThreadName[id] = name;
+    {
+      ThreadNameRecord r;
+      r.Name = name;
+
+      if (log)
+        r.Prev = std::format("{:X}", id);
+
+      ThreadName[id] = r;
+    }
   }
 }
 
-const char* Channel::GetThreadName(uint64_t id)
+const char* Channel::GetThreadName(
+  uint64_t id
+  , ThreadNameInfo& info
+  , std::optional<std::string>* transition
+  , bool clear
+)
 {
+  if (transition)
+    transition->reset();
+
+  std::lock_guard guard(DataLock);
+
   auto it = ThreadName.find(id);
   if (it != ThreadName.end())
-    return it->second.c_str();
+  {
+    if (it->second.Name.has_value() == false && it->second.Prev.has_value() == false)
+    {
+      ThreadName.erase(it);
+      return nullptr;
+    }
+
+    if (transition)
+      *transition = it->second.Prev;
+
+    if (clear)
+      it->second.Prev.reset();
+
+    if (it->second.Name.has_value())
+    {
+      const std::string& s = it->second.Name.value();
+      if (s.size()  < sizeof(info.Buffer))
+      {
+        strcpy(info.Buffer, s.c_str());
+        return info.Buffer;
+      }
+
+      info.Name = s;
+      return info.Name.c_str();
+    }
+
+    return nullptr;
+  }
 
   return nullptr;
 }

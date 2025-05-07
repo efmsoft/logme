@@ -11,4 +11,5 @@ OutputFlags::OutputFlags()
   ErrorPrefix = true;
   Highlight = true;
   Eol = true;
+  ThreadTransition = true;
 }

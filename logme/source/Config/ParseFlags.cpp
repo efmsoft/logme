@@ -61,6 +61,7 @@ static FLAG_CONFIG FlagConfig[] =
   {"highlight", nullptr, [](OutputFlags& f, int v) {f.Highlight = v; } },
   {"console", ConsoleValues, [](OutputFlags& f, int v) {f.Console = v; } },
   {"disablelink", nullptr, [](OutputFlags& f, int v) {f.DisableLink = v; } },
+  {"transition", nullptr, [](OutputFlags& f, int v) {f.ThreadTransition = v; } },
   {nullptr, nullptr, nullptr, }
 };
 

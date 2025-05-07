@@ -224,14 +224,41 @@ void Context::InitThreadProcessID(ChannelPtr ch, OutputFlags flags)
     {
       *p++ = ':';
 
-      auto name = ch->GetThreadName(thread);
-      if (name)
+      do
       {
-        strcpy(p, name);
-        p += strlen(name);
-      }
-      else
-        p += sprintf(p, LLX, (uint64_t)thread);
+        Channel::ThreadNameInfo info;
+        std::optional<std::string> trans;
+        auto name = ch->GetThreadName(thread, info, &trans, true);
+
+        if (flags.ThreadTransition)
+        {
+          if (name == nullptr && trans.has_value() == false)
+          {
+            ChannelPtr link = ch->GetLinkPtr();
+
+            if (link)
+              name = link->GetThreadName(thread, info, &trans, true);
+          }
+
+          if (trans.has_value())
+          {
+            strcpy(p, trans.value().c_str());
+            p += trans.value().size();
+
+            strcpy(p, " -> ");
+            p += 4;
+          }
+        }
+
+        if (name)
+        {
+          strcpy(p, name);
+          p += strlen(name);
+        }
+        else
+          p += sprintf(p, LLX, (uint64_t)thread);
+      
+      } while (false);
     }
 
     *p++ = ']';

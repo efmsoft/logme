@@ -2,6 +2,7 @@
 
 #include <Logme/Backend/Backend.h>
 #include <Logme/Context.h>
+#include <Logme/Override.h>
 #include <Logme/OutputFlags.h>
 #include <Logme/Types.h>
 
@@ -29,9 +30,9 @@ namespace Logme
   typedef std::vector<ChannelConfig> ChannelConfigArray;
   typedef std::function<bool(Context&, const char*)> TDisplayFilter;
 
-  class Channel
+  class Channel : public std::enable_shared_from_this<Channel>
   {
-    std::mutex DataLock;
+    std::recursive_mutex DataLock;
 
     class Logger* Owner;
     std::string Name;
@@ -44,8 +45,15 @@ namespace Logme
     IDPtr Link;
     ChannelPtr LinkTo;
 
+    const ShortenerPair* ShortenerList;
     std::map<std::string, std::string> ShortenerMap;
-    std::map<uint64_t, std::string> ThreadName;
+
+    struct ThreadNameRecord
+    {
+      std::optional<std::string> Name;
+      std::optional<std::string> Prev;
+    };
+    std::map<uint64_t, ThreadNameRecord> ThreadName;
 
     TDisplayFilter DisplayFilter;
 
@@ -94,11 +102,25 @@ namespace Logme
     LOGMELNK bool IsIdle();
 
     LOGMELNK void ShortenerAdd(const char* what, const char* replace_on);
+    LOGMELNK void SetShortenerPair(const ShortenerPair* pair);
     LOGMELNK const char* ShortenerRun(const char* value, ShortenerContext& context);
     LOGMELNK const char* ShortenerRun(const char* value, ShortenerContext& context, Override& ovr);
+    LOGMELNK const char* ShortenerPairRun(const char* value, ShortenerContext& context, const ShortenerPair* pair);
 
-    LOGMELNK void SetThreadName(uint64_t id, const char* name);
-    LOGMELNK const char* GetThreadName(uint64_t id);
+    LOGMELNK void SetThreadName(uint64_t id, const char* name, bool log = true);
+
+    struct ThreadNameInfo
+    {
+      std::string Name;
+      char Buffer[32]{};
+    };
+
+    LOGMELNK const char* GetThreadName(
+      uint64_t id
+      , ThreadNameInfo& info
+      , std::optional<std::string>* transition = nullptr
+      , bool clear = true
+    );
   };
 
   typedef std::shared_ptr<Channel> ChannelPtr;

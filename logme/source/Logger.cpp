@@ -19,7 +19,8 @@ using namespace Logme;
 LoggerPtr Logme::Instance = std::make_shared<Logger>();
 
 Logger::Logger()
-  : IDGenerator(1)
+  : BlockReportedSubsystems(true)
+  , IDGenerator(1)
   , ControlSocket(-1)
   , LastDoAutodelete(0)
   , NumDeleting(0)
@@ -101,13 +102,13 @@ FileManagerFactory& Logger::GetFileManagerFactory()
 
 StringPtr Logger::GetErrorChannel()
 {
-  Guard guard(ErrorLock);
+  std::lock_guard guard(ErrorLock);
   return ErrorChannel;
 }
 
 void Logger::SetErrorChannel(const char* name)
 {
-  Guard guard(ErrorLock);
+  std::lock_guard guard(ErrorLock);
 
   if (ErrorChannel == nullptr)
     ErrorChannel = std::make_shared<std::string>(name);
@@ -129,7 +130,7 @@ void Logger::SetThreadOverride(const Override* ovr)
 {
   uint64_t tid = GetCurrentThreadId();
 
-  Guard guard(DataLock);
+  std::lock_guard guard(DataLock);
 
   if (ovr == nullptr)
   {
@@ -145,7 +146,7 @@ Override Logger::GetThreadOverride()
 {
   uint64_t tid = GetCurrentThreadId();
 
-  Guard guard(DataLock);
+  std::lock_guard guard(DataLock);
 
   auto it = ThreadOverride.find(tid);
   if (it != ThreadOverride.end())
@@ -158,7 +159,7 @@ void Logger::SetThreadChannel(const ID* id)
 {
   uint64_t tid = GetCurrentThreadId();
   
-  Guard guard(DataLock);
+  std::lock_guard guard(DataLock);
 
   if (id == nullptr)
   {
@@ -174,7 +175,8 @@ void Logger::ApplyThreadChannel(Context& context)
 {
   uint64_t tid = GetCurrentThreadId();
   
-  Guard guard(DataLock);
+  std::lock_guard guard(DataLock);
+
   auto it = ThreadChannel.find(tid);
   if (it != ThreadChannel.end())
   {
@@ -187,7 +189,7 @@ ID Logger::GetDefaultChannel()
 {
   uint64_t tid = GetCurrentThreadId();
 
-  Guard guard(DataLock);
+  std::lock_guard guard(DataLock);
 
   auto it = ThreadChannel.find(tid);
   if (it != ThreadChannel.end())
@@ -201,7 +203,7 @@ ChannelPtr Logger::GetExistingChannel(const ID& id)
   if (id.Name == nullptr || *id.Name == '\0')
     return Default;
 
-  Guard guard(DataLock);
+  std::lock_guard guard(DataLock);
 
   auto it = Channels.find(id.Name);
   if (it != Channels.end())
@@ -216,7 +218,7 @@ ChannelPtr Logger::GetChannel(const ID& id)
   if (v)
     return v;
 
-  Guard guard(DataLock);
+  std::lock_guard guard(DataLock);
   return CreateChannelInternal(id, OutputFlags());
 }
 
@@ -246,7 +248,7 @@ void Logger::DoAutodelete(bool force)
       ch.reset();
     }
 
-    Guard guard(DataLock);
+    std::lock_guard guard(DataLock);
     for (auto it = ToDelete.begin(); it != ToDelete.end(); ++it)
     {
       auto& p = *it;
@@ -265,7 +267,7 @@ void Logger::DoAutodelete(bool force)
 
 void Logger::Autodelete(const ID& id)
 {
-  Guard guard(DataLock);
+  std::lock_guard guard(DataLock);
 
   auto it = Channels.find(id.Name);
   if (it != Channels.end())
@@ -285,7 +287,7 @@ void Logger::DeleteChannel(const ID& id)
 
   do
   {
-    Guard guard(DataLock);
+    std::lock_guard guard(DataLock);
 
     auto it = Channels.find(id.Name);
     if (it != Channels.end())
@@ -313,7 +315,7 @@ ChannelPtr Logger::CreateChannel(
   ID id{};
   std::string name;
 
-  Guard guard(DataLock);
+  std::lock_guard guard(DataLock);
 
   for (;;)
   {
@@ -332,7 +334,7 @@ ChannelPtr Logger::CreateChannel(
   , Level level
 )
 {
-  Guard guard(DataLock);
+  std::lock_guard guard(DataLock);
 
   auto it = Channels.find(id.Name);
   if (it != Channels.end())
@@ -357,7 +359,42 @@ ChannelPtr Logger::CreateChannelInternal(
   return channel;
 }
 
-Stream Logger::Log(const Context& context)
+void Logger::SetBlockReportedSubsystems(bool block)
+{
+  BlockReportedSubsystems = block;
+}
+
+void Logger::ReportSubsystem(const SID& sid)
+{
+  if (sid.Name == 0)
+    return;
+
+  auto& arr = Subsystems;
+  auto& id = sid.Name;
+
+  std::lock_guard guard(DataLock);
+
+  auto it = std::lower_bound(arr.begin(), arr.end(), id);
+  if (it == arr.end() || *it != id)
+    arr.insert(it, id);
+}
+
+void Logger::UnreportSubsystem(const SID& sid)
+{
+  if (sid.Name == 0)
+    return;
+
+  auto& arr = Subsystems;
+  auto& id = sid.Name;
+
+  std::lock_guard guard(DataLock);
+
+  auto it = std::lower_bound(arr.begin(), arr.end(), id);
+  if (it != arr.end() && *it == id)
+    arr.erase(it);
+}
+
+Stream Logger::Log(const Context& context) // @1
 {
   Context& context2 = *(Context*)&context;
 
@@ -369,52 +406,107 @@ Stream Logger::Log(const Context& context)
   return Stream(shared_from_this(), context2, ovr);
 }
 
-Stream Logger::Log(const Context& context, const ID& id)
-{
-  Context& context2 = *(Context *)&context;
-  context2.Channel = &id;
-
-  OverridePtr ovr = std::make_shared<Override>(GetThreadOverride());
-  context2.Ovr = ovr.get();
-
-  return Stream(shared_from_this(), context2, ovr);
-}
-
-Stream Logger::Log(const Context& context, ChannelPtr ch)
-{
-  Context& context2 = *(Context*)&context;
-  context2.Ch = ch;
-
-  OverridePtr ovr = std::make_shared<Override>(GetThreadOverride());
-  context2.Ovr = ovr.get();
-
-  return Stream(shared_from_this(), context2, ovr);
-}
-
-Stream Logger::Log(const Context& context, const ID& id, Override& ovr)
-{
-  Context& context2 = *(Context*)&context;
-  context2.Channel = &id;
-  context2.Ovr = &ovr;
-
-  return Stream(shared_from_this(), context2);
-}
-
-Stream Logger::Log(const Context& context, ChannelPtr ch, Override& ovr)
-{
-  Context& context2 = *(Context*)&context;
-  context2.Ch = ch;
-  context2.Ovr = &ovr;
-
-  return Stream(shared_from_this(), context2);
-}
-
-Stream Logger::Log(const Context& context, Override& ovr)
+Stream Logger::Log(const Context& context, Override& ovr) // @2
 {
   Context& context2 = *(Context*)&context;
   context2.Ovr = &ovr;
 
   ApplyThreadChannel(context2);
+
+  return Stream(shared_from_this(), context2);
+}
+
+Stream Logger::Log(const Context& context, const SID& sid, Override& ovr) // @3
+{
+  Context& context2 = *(Context*)&context;
+  context2.Ovr = &ovr;
+  context2.Subsystem = &sid;
+
+  ApplyThreadChannel(context2);
+
+  return Stream(shared_from_this(), context2);
+}
+
+Stream Logger::Log(const Context& context, const ID& id) // @4
+{
+  Context& context2 = *(Context*)&context;
+  context2.Channel = &id;
+
+  OverridePtr ovr = std::make_shared<Override>(GetThreadOverride());
+  context2.Ovr = ovr.get();
+
+  return Stream(shared_from_this(), context2, ovr);
+}
+
+Stream Logger::Log(const Context& context, ChannelPtr ch) // @5
+{
+  Context& context2 = *(Context*)&context;
+  context2.Ch = ch;
+
+  OverridePtr ovr = std::make_shared<Override>(GetThreadOverride());
+  context2.Ovr = ovr.get();
+
+  return Stream(shared_from_this(), context2, ovr);
+}
+
+Stream Logger::Log(const Context& context, const ID& id, const SID& sid) // @6
+{
+  Context& context2 = *(Context*)&context;
+  context2.Channel = &id;
+  context2.Subsystem = &sid;
+
+  OverridePtr ovr = std::make_shared<Override>(GetThreadOverride());
+  context2.Ovr = ovr.get();
+
+  return Stream(shared_from_this(), context2, ovr);
+}
+
+Stream Logger::Log(const Context& context, ChannelPtr ch, const SID& sid) // @7
+{
+  Context& context2 = *(Context*)&context;
+  context2.Ch = ch;
+  context2.Subsystem = &sid;
+
+  OverridePtr ovr = std::make_shared<Override>(GetThreadOverride());
+  context2.Ovr = ovr.get();
+
+  return Stream(shared_from_this(), context2, ovr);
+}
+
+Stream Logger::Log(const Context& context, const ID& id, Override& ovr) // @8
+{
+  Context& context2 = *(Context*)&context;
+  context2.Channel = &id;
+  context2.Ovr = &ovr;
+
+  return Stream(shared_from_this(), context2);
+}
+
+Stream Logger::Log(const Context& context, ChannelPtr ch, Override& ovr) // @9
+{
+  Context& context2 = *(Context*)&context;
+  context2.Ch = ch;
+  context2.Ovr = &ovr;
+
+  return Stream(shared_from_this(), context2);
+}
+
+Stream Logger::Log(const Context& context, const ID& id, const SID& sid, Override& ovr) // @10
+{
+  Context& context2 = *(Context*)&context;
+  context2.Channel = &id;
+  context2.Subsystem = &sid;
+  context2.Ovr = &ovr;
+
+  return Stream(shared_from_this(), context2);
+}
+
+Stream Logger::Log(const Context& context, ChannelPtr ch, const SID& sid, Override& ovr) // @11
+{
+  Context& context2 = *(Context*)&context;
+  context2.Ch = ch;
+  context2.Subsystem = &sid;
+  context2.Ovr = &ovr;
 
   return Stream(shared_from_this(), context2);
 }
@@ -545,7 +637,7 @@ void Logger::DoLog(Context& context, const char* format, va_list args)
   {
     auto ticks = GetTimeInMillisec();
 
-    Guard guard(DataLock);
+    std::lock_guard guard(DataLock);
     if (context.Ovr->LastTime && ticks - context.Ovr->LastTime < context.Ovr->MaxFrequency)
       return;
 
@@ -554,11 +646,23 @@ void Logger::DoLog(Context& context, const char* format, va_list args)
 
   if (context.Ovr && context.Ovr->MaxRepetitions != -1)
   {
-    Guard guard(DataLock);
+    std::lock_guard guard(DataLock);
     if (context.Ovr->Repetitions >= context.Ovr->MaxRepetitions)
       return;
 
     context.Ovr->Repetitions++;
+  }
+
+  if (context.Subsystem && context.Subsystem->Name)
+  {
+    auto& arr = Subsystems;
+    if (std::binary_search(arr.begin(), arr.end(), context.Subsystem->Name))
+    {
+      if (BlockReportedSubsystems)
+        return;
+    }
+    else if (BlockReportedSubsystems == false)
+      return;
   }
 
   ChannelPtr ch = context.Ch ? context.Ch : GetChannel(*context.Channel);  
@@ -635,7 +739,7 @@ void Logger::DoLog(Context& context, const char* format, va_list args)
 
 void Logger::IterateChannels(const TChannelCallback& callback)
 {
-  Guard guard(DataLock);
+  std::lock_guard guard(DataLock);
 
   if (Default)
     callback("", Default);

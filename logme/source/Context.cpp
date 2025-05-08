@@ -27,9 +27,10 @@ using namespace Logme;
 #  define LLX "%lX"
 #endif
 
-Context::Context(Level level, const ID* ch)
+Context::Context(Level level, const ID* ch, const SID* sid)
   : ChannelStg{}
   , Channel(ch)
+  , Subsystem(sid)
   , ErrorLevel(level)
   , Method(nullptr)
   , File(nullptr)
@@ -45,6 +46,7 @@ Context::Context(Level level, const ID* ch)
 Context::Context(
   Level level
   , const ID* chdef
+  , const SID* siddef
   , const char* method
   , const char* file
   , int line
@@ -52,6 +54,7 @@ Context::Context(
 )
   : ChannelStg{}
   , Channel(&params.Channel)
+  , Subsystem(&params.Subsystem)
   , ErrorLevel(level)
   , Method(method)
   , File(file)

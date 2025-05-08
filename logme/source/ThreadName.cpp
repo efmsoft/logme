@@ -35,10 +35,15 @@ ThreadName::~ThreadName()
     ovr.Remove.Method = true;
 
     Logme::ID ch = PCH->GetID();
-    Context c = LOGME_CONTEXT(Logme::Level::LEVEL_INFO, &ch);
+    Context c = LOGME_CONTEXT(Logme::Level::LEVEL_INFO, &ch, &SUBSID);
     c.Ovr = &ovr;
 
-    PCH->Display(c, "@");
+    // After returning the initial name, a message should be printed. 
+    // The text of the message doesn’t matter. Otherwise, it might 
+    // happen that the next message to the channel will be output much 
+    // later, and the channel name change will appear as if it happened 
+    // much later than it actually did
+    PCH->Display(c, ".");
   }
 }
 

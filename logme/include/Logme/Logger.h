@@ -30,6 +30,9 @@ namespace Logme
     ChannelPtr Default;
     std::string HomeDirectory;
 
+    bool BlockReportedSubsystems;
+    std::vector<uint64_t> Subsystems;
+
     int IDGenerator;
 
     std::map<uint64_t, ID> ThreadChannel;
@@ -77,19 +80,28 @@ namespace Logme
     LOGMELNK void SetThreadOverride(const Override* ovr);
     LOGMELNK Override GetThreadOverride();
 
+    LOGMELNK void ReportSubsystem(const SID& sid);
+    LOGMELNK void UnreportSubsystem(const SID& sid);
+    LOGMELNK void SetBlockReportedSubsystems(bool block);
+
     LOGMELNK bool LoadConfigurationFile(const std::wstring& config_file, const std::string& section = std::string());
     LOGMELNK bool LoadConfigurationFile(const std::string& config_file, const std::string& section = std::string());
     LOGMELNK bool LoadConfiguration(const std::string& config_data, const std::string& section = std::string());
 
     LOGMELNK virtual void DoLog(Context& context, const char* format, va_list args);
 
-    LOGMELNK Stream Log(const Context& context);
+    LOGMELNK Stream Log(const Context& context); // @1
 
-    LOGMELNK Stream Log(const Context& context, Override& ovr);
-    LOGMELNK Stream Log(const Context& context, const ID& id);
-    LOGMELNK Stream Log(const Context& context, ChannelPtr ch);
-    LOGMELNK Stream Log(const Context& context, const ID& id, Override& ovr);
-    LOGMELNK Stream Log(const Context& context, ChannelPtr ch, Override& ovr);
+    LOGMELNK Stream Log(const Context& context, Override& ovr); // @2
+    LOGMELNK Stream Log(const Context& context, const SID& sid, Override& ovr); // @3
+    LOGMELNK Stream Log(const Context& context, const ID& id); // @4
+    LOGMELNK Stream Log(const Context& context, ChannelPtr ch); // @5
+    LOGMELNK Stream Log(const Context& context, const ID& id, const SID& sid); // @6
+    LOGMELNK Stream Log(const Context& context, ChannelPtr ch, const SID& sid); // @7
+    LOGMELNK Stream Log(const Context& context, const ID& id, Override& ovr); // @8
+    LOGMELNK Stream Log(const Context& context, ChannelPtr ch, Override& ovr); // @9
+    LOGMELNK Stream Log(const Context& context, const ID& id, const SID& sid, Override& ovr); // @10
+    LOGMELNK Stream Log(const Context& context, ChannelPtr ch, const SID& sid, Override& ovr); // @11
 
     template<typename... Args>
     void Log(const Context& context, const StdFormat*, const ID& id, const char* fmt, Args&&... args)

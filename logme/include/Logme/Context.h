@@ -4,6 +4,7 @@
 #include <Logme/Module.h>
 #include <Logme/OutputFlags.h>
 #include <Logme/Override.h>
+#include <Logme/SID.h>
 #include <Logme/Types.h>
 
 #include <memory>
@@ -44,6 +45,7 @@ namespace Logme
 
     ID ChannelStg;
     const ID* Channel;
+    const SID* Subsystem;
     Level ErrorLevel;
     const char* Method;
     Module File;
@@ -73,23 +75,46 @@ namespace Logme
     {
       ID None;
       const ID& Channel;
-      
+
+      SID SNone;
+      const SID& Subsystem;
+
       Params(...) 
         : None{0}
         , Channel(None)
+        , SNone{0}
+        , Subsystem(SNone)
       {
       }
 
       Params(const ID& ch, ...)
         : None{0}
         , Channel(ch)
+        , SNone{0}
+        , Subsystem(SNone)
+      {
+      }
+
+      Params(const SID& sid, ...)
+        : None{ 0 }
+        , Channel(None)
+        , SNone{0}
+        , Subsystem(sid)
+      {
+      }
+
+      Params(const ID& ch, const SID& sid, ...)
+        : None{ 0 }
+        , Channel(ch)
+        , SNone{0}
+        , Subsystem(sid)
       {
       }
     };
 
   public:
-    LOGMELNK Context(Level level, const ID* ch);
-    LOGMELNK Context(Level level, const ID* chdef, const char* method, const char* module, int line, const Params& params);
+    LOGMELNK Context(Level level, const ID* ch, const SID* sid);
+    LOGMELNK Context(Level level, const ID* chdef, const SID* siddef, const char* method, const char* module, int line, const Params& params);
 
     LOGMELNK void InitContext();
     LOGMELNK void InitTimestamp(TimeFormat tf);
@@ -101,5 +126,5 @@ namespace Logme
   };
 }
 
-#define LOGME_CONTEXT(level, ch, ...) \
-  Logme::Context(level, ch, __FUNCTION__, __FILE__, __LINE__, Logme::Context::Params(__VA_ARGS__))
+#define LOGME_CONTEXT(level, ch, sid, ...) \
+  Logme::Context(level, ch, sid, __FUNCTION__, __FILE__, __LINE__, Logme::Context::Params(__VA_ARGS__))

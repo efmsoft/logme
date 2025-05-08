@@ -22,17 +22,17 @@
 #ifdef _MSC_VER
   #define Logme_If(condition, logger, level, ...) \
     if ((condition)) \
-      logger->Log(LOGME_CONTEXT(level, &CH, __VA_ARGS__) , __VA_ARGS__)
+      logger->Log(LOGME_CONTEXT(level, &CH, &SUBSID, __VA_ARGS__) , __VA_ARGS__)
   #define Logme_Ifg(condition, logger, level, ...) \
     if ((condition)) \
-      logger->Log(LOGME_CONTEXT(level, &::CH, __VA_ARGS__) , __VA_ARGS__)
+      logger->Log(LOGME_CONTEXT(level, &::CH, &::SUBSID, __VA_ARGS__) , __VA_ARGS__)
 #else
   #define Logme_If(condition, logger, level, ...) \
     if ((condition)) \
-      logger->Log(LOGME_CONTEXT(level, &CH) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+      logger->Log(LOGME_CONTEXT(level, &CH, &SUBSID) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
   #define Logme_Ifg(condition, logger, level, ...) \
     if ((condition)) \
-      logger->Log(LOGME_CONTEXT(level, &::CH) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+      logger->Log(LOGME_CONTEXT(level, &::CH, &::SUBSID) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 #else
   #define Logme_If(condition, logger, level, ...)

@@ -66,6 +66,11 @@ bool Logger::LoadConfiguration(
   if (!ParseChannels(config, flags, arr))
     return false;
 
+  bool blockReported = true;
+  std::list<std::string> subsystems;
+  if (!ParseSubsystems(config, blockReported, subsystems))
+    return false;
+
   DeleteAllChannels();
   if (!CreateChannels(arr))
   {
@@ -74,6 +79,12 @@ bool Logger::LoadConfiguration(
   }
 
   CreateDefaultChannelLayout(false);
+
+  Subsystems.clear();
+  for (auto& s : subsystems)
+    ReportSubsystem(SID::Build(s));
+
+  BlockReportedSubsystems = blockReported;
 
   return StartControlServer(cc);
 #else

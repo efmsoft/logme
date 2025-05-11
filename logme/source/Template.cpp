@@ -1,3 +1,4 @@
+#include <Logme/File/exe_path.h>
 #include <Logme/Logme.h>
 #include <Logme/Template.h>
 #include <Logme/Utils.h>
@@ -91,11 +92,13 @@ std::string Logme::ProcessTemplate(
   constexpr const char* pPName = "{pname}";
   constexpr const char* pDate = "{date}";
   constexpr const char* pTarget = "{target}";
+  constexpr const char* pExePath = "{exepath}";
 
   static const size_t pidl = strlen(pPid);
   static const size_t pnamel = strlen(pPName);
   static const size_t pdatel = strlen(pDate);
   static const size_t ptargetl = strlen(pTarget);
+  static const size_t pexepathl = strlen(pExePath);
 
   bool ftemplate = false;
   const char* tstr = p;
@@ -204,6 +207,21 @@ std::string Logme::ProcessTemplate(
 
         if (notProcessed)
           *notProcessed |= TEMPLATE_TARGET;
+
+        ftemplate = true;
+      }
+      else if (strncmp(p, pExePath, pexepathl) == 0)
+      {
+        if (param.Flags & TEMPLATE_EXEPATH)
+        {
+          p += pexepathl;
+
+          name += GetExecutablePath();
+          continue;
+        }
+
+        if (notProcessed)
+          *notProcessed |= TEMPLATE_EXEPATH;
 
         ftemplate = true;
       }

@@ -165,6 +165,14 @@ void FileBackend::CloseLog()
   Close();
 }
 
+bool FileBackend::TestFileInUse(const std::string& file) const
+{
+  if (File == -1)
+    return false;
+
+  return Name == file;
+}
+
 void FileBackend::Write(CharBuffer& data, SizeArray& msgSize)
 {
   std::lock_guard<std::recursive_mutex> guard(IoLock);

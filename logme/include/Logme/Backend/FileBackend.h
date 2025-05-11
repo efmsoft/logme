@@ -88,6 +88,8 @@ namespace Logme
     LOGMELNK static size_t GetQueueSizeLimitDefault();
     LOGMELNK static void SetQueueSizeLimitDefault(size_t size);
 
+    LOGMELNK bool TestFileInUse(const std::string& file) const;
+
   private:
     class FileManagerFactory& GetFactory() const;
 

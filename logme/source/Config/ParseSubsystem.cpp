@@ -42,7 +42,7 @@ bool ParseSubsystems(
 
   auto& l = c["list"];
 
-  if (!c.isArray())
+  if (!l.isArray())
   {
     LogmeE(CHINT, "\"subsystems[\"list\"]\" is not an array");
     return false;

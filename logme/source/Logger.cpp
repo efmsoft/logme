@@ -19,7 +19,8 @@ using namespace Logme;
 LoggerPtr Logme::Instance = std::make_shared<Logger>();
 
 Logger::Logger()
-  : BlockReportedSubsystems(true)
+  : HomeDirectoryWatchDog(HomeDirectory, std::bind_front(&Logger::TestFileInUse, this))
+  , BlockReportedSubsystems(true)
   , IDGenerator(1)
   , ControlSocket(-1)
   , LastDoAutodelete(0)
@@ -93,6 +94,11 @@ void Logger::DeleteAllChannels()
 const std::string& Logger::GetHomeDirectory() const
 {
   return HomeDirectory;
+}
+
+bool Logger::TestFileInUse(const std::string& file)
+{
+  return Factory.TestFileInUse(file);
 }
 
 FileManagerFactory& Logger::GetFileManagerFactory()

@@ -24,6 +24,8 @@ namespace Logme
     void WakeUp();
     bool Empty() const;
 
+    bool TestFileInUse(const std::string& file);
+
   private:
     void ManagementThread();
     bool DispatchEvents(size_t index, bool force);

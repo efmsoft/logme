@@ -42,6 +42,17 @@ bool FileManager::Empty() const
   return Backend.empty();
 }
 
+bool FileManager::TestFileInUse(const std::string& file)
+{
+  for (auto& b : Backend)
+  {
+    if (b->TestFileInUse(file))
+      return true;
+  }
+
+  return false;
+}
+
 bool FileManager::DispatchEvents(size_t index, bool force)
 {
   FileBackend* backend = Backend[index];

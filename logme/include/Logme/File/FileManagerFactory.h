@@ -1,5 +1,7 @@
 #pragma once 
 
+#include <string>
+
 namespace Logme
 {
   class FileBackend;
@@ -17,5 +19,7 @@ namespace Logme
     void Add(FileBackend* backend);
     void Remove(FileBackend* backend);
     void WakeUp();
+
+    bool TestFileInUse(const std::string& file);
   };
 }

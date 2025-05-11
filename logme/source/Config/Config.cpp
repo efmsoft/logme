@@ -71,6 +71,10 @@ bool Logger::LoadConfiguration(
   if (!ParseSubsystems(config, blockReported, subsystems))
     return false;
 
+  HomeDirectoryConfig hdc;
+  if (!ParseHomeDirectoryConfig(config, hdc))
+    return false;
+
   DeleteAllChannels();
   if (!CreateChannels(arr))
   {
@@ -85,6 +89,14 @@ bool Logger::LoadConfiguration(
     ReportSubsystem(SID::Build(s));
 
   BlockReportedSubsystems = blockReported;
+
+  HomeDirectory = hdc.HomeDirectory;
+  HomeDirectoryWatchDog.SetMaximalSize(hdc.MaximalSize);
+  HomeDirectoryWatchDog.SetPeriodicity(hdc.CheckPeriodicity);
+  HomeDirectoryWatchDog.SetExtensions(hdc.Extensions);
+  
+  if (hdc.EnableWatchDog)
+    HomeDirectoryWatchDog.Run();
 
   return StartControlServer(cc);
 #else

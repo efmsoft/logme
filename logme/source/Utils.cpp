@@ -114,3 +114,22 @@ uint64_t Logme::GetCurrentThreadId()
 }   
 
 #endif
+
+std::string Logme::TrimSpaces(const std::string& str)
+{
+  std::string v(str);
+
+  constexpr const char* spaces{ " \t\n\r\f\v" };
+  v.erase(v.find_last_not_of(spaces) + 1);
+  v.erase(0, v.find_first_not_of(spaces));
+  return v;
+}
+
+std::string& Logme::ToLowerAsciiInplace(std::string& v)
+{
+  std::transform(v.begin(), v.end(), v.begin(), [](char c) {
+    return ::tolower((unsigned char)c);
+  });
+
+  return v;
+}

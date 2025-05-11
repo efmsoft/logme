@@ -38,3 +38,13 @@ void FileManagerFactory::WakeUp()
   if (Instance)
     Instance->WakeUp();
 }
+
+bool FileManagerFactory::TestFileInUse(const std::string& file)
+{
+  std::lock_guard guard(ListLock);
+
+  if (Instance)
+    return Instance->TestFileInUse(file);
+
+  return false;
+}

@@ -28,4 +28,8 @@ namespace Logme
   );
 
   LOGMELNK void SortLines(std::string& s);
+
+  LOGMELNK std::string TrimSpaces(const std::string& str);
+
+  LOGMELNK std::string& ToLowerAsciiInplace(std::string&);
 }

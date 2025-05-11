@@ -5,6 +5,8 @@
 #include <json/json.h>
 #endif
 
+#include "../Config/Helper.h"
+
 using namespace Logme;
 
 FileBackendConfig::FileBackendConfig()
@@ -35,13 +37,13 @@ bool FileBackendConfig::Parse(const Json::Value* po)
 
   if (o.isMember("max-size"))
   {
-    if (!o["max-size"].isInt())
+    if (!o["max-size"].isInt() && !o["max-size"].isString())
     {
-      LogmeE(CHINT, "\"max-size\" is not an integer value");
+      LogmeE(CHINT, "\"max-size\" is not an integer or a string value");
       return false;
     }
 
-    MaxSize = o["max-size"].asInt();
+    MaxSize = GetByteSize(o, "max-size", MaxSize);
   }
 
   if (!o.isMember("file"))

@@ -9,6 +9,7 @@
 #include <thread>
 
 #include <Logme/Channel.h>
+#include <Logme/File/DirectorySizeWatchdog.h>
 #include <Logme/File/FileManagerFactory.h>
 #include <Logme/Stream.h>
 #include <Logme/Utils.h>
@@ -28,7 +29,9 @@ namespace Logme
 
     ChannelMap Channels;
     ChannelPtr Default;
+    
     std::string HomeDirectory;
+    DirectorySizeWatchdog HomeDirectoryWatchDog;
 
     bool BlockReportedSubsystems;
     std::vector<uint64_t> Subsystems;
@@ -184,6 +187,8 @@ namespace Logme
     LOGMELNK static bool DefaultCondition();
 
     LOGMELNK void IterateChannels(const TChannelCallback& callback);
+
+    LOGMELNK bool TestFileInUse(const std::string& file);
 
   protected:
     ChannelPtr CreateChannelInternal(

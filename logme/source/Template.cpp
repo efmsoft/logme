@@ -91,12 +91,14 @@ std::string Logme::ProcessTemplate(
   constexpr const char* pPid = "{pid}";
   constexpr const char* pPName = "{pname}";
   constexpr const char* pDate = "{date}";
+  constexpr const char* pDay = "{day}";
   constexpr const char* pTarget = "{target}";
   constexpr const char* pExePath = "{exepath}";
 
   static const size_t pidl = strlen(pPid);
   static const size_t pnamel = strlen(pPName);
   static const size_t pdatel = strlen(pDate);
+  static const size_t pdayl = strlen(pDay);
   static const size_t ptargetl = strlen(pTarget);
   static const size_t pexepathl = strlen(pExePath);
 
@@ -186,8 +188,28 @@ std::string Logme::ProcessTemplate(
           name += buffer;
           continue;
         }
-        else if (notProcessed)
-          *notProcessed |= TEMPLATE_PDATE;
+        else if (strncmp(p, pDay, pdayl) == 0)
+        {
+          if (param.Flags & TEMPLATE_PDAY)
+          {
+            p += pdayl;
+
+            const time_t now = time(0);
+#ifdef _WIN32
+            struct tm tmstg {};
+            struct tm* t = &tmstg;
+            localtime_s(t, &now);
+#else
+            struct tm* t = localtime(&now);
+#endif
+            char buffer[32];
+            strftime(buffer, sizeof(buffer), "%Y-%m-%d", t);
+
+            name += buffer;
+            continue;
+          }
+          else if (notProcessed)
+          *notProcessed |= TEMPLATE_PDAY;
         
         ftemplate = true;
       }

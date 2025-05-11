@@ -127,11 +127,14 @@ std::string Logme::ProcessTemplate(
         }
         else
         {
+          uint32_t m = 0;
           std::string v = EnvGetVar(var.c_str());
 
-          if (v.empty())
-            ftemplate = true;
-          
+          // The variable value string can also contain 
+          // substitution fields
+          v = ProcessTemplate(v.c_str(), param, &m);
+
+          ftemplate = true;
           name += v;
         }
           
@@ -175,12 +178,13 @@ std::string Logme::ProcessTemplate(
           p += pdatel;
 
           const time_t now = time(0);
+          struct tm tmstg {};
+
 #ifdef _WIN32
-          struct tm tmstg{};
           struct tm* t = &tmstg;
           localtime_s(t, &now);
 #else
-          struct tm * t = localtime(&now);
+          struct tm * t = localtime_r(&now);
 #endif
           char buffer[32];
           strftime(buffer, sizeof(buffer), "%Y-%m-%d-%H-%M-%S", t);
@@ -195,12 +199,13 @@ std::string Logme::ProcessTemplate(
             p += pdayl;
 
             const time_t now = time(0);
-#ifdef _WIN32
             struct tm tmstg {};
+
+#ifdef _WIN32
             struct tm* t = &tmstg;
             localtime_s(t, &now);
 #else
-            struct tm* t = localtime(&now);
+            struct tm* t = localtime_r(&now);
 #endif
             char buffer[32];
             strftime(buffer, sizeof(buffer), "%Y-%m-%d", t);

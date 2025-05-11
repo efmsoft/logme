@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <filesystem>
 #include <functional>
 #include <stdarg.h>
 
@@ -89,6 +90,17 @@ void Logger::DeleteAllChannels()
 
   Channels.clear();
   Default.reset();
+}
+
+void Logger::SetHomeDirectory(const std::string& path)
+{
+  HomeDirectory = path;
+
+  if (HomeDirectory.empty() == false)
+  {
+    if (!HomeDirectory.ends_with(std::filesystem::path::preferred_separator))
+      HomeDirectory += std::filesystem::path::preferred_separator;
+  }
 }
 
 const std::string& Logger::GetHomeDirectory() const

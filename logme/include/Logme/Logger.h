@@ -168,6 +168,7 @@ namespace Logme
     LOGMELNK void Autodelete(const ID& id);
     LOGMELNK void CreateDefaultChannelLayout(bool delete_all = true);
 
+    LOGMELNK void SetHomeDirectory(const std::string& path);
     LOGMELNK const std::string& GetHomeDirectory() const;
     LOGMELNK FileManagerFactory& GetFileManagerFactory();
 

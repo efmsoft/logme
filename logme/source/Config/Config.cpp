@@ -90,7 +90,7 @@ bool Logger::LoadConfiguration(
 
   BlockReportedSubsystems = blockReported;
 
-  HomeDirectory = hdc.HomeDirectory;
+  SetHomeDirectory(hdc.HomeDirectory);
   HomeDirectoryWatchDog.SetMaximalSize(hdc.MaximalSize);
   HomeDirectoryWatchDog.SetPeriodicity(hdc.CheckPeriodicity);
   HomeDirectoryWatchDog.SetExtensions(hdc.Extensions);

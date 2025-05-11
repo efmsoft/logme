@@ -12,6 +12,8 @@ using namespace Logme;
 FileBackendConfig::FileBackendConfig()
   : Append(true)
   , MaxSize(FileBackend::GetMaxSizeDefault())
+  , DailyRotation(false)
+  , MaxParts(2)
 {
 }
 
@@ -44,6 +46,31 @@ bool FileBackendConfig::Parse(const Json::Value* po)
     }
 
     MaxSize = GetByteSize(o, "max-size", MaxSize);
+  }
+
+  if (o.isMember("rotation"))
+  {
+    if (!o["rotation"].isString())
+    {
+      LogmeE(CHINT, "\"rotation\" is not a string value");
+      return false;
+    }
+
+    std::string v = TrimSpaces(o["rotation"].asString());
+    ToLowerAsciiInplace(v);
+
+    DailyRotation = v == "daily";
+  }
+
+  if (o.isMember("max-parts"))
+  {
+    if (!o["max-parts"].isInt())
+    {
+      LogmeE(CHINT, "\"max-parts\" is not an integer");
+      return false;
+    }
+
+    MaxParts = o["max-parts"].asInt();
   }
 
   if (!o.isMember("file"))

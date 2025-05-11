@@ -14,6 +14,9 @@ namespace Logme
     bool Append;
     size_t MaxSize;
     std::string Filename;
+    
+    bool DailyRotation;
+    int MaxParts;
 
     LOGMELNK FileBackendConfig();
     LOGMELNK ~FileBackendConfig();

@@ -152,6 +152,9 @@ bool FileBackend::CreateLog(const char* v)
   ProcessTemplateParam param;
   std::string name = ProcessTemplate(v, param);
 
+  if (!IsAbsolutePath(name))
+    name = Owner->GetOwner()->GetHomeDirectory() + name;
+
   CloseLog();
   Name.clear();
 

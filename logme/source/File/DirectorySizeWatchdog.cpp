@@ -201,7 +201,7 @@ void DirectorySizeWatchdog::DeleteFiles(
       fLogmeE(CHINT, "unable to delete {}: {}", file.Path.string(), ec.message());
     }
     else
-      fLogmeE(CHINT, "{} was deleted", file.Path.string());
+      fLogmeW(CHINT, "{} was deleted", file.Path.string());
   }
 }
 

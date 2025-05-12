@@ -201,7 +201,7 @@ std::string Logme::ProcessTemplate(
           struct tm* t = &tmstg;
           localtime_s(t, &now);
 #else
-          struct tm * t = localtime_r(&now);
+          struct tm * t = localtime_r(&now, &tmstg);
 #endif
           char buffer[32];
           strftime(buffer, sizeof(buffer), "%Y-%m-%d-%H-%M-%S", t);
@@ -228,7 +228,7 @@ std::string Logme::ProcessTemplate(
           struct tm* t = &tmstg;
           localtime_s(t, &now);
 #else
-          struct tm* t = localtime_r(&now);
+          struct tm* t = localtime_r(&now, &tmstg);
 #endif
           char buffer[32];
           strftime(buffer, sizeof(buffer), "%Y-%m-%d", t);

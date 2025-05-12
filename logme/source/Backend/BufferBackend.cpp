@@ -29,7 +29,7 @@ void BufferBackend::Append(const BufferBackend& bb)
 void BufferBackend::Append(const char* str, int nc)
 {
   if (nc == -1)
-    nc = strlen(str);
+    nc = (int)strlen(str);
 
   size_t pos = Buffer.size();
   if (pos)

@@ -38,7 +38,5 @@ void DayChangeDetector::UpdateDayBoundaries()
   StartOfDayTime = mktime(&tmNow);
 
   // Next midnight is +24 hours
-  //NextMidnightTime = StartOfDayTime + 24ULL * 60 * 60;
-
-  NextMidnightTime = StartOfDayTime + 3 * 60;
+  NextMidnightTime = StartOfDayTime + 24ULL * 60 * 60;
 }

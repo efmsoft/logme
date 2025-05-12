@@ -1,6 +1,7 @@
 #include <ctime>
 #include <regex>
 #include <string.h>
+#include <time.h>
 
 #include <Logme/File/exe_path.h>
 #include <Logme/Logme.h>

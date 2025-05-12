@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Logme/Backend/Backend.h>
+#include <Logme/DayChangeDetector.h>
 #include <Logme/File/file_io.h>
 #include <Logme/Types.h>
 
@@ -36,6 +37,7 @@ namespace Logme
     size_t MaxSize;
     size_t QueueSizeLimit;
     std::string Name;
+    std::string NameTemplate;
 
     volatile bool DataReady;
     volatile long Flush;
@@ -50,6 +52,10 @@ namespace Logme
 
     std::condition_variable Done;
     std::condition_variable Shutdown;
+
+    DayChangeDetector Day;
+    bool DailyRotation;
+    int MaxParts;
 
     static size_t MaxSizeDefault;
     static size_t QueueSizeLimitDefault;
@@ -113,5 +119,7 @@ namespace Logme
     friend class FileManager;
     bool WorkerFunc(bool force);
     void OnShutdown();
+
+    bool ChangePart();
   };
 }

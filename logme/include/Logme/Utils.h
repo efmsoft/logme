@@ -32,4 +32,10 @@ namespace Logme
   LOGMELNK std::string TrimSpaces(const std::string& str);
 
   LOGMELNK std::string& ToLowerAsciiInplace(std::string&);
+
+  LOGMELNK std::string ReplaceAll(
+    const std::string& where
+    , const std::string& what
+    , const std::string& on
+  );
 }

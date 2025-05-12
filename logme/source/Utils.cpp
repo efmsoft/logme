@@ -133,3 +133,26 @@ std::string& Logme::ToLowerAsciiInplace(std::string& v)
 
   return v;
 }
+
+std::string Logme::ReplaceAll(
+  const std::string& where
+  , const std::string& what
+  , const std::string& on
+)
+{
+  if (what == on)
+    return where;
+
+  std::string str(where);
+
+  while (true)
+  {
+    auto pos = str.find(what);
+    if (pos == std::string::npos)
+      break;
+
+    str = str.substr(0, pos) + on + str.substr(pos + what.size());
+  }
+
+  return str;
+}

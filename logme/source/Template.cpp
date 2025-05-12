@@ -1,9 +1,10 @@
+#include <regex>
+#include <string.h>
+
 #include <Logme/File/exe_path.h>
 #include <Logme/Logme.h>
 #include <Logme/Template.h>
 #include <Logme/Utils.h>
-
-#include <string.h>
 
 #if defined(__GNUC__) && !defined(__DJGPP__)
 #include <sys/time.h>
@@ -34,6 +35,13 @@
 #endif
  
 using namespace Logme;
+
+const char* Logme::TPID = "{pid}";
+const char* Logme::TPNAME ="{pname}";
+const char* Logme::TDATE = "{date}";
+const char* Logme::TDATETIME = "{datetime}";
+const char* Logme::TTARGET = "{target}";
+const char* Logme::TEXEPATH = "{exepath}";
 
 #if defined(__linux__) || defined(__APPLE__) || defined(__sun__)
 static int GetModuleFileNameA(int, char* buff, size_t maxLen)
@@ -82,25 +90,32 @@ static std::string GetExeName()
   return e ? e + 1 : buff;
 } 
 
+std::string Logme::ReplaceDatetimePlaceholders(
+  const std::string& where
+  , const std::string& on
+)
+{
+  static const std::regex special_chars(R"([.^$|()\\[\]*+?])");
+  std::string re(std::regex_replace(where, special_chars, R"(\$&)"));
+  
+  re = ReplaceAll(re, TDATE, ".+");
+  re = ReplaceAll(re, TDATETIME, ".+");
+
+  return ReplaceAll(re, ".+.+", ".+");
+}
+
 std::string Logme::ProcessTemplate(
   const char* p
   , const ProcessTemplateParam& param
   , uint32_t* notProcessed
 )
 {
-  constexpr const char* pPid = "{pid}";
-  constexpr const char* pPName = "{pname}";
-  constexpr const char* pDate = "{date}";
-  constexpr const char* pDay = "{day}";
-  constexpr const char* pTarget = "{target}";
-  constexpr const char* pExePath = "{exepath}";
-
-  static const size_t pidl = strlen(pPid);
-  static const size_t pnamel = strlen(pPName);
-  static const size_t pdatel = strlen(pDate);
-  static const size_t pdayl = strlen(pDay);
-  static const size_t ptargetl = strlen(pTarget);
-  static const size_t pexepathl = strlen(pExePath);
+  static const size_t TPID_L = strlen(TPID);
+  static const size_t TPNAME_L = strlen(TPNAME);
+  static const size_t TDATE_L = strlen(TDATE);
+  static const size_t TDATETIME_L = strlen(TDATETIME);
+  static const size_t TTARGET_L = strlen(TTARGET);
+  static const size_t TEXEPATH_L = strlen(TEXEPATH);
 
   bool ftemplate = false;
   const char* tstr = p;
@@ -141,11 +156,11 @@ std::string Logme::ProcessTemplate(
         p = e + 1;                          // next char after }
         continue;
       }
-      else if (strncmp(p, pPid, pidl) == 0)
+      else if (strncmp(p, TPID, TPID_L) == 0)
       {
         if (param.Flags & TEMPLATE_PID)
         {
-          p += pidl;
+          p += TPID_L;
           name += dword2str(GetCurrentProcessId());
           continue;
         }
@@ -155,11 +170,11 @@ std::string Logme::ProcessTemplate(
 
         ftemplate = true;
       }
-      else if (strncmp(p, pPName, pnamel) == 0)
+      else if (strncmp(p, TPNAME, TPNAME_L) == 0)
       {
         if (param.Flags & TEMPLATE_PNAME)
         {
-          p += pnamel;
+          p += TPNAME_L;
 
           std::string exe = GetExeName();
           name += exe.substr(0, exe.find_last_of('.'));
@@ -171,11 +186,11 @@ std::string Logme::ProcessTemplate(
       
         ftemplate = true;
       }
-      else if (strncmp(p, pDate, pdatel) == 0)
+      else if (strncmp(p, TDATETIME, TDATETIME_L) == 0)
       {
-        if (param.Flags & TEMPLATE_PDATE)
+        if (param.Flags & TEMPLATE_PDATETIME)
         {
-          p += pdatel;
+          p += TDATETIME_L;
 
           const time_t now = time(0);
           struct tm tmstg {};
@@ -192,37 +207,42 @@ std::string Logme::ProcessTemplate(
           name += buffer;
           continue;
         }
-        else if (strncmp(p, pDay, pdayl) == 0)
-        {
-          if (param.Flags & TEMPLATE_PDAY)
-          {
-            p += pdayl;
 
-            const time_t now = time(0);
-            struct tm tmstg {};
+        if (notProcessed)
+          *notProcessed |= TEMPLATE_PDATETIME;
 
-#ifdef _WIN32
-            struct tm* t = &tmstg;
-            localtime_s(t, &now);
-#else
-            struct tm* t = localtime_r(&now);
-#endif
-            char buffer[32];
-            strftime(buffer, sizeof(buffer), "%Y-%m-%d", t);
-
-            name += buffer;
-            continue;
-          }
-          else if (notProcessed)
-          *notProcessed |= TEMPLATE_PDAY;
-        
         ftemplate = true;
       }
-      else if (strncmp(p, pTarget, ptargetl) == 0)
+      else if (strncmp(p, TDATE, TDATE_L) == 0)
+      {
+        if (param.Flags & TEMPLATE_PDATE)
+        {
+          p += TDATE_L;
+
+          const time_t now = time(0);
+          struct tm tmstg {};
+
+#ifdef _WIN32
+          struct tm* t = &tmstg;
+          localtime_s(t, &now);
+#else
+          struct tm* t = localtime_r(&now);
+#endif
+          char buffer[32];
+          strftime(buffer, sizeof(buffer), "%Y-%m-%d", t);
+
+          name += buffer;
+          continue;
+        }
+
+        if (notProcessed)
+          *notProcessed |= TEMPLATE_PDATE;
+      }
+      else if (strncmp(p, TTARGET, TTARGET_L) == 0)
       {
         if (param.Flags & TEMPLATE_TARGET)
         {
-          p += ptargetl;
+          p += TTARGET_L;
 
           if (!param.TargetChannel)
             name += "0";
@@ -237,11 +257,11 @@ std::string Logme::ProcessTemplate(
 
         ftemplate = true;
       }
-      else if (strncmp(p, pExePath, pexepathl) == 0)
+      else if (strncmp(p, TEXEPATH, TEXEPATH_L) == 0)
       {
         if (param.Flags & TEMPLATE_EXEPATH)
         {
-          p += pexepathl;
+          p += TEXEPATH_L;
 
           name += GetExecutablePath();
           continue;

@@ -1,5 +1,6 @@
 #include <cassert>
 #include <chrono>
+#include <regex>
 #include <stdint.h>
 #include <string.h>
 #include <vector>
@@ -10,9 +11,12 @@
 #include <Logme/File/exe_path.h>
 #include <Logme/File/FileManagerFactory.h>
 #include <Logme/Logger.h>
+#include <Logme/Logme.h>
 #include <Logme/Template.h>
 #include <Logme/Time/datetime.h> 
 #include <Logme/Types.h>
+
+#include "../File/CleanOldest.h"
 
 using namespace std::chrono_literals;
 
@@ -45,6 +49,8 @@ FileBackend::FileBackend(ChannelPtr owner)
   , ShutdownCalled(owner == nullptr)
   , LastFlush(0)
   , MaxBufferSize(0)
+  , DailyRotation(false)
+  , MaxParts(2)
 {
   if (Owner)
     GetFactory().Add(this);
@@ -110,8 +116,13 @@ bool FileBackend::ApplyConfig(BackendConfigPtr c)
 {
   FileBackendConfig* p = (FileBackendConfig*)c.get();
 
-  SetAppend(p->Append);
+  SetAppend(p->DailyRotation ? true : p->Append);
   SetMaxSize(p->MaxSize);
+
+  DailyRotation = p->DailyRotation;
+  MaxParts = p->MaxParts;
+  
+  Day.UpdateDayBoundaries();
 
   return CreateLog(p->Filename.c_str());
 }
@@ -149,6 +160,8 @@ void FileBackend::SetAppend(bool append)
 
 bool FileBackend::CreateLog(const char* v)
 {
+  NameTemplate = v;
+
   ProcessTemplateParam param;
   std::string name = ProcessTemplate(v, param);
 
@@ -193,8 +206,34 @@ void FileBackend::Write(CharBuffer& data, SizeArray& msgSize)
   }
 }
 
+bool FileBackend::ChangePart()
+{
+  if (!CreateLog(NameTemplate.c_str()))
+  {
+    LogmeE(CHINT, "failed to create a new log");
+    return false;
+  }
+
+  ProcessTemplateParam param(TEMPLATE_ALL & (~TEMPLATE_DATE_AND_TIME));
+  std::string re = ProcessTemplate(NameTemplate.c_str(), param);
+
+  re = ReplaceDatetimePlaceholders(re, ".+");
+  CleanFiles(std::regex(re), Name, MaxParts);
+
+  return true;
+}
+
 void FileBackend::Display(Context& context, const char* line)
 {
+  if (File == -1)
+    return;
+
+  if (DailyRotation && Day.IsSameDayCached() == false)
+  {
+    if (!ChangePart())
+      return;
+  }
+
   int nc;
   const char* buffer = context.Apply(Owner, Owner->GetFlags(), line, nc);
   AppendString(buffer, nc);

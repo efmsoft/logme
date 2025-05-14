@@ -48,7 +48,11 @@ Procedure::Procedure(
 
 Procedure::~Procedure()
 {
-  std::string result = RValPrinter->Format();
+  std::string result;
+  
+  if (RValPrinter)
+    result = RValPrinter->Format();
+
   Print(false, result.c_str());
 }
 

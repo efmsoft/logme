@@ -49,11 +49,19 @@ namespace Logme
 #if _LOGME_ACTIVE
 #define _LogmeP(level, retval, ...) \
   unsigned char _procStorage[sizeof(Logme::PrinterT<int>)]; \
-  const Logme::Context& _procContext = LOGME_CONTEXT(level, &CH); \
+  const Logme::Context& _procContext = LOGME_CONTEXT(level, &CH, &SUBSID); \
   Logme::Procedure logme_proc(_procContext, Logme::CreatePrinter(retval, _procStorage), ## __VA_ARGS__)
+
+#define _LogmePV(level) \
+  const Logme::Context& _procContext = LOGME_CONTEXT(level, &CH, &SUBSID); \
+  Logme::Procedure logme_proc(_procContext, nullptr)
 #else
 #define _LogmeP(level, retval, ...)
+#define _LogmePV(level)
 #endif
 
 #define LogmeP(retval, ...) \
   _LogmeP(Logme::Level::LEVEL_INFO, retval, ## __VA_ARGS__)
+
+#define LogmePV() \
+  _LogmePV(Logme::Level::LEVEL_INFO)

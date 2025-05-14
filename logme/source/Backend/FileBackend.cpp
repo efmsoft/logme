@@ -124,7 +124,8 @@ bool FileBackend::ApplyConfig(BackendConfigPtr c)
   
   Day.UpdateDayBoundaries();
 
-  return CreateLog(p->Filename.c_str());
+  NameTemplate = p->Filename;
+  return ChangePart();
 }
 
 void FileBackend::WaitForShutdown()

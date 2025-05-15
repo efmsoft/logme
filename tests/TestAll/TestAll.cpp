@@ -52,7 +52,7 @@ std::string OutputToChannel1()
 int OutputToNamespaceChannel(int arg1, const char* argv, const std::string& str)
 {
   int rc = 8;
-  LogmeP(rc, _ARGS3(arg1, argv, str));
+  LogmeP(rc, ARGS3(arg1, argv, str));
 
   LOGME_CHANNEL(CH, "notdefault");
 

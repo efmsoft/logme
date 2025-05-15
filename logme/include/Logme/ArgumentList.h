@@ -7,78 +7,51 @@
 
 namespace Logme
 {
-  template<typename T1> 
-  std::string ArgumentList(
-    const char* name1, const T1& t1
-  )
+  template<typename T>
+  std::string FormatOne(const std::pair<const char*, T>& item)
   {
-    return std::string(name1) + "=" + FormatValue(t1);
+    return std::string(item.first) + "=" + FormatValue(item.second);
   }
 
-  template<typename T1, typename T2>
-  std::string ArgumentList(
-    const char* name1, const T1& t1
-    , const char* name2, const T2& t2
-  )
+  template<typename T>
+  std::string FormatOne(const T& value)
   {
-    return std::string(name1) + "=" + FormatValue(t1)
-      + ", " + name2 + "=" + FormatValue(t2);
+    return FormatValue(value);
   }
 
-  template<typename T1, typename T2, typename T3>
-  std::string ArgumentList(
-    const char* name1, const T1& t1
-    , const char* name2, const T2& t2
-    , const char* name3, const T3& t3
-  )
+  template<typename Tuple, std::size_t... Is>
+  std::string FormatTupleWithCommas(const Tuple& tup, std::index_sequence<Is...>)
   {
-    return std::string(name1) + "=" + FormatValue(t1)
-      + ", " + name2 + "=" + FormatValue(t2)
-      + ", " + name3 + "=" + FormatValue(t3);
+    std::ostringstream oss;
+    ((oss << FormatOne(std::get<Is>(tup)) << (Is + 1 < sizeof...(Is) ? ", " : "")), ...);
+
+    return oss.str();
   }
 
-  template<typename T1, typename T2, typename T3, typename T4>
-  std::string ArgumentList(
-    const char* name1, const T1& t1
-    , const char* name2, const T2& t2
-    , const char* name3, const T3& t3
-    , const char* name4, const T4& t4
-  )
+  template<typename... Args>
+  std::string FormatAll(Args&&... args)
   {
-    return std::string(name1) + "=" + FormatValue(t1)
-      + ", " + name2 + "=" + FormatValue(t2)
-      + ", " + name3 + "=" + FormatValue(t3)
-      + ", " + name4 + "=" + FormatValue(t4);
-  }
-
-  template<typename T1, typename T2, typename T3, typename T4, typename T5>
-  std::string ArgumentList(
-    const char* name1, const T1& t1
-    , const char* name2, const T2& t2
-    , const char* name3, const T3& t3
-    , const char* name4, const T4& t4
-    , const char* name5, const T5& t5
-  )
-  {
-    return std::string(name1) + "=" + FormatValue(t1)
-      + ", " + name2 + "=" + FormatValue(t2)
-      + ", " + name3 + "=" + FormatValue(t3)
-      + ", " + name4 + "=" + FormatValue(t4)
-      + ", " + name5 + "=" + FormatValue(t5);
+    auto tup = std::make_tuple(std::forward<Args>(args)...);
+    return FormatTupleWithCommas(tup, std::index_sequence_for<Args...>{});
   }
 }
 
-#define _ARGS1(arg1) \
-  Logme::ArgumentList(#arg1, arg1).c_str()
+#define NAMED(x) std::make_pair(#x, (x))
 
-#define _ARGS2(arg1, arg2) \
-  Logme::ArgumentList(#arg1, arg1, #arg2, arg2).c_str()
+#define ARGS(...) Logme::FormatAll(__VA_ARGS__).c_str()
 
-#define _ARGS3(arg1, arg2, arg3) \
-  Logme::ArgumentList(#arg1, arg1, #arg2, arg2, #arg3, arg3).c_str()
+#define ARGS1(arg1) \
+  Logme::FormatAll(NAMED(arg1)).c_str()
 
-#define _ARGS4(arg1, arg2, arg3, arg4) \
-  Logme::ArgumentList(#arg1, arg1, #arg2, arg2, #arg3, arg3, #arg4, arg4).c_str()
+#define ARGS2(arg1, arg2) \
+  Logme::FormatAll(NAMED(arg1), NAMED(arg2)).c_str()
 
-#define _ARGS5(arg1, arg2, arg3, arg4, arg5) \
-  Logme::ArgumentList(#arg1, arg1, #arg2, arg2, #arg3, arg3, #arg4, arg4, #arg5, arg5).c_str()
+#define ARGS3(arg1, arg2, arg3) \
+  Logme::FormatAll(NAMED(arg1), NAMED(arg2), NAMED(arg3)).c_str()
+
+#define ARGS4(arg1, arg2, arg3, arg4) \
+  Logme::FormatAll(NAMED(arg1), NAMED(arg2), NAMED(arg3), NAMED(arg4)).c_str()
+
+#define ARGS5(arg1, arg2, arg3, arg4, arg5) \
+  Logme::FormatAll(NAMED(arg1), NAMED(arg2), NAMED(arg3), NAMED(arg4), NAMED(arg5)).c_str()
+

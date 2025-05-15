@@ -33,7 +33,7 @@ TEST(OutputFlags, Channel)
 int MyFunction(xint64_t p1, const char* p2)
 {
   int rc = 8;
-  LogmeP(rc, CHT, _ARGS2(p1, p2));
+  LogmeP(rc, CHT, ARGS2(p1, p2));
 
   Logme::Sleep(100);
   return rc;

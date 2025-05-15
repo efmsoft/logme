@@ -7,4 +7,4 @@ target_include_directories(logme PRIVATE
   ${ALLSTAT_INCLUDE_DIR}
 )
 
-target_compile_definitions(logme PRIVATE _WINSOCK_DEPRECATED_NO_WARNINGS _LOGME_STATIC_BUILD_)
+target_compile_definitions(logme PRIVATE _WINSOCK_DEPRECATED_NO_WARNINGS _CRT_SECURE_NO_WARNINGS _LOGME_STATIC_BUILD_)

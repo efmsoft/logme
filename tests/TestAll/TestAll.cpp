@@ -121,20 +121,17 @@ enum class MyEnum
   MyEnumTwo,
 };
 
-namespace Logme
+template<> std::string FormatValue<MyEnum>(const MyEnum& value)
 {
-  std::string FormatValue(const MyEnum& value)
+  switch (value)
   {
-    switch (value)
-    {
-    case MyEnum::MyEnumZero: return "MyEnumZero";
-    case MyEnum::MyEnumOne: return "MyEnumOne";
-    case MyEnum::MyEnumTwo: return "MyEnumTwo";
-    default:
-      break;
-    }
-    return "";
+  case MyEnum::MyEnumZero: return "MyEnumZero";
+  case MyEnum::MyEnumOne: return "MyEnumOne";
+  case MyEnum::MyEnumTwo: return "MyEnumTwo";
+  default:
+    break;
   }
+  return "";
 }
 
 MyEnum ProcReturningEnumValue()

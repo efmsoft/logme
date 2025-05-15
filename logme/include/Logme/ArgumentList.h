@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include <Logme/Printer.h>
 #include <Logme/Types.h>
 
 namespace Logme
@@ -11,7 +12,6 @@ namespace Logme
     const char* name1, const T1& t1
   )
   {
-    LOGMELNK std::string FormatValue(const T1&);
     return std::string(name1) + "=" + FormatValue(t1);
   }
 
@@ -21,8 +21,6 @@ namespace Logme
     , const char* name2, const T2& t2
   )
   {
-    LOGMELNK std::string FormatValue(const T1&);
-    LOGMELNK std::string FormatValue(const T2&);
     return std::string(name1) + "=" + FormatValue(t1)
       + ", " + name2 + "=" + FormatValue(t2);
   }
@@ -34,10 +32,6 @@ namespace Logme
     , const char* name3, const T3& t3
   )
   {
-    LOGMELNK std::string FormatValue(const T1&);
-    LOGMELNK std::string FormatValue(const T2&);
-    LOGMELNK std::string FormatValue(const T3&);
-
     return std::string(name1) + "=" + FormatValue(t1)
       + ", " + name2 + "=" + FormatValue(t2)
       + ", " + name3 + "=" + FormatValue(t3);
@@ -51,11 +45,6 @@ namespace Logme
     , const char* name4, const T4& t4
   )
   {
-    LOGMELNK std::string FormatValue(const T1&);
-    LOGMELNK std::string FormatValue(const T2&);
-    LOGMELNK std::string FormatValue(const T3&);
-    LOGMELNK std::string FormatValue(const T4&);
-
     return std::string(name1) + "=" + FormatValue(t1)
       + ", " + name2 + "=" + FormatValue(t2)
       + ", " + name3 + "=" + FormatValue(t3)
@@ -71,12 +60,6 @@ namespace Logme
     , const char* name5, const T5& t5
   )
   {
-    LOGMELNK std::string FormatValue(const T1&);
-    LOGMELNK std::string FormatValue(const T2&);
-    LOGMELNK std::string FormatValue(const T3&);
-    LOGMELNK std::string FormatValue(const T4&);
-    LOGMELNK std::string FormatValue(const T5&);
-
     return std::string(name1) + "=" + FormatValue(t1)
       + ", " + name2 + "=" + FormatValue(t2)
       + ", " + name3 + "=" + FormatValue(t3)

@@ -4,6 +4,8 @@
 
 #include <Logme/Types.h>
 
+template<typename T> std::string FormatValue(const T&);
+
 namespace Logme
 {
   struct Printer
@@ -25,8 +27,7 @@ namespace Logme
 
     std::string Format() override
     {
-      std::string FormatValue(const T&);
-      return FormatValue(RetVal);
+      return ::FormatValue(RetVal);
     }
   };
 

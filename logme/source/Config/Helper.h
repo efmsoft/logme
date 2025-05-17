@@ -17,8 +17,6 @@ bool ParseFlags(const Json::Value& root, Logme::OutputFlagsMap& m);
 bool ParseChannels(const Json::Value& root, Logme::OutputFlagsMap& m, Logme::ChannelConfigArray& arr);
 bool GetConfigSection(const Json::Value& root, const std::string& section, Json::Value& config);
 bool ParseSubsystems(const Json::Value& root, bool& blockListed, std::list<std::string>& arr);
-uint64_t GetByteSize(const Json::Value& root, const char* option, uint64_t def);
-uint64_t GetInterval(const Json::Value& root, const char* option, uint64_t def);
 
 struct Suffix
 {

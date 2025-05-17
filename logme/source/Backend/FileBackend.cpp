@@ -1,5 +1,6 @@
 #include <cassert>
 #include <chrono>
+#include <filesystem>
 #include <regex>
 #include <stdint.h>
 #include <string.h>
@@ -173,6 +174,10 @@ bool FileBackend::CreateLog(const char* v)
   Name.clear();
 
   Name = name;
+  
+  std::filesystem::create_directories(
+    std::filesystem::path(Name).parent_path()
+  );
 
   return Open(Append);
 }
@@ -188,6 +193,14 @@ bool FileBackend::TestFileInUse(const std::string& file) const
     return false;
 
   return Name == file;
+}
+
+size_t FileBackend::GetSize()
+{
+  if (File == -1)
+    return -1;
+
+  return Seek(0, SEEK_END);
 }
 
 void FileBackend::Write(CharBuffer& data, SizeArray& msgSize)

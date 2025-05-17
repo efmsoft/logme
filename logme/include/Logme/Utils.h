@@ -4,6 +4,10 @@
 #include <string>
 #include <vector>
 
+#ifdef USE_JSONCPP
+#include <json/json.h>
+#endif
+
 #include <Logme/Types.h>
 
 namespace Logme
@@ -38,4 +42,10 @@ namespace Logme
     , const std::string& what
     , const std::string& on
   );
+
+#ifdef USE_JSONCPP
+  LOGMELNK uint64_t GetByteSize(const Json::Value& root, const char* option, uint64_t def);
+  LOGMELNK uint64_t GetInterval(const Json::Value& root, const char* option, uint64_t def);
+#endif
+
 }

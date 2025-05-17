@@ -49,7 +49,7 @@ uint64_t SmartValue(
   return val * mul;
 }
 
-uint64_t GetInterval(const Json::Value& root, const char* option, uint64_t def)
+uint64_t Logme::GetInterval(const Json::Value& root, const char* option, uint64_t def)
 {
   static Suffix suffixes[] =
   {

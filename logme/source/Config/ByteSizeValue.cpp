@@ -6,7 +6,7 @@
 
 using namespace Logme;
 
-uint64_t GetByteSize(const Json::Value& root, const char* option, uint64_t def)
+uint64_t Logme::GetByteSize(const Json::Value& root, const char* option, uint64_t def)
 {
   static Suffix suffixes[] =
   {

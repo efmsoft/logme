@@ -1,6 +1,6 @@
 get_filename_component(LOGME_ROOT "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE) 
 
-file(TO_CMAKE_PATH ${LOGME_ROOT}/logme/source SRCROOT)
+file(TO_CMAKE_PATH ${LOGME_ROOT}/logme SRCROOT)
 file(GLOB_RECURSE SOURCES ${SRCROOT}/*.cpp)
 file(GLOB_RECURSE HEADERS ${SRCROOT}/*.h)
 

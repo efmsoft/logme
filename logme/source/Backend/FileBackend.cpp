@@ -175,9 +175,10 @@ bool FileBackend::CreateLog(const char* v)
 
   Name = name;
   
-  std::filesystem::create_directories(
-    std::filesystem::path(Name).parent_path()
-  );
+  auto dir = std::filesystem::path(Name).parent_path();
+
+  if (std::filesystem::exists(dir) == false)
+    std::filesystem::create_directories(dir);
 
   return Open(Append);
 }

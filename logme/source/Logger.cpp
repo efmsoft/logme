@@ -557,6 +557,9 @@ void Logger::Log(
   , ...
 )
 {
+  if (ch && context.ErrorLevel < ch->GetFilterLevel())
+    return;
+
   Context& context2 = *(Context*)&context;
   context2.Ch = ch;
 

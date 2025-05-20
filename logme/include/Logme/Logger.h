@@ -138,6 +138,9 @@ namespace Logme
     template<typename... Args>
     void Log(const Context& context, const StdFormat*, ChannelPtr ch, Override& ovr, const char* fmt, Args&&... args)
     {
+      if (ch && context.ErrorLevel < ch->GetFilterLevel())
+        return;
+
       std::string out = std::vformat(fmt, std::make_format_args(args...));
       Log(context, ch, ovr, "%s", out.c_str());
     }

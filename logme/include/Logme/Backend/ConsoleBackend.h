@@ -14,6 +14,6 @@ namespace Logme
     LOGMELNK void Display(Context& context, const char* line) override;
     LOGMELNK const char* GetEscapeSequence(Level level);
 
-    LOGMELNK std::ostream& GetOutputStream(Context& context);
+    LOGMELNK FILE* GetOutputStream(Context& context);
   };
 }

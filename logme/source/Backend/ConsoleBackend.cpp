@@ -32,33 +32,33 @@ const char* ConsoleBackend::GetEscapeSequence(enum Level level)
   return ANSI_LIGHT_RED;
 }
 
-std::ostream& ConsoleBackend::GetOutputStream(Context& context)
+FILE* ConsoleBackend::GetOutputStream(Context& context)
 {
-  auto flags = Owner->GetFlags();
+  OutputFlags flags = Owner->GetFlags();
 
   switch (flags.Console)
   {
     case ConsoleStream::STREAM_ALL2COUT:
-      return std::cout;
+      return stdout;
 
     case ConsoleStream::STREAM_ALL2CERR:
-      return std::cerr;
+      return stderr;
 
     case ConsoleStream::STREAM_WARNCERR:
-      return context.ErrorLevel >= Level::LEVEL_WARN ? std::cerr : std::cout;
+      return context.ErrorLevel >= Level::LEVEL_WARN ? stderr : stdout;
 
     case ConsoleStream::STREAM_ERRCERR:
-      return context.ErrorLevel >= Level::LEVEL_ERROR? std::cerr : std::cout;
+      return context.ErrorLevel >= Level::LEVEL_ERROR? stderr : stdout;
 
     case ConsoleStream::STREAM_CERRCERR:
-      return context.ErrorLevel >= Level::LEVEL_CRITICAL? std::cerr : std::cout;
+      return context.ErrorLevel >= Level::LEVEL_CRITICAL? stderr : stdout;
   }
-  return std::cout;
+  return stdout;
 }
 
-static bool IsTerminalStream(std::ostream& stream)
+static bool IsTerminalStream(FILE* stream)
 {
-  if (&stream == &std::cerr)
+  if (stream == stderr)
     return !!_isatty(_fileno(stderr));
 
   return !!_isatty(_fileno(stdout));
@@ -80,14 +80,16 @@ void ConsoleBackend::Display(Context& context, const char* line)
   if (flags.Highlight)
     escape = GetEscapeSequence(context.ErrorLevel);
 
-  auto& stream = GetOutputStream(context);
+  FILE* stream = GetOutputStream(context);
   if (IsTerminalStream(stream) && escape)
   {
     Colorizer colorizer(false);
     colorizer.Escape(escape);
 
-    stream << buffer;
+    fputs(buffer, stream);
   }
   else
-    stream << buffer;
+  {
+    fputs(buffer, stream);
+  }
 }

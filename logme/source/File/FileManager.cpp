@@ -70,7 +70,7 @@ void FileManager::ManagementThread()
 
   // Used to combine data from several consecutive Log() calls
   const unsigned delay = 100;
-  for (unsigned t0 = GetTimeInMillisec();; Sleep(10))
+  for (unsigned t0 = GetTimeInMillisec();; Sleep(50))
   {
     if (ShutdownFlag && Backend.empty())
       break;

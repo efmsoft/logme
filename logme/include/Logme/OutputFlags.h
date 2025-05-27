@@ -31,7 +31,8 @@ namespace Logme
       uint32_t Console : 3; // CONSOLE BACKEND ONLY:Console output type (ConsoleStream enum)
       uint32_t DisableLink : 1; // Do not send to linked channel
       uint32_t ThreadTransition : 1; // Log thread name transitions
-      uint32_t : 11;
+      uint32_t Subsystem : 1; // Print name of subsystem
+      uint32_t : 10;
       uint32_t ProcPrint : 1; // Working in the context of Procedure::xxx
       uint32_t ProcPrintIn : 1; // Input parameters
       uint32_t None : 1; // Invalid flags bit

@@ -438,7 +438,7 @@ Stream Logger::Log(const Context& context, const SID& sid, Override& ovr) // @3
 {
   Context& context2 = *(Context*)&context;
   context2.Ovr = &ovr;
-  context2.Subsystem = &sid;
+  context2.Subsystem = sid;
 
   ApplyThreadChannel(context2);
 
@@ -471,7 +471,7 @@ Stream Logger::Log(const Context& context, const ID& id, const SID& sid) // @6
 {
   Context& context2 = *(Context*)&context;
   context2.Channel = &id;
-  context2.Subsystem = &sid;
+  context2.Subsystem = sid;
 
   OverridePtr ovr = std::make_shared<Override>(GetThreadOverride());
   context2.Ovr = ovr.get();
@@ -483,7 +483,7 @@ Stream Logger::Log(const Context& context, ChannelPtr ch, const SID& sid) // @7
 {
   Context& context2 = *(Context*)&context;
   context2.Ch = ch;
-  context2.Subsystem = &sid;
+  context2.Subsystem = sid;
 
   OverridePtr ovr = std::make_shared<Override>(GetThreadOverride());
   context2.Ovr = ovr.get();
@@ -513,7 +513,7 @@ Stream Logger::Log(const Context& context, const ID& id, const SID& sid, Overrid
 {
   Context& context2 = *(Context*)&context;
   context2.Channel = &id;
-  context2.Subsystem = &sid;
+  context2.Subsystem = sid;
   context2.Ovr = &ovr;
 
   return Stream(shared_from_this(), context2);
@@ -523,7 +523,7 @@ Stream Logger::Log(const Context& context, ChannelPtr ch, const SID& sid, Overri
 {
   Context& context2 = *(Context*)&context;
   context2.Ch = ch;
-  context2.Subsystem = &sid;
+  context2.Subsystem = sid;
   context2.Ovr = &ovr;
 
   return Stream(shared_from_this(), context2);
@@ -674,10 +674,10 @@ void Logger::DoLog(Context& context, const char* format, va_list args)
     context.Ovr->Repetitions++;
   }
 
-  if (context.Subsystem && context.Subsystem->Name)
+  if (context.Subsystem.Name)
   {
     auto& arr = Subsystems;
-    if (std::binary_search(arr.begin(), arr.end(), context.Subsystem->Name))
+    if (std::binary_search(arr.begin(), arr.end(), context.Subsystem.Name))
     {
       if (BlockReportedSubsystems)
         return;

@@ -45,7 +45,7 @@ namespace Logme
 
     ID ChannelStg;
     const ID* Channel;
-    const SID* Subsystem;
+    SID Subsystem;
     Level ErrorLevel;
     const char* Method;
     Module File;

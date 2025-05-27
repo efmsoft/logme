@@ -30,7 +30,7 @@ using namespace Logme;
 Context::Context(Level level, const ID* ch, const SID* sid)
   : ChannelStg{}
   , Channel(ch)
-  , Subsystem(sid)
+  , Subsystem(sid ? *sid : SUBSID)
   , ErrorLevel(level)
   , Method(nullptr)
   , File(nullptr)
@@ -54,7 +54,7 @@ Context::Context(
 )
   : ChannelStg{}
   , Channel(&params.Channel)
-  , Subsystem(&params.Subsystem)
+  , Subsystem(params.Subsystem)
   , ErrorLevel(level)
   , Method(method)
   , File(file)

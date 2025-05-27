@@ -67,6 +67,9 @@ Context::Context(
   if (Channel->Name == nullptr)
     Channel = chdef;
 
+  if (Subsystem.Name == 0)
+    Subsystem = *siddef;
+
   InitContext();
 }
 
@@ -338,6 +341,14 @@ const char* Context::Apply(ChannelPtr ch, OutputFlags flags, const char* text, i
     int c = Channel->Name ? (int)strlen(Channel->Name) : 0;
     nChannel = c + 3; // "{c} "
   }
+  
+  int nSubsystem = 0;
+  char subsystem[128]{};
+  if (flags.Subsystem && Subsystem.Name)
+  {
+    sprintf(subsystem, "#%.8s ", (const char*)&Subsystem.Name);
+    nSubsystem = (int)strlen(subsystem);
+  }
 
   int nFile = 0;
   char line[32] = {0};
@@ -391,7 +402,7 @@ const char* Context::Apply(ChannelPtr ch, OutputFlags flags, const char* text, i
   }
 
   char* buffer = Buffer;
-  int n = nTimestamp + nSignature + nID + nChannel + nFile + nError + nMethod + nLine + nAppend + nEol + 1;
+  int n = nTimestamp + nSignature + nID + nChannel + nSubsystem + nFile + nError + nMethod + nLine + nAppend + nEol + 1;
   if (n > sizeof(Buffer))
   {
     if (ExtBuffer.size() < size_t(n))
@@ -428,6 +439,12 @@ const char* Context::Apply(ChannelPtr ch, OutputFlags flags, const char* text, i
       , Channel->Name ? Channel->Name : ""
     );
     p += nChannel;
+  }
+
+  if (nSubsystem)
+  {
+    strcpy(p, subsystem);
+    p += nSubsystem;
   }
 
   if (nFile)

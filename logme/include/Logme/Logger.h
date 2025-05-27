@@ -120,6 +120,9 @@ namespace Logme
     }
     LOGMELNK void Log(const Context& context, const ID& id, const char* format, ...);
     LOGMELNK void Log(const Context& context, ChannelPtr ch, const char* format, ...);
+    
+    LOGMELNK void Log(const Context& context, const ID& id,  const SID& sid, const char* format, ...);
+    LOGMELNK void Log(const Context& context, ChannelPtr ch, const SID& sid, const char* format, ...);
 
     template<typename... Args>
     void Log(const Context& context, const StdFormat*, Override& ovr, const char* fmt, Args&&... args)

@@ -574,6 +574,43 @@ void Logger::Log(
   va_end(args);
 }
 
+void Logger::Log(const Context& context, const ID& id, const SID& sid, const char* format, ...)
+{
+  Context& context2 = *(Context*)&context;
+  context2.Channel = &id;
+  context2.Subsystem = sid;
+
+  auto ovr = GetThreadOverride();
+  context2.Ovr = &ovr;
+
+  va_list args;
+  va_start(args, format);
+
+  DoLog(context2, format, args);
+
+  va_end(args);
+}
+
+void Logger::Log(const Context& context, ChannelPtr ch, const SID& sid, const char* format, ...)
+{
+  if (ch && context.ErrorLevel < ch->GetFilterLevel())
+    return;
+
+  Context& context2 = *(Context*)&context;
+  context2.Ch = ch;
+  context2.Subsystem = sid;
+
+  auto ovr = GetThreadOverride();
+  context2.Ovr = &ovr;
+
+  va_list args;
+  va_start(args, format);
+
+  DoLog(context2, format, args);
+
+  va_end(args);
+}
+
 void Logger::Log(
   const Context& context
   , const ID& id

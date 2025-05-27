@@ -246,6 +246,43 @@ TEST(OutputFlags, ThreadID)
   EXPECT_EQ(Be->Line, str);
 }
 
+TEST(OutputFlags, All)
+{
+  OutputFlags flags;
+  flags.Value = 0x0FFFFFFF;
+  Be->Owner->SetFlags(flags);
+
+  LOGME_SUBSYSTEM(sid, "subs1");
+
+  Be->Clear();
+  LogmeE(CHT, sid, "test");
+
+  printf("%s\n", Be->Line.c_str());
+}
+
+TEST(OutputFlags, Subsystem)
+{
+  OutputFlags flags;
+  flags.Value = 0;
+  flags.Subsystem = true;
+  Be->Owner->SetFlags(flags);
+
+  Be->Clear();
+  LogmeE(CHT, "test");
+  EXPECT_EQ(Be->Line.starts_with("test"), true);
+
+  LOGME_SUBSYSTEM(SUBSID, "sb");
+
+  Be->Clear();
+  LOGME_SUBSYSTEM(sid, "subsystem1");
+  LogmeE(CHT, sid, "test");
+  EXPECT_EQ(Be->Line.starts_with("#subsyste"), true);
+
+  Be->Clear();
+  LogmeE(CHT, "test");
+  EXPECT_EQ(Be->Line.starts_with("#sb"), true);
+}
+
 TEST(OutputFlags, Timestamp)
 {
   OutputFlags flags;

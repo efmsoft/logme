@@ -20,4 +20,4 @@ namespace Logme
 static constexpr const Logme::SID SUBSID{0};
 
 #define LOGME_SUBSYSTEM(var, name) \
-  Logme::SID var{name}
+  Logme::SID var = Logme::SID::Build(name)

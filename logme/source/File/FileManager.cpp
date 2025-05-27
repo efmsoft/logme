@@ -1,5 +1,3 @@
-#include <cassert>
-
 #include <Logme/Backend/FileBackend.h>
 #include <Logme/File/FileManager.h>
 #include <Logme/Time/datetime.h> 
@@ -7,60 +5,54 @@
 
 using namespace Logme;
 
-FileManager::FileManager(std::recursive_mutex& listLock)
-  : ListLock(listLock)
-  , Wake(false)
-  , ShutdownFlag(false)
+FileManager::FileManager()
+  : StopRequested(false)
+  , Reschedule(false)
+  , CurrentEarliestTime(0)
 {
-  Worker = std::thread(&FileManager::ManagementThread, this);
-  assert(Worker.joinable());
 }
 
 FileManager::~FileManager()
 {
-  ShutdownFlag = true;
-
-  if (Worker.joinable())
-    Worker.join();
+  std::lock_guard lock(Lock);
+  
+  if (ManagerThread.joinable()) 
+    ManagerThread.join();
 }
 
-void FileManager::Add(FileBackend* backend)
+void FileManager::AddBackend(const FileBackendPtr& backend)
 {
-  // This method is called with acquired ListLock!!!
-  Backend.push_back(backend);
+  std::lock_guard lock(Lock);
+  Backends.insert(backend);
+  
+  if (!ManagerThread.joinable())
+    ManagerThread = std::thread(&FileManager::ManagementThread, this);
 }
 
-void FileManager::WakeUp()
+bool FileManager::Stopping() const
 {
-  // This method is called with acquired ListLock!!!
-  Wake = true;
+  return StopRequested;
 }
 
-bool FileManager::Empty() const
+void FileManager::Notify(FileBackend* backend, uint64_t when)
 {
-  // This method is called with acquired ListLock!!!
-  return Backend.empty();
+  std::lock_guard lock(Lock);
+  
+  if (when == FileBackend::RIGHT_NOW || when < CurrentEarliestTime)
+  {
+    Reschedule = true;
+    CV.notify_all();
+  }
 }
 
 bool FileManager::TestFileInUse(const std::string& file)
 {
-  for (auto& b : Backend)
-  {
-    if (b->TestFileInUse(file))
+  std::lock_guard lock(Lock);
+
+  for (const auto& backend : Backends)
+    if (backend->TestFileInUse(file))
       return true;
-  }
-
-  return false;
-}
-
-bool FileManager::DispatchEvents(size_t index, bool force)
-{
-  FileBackend* backend = Backend[index];
-  if (backend->WorkerFunc(force) && !ShutdownFlag)
-    return true;
-
-  backend->OnShutdown();
-  Backend.erase(Backend.begin() + index);
+  
   return false;
 }
 
@@ -68,33 +60,86 @@ void FileManager::ManagementThread()
 {
   RenameThread(-1, "FileManager::ManagementThread");
 
-  // Used to combine data from several consecutive Log() calls
-  const unsigned delay = 100;
-  for (unsigned t0 = GetTimeInMillisec();; Sleep(50))
+  std::unique_lock lock(Lock);
+
+  while (StopRequested == false)
   {
-    if (ShutdownFlag && Backend.empty())
+    FileBackendPtr nextToRun;
+    uint64_t earliest = UINT64_MAX;
+
+    for (const auto& backend : Backends)
+    {
+      if (backend->HasEvents() == false)
+        continue;
+
+      if (backend->GetFlushTime() != FileBackend::RIGHT_NOW)
+        continue;
+
+      nextToRun = backend;
+      earliest = 0;
       break;
+    }
 
-    unsigned t1 = GetTimeInMillisec();
-    if (t1 < t0)
-      t0 = 0;
+    if (nextToRun == nullptr)
+    {
+      for (const auto& backend : Backends)
+      {
+        if (backend->HasEvents() == false)
+          continue;
 
-    // Wake is true if one of backends requested flush.
-    // Otherwise force flush once per 100ms
-    if (!Wake && t1 - t0 < delay)
+        uint64_t flushTime = backend->GetFlushTime();
+        if (flushTime > 0 && flushTime < earliest)
+        {
+          earliest = flushTime;
+          nextToRun = backend;
+        }
+      }
+    }
+
+    if (nextToRun == nullptr)
+    {
+      CurrentEarliestTime = UINT64_MAX;
+      CV.wait(lock, [&] { return StopRequested || Reschedule; });
+      Reschedule = false;
       continue;
+    }
 
-    ListLock.lock();
+    if (earliest != 0)
+    {
+      uint64_t now = GetTimeInMillisec();
+      
+      // To avoid frequent sleeping and rapid wake-ups, it's better to
+      // handle the request slightly earlier than the requested time.
+      const uint64_t MIN_WAIT = 10;
+      if (now + MIN_WAIT < earliest)
+      {
+        CurrentEarliestTime = earliest;
+        CV.wait_for(
+          lock
+          , std::chrono::milliseconds(earliest - now), [&] { 
+            return StopRequested || Reschedule; 
+          }
+        );
 
-    bool force = t1 - t0 >= delay;
-    Wake = false;
-    if (force)
-      t0 = t1;
+        Reschedule = false;
+        CurrentEarliestTime = UINT64_MAX;
+        continue;
+      }
+    }
 
-    for (size_t i = 0; i < Backend.size();)
-      if (DispatchEvents(i, force))
-        i++;
-
-    ListLock.unlock();
+    lock.unlock();
+    
+    if (!nextToRun->WorkerFunc())
+    {
+      nextToRun->OnShutdown();
+      
+      lock.lock();
+      Backends.erase(nextToRun);
+      
+      if (Backends.empty())
+        StopRequested = true;
+    }
+    else 
+      lock.lock();
   }
 }

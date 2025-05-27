@@ -10,41 +10,43 @@ FileManagerFactory::FileManagerFactory()
 
 FileManagerFactory::~FileManagerFactory()
 {
+  Instance.reset();
 }
 
-void FileManagerFactory::Add(FileBackend* backend)
+void FileManagerFactory::Add(const FileBackendPtr& backend)
 {
-  std::lock_guard guard(ListLock);
+  std::unique_lock guard(Lock);
+
+  if (Instance && Instance->Stopping())
+  {
+    std::shared_ptr<FileManager> instance;
+    Instance.swap(instance);
+  }
 
   if (Instance == nullptr)
-    Instance = std::make_shared<FileManager>(ListLock);
+    Instance = std::make_shared<FileManager>();
 
-  Instance->Add(backend);
+  Instance->AddBackend(backend);
 }
 
-void FileManagerFactory::Remove(FileBackend* backend)
+void FileManagerFactory::Notify(FileBackend* backend, uint64_t when)
 {
-  std::shared_ptr<FileManager> instance;
-  std::lock_guard guard(ListLock);
+  std::unique_lock guard(Lock);
+  std::shared_ptr<FileManager> instance = Instance;
+  guard.unlock();
 
-  if (Instance && Instance->Empty())
-    Instance.swap(instance);
-}
-
-void FileManagerFactory::WakeUp()
-{
-  std::lock_guard guard(ListLock);
-
-  if (Instance)
-    Instance->WakeUp();
+  if (instance)
+    instance->Notify(backend, when);
 }
 
 bool FileManagerFactory::TestFileInUse(const std::string& file)
 {
-  std::lock_guard guard(ListLock);
+  std::unique_lock guard(Lock);
+  std::shared_ptr<FileManager> instance = Instance;
+  guard.unlock();
 
-  if (Instance)
-    return Instance->TestFileInUse(file);
+  if (instance)
+    return instance->TestFileInUse(file);
 
   return false;
 }

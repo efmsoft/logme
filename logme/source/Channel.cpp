@@ -189,6 +189,8 @@ void Channel::SetFlags(const OutputFlags& flags)
 
 void Channel::RemoveBackends()
 {
+  Freeze();
+
   Guard guard(DataLock);
   Backends.clear();
 }
@@ -201,6 +203,8 @@ bool Channel::RemoveBackend(BackendPtr backend)
     auto& p = *it;
     if (p.get() == backend.get())
     {
+      p->Freeze();
+     
       Backends.erase(it);
       return true;
     }

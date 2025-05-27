@@ -44,31 +44,25 @@ FileBackend::FileBackend(ChannelPtr owner)
   , Append(true)
   , MaxSize(MaxSizeDefault)
   , QueueSizeLimit(QueueSizeLimitDefault)
+  , Registered(false)
   , DataReady(false)
-  , Flush(false)
+  , CallScheduled(false)
   , ShutdownFlag(false)
   , ShutdownCalled(owner == nullptr)
-  , LastFlush(0)
+  , FlushTime(0)
   , MaxBufferSize(0)
   , DailyRotation(false)
   , MaxParts(2)
 {
-  if (Owner)
-    GetFactory().Add(this);
+  OutBuffer.reserve(QUEUE_GROW_SIZE);
 }
 
 FileBackend::~FileBackend()
 {
-  ShutdownFlag = true;
+  assert(ShutdownFlag || Registered == false);
 
   if (ShutdownCalled == false)
-  {
-    RequestFlush();
     WaitForShutdown();
-  }
-
-  if (Owner)
-    GetFactory().Remove(this);
 
   CloseLog();
 }
@@ -104,13 +98,19 @@ BackendConfigPtr FileBackend::CreateConfig()
 void FileBackend::Freeze()
 {
   ShutdownFlag = true;
-
   Backend::Freeze();
+
+  RequestFlush();
 }
 
 bool FileBackend::IsIdle() const
 {
-  return DataReady == false;
+  return DataReady == false && (ShutdownFlag || Registered == false);
+}
+
+uint64_t FileBackend::GetFlushTime() const
+{
+  return FlushTime;
 }
 
 bool FileBackend::ApplyConfig(BackendConfigPtr c)
@@ -131,9 +131,9 @@ bool FileBackend::ApplyConfig(BackendConfigPtr c)
 
 void FileBackend::WaitForShutdown()
 {
-  while (ShutdownCalled == false)
+  while (ShutdownCalled == false && Registered)
   {
-    std::unique_lock<std::mutex> locker(BufferLock);
+    std::unique_lock locker(BufferLock);
 
     Shutdown.wait_for(
       locker
@@ -206,8 +206,8 @@ size_t FileBackend::GetSize()
 
 void FileBackend::Write(CharBuffer& data, SizeArray& msgSize)
 {
-  std::lock_guard<std::recursive_mutex> guard(IoLock);
-
+  std::lock_guard guard(IoLock);
+  
   char* head = &data[0];
   char* tail = head + data.size();
 
@@ -240,8 +240,20 @@ bool FileBackend::ChangePart()
 
 void FileBackend::Display(Context& context, const char* line)
 {
-  if (File == -1)
+  if (File == -1 || ShutdownFlag)
     return;
+
+  if (Registered == false)
+  {
+    std::unique_lock locker(BufferLock);
+
+    if (Owner && Registered == false)
+    {
+      FileBackendPtr self = std::static_pointer_cast<FileBackend>(shared_from_this());
+      GetFactory().Add(self);
+      Registered = true;
+    }
+  }
 
   if (DailyRotation && Day.IsSameDayCached() == false)
   {
@@ -252,10 +264,6 @@ void FileBackend::Display(Context& context, const char* line)
   int nc;
   const char* buffer = context.Apply(Owner, Owner->GetFlags(), line, nc);
   AppendString(buffer, nc);
-}
-
-void FileBackend::FlushData()
-{
 }
 
 void FileBackend::Truncate()
@@ -343,14 +351,15 @@ void FileBackend::AppendString(const char* text, size_t len)
 void FileBackend::AppendOutputData(const char* text, size_t add)
 {
   size_t queued = 0;
+  size_t pos = -1;
 
   if (true)
   {
-    std::lock_guard<std::mutex> guard(BufferLock);
+    std::lock_guard guard(BufferLock);
     
     if (!ShutdownFlag)
     {
-      size_t pos = OutBuffer.size();
+      pos = OutBuffer.size();
       queued = pos + add;
 
       MessageSize.push_back(add);
@@ -372,14 +381,22 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
 
   if (queued >= QueueSizeLimit)
     RequestFlush();                         // Speed up data processing
+  else if (pos == 0)
+    RequestFlush(uint64_t(GetTimeInMillisec()) + FLUSH_AFTER);
 }
 
-void FileBackend::RequestFlush()
+void FileBackend::RequestFlush(uint64_t when)
 {
-  Flush = true;
+  FlushTime = when;
+  CallScheduled = true;
 
   if (Owner)
-    GetFactory().WakeUp();
+    GetFactory().Notify(this, FlushTime);
+}
+
+bool FileBackend::HasEvents() const
+{
+  return CallScheduled;
 }
 
 FileManagerFactory& FileBackend::GetFactory() const
@@ -390,7 +407,7 @@ FileManagerFactory& FileBackend::GetFactory() const
 
 void FileBackend::GetOutputData(CharBuffer& data, SizeArray& size)
 {
-  std::lock_guard<std::mutex> guard(BufferLock);
+  std::lock_guard guard(BufferLock);
 
   assert(data.size() == 0);
   assert(size.size() == 0);
@@ -411,7 +428,7 @@ void FileBackend::WriteData()
   Write(data, size);
 
   // Try to reuse buffers
-  std::lock_guard<std::mutex> guard(BufferLock);
+  std::lock_guard guard(BufferLock);
 
   if (OutBuffer.size() == 0)
   {
@@ -426,46 +443,40 @@ void FileBackend::WriteData()
   }
 }
 
-void FileBackend::ConditionalFlush()
+bool FileBackend::WorkerFunc()
 {
-  unsigned ticks = GetTimeInMillisec();
+  // Used to limit number of WriteData calls before Done event set if
+  // one or more threads call Log() very frequently
+  const int maxWriteLoops = 5;
+  CallScheduled = false;
 
-  // Handle tick counter overflow
-  if (ticks < LastFlush)
-    LastFlush = ticks;
-
-  if (Flush || ticks - LastFlush >= FLUSH_PERIOD)
+  static uint64_t n = 0;
+  static uint64_t sum = 0;
+  static uint64_t avg = 0;
+  static uint64_t minm = -1;
+  static uint64_t maxm = 0;
+  if (FlushTime && FlushTime != RIGHT_NOW)
   {
-    FlushData();
-    LastFlush = ticks;
-  }
-}
+    auto now = GetTimeInMillisec();
+    auto diff = now - (FlushTime - FLUSH_AFTER);
 
-bool FileBackend::WorkerFunc(bool force)
-{
-  if (Flush || force)
+    n++;
+    sum += diff;
+    avg = sum / n;
+
+    if (diff < minm)
+      minm = diff;
+
+    if (diff > maxm)
+      maxm = diff;
+  }
+
+  if (DataReady)
   {
-    // Used to limit number of WriteData calls before Done event set if
-    // one or more threads call Log() very frequently
-    const int maxWriteLoops = 5;
-
-    if (DataReady)
-    {
-      for (int i = 0; DataReady && i < maxWriteLoops; i++)
-        WriteData();
-
-      ConditionalFlush();
-      Done.notify_all();
-    }
-    else
-    {
-      ConditionalFlush();
-      if (Flush)
-        Done.notify_all();
-    }
-
-    Flush = false;
+    for (int i = 0; DataReady && i < maxWriteLoops; i++)
+      WriteData();
   }
+
   return !ShutdownFlag;
 }
 
@@ -474,10 +485,6 @@ void FileBackend::OnShutdown()
   if (DataReady)
     WriteData();
 
-  FlushData();
-
   ShutdownCalled = true;
-
-  Done.notify_all();
   Shutdown.notify_all();
 }

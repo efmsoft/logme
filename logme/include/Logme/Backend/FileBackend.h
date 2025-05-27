@@ -6,6 +6,7 @@
 #include <Logme/Types.h>
 
 #include <condition_variable>
+#include <memory>
 #include <mutex>
 
 namespace Logme
@@ -39,18 +40,18 @@ namespace Logme
     std::string Name;
     std::string NameTemplate;
 
+    bool Registered;
+    bool CallScheduled;
     volatile bool DataReady;
-    volatile long Flush;
     volatile bool ShutdownFlag;
     volatile bool ShutdownCalled;
-    unsigned LastFlush;
+    uint64_t FlushTime;
 
     std::mutex BufferLock;
     CharBuffer OutBuffer;
     SizeArray MessageSize;
     uint32_t MaxBufferSize;
 
-    std::condition_variable Done;
     std::condition_variable Shutdown;
 
     DayChangeDetector Day;
@@ -66,9 +67,12 @@ namespace Logme
       MAX_SIZE_DEFAULT = 8 * 1024 * 1024,
       
       FLUSH_PERIOD = 3000,                  // 3 sec
-      QUEUE_SIZE_LIMIT = 8 * 1024 * 1024,   // force processing if queue size >= limit
+      QUEUE_SIZE_LIMIT = 7 * 1024 * 1024,   // force processing if queue size >= limit
       QUEUE_GROW_SIZE = 64 * 1024,          // grow size
       STAT_OUTPUT_PERIOD = 10 * 60 * 1000,  // 10 min
+
+      RIGHT_NOW = 1,                        // Force flush right now
+      FLUSH_AFTER = 100,
     };
 
     constexpr static const char* TYPE_ID = "FileBackend";
@@ -100,27 +104,29 @@ namespace Logme
     LOGMELNK bool TestFileInUse(const std::string& file) const;
     LOGMELNK size_t GetSize();
 
+    LOGMELNK uint64_t GetFlushTime() const;
+    LOGMELNK bool HasEvents() const;
+
   private:
     class FileManagerFactory& GetFactory() const;
 
     void Truncate();
-    void ConditionalFlush();
-
     void AppendString(const char* text, size_t len);
     void AppendOutputData(const char* text, size_t add);
-    void RequestFlush();
+    void RequestFlush(uint64_t when = RIGHT_NOW);
     void GetOutputData(CharBuffer& data, SizeArray& size);
     void WriteData();
 
     void WaitForShutdown();
 
     void Write(CharBuffer&, SizeArray&);
-    void FlushData();
 
     friend class FileManager;
-    bool WorkerFunc(bool force);
+    bool WorkerFunc();
     void OnShutdown();
 
     bool ChangePart();
   };
+
+  typedef std::shared_ptr<class FileBackend> FileBackendPtr;
 }

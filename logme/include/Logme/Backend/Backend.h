@@ -33,7 +33,7 @@ namespace Logme
   typedef std::shared_ptr<Backend> BackendPtr;
   typedef std::vector<BackendPtr> BackendArray;
 
-  struct Backend
+  struct Backend : public std::enable_shared_from_this<Backend>
   {
     ChannelPtr Owner;
     const char* Type;

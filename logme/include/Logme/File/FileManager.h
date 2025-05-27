@@ -1,33 +1,37 @@
 #pragma once
 
+#include <condition_variable>
 #include <mutex>
+#include <set>
+#include <stdint.h>
 #include <thread>
 
 namespace Logme
 {
   class FileManager
   {
-    std::recursive_mutex& ListLock;
-    volatile bool Wake;
+    bool StopRequested;
+    bool Reschedule;
+    std::thread ManagerThread;
 
-    typedef std::vector<class FileBackend*> BackendList;
-    BackendList Backend;
+    std::mutex Lock;
+    std::condition_variable CV;
+    std::set<FileBackendPtr> Backends;
 
-    std::thread Worker;
-    volatile bool ShutdownFlag;
+    uint64_t CurrentEarliestTime;
 
   public:
-    FileManager(std::recursive_mutex& listLock);
+    FileManager();
     ~FileManager();
 
-    void Add(FileBackend* backend);
-    void WakeUp();
-    bool Empty() const;
+    void AddBackend(const FileBackendPtr& backend);
+    void Notify(FileBackend* backend, uint64_t when);
+
+    bool Stopping() const;
 
     bool TestFileInUse(const std::string& file);
 
   private:
     void ManagementThread();
-    bool DispatchEvents(size_t index, bool force);
   };
 }

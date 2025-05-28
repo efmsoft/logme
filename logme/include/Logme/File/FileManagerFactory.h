@@ -22,5 +22,6 @@ namespace Logme
     void Notify(FileBackend* backend, uint64_t when);
 
     bool TestFileInUse(const std::string& file);
+    void SetStopping();
   };
 }

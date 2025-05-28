@@ -50,3 +50,13 @@ bool FileManagerFactory::TestFileInUse(const std::string& file)
 
   return false;
 }
+
+void FileManagerFactory::SetStopping()
+{
+  std::unique_lock guard(Lock);
+  std::shared_ptr<FileManager> instance = Instance;
+  guard.unlock();
+
+  if (instance)
+    instance->SetStopping();
+}

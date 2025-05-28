@@ -34,6 +34,12 @@ bool FileManager::Stopping() const
   return StopRequested;
 }
 
+void FileManager::SetStopping()
+{
+  StopRequested = true;
+  CV.notify_all();
+}
+
 void FileManager::Notify(FileBackend* backend, uint64_t when)
 {
   std::lock_guard lock(Lock);
@@ -42,6 +48,14 @@ void FileManager::Notify(FileBackend* backend, uint64_t when)
   {
     Reschedule = true;
     CV.notify_all();
+  }
+
+  if (StopRequested)
+  {
+    for (const auto& backend : Backends)
+      backend->OnShutdown();
+
+    Backends.clear();
   }
 }
 

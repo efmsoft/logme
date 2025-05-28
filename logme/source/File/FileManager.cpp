@@ -36,6 +36,21 @@ bool FileManager::Stopping() const
 
 void FileManager::SetStopping()
 {
+#ifdef _WIN32
+  // In Windows, the handling of ExitProcess is implemented in a very 
+  // specific way. If our library is in a DLL, then all threads created 
+  // by the library are simply terminated by the system during ExitProcess 
+  // handling, without sending any notifications. Since this function is 
+  // called from the Logger destructor, it's very likely that any thread 
+  // we created no longer exists at that point. Therefore, we simply remove 
+  // all backends from the list to drop our references to FileBackend, 
+  // allowing them to be destroyed properly.
+  for (const auto& backend : Backends)
+    backend->OnShutdown();
+
+  Backends.clear();
+#endif
+
   StopRequested = true;
   CV.notify_all();
 }
@@ -48,14 +63,6 @@ void FileManager::Notify(FileBackend* backend, uint64_t when)
   {
     Reschedule = true;
     CV.notify_all();
-  }
-
-  if (StopRequested)
-  {
-    for (const auto& backend : Backends)
-      backend->OnShutdown();
-
-    Backends.clear();
   }
 }
 

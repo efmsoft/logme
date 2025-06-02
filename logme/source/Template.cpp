@@ -279,7 +279,7 @@ std::string Logme::ProcessTemplate(
     name += *p++;
   }
 
-  LogmeE_If(ftemplate, CHINT, "ProcessTemplate: %s -> %s", tstr, name.c_str());
+  LogmeI_If(ftemplate, CHINT, "ProcessTemplate: %s -> %s", tstr, name.c_str());
   return name;
 }
  

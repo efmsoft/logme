@@ -6,6 +6,7 @@
 #include <Logme/Backend/ConsoleBackend.h>
 #include <Logme/Backend/DebugBackend.h>
 #include <Logme/Backend/FileBackend.h>
+#include <Logme/Backend/SharedFileBackend.h>
 
 using namespace Logme;
 
@@ -61,6 +62,9 @@ BackendPtr Backend::Create(const char* type, ChannelPtr owner)
 
   if (t == FileBackend::TYPE_ID)
     return std::make_shared<FileBackend>(owner);
+
+  if (t == SharedFileBackend::TYPE_ID)
+    return std::make_shared<SharedFileBackend>(owner);
 
   return BackendPtr();
 }

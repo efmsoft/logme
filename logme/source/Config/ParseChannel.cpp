@@ -297,8 +297,55 @@ bool ParseChannels(
 
 #endif
 
+void Logger::ReplaceChannels(ChannelConfigArray& arr)
+{
+  std::vector<std::string> names;
+  std::lock_guard guard(DataLock);
+
+  DeleteAllChannels();
+
+  for (auto& c : arr)
+  {
+    if (c.Object == nullptr)
+      continue;
+
+    std::string name = c.Object->GetName();
+
+    if (name.empty())
+      Default = c.Object;
+    else
+    {
+      if (std::find(names.begin(), names.end(), name) != names.end())
+        continue;
+
+      Channels[name] = c.Object;
+      names.push_back(name);
+    }
+  }
+
+  CreateDefaultChannelLayout(false);
+}
+
+static ChannelPtr LookupChannel(ChannelConfigArray& arr, Logme::ID& ch)
+{
+  for (auto& c : arr)
+  {
+    if (c.Object == nullptr)
+      continue;
+
+    if (ch.Name == nullptr && c.Name.empty())
+      return c.Object;
+    
+    if (c.Name == ch.Name)
+      return c.Object;
+  }
+
+  return ChannelPtr();
+}
+
 bool Logger::CreateChannels(ChannelConfigArray& arr)
 {
+  bool rc = true;
   for (auto& c : arr)
   {
     ID ch{ c.Name.c_str() };
@@ -313,16 +360,25 @@ bool Logger::CreateChannels(ChannelConfigArray& arr)
     }
 
     if (channel == nullptr)
-      return false;
+    {
+      rc = false;
+      continue;
+    }
 
     for (auto& b : c.Backend)
     {
       BackendPtr backend = Backend::Create(b->Type.c_str(), channel);
       if (backend == nullptr)
-        return false;
+      {
+        rc = false;
+        continue;
+      }
 
       if (!backend->ApplyConfig(b))
-        return false;
+      {
+        rc = false;
+        continue;
+      }
 
       channel->AddBackend(backend);
     }
@@ -335,13 +391,13 @@ bool Logger::CreateChannels(ChannelConfigArray& arr)
       SafeID ch1(c.Name.c_str());
       SafeID ch2(c.Link.value().c_str());
 
-      auto p1 = GetExistingChannel(ch1);
-      auto p2 = GetExistingChannel(ch2);
+      auto p1 = LookupChannel(arr, ch1);
+      auto p2 = LookupChannel(arr, ch2);
 
       if (p1 && p2)
         p1->AddLink(ch2);
     }
   }
   
-  return true;
+  return rc;
 }

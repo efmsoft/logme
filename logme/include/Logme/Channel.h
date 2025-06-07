@@ -16,6 +16,8 @@
 
 namespace Logme
 {
+  typedef std::shared_ptr<class Channel> ChannelPtr;
+
   struct ChannelConfig
   {
     std::string Name;
@@ -23,6 +25,8 @@ namespace Logme
     Level Filter;
     BackendConfigArray Backend;
     std::optional<std::string> Link;
+
+    ChannelPtr Object;
 
     LOGMELNK ChannelConfig() : Filter(DEFAULT_LEVEL) {}
   };
@@ -123,7 +127,6 @@ namespace Logme
     );
   };
 
-  typedef std::shared_ptr<Channel> ChannelPtr;
   typedef std::vector<ChannelPtr> ChannelArray;
   typedef std::unordered_map<std::string, ChannelPtr> ChannelMap;
 }

@@ -75,14 +75,8 @@ bool Logger::LoadConfiguration(
   if (!ParseHomeDirectoryConfig(config, hdc))
     return false;
 
-  DeleteAllChannels();
-  if (!CreateChannels(arr))
-  {
-    CreateDefaultChannelLayout();
-    return false;
-  }
-
-  CreateDefaultChannelLayout(false);
+  bool rc = CreateChannels(arr);
+  ReplaceChannels(arr);
 
   Subsystems.clear();
   for (auto& s : subsystems)
@@ -98,7 +92,11 @@ bool Logger::LoadConfiguration(
   if (hdc.EnableWatchDog)
     HomeDirectoryWatchDog.Run();
 
-  return StartControlServer(cc);
+  bool exitcode = StartControlServer(cc) && rc;
+  if (exitcode == false)
+    LogmeE(CHINT, "LoadConfiguration() failed");
+
+  return exitcode;
 #else
   return false;
 #endif

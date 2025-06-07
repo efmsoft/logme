@@ -206,6 +206,7 @@ namespace Logme
 
     void ApplyThreadChannel(Context& context);
     bool CreateChannels(ChannelConfigArray& arr);
+    void ReplaceChannels(ChannelConfigArray& arr);
 
     void ControlListener();
     void ControlHandler(int socket);

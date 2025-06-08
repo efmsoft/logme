@@ -20,6 +20,7 @@ namespace Logme
 
   struct ChannelConfig
   {
+    bool Enabled;
     std::string Name;
     OutputFlags Flags;
     Level Filter;
@@ -28,7 +29,11 @@ namespace Logme
 
     ChannelPtr Object;
 
-    LOGMELNK ChannelConfig() : Filter(DEFAULT_LEVEL) {}
+    LOGMELNK ChannelConfig() 
+      : Enabled(true)
+      , Filter(DEFAULT_LEVEL) 
+    {
+    }
   };
 
   typedef std::vector<ChannelConfig> ChannelConfigArray;
@@ -42,6 +47,7 @@ namespace Logme
     std::string Name;
     OutputFlags Flags;
     Level LevelFilter;
+    bool Enabled;
 
     BackendArray Backends;
     uint64_t AccessCount;
@@ -76,6 +82,9 @@ namespace Logme
 
     LOGMELNK const OutputFlags& GetFlags() const;
     LOGMELNK void SetFlags(const OutputFlags& flags);
+
+    LOGMELNK void SetEnabled(bool enable);
+    LOGMELNK bool GetEnabled() const;
 
     LOGMELNK Level GetFilterLevel() const;
     LOGMELNK void SetFilterLevel(Level level);

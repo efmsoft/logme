@@ -65,6 +65,21 @@ static bool GetFilterLevel(const Json::Value& o, int i, Level& level)
   return true;
 }
 
+static bool GetEnabled(const Json::Value& o, int i, bool& enable)
+{
+  if (!o.isMember("enable"))
+    return true;
+
+  if (!o["enable"].isBool())
+  {
+    LogmeE(CHINT, "\"channels[%i].enable\" is not a bool", i);
+    return false;
+  }
+
+  enable = o["enable"].asBool();
+  return true;
+}
+
 static bool GetChannelFlags(const Json::Value& o, int i, OutputFlagsMap& m, OutputFlags& f)
 {
   if (!o.isMember("flags"))
@@ -282,6 +297,9 @@ bool ParseChannels(
     if (!GetFilterLevel(o, i, c.Filter))
       return false;
 
+    if (!GetEnabled(o, i, c.Enabled))
+      return false;
+
     if (!GetBackends(o, i, c.Backend))
       return false;
 
@@ -333,7 +351,7 @@ static ChannelPtr LookupChannel(ChannelConfigArray& arr, Logme::ID& ch)
     if (c.Object == nullptr)
       continue;
 
-    if (ch.Name == nullptr && c.Name.empty())
+    if (ch.Name == nullptr || *ch.Name == '\0')
       return c.Object;
     
     if (c.Name == ch.Name)
@@ -351,19 +369,16 @@ bool Logger::CreateChannels(ChannelConfigArray& arr)
     ID ch{ c.Name.c_str() };
     
     ChannelPtr channel;
-    if (*ch.Name != '\0')
-      channel = CreateChannel(ch, c.Flags, c.Filter);
-    else
-    {
-      channel = std::make_shared<Channel>(this, nullptr, c.Flags, c.Filter);
-      Default = channel;
-    }
+    const char* name = ch.Name ? ch.Name : nullptr;
+    channel = std::make_shared<Channel>(this, name, c.Flags, c.Filter);
 
     if (channel == nullptr)
     {
       rc = false;
       continue;
     }
+
+    channel->SetEnabled(c.Enabled);
 
     for (auto& b : c.Backend)
     {
@@ -382,6 +397,8 @@ bool Logger::CreateChannels(ChannelConfigArray& arr)
 
       channel->AddBackend(backend);
     }
+
+    c.Object = channel;
   }
 
   for (auto& c : arr)

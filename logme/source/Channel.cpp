@@ -23,6 +23,7 @@ Channel::Channel(
   , Name(name ? name : "")
   , Flags(flags)
   , LevelFilter(level)
+  , Enabled(true)
   , AccessCount(0)
   , ShortenerList(nullptr)
 {
@@ -88,6 +89,9 @@ void Channel::Display(Context& context, const char* line)
 {
   DataLock.lock();
   AccessCount++;
+
+  if (Enabled == false)
+    return;
 
   if (DisplayFilter)
   {
@@ -282,6 +286,16 @@ Level Channel::GetFilterLevel() const
 void Channel::SetFilterLevel(Level level)
 {
   LevelFilter = level;
+}
+
+void Channel::SetEnabled(bool enable)
+{
+  Enabled = enable;
+}
+
+bool Channel::GetEnabled() const
+{
+  return Enabled;
 }
 
 uint64_t Channel::GetAccessCount() const

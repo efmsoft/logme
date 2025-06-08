@@ -558,7 +558,7 @@ void Logger::Log(
   , ...
 )
 {
-  if (ch && context.ErrorLevel < ch->GetFilterLevel())
+  if (ch && (context.ErrorLevel < ch->GetFilterLevel() || ch->GetEnabled() == false))
     return;
 
   Context& context2 = *(Context*)&context;
@@ -594,7 +594,7 @@ void Logger::Log(const Context& context, const ID& id, const SID& sid, const cha
 
 void Logger::Log(const Context& context, ChannelPtr ch, const SID& sid, const char* format, ...)
 {
-  if (ch && context.ErrorLevel < ch->GetFilterLevel())
+  if (ch && (context.ErrorLevel < ch->GetFilterLevel() || ch->GetEnabled() == false))
     return;
 
   Context& context2 = *(Context*)&context;
@@ -640,6 +640,9 @@ void Logger::Log(
   , ...
 )
 {
+  if (ch && (context.ErrorLevel < ch->GetFilterLevel() || ch->GetEnabled() == false))
+    return;
+
   Context& context2 = *(Context*)&context;
   context2.Ch = ch;
   context2.Ovr = &ovr;

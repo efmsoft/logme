@@ -106,12 +106,12 @@ namespace Logme
 
     LOGMELNK uint64_t GetFlushTime() const;
     LOGMELNK bool HasEvents() const;
+    LOGMELNK void AppendString(const char* text, size_t len);
 
   private:
     class FileManagerFactory& GetFactory() const;
 
     void Truncate();
-    void AppendString(const char* text, size_t len);
     void AppendOutputData(const char* text, size_t add);
     void RequestFlush(uint64_t when = RIGHT_NOW);
     void GetOutputData(CharBuffer& data, SizeArray& size);

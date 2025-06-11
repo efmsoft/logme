@@ -47,7 +47,7 @@ bool Channel::operator==(const char* name) const
 
 void Channel::AddLink(const ID& to)
 {
-  Guard guard(DataLock);
+  std::lock_guard guard(DataLock);
 
   IDPtr p = std::make_shared<SafeID>(to);
   Link.swap(p);
@@ -55,14 +55,14 @@ void Channel::AddLink(const ID& to)
 
 void Channel::AddLink(ChannelPtr to)
 {
-  Guard guard(DataLock);
+  std::lock_guard guard(DataLock);
 
   LinkTo = to;
 }
 
 void Channel::RemoveLink()
 {
-  Guard guard(DataLock);
+  std::lock_guard guard(DataLock);
 
   Link.reset();
   LinkTo.reset();
@@ -75,13 +75,13 @@ bool Channel::IsLinked() const
 
 ChannelPtr Channel::GetLinkPtr()
 {
-  Guard guard(DataLock);
+  std::lock_guard guard(DataLock);
   return LinkTo;
 }
 
 void Channel::SetDisplayFilter(TDisplayFilter filter)
 {
-  Guard guard(DataLock);
+  std::lock_guard guard(DataLock);
   DisplayFilter = filter;
 }
 
@@ -91,7 +91,10 @@ void Channel::Display(Context& context, const char* line)
   AccessCount++;
 
   if (Enabled == false)
+  {
+    DataLock.unlock();
     return;
+  }
 
   if (DisplayFilter)
   {
@@ -167,6 +170,14 @@ bool Channel::IsIdle()
   return idle;
 }
 
+void Channel::Flush()
+{
+  std::lock_guard guard(DataLock);
+
+  for (auto& b : Backends)
+    b->Flush();
+}
+
 void Channel::Freeze()
 {
   DataLock.lock();
@@ -195,13 +206,13 @@ void Channel::RemoveBackends()
 {
   Freeze();
 
-  Guard guard(DataLock);
+  std::lock_guard guard(DataLock);
   Backends.clear();
 }
 
 bool Channel::RemoveBackend(BackendPtr backend)
 {
-  Guard guard(DataLock);
+  std::lock_guard guard(DataLock);
   for (auto it = Backends.begin(); it != Backends.end(); ++it)
   {
     auto& p = *it;
@@ -220,7 +231,7 @@ void Channel::AddBackend(BackendPtr backend)
 {
   assert(backend);
 
-  Guard guard(DataLock);
+  std::lock_guard guard(DataLock);
   for (auto it = Backends.begin(); it != Backends.end(); ++it)
   {
     auto& p = *it;
@@ -233,7 +244,7 @@ void Channel::AddBackend(BackendPtr backend)
 
 BackendPtr Channel::GetBackend(size_t index)
 {
-  Guard guard(DataLock);
+  std::lock_guard guard(DataLock);
 
   if (index < Backends.size())
     return Backends[index];
@@ -243,7 +254,7 @@ BackendPtr Channel::GetBackend(size_t index)
 
 size_t Channel::NumberOfBackends()
 {
-  Guard guard(DataLock);
+  std::lock_guard guard(DataLock);
   return Backends.size();
 }
 
@@ -258,7 +269,7 @@ BackendPtr Channel::FindNextBackend(const char* type, int& context)
   assert(type);
   std::string stype(type);
 
-  Guard guard(DataLock);
+  std::lock_guard guard(DataLock);
   size_t pos = size_t(context) + 1;
   for (; pos < Backends.size(); pos++)
   {
@@ -274,7 +285,7 @@ BackendPtr Channel::FindNextBackend(const char* type, int& context)
 
 std::string Channel::GetName()
 {
-  Guard guard(DataLock);
+  std::lock_guard guard(DataLock);
   return Name;
 }
 

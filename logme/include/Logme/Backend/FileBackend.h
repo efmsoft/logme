@@ -53,6 +53,7 @@ namespace Logme
     uint32_t MaxBufferSize;
 
     std::condition_variable Shutdown;
+    std::condition_variable Done;
 
     DayChangeDetector Day;
     bool DailyRotation;
@@ -94,6 +95,7 @@ namespace Logme
     LOGMELNK bool ApplyConfig(BackendConfigPtr c) override;
     LOGMELNK bool IsIdle() const override;
     LOGMELNK void Freeze();
+    LOGMELNK void Flush() override;
 
     LOGMELNK static size_t GetMaxSizeDefault();
     LOGMELNK static void SetMaxSizeDefault(size_t size);

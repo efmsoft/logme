@@ -48,6 +48,7 @@ namespace Logme
     LOGMELNK virtual bool ApplyConfig(BackendConfigPtr c);
     LOGMELNK virtual bool IsIdle() const;
     LOGMELNK virtual void Freeze();
+    LOGMELNK virtual void Flush();
 
     LOGMELNK const char* GetType() const;
 

@@ -95,6 +95,14 @@ BackendConfigPtr FileBackend::CreateConfig()
   return std::make_shared<FileBackendConfig>();
 }
 
+void FileBackend::Flush()
+{
+  RequestFlush();
+
+  std::unique_lock locker(BufferLock);
+  Done.wait(locker, [this]() {return DataReady == false;});
+}
+
 void FileBackend::Freeze()
 {
   ShutdownFlag = true;
@@ -417,6 +425,8 @@ void FileBackend::GetOutputData(CharBuffer& data, SizeArray& size)
 
   DataReady = false;
   assert(!data.empty());
+
+  Done.notify_all();
 }
 
 void FileBackend::WriteData()

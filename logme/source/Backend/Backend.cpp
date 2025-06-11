@@ -36,6 +36,10 @@ bool Backend::IsIdle() const
   return true;
 }
 
+void Backend::Flush()
+{
+}
+
 BackendConfigPtr Backend::CreateConfig()
 {
   return std::make_shared<BackendConfig>();

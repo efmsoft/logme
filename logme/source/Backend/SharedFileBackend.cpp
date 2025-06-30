@@ -50,6 +50,11 @@ std::string SharedFileBackend::GetPathName(int index)
   return pathName;
 }
 
+std::string SharedFileBackend::FormatDetails()
+{
+  return std::format("{}", NameTemplate);
+}
+
 BackendConfigPtr SharedFileBackend::CreateConfig()
 {
   return std::make_shared<SharedFileBackendConfig>();

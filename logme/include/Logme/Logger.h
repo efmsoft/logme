@@ -215,6 +215,7 @@ namespace Logme
 
   public:
     static bool CommandList(StringArray& arr, std::string& response);
+    static bool CommandChannel(StringArray& arr, std::string& response);
   };
 
   typedef std::shared_ptr<Logger> LoggerPtr;

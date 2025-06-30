@@ -51,6 +51,11 @@ bool Backend::ApplyConfig(BackendConfigPtr c)
   return true;
 }
 
+std::string Backend::FormatDetails()
+{
+  return std::string();
+}
+
 BackendPtr Backend::Create(const char* type, ChannelPtr owner)
 {
   std::string t(type);

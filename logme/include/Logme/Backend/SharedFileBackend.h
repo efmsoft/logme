@@ -45,6 +45,8 @@ namespace Logme
 
     LOGMELNK BackendConfigPtr CreateConfig() override;
     LOGMELNK bool ApplyConfig(BackendConfigPtr c) override;
+    
+    LOGMELNK std::string FormatDetails() override;
 
   private:
     bool CreateLog(const char* name);

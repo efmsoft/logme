@@ -156,3 +156,29 @@ std::string Logme::ReplaceAll(
 
   return str;
 }
+
+std::string Logme::Join(const StringArray& arr, const std::string separator)
+{
+  std::string result;
+  for (const auto& item : arr)
+  {
+    if (!result.empty())
+      result += separator;
+
+    result += item;
+  }
+  return result;
+}
+
+std::string Logme::GetLevelName(Logme::Level level)
+{
+  switch (level)
+  {
+  case Logme::Level::LEVEL_DEBUG: return "DEBUG";
+  case Logme::Level::LEVEL_INFO: return "INFO";
+  case Logme::Level::LEVEL_WARN: return "WARN";
+  case Logme::Level::LEVEL_ERROR: return "ERROR";
+  case Logme::Level::LEVEL_CRITICAL: return "CRITICAL";
+  default: return "UNKNOWN";
+  }
+}

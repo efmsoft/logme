@@ -39,6 +39,11 @@ namespace Logme
     };
 
     LOGMELNK OutputFlags();
+
+    LOGMELNK std::string ToString(const char* separator = " ", bool brackets = false) const;
+    LOGMELNK std::string TimestampType() const;
+    LOGMELNK std::string LocationType() const;
+    LOGMELNK std::string ConsoleType() const;
   };
 
   typedef std::map<std::string, OutputFlags> OutputFlagsMap;

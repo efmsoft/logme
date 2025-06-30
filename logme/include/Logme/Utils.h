@@ -43,9 +43,12 @@ namespace Logme
     , const std::string& on
   );
 
+  LOGMELNK std::string Join(const StringArray& arr, const std::string separator);
+
 #ifdef USE_JSONCPP
   LOGMELNK uint64_t GetByteSize(const Json::Value& root, const char* option, uint64_t def);
   LOGMELNK uint64_t GetInterval(const Json::Value& root, const char* option, uint64_t def);
 #endif
 
+  std::string GetLevelName(Level level);
 }

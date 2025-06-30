@@ -53,5 +53,6 @@ namespace Logme
     LOGMELNK const char* GetType() const;
 
     LOGMELNK static BackendPtr Create(const char* type, ChannelPtr owner);
+    LOGMELNK virtual std::string FormatDetails();
   };
 }

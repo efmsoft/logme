@@ -1,6 +1,7 @@
 #include <cassert>
 #include <chrono>
 #include <filesystem>
+#include <format>
 #include <regex>
 #include <stdint.h>
 #include <string.h>
@@ -88,6 +89,11 @@ void FileBackend::SetQueueSizeLimitDefault(size_t size)
     size = 4ULL * 1024;
 
   QueueSizeLimitDefault = size;
+}
+
+std::string FileBackend::FormatDetails()
+{
+  return std::format("{}{}", NameTemplate, Append ? " APPEND" : "");
 }
 
 BackendConfigPtr FileBackend::CreateConfig()

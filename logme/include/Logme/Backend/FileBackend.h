@@ -96,6 +96,7 @@ namespace Logme
     LOGMELNK bool IsIdle() const override;
     LOGMELNK void Freeze();
     LOGMELNK void Flush() override;
+    LOGMELNK std::string FormatDetails() override;
 
     LOGMELNK static size_t GetMaxSizeDefault();
     LOGMELNK static void SetMaxSizeDefault(size_t size);

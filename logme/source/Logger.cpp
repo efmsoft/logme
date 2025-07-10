@@ -190,6 +190,16 @@ void Logger::SetThreadChannel(const ID* id)
     ThreadChannel[tid] = *id;
 }
 
+bool Logger::IsChannelDefinedForCurrentThread()
+{
+  uint64_t tid = GetCurrentThreadId();
+
+  std::lock_guard guard(DataLock);
+
+  auto it = ThreadChannel.find(tid);
+  return it != ThreadChannel.end();
+}
+
 void Logger::ApplyThreadChannel(Context& context)
 {
   uint64_t tid = GetCurrentThreadId();

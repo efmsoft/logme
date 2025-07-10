@@ -171,6 +171,9 @@
 #define LogmeThreadName(pch, ...) \
   Logme::ThreadName _logme_thread_name(pch, __VA_ARGS__)
 
+#define LogmeThreadChannelDefined() \
+  Logme::Instance->IsChannelDefinedForCurrentThread()
+
 // Thread override
 
 #define LogmeThreadOverride(ovr) \

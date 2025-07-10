@@ -78,6 +78,7 @@ namespace Logme
     LOGMELNK static void Shutdown();
 
     LOGMELNK void SetThreadChannel(const ID* id);
+    LOGMELNK bool IsChannelDefinedForCurrentThread();
     LOGMELNK ID GetDefaultChannel();
 
     LOGMELNK void SetThreadOverride(const Override* ovr);

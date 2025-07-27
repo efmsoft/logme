@@ -4,6 +4,7 @@
 #include <vector>
 #include <utility>
 
+#ifdef USE_JSONCPP
 #include <json/json.h>
 
 #include <Logme/Types.h>
@@ -52,3 +53,4 @@ namespace Logme
     }
   }
 }
+#endif

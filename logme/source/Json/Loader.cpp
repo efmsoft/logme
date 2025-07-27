@@ -3,6 +3,7 @@
 #include <Logme/Json/Loader.h>
 #include <Logme/Utils.h>
 
+#ifdef USE_JSONCPP
 using namespace Logme::JSON;
 
 static const Json::Value* FindByPath(
@@ -112,3 +113,4 @@ bool Logme::JSON::Name2Value(const NamedValues& table, const std::string& name, 
   }
   return false;
 }
+#endif

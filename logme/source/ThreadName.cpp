@@ -20,41 +20,47 @@ ThreadName::ThreadName(ChannelPtr pch, const std::string& name, bool log)
 
 ThreadName::~ThreadName()
 {
-  uint64_t tid = GetCurrentThreadId();
-  PCH->SetThreadName(
-    tid
-    , PreviousName.has_value() 
-    ? PreviousName.value().c_str() 
-    : nullptr
-    , Log
-  );
-
-  if (Log)
+  if (PCH)
   {
-    Override ovr;
-    ovr.Remove.Method = true;
+    uint64_t tid = GetCurrentThreadId();
+    PCH->SetThreadName(
+      tid
+      , PreviousName.has_value()
+      ? PreviousName.value().c_str()
+      : nullptr
+      , Log
+    );
 
-    Logme::ID ch = PCH->GetID();
-    Context c = LOGME_CONTEXT(Logme::Level::LEVEL_INFO, &ch, &SUBSID);
-    c.Ovr = &ovr;
+    if (Log)
+    {
+      Override ovr;
+      ovr.Remove.Method = true;
 
-    // After returning the initial name, a message should be printed. 
-    // The text of the message doesn’t matter. Otherwise, it might 
-    // happen that the next message to the channel will be output much 
-    // later, and the channel name change will appear as if it happened 
-    // much later than it actually did
-    PCH->Display(c, ".");
+      Logme::ID ch = PCH->GetID();
+      Context c = LOGME_CONTEXT(Logme::Level::LEVEL_INFO, &ch, &SUBSID);
+      c.Ovr = &ovr;
+
+      // After returning the initial name, a message should be printed. 
+      // The text of the message doesn’t matter. Otherwise, it might 
+      // happen that the next message to the channel will be output much 
+      // later, and the channel name change will appear as if it happened 
+      // much later than it actually did
+      PCH->Display(c, ".");
+    }
   }
 }
 
 void ThreadName::Initialize(const char* name)
 {
-  uint64_t tid = GetCurrentThreadId();
+  if (PCH)
+  {
+    uint64_t tid = GetCurrentThreadId();
 
-  Channel::ThreadNameInfo info;
-  auto p = PCH->GetThreadName(tid, info, nullptr, false);
-  if (p != nullptr)
-    PreviousName = p;
+    Channel::ThreadNameInfo info;
+    auto p = PCH->GetThreadName(tid, info, nullptr, false);
+    if (p != nullptr)
+      PreviousName = p;
 
-  PCH->SetThreadName(tid, name, Log);
+    PCH->SetThreadName(tid, name, Log);
+  }
 }

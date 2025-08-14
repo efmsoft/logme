@@ -21,6 +21,7 @@ Channel::Channel(
 )
   : Owner(owner)
   , Name(name ? name : "")
+  , ChannelID(ID{ Name.c_str()})
   , Flags(flags)
   , LevelFilter(level)
   , Enabled(true)
@@ -34,9 +35,9 @@ Channel::~Channel()
   Backends.clear();
 }
 
-const ID Channel::GetID() const
+const ID& Channel::GetID() const
 {
-  return ID{ Name.c_str() };
+  return ChannelID;
 }
 
 bool Channel::operator==(const char* name) const

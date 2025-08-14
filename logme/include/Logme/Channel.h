@@ -45,6 +45,7 @@ namespace Logme
 
     class Logger* Owner;
     std::string Name;
+    ID ChannelID;
     OutputFlags Flags;
     Level LevelFilter;
     bool Enabled;
@@ -109,7 +110,7 @@ namespace Logme
     LOGMELNK bool IsLinked() const;
     LOGMELNK ChannelPtr GetLinkPtr();
 
-    LOGMELNK const ID GetID() const;
+    LOGMELNK const ID& GetID() const;
     
     LOGMELNK void Freeze();
     LOGMELNK bool IsIdle();

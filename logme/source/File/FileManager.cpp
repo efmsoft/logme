@@ -14,6 +14,8 @@ FileManager::FileManager()
 
 FileManager::~FileManager()
 {
+  SetStopping();
+
   std::lock_guard lock(Lock);
   
   if (ManagerThread.joinable()) 

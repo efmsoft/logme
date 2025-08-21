@@ -748,10 +748,10 @@ void Logger::Log(const Context& context, const char* format, ...)
 
 void Logger::DoLog(Context& context, const char* format, va_list args)
 {
+  DoAutodelete(false);
+
   if (ShutdownCalled)
     return;
-
-  DoAutodelete(false);
 
   if (context.Ovr && context.Ovr->MaxFrequency)
   {

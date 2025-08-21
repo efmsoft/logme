@@ -18,6 +18,7 @@
 using namespace Logme;
 
 LoggerPtr Logme::Instance = std::make_shared<Logger>();
+bool Logme::ShutdownCalled = false;
 
 Logger::Logger()
   : HomeDirectoryWatchDog(HomeDirectory, std::bind_front(&Logger::TestFileInUse, this))
@@ -47,6 +48,8 @@ void Logger::Shutdown()
     Instance->StopControlServer();
     Instance->DeleteAllChannels();
   }
+
+  ShutdownCalled = true;
 }
 
 void Logger::SetCondition(TCondition cond)
@@ -61,6 +64,9 @@ bool Logger::DefaultCondition()
 
 void Logger::CreateDefaultChannelLayout(bool delete_all)
 {
+  if (ShutdownCalled)
+    return;
+
   if (delete_all)
     DeleteAllChannels();
 
@@ -341,6 +347,9 @@ ChannelPtr Logger::CreateChannel(
   , Level level
 )
 {
+  if (ShutdownCalled)
+    return ChannelPtr();
+
   ID id{};
   std::string name;
 
@@ -363,6 +372,9 @@ ChannelPtr Logger::CreateChannel(
   , Level level
 )
 {
+  if (ShutdownCalled)
+    return ChannelPtr();
+
   std::lock_guard guard(DataLock);
 
   auto it = Channels.find(id.Name);
@@ -378,6 +390,9 @@ ChannelPtr Logger::CreateChannelInternal(
   , Level level
 )
 {
+  if (ShutdownCalled)
+    return ChannelPtr();
+
   auto it = Channels.find(id.Name);
   if (it != Channels.end())
     return it->second;
@@ -390,11 +405,17 @@ ChannelPtr Logger::CreateChannelInternal(
 
 void Logger::SetBlockReportedSubsystems(bool block)
 {
+  if (ShutdownCalled)
+    return;
+
   BlockReportedSubsystems = block;
 }
 
 void Logger::ReportSubsystem(const SID& sid)
 {
+  if (ShutdownCalled)
+    return;
+
   if (sid.Name == 0)
     return;
 
@@ -547,6 +568,9 @@ void Logger::Log(
   , ...
 )
 {
+  if (ShutdownCalled)
+    return;
+
   Context& context2 = *(Context*)&context;
   context2.Channel = &id;
 
@@ -568,6 +592,9 @@ void Logger::Log(
   , ...
 )
 {
+  if (ShutdownCalled)
+    return;
+
   if (ch && (context.ErrorLevel < ch->GetFilterLevel() || ch->GetEnabled() == false))
     return;
 
@@ -587,6 +614,9 @@ void Logger::Log(
 
 void Logger::Log(const Context& context, const ID& id, const SID& sid, const char* format, ...)
 {
+  if (ShutdownCalled)
+    return;
+
   Context& context2 = *(Context*)&context;
   context2.Channel = &id;
   context2.Subsystem = sid;
@@ -604,6 +634,9 @@ void Logger::Log(const Context& context, const ID& id, const SID& sid, const cha
 
 void Logger::Log(const Context& context, ChannelPtr ch, const SID& sid, const char* format, ...)
 {
+  if (ShutdownCalled)
+    return;
+
   if (ch && (context.ErrorLevel < ch->GetFilterLevel() || ch->GetEnabled() == false))
     return;
 
@@ -630,6 +663,9 @@ void Logger::Log(
   , ...
 )
 {
+  if (ShutdownCalled)
+    return;
+
   Context& context2 = *(Context*)&context;
   context2.Channel = &id;
   context2.Ovr = &ovr;
@@ -650,6 +686,9 @@ void Logger::Log(
   , ...
 )
 {
+  if (ShutdownCalled)
+    return;
+
   if (ch && (context.ErrorLevel < ch->GetFilterLevel() || ch->GetEnabled() == false))
     return;
 
@@ -672,6 +711,9 @@ void Logger::Log(
   , ...
 )
 {
+  if (ShutdownCalled)
+    return;
+
   Context& context2 = *(Context*)&context;
   context2.Ovr = &ovr;
   ApplyThreadChannel(context2);
@@ -686,6 +728,9 @@ void Logger::Log(
 
 void Logger::Log(const Context& context, const char* format, ...)
 {
+  if (ShutdownCalled)
+    return;
+
   Context& context2 = *(Context*)&context;
 
   auto ovr = GetThreadOverride();
@@ -703,6 +748,9 @@ void Logger::Log(const Context& context, const char* format, ...)
 
 void Logger::DoLog(Context& context, const char* format, va_list args)
 {
+  if (ShutdownCalled)
+    return;
+
   DoAutodelete(false);
 
   if (context.Ovr && context.Ovr->MaxFrequency)
@@ -811,6 +859,9 @@ void Logger::DoLog(Context& context, const char* format, va_list args)
 
 void Logger::IterateChannels(const TChannelCallback& callback)
 {
+  if (ShutdownCalled)
+    return;
+
   std::lock_guard guard(DataLock);
 
   if (Default)

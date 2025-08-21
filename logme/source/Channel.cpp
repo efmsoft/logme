@@ -56,6 +56,9 @@ void Channel::AddLink(const ID& to)
 
 void Channel::AddLink(ChannelPtr to)
 {
+  if (ShutdownCalled)
+    return;
+
   std::lock_guard guard(DataLock);
 
   LinkTo = to;
@@ -88,6 +91,9 @@ void Channel::SetDisplayFilter(TDisplayFilter filter)
 
 void Channel::Display(Context& context, const char* line)
 {
+  if (ShutdownCalled)
+    return;
+
   DataLock.lock();
   AccessCount++;
 
@@ -231,6 +237,9 @@ bool Channel::RemoveBackend(BackendPtr backend)
 void Channel::AddBackend(BackendPtr backend)
 {
   assert(backend);
+
+  if (ShutdownCalled)
+    return;
 
   std::lock_guard guard(DataLock);
   for (auto it = Backends.begin(); it != Backends.end(); ++it)

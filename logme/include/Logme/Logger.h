@@ -221,6 +221,7 @@ namespace Logme
 
   typedef std::shared_ptr<Logger> LoggerPtr;
   LOGMELNK extern LoggerPtr Instance;
+  LOGMELNK extern bool ShutdownCalled;
 
   inline StdFormat* GetStdFormat()
   {

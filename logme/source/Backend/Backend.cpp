@@ -8,6 +8,8 @@
 #include <Logme/Backend/FileBackend.h>
 #include <Logme/Backend/SharedFileBackend.h>
 
+#include <Logme/Logger.h>
+
 using namespace Logme;
 
 Backend::Backend(ChannelPtr owner, const char* type)
@@ -58,6 +60,9 @@ std::string Backend::FormatDetails()
 
 BackendPtr Backend::Create(const char* type, ChannelPtr owner)
 {
+  if (ShutdownCalled)
+    return BackendPtr();
+
   std::string t(type);
 
   if (t == BufferBackend::TYPE_ID)

@@ -83,6 +83,9 @@ void ConsoleBackend::Display(Context& context, const char* line)
   FILE* stream = GetOutputStream(context);
   if (IsTerminalStream(stream) && escape)
   {
+    static std::mutex ColorizerLock;
+    std::lock_guard guard(ColorizerLock);
+
     Colorizer colorizer(false);
     colorizer.Escape(escape);
 

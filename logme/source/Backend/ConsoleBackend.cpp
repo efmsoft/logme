@@ -1,10 +1,11 @@
+#include <cstdio>
+#include <cstring>
+#include <iostream>
+
 #include <Logme/AnsiColorEscape.h>
 #include <Logme/Backend/ConsoleBackend.h>
 #include <Logme/Channel.h>
 #include <Logme/Colorizer.h>
-
-#include <iostream>
-#include <cstdio>
 
 #ifdef _WIN32
 #include <io.h>
@@ -64,6 +65,72 @@ static bool IsTerminalStream(FILE* stream)
   return !!_isatty(_fileno(stdout));
 }
 
+static void PrintWithAnsiSegments(
+  FILE* stream
+  , const char* text
+  , const char* defaultEscape
+)
+{
+  if (!text || !*text)
+    return;
+
+  bool isStdErr = (stream == stderr);
+
+  Colorizer colorizer(isStdErr);
+
+  const char* p = text;
+  const char* escPos = nullptr;
+  bool defaultApplied = false;
+
+  while ((escPos = std::strchr(p, '\x1b')) != nullptr)
+  {
+    if (escPos > p)
+    {
+      size_t len = static_cast<size_t>(escPos - p);
+
+      if (defaultEscape && !defaultApplied)
+      {
+        colorizer.Escape(defaultEscape);
+        defaultApplied = true;
+      }
+
+      if (len > 0)
+        fwrite(p, 1, len, stream);
+    }
+
+    const char* seq = escPos;
+    int attr = 0, fg = -1, bg = -1;
+    if (Colorizer::ParseSequence(seq, attr, fg, bg))
+    {
+      colorizer.Escape(escPos);
+      defaultApplied = false;
+
+      p = seq;
+      continue;
+    }
+    else
+    {
+      fputc('\x1b', stream);
+      p = escPos + 1;
+      
+      continue;
+    }
+  }
+
+  if (*p)
+  {
+    if (defaultEscape && !defaultApplied)
+    {
+      colorizer.Escape(defaultEscape);
+      defaultApplied = true;
+    }
+
+    fputs(p, stream);
+  }
+
+  // Colorizer dtor will restore original console attributes (Escape(RESET)).
+}
+
 void ConsoleBackend::Display(Context& context, const char* line)
 {
   OutputFlags flags = Owner->GetFlags();
@@ -80,16 +147,25 @@ void ConsoleBackend::Display(Context& context, const char* line)
   if (flags.Highlight)
     escape = GetEscapeSequence(context.ErrorLevel);
 
+  const bool hasAnsi = (std::strchr(buffer, '\x1b') != nullptr);
+
   FILE* stream = GetOutputStream(context);
-  if (IsTerminalStream(stream) && escape)
+  if (IsTerminalStream(stream) && (escape || hasAnsi))
   {
     static std::mutex ColorizerLock;
     std::lock_guard guard(ColorizerLock);
 
-    Colorizer colorizer(false);
-    colorizer.Escape(escape);
+    if (hasAnsi)
+    {
+      PrintWithAnsiSegments(stream, buffer, escape);
+    }
+    else if (escape)
+    {
+      Colorizer colorizer(false);
+      colorizer.Escape(escape);
 
-    fputs(buffer, stream);
+      fputs(buffer, stream);
+    }
   }
   else
   {

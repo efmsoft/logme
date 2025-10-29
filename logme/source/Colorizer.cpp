@@ -25,7 +25,7 @@ static WORD ColorFlags[] =
 };
 #endif
 
-bool IsTTY(FILE* stream)
+static bool IsTTY(FILE* stream)
 {
 #ifdef _WIN32
   return (_isatty(_fileno(stream)) != 0);

@@ -28,6 +28,7 @@ Logger::Logger()
   , LastDoAutodelete(0)
   , NumDeleting(0)
   , Condition(&Logger::DefaultCondition)
+  , EnableVTMode(false)
 {
   CreateDefaultChannelLayout();
 
@@ -113,6 +114,16 @@ void Logger::SetHomeDirectory(const std::string& path)
 const std::string& Logger::GetHomeDirectory() const
 {
   return HomeDirectory;
+}
+
+void Logger::SetEnableVTMode(bool enable)
+{
+  EnableVTMode = enable;
+}
+
+bool Logger::GetEnableVTMode() const
+{
+  return EnableVTMode;
 }
 
 bool Logger::TestFileInUse(const std::string& file)

@@ -15,6 +15,9 @@ namespace Logme
     void Escape(const char* escape = 0);
     static bool ParseSequence(const char*& escape, int& attr, int& fg, int& bg);
 
+    static bool EnableVTMode();
+    static bool VTMode();
+
 #ifdef _WIN32
   private:
 

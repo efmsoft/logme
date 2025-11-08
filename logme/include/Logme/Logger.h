@@ -55,6 +55,8 @@ namespace Logme
     unsigned LastDoAutodelete;
     int NumDeleting;
 
+    bool EnableVTMode;
+
     struct ControlThread
     {
       ThreadPtr Thread;
@@ -197,6 +199,9 @@ namespace Logme
     LOGMELNK void IterateChannels(const TChannelCallback& callback);
 
     LOGMELNK bool TestFileInUse(const std::string& file);
+
+    LOGMELNK void SetEnableVTMode(bool enable);
+    LOGMELNK bool GetEnableVTMode() const;
 
   protected:
     ChannelPtr CreateChannelInternal(

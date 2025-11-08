@@ -23,6 +23,8 @@ static WORD ColorFlags[] =
   FOREGROUND_GREEN | FOREGROUND_BLUE,       // cyan
   FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE, // white
 };
+
+bool VTModeEnabled = false;
 #endif
 
 static bool IsTTY(FILE* stream)
@@ -62,6 +64,41 @@ Colorizer::Colorizer(bool isStdErr)
 Colorizer::~Colorizer()
 {
   Escape();                                 // Back to defaults colors
+}
+
+bool Colorizer::VTMode()
+{
+#ifdef _WIN32
+  return VTModeEnabled;
+#else
+  return true;
+#endif
+}
+
+bool Colorizer::EnableVTMode()
+{
+#ifdef _WIN32
+  if (VTModeEnabled)
+    return true;
+
+  HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+  if (hOut == INVALID_HANDLE_VALUE)
+    return false;
+
+  DWORD dwMode = 0;
+  if (!GetConsoleMode(hOut, &dwMode))
+    return false;
+
+  dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    
+  if (!SetConsoleMode(hOut, dwMode))
+    return false;
+
+  VTModeEnabled = true;
+  return true;
+#else
+  return true;
+#endif
 }
 
 void Colorizer::Escape(const char* escape)

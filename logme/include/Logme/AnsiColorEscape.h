@@ -38,3 +38,34 @@
 #define ANSI_BG_WHITE         "\x1b[1;47m"
 
 #define ANSI_RESET            "\x1b[0m"
+
+// ---------------------------------------------------------------------------
+// Text formatting effects (supported with ENABLE_VIRTUAL_TERMINAL_PROCESSING)
+// ---------------------------------------------------------------------------
+
+#define ANSI_BOLD             "\x1b[1m"   // Bold / bright
+#define ANSI_DIM              "\x1b[2m"   // Dim / faint
+#define ANSI_ITALIC           "\x1b[3m"   // Italic
+#define ANSI_UNDERLINE        "\x1b[4m"   // Underline
+#define ANSI_BLINK            "\x1b[5m"   // Slow blink
+#define ANSI_RAPID_BLINK      "\x1b[6m"   // Rapid blink
+#define ANSI_REVERSE          "\x1b[7m"   // Invert foreground/background
+#define ANSI_HIDDEN           "\x1b[8m"   // Hidden text (invisible)
+#define ANSI_STRIKE           "\x1b[9m"   // Strikethrough
+
+// Reset individual attributes
+#define ANSI_BOLD_OFF         "\x1b[22m"
+#define ANSI_DIM_OFF          "\x1b[22m"
+#define ANSI_ITALIC_OFF       "\x1b[23m"
+#define ANSI_UNDERLINE_OFF    "\x1b[24m"
+#define ANSI_BLINK_OFF        "\x1b[25m"
+#define ANSI_REVERSE_OFF      "\x1b[27m"
+#define ANSI_HIDDEN_OFF       "\x1b[28m"
+#define ANSI_STRIKE_OFF       "\x1b[29m"
+
+// Double underline (some terminals may not support it)
+#define ANSI_DOUBLE_UNDERLINE "\x1b[21m"
+
+// Overline (Win10+ supports it)
+#define ANSI_OVERLINE         "\x1b[53m"
+#define ANSI_OVERLINE_OFF     "\x1b[55m"

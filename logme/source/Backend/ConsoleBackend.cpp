@@ -6,6 +6,7 @@
 #include <Logme/Backend/ConsoleBackend.h>
 #include <Logme/Channel.h>
 #include <Logme/Colorizer.h>
+#include <Logme/Logger.h>
 
 #ifdef _WIN32
 #include <io.h>
@@ -20,6 +21,12 @@ using namespace Logme;
 ConsoleBackend::ConsoleBackend(ChannelPtr owner)
   : Backend(owner, TYPE_ID)
 {
+  if (owner)
+  {
+    auto logger = owner->GetOwner();
+    if (logger->GetEnableVTMode())
+      Colorizer::EnableVTMode();
+  }
 }
 
 const char* ConsoleBackend::GetEscapeSequence(enum Level level)
@@ -78,6 +85,16 @@ static void PrintWithAnsiSegments(
 
   Colorizer colorizer(isStdErr);
 
+  // If VT mode is enabled we do not parse escapes ourselves.
+  if (Colorizer::VTMode())
+  {
+    if (defaultEscape && *defaultEscape)
+      colorizer.Escape(defaultEscape);
+
+    fputs(text, stream);
+    return;
+  }
+
   const char* p = text;
   const char* escPos = nullptr;
   bool defaultApplied = false;
@@ -99,12 +116,14 @@ static void PrintWithAnsiSegments(
     }
 
     const char* seq = escPos;
-    int attr = 0, fg = -1, bg = -1;
+    int attr = 0;
+    int fg = -1;
+    int bg = -1;
+
     if (Colorizer::ParseSequence(seq, attr, fg, bg))
     {
       colorizer.Escape(escPos);
       defaultApplied = false;
-
       p = seq;
       continue;
     }
@@ -112,7 +131,6 @@ static void PrintWithAnsiSegments(
     {
       fputc('\x1b', stream);
       p = escPos + 1;
-      
       continue;
     }
   }
@@ -128,7 +146,7 @@ static void PrintWithAnsiSegments(
     fputs(p, stream);
   }
 
-  // Colorizer dtor will restore original console attributes (Escape(RESET)).
+  // Colorizer dtor will restore original console attributes.
 }
 
 void ConsoleBackend::Display(Context& context, const char* line)

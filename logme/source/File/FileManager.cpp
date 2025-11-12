@@ -9,6 +9,9 @@ FileManager::FileManager()
   : StopRequested(false)
   , Reschedule(false)
   , CurrentEarliestTime(0)
+#ifdef _WIN32
+  , ThreadID(0)
+#endif
 {
 }
 
@@ -16,8 +19,6 @@ FileManager::~FileManager()
 {
   SetStopping();
 
-  std::lock_guard lock(Lock);
-  
   if (ManagerThread.joinable()) 
     ManagerThread.join();
 }
@@ -36,25 +37,55 @@ bool FileManager::Stopping() const
   return StopRequested;
 }
 
-void FileManager::SetStopping()
-{
 #ifdef _WIN32
-  // In Windows, the handling of ExitProcess is implemented in a very 
-  // specific way. If our library is in a DLL, then all threads created 
-  // by the library are simply terminated by the system during ExitProcess 
-  // handling, without sending any notifications. Since this function is 
-  // called from the Logger destructor, it's very likely that any thread 
-  // we created no longer exists at that point. Therefore, we simply remove 
-  // all backends from the list to drop our references to FileBackend, 
-  // allowing them to be destroyed properly.
-  for (const auto& backend : Backends)
-    backend->OnShutdown();
+#include <windows.h>
 
-  Backends.clear();
+static bool ThreadExists(DWORD threadId)
+{
+  HANDLE hThread = OpenThread(THREAD_QUERY_LIMITED_INFORMATION, FALSE, threadId);
+  if (!hThread)
+    return false;
+
+  DWORD exitCode = 0;
+  BOOL ok = GetExitCodeThread(hThread, &exitCode);
+  CloseHandle(hThread);
+
+  if (!ok)
+    return false;
+
+  return exitCode == STILL_ACTIVE;
+}
 #endif
 
-  StopRequested = true;
+void FileManager::SetStopping()
+{
+  if (true)
+  {
+    std::lock_guard<std::mutex> lock(Lock);
+    
+    StopRequested = true;
+    Reschedule = true;
+  }
+
   CV.notify_all();
+
+#ifdef _WIN32
+  if (ThreadExists(ThreadID) == false)
+  {
+    // In Windows, the handling of ExitProcess is implemented in a very 
+    // specific way. If our library is in a DLL, then all threads created 
+    // by the library are simply terminated by the system during ExitProcess 
+    // handling, without sending any notifications. Since this function is 
+    // called from the Logger destructor, it's very likely that any thread 
+    // we created no longer exists at that point. Therefore, we simply remove 
+    // all backends from the list to drop our references to FileBackend, 
+    // allowing them to be destroyed properly.
+    for (const auto& backend : Backends)
+      backend->OnShutdown();
+
+    Backends.clear();
+  }
+#endif
 }
 
 void FileManager::Notify(FileBackend* backend, uint64_t when)
@@ -82,6 +113,10 @@ bool FileManager::TestFileInUse(const std::string& file)
 void FileManager::ManagementThread()
 {
   RenameThread(-1, "FileManager::ManagementThread");
+
+#ifdef _WIN32
+  ThreadID = GetCurrentThreadId();
+#endif
 
   std::unique_lock lock(Lock);
 

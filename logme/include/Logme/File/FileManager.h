@@ -20,6 +20,10 @@ namespace Logme
 
     uint64_t CurrentEarliestTime;
 
+#ifdef _WIN32
+    unsigned ThreadID;
+#endif
+
   public:
     FileManager();
     ~FileManager();

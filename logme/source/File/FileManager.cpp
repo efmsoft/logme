@@ -21,6 +21,9 @@ FileManager::~FileManager()
 
   if (ManagerThread.joinable()) 
     ManagerThread.join();
+
+  for (const auto& backend : Backends)
+    backend->OnShutdown();
 }
 
 void FileManager::AddBackend(const FileBackendPtr& backend)

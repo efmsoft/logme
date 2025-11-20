@@ -41,13 +41,7 @@ Logger::~Logger()
 {
   Factory.SetStopping();
   StopControlServer();
-
-  if (ControlSsl)
-  {
-    delete ControlSsl;
-    ControlSsl = nullptr;
-  }
-
+  FreeControlSsl();
   DeleteAllChannels();
 }
 

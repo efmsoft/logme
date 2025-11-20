@@ -384,6 +384,17 @@ void Logger::StopControlServer()
   }
 }
 
+void Logger::FreeControlSsl()
+{
+  std::lock_guard guard(DataLock);
+
+  if (ControlSsl)
+  {
+    delete ControlSsl;
+    ControlSsl = nullptr;
+  }
+}
+
 Result Logger::SetControlCertificate(
   X509* cert
   , EVP_PKEY* key

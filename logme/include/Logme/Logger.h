@@ -225,6 +225,7 @@ namespace Logme
     void ControlHandler(int socket);
 
     void DoAutodelete(bool force);
+    void FreeControlSsl();
 
   public:
     static bool CommandList(StringArray& arr, std::string& response);

@@ -50,5 +50,6 @@ namespace Logme
   LOGMELNK uint64_t GetInterval(const Json::Value& root, const char* option, uint64_t def);
 #endif
 
-  std::string GetLevelName(Level level);
+  LOGMELNK std::string GetLevelName(Level level);
+  LOGMELNK bool LevelFromName(const std::string& n, int& v);
 }

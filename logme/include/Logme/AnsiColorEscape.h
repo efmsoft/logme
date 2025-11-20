@@ -69,3 +69,7 @@
 // Overline (Win10+ supports it)
 #define ANSI_OVERLINE         "\x1b[53m"
 #define ANSI_OVERLINE_OFF     "\x1b[55m"
+
+#define ANSI_SKY_BLUE         "\x1b[38;2;92;199;255m"
+#define ANSI_NEON_MINT        "\x1b[38;2;124;255;196m"
+#define ANSI_SOLAR_ORANGE     "\x1b[38;2;255;175;95m"

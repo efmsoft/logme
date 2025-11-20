@@ -4,6 +4,9 @@
 #include <mutex>
 #include <stdint.h>
 
+typedef struct x509_st X509;
+typedef struct evp_pkey_st EVP_PKEY;
+
 namespace Logme
 {
   enum Result
@@ -55,6 +58,8 @@ namespace Logme
     bool Enable;
     int Port;
     uint32_t Interface;
+    X509* Cert;
+    EVP_PKEY* Key;
   };
 
   struct NAMED_VALUE

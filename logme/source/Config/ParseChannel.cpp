@@ -42,6 +42,14 @@ static bool GetChannelName(const Json::Value& o, int i, std::string& name)
   return true;
 }
 
+bool Logme::LevelFromName(const std::string& n, int& v)
+{
+  if (!Name2Value(n, false, LevelValues, v))
+    return false;
+
+  return true;
+}
+
 static bool GetFilterLevel(const Json::Value& o, int i, Level& level)
 {
   if (!o.isMember("level"))
@@ -54,7 +62,7 @@ static bool GetFilterLevel(const Json::Value& o, int i, Level& level)
   }
 
   int v = 0;
-  if (!Name2Value(o["level"].asString(), false, LevelValues, v))
+  if (!LevelFromName(o["level"].asString(), v))
   {
     LogmeE(CHINT, "\"channels[%i].level\" value is not supported", i);
     return false;

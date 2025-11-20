@@ -22,6 +22,7 @@ namespace Logme
   typedef std::function<void(const std::string&, const ChannelPtr&)> TChannelCallback;
 
   struct StdFormat{};
+  struct ControlSslContext;
 
   class Logger : public std::enable_shared_from_this<Logger>
   {
@@ -46,7 +47,9 @@ namespace Logme
     StringPtr ErrorChannel;
 
     int ControlSocket;
+    ControlConfig ControlCfg;
     TControlHandler ControlExtension;
+    ControlSslContext* ControlSsl;
     
     typedef std::shared_ptr<std::thread> ThreadPtr;
     ThreadPtr ListenerThread;
@@ -189,6 +192,10 @@ namespace Logme
     LOGMELNK void DeleteAllChannels();
     LOGMELNK bool StartControlServer(const ControlConfig& c);
     LOGMELNK void StopControlServer();
+    LOGMELNK Result SetControlCertificate(
+      X509* cert
+      , EVP_PKEY* key
+    );
 
     LOGMELNK std::string Control(const std::string& command);
     LOGMELNK void SetControlExtension(TControlHandler handler);

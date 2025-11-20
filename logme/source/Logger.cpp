@@ -25,6 +25,8 @@ Logger::Logger()
   , BlockReportedSubsystems(true)
   , IDGenerator(1)
   , ControlSocket(-1)
+  , ControlCfg{}
+  , ControlSsl(nullptr)
   , LastDoAutodelete(0)
   , NumDeleting(0)
   , Condition(&Logger::DefaultCondition)
@@ -39,6 +41,13 @@ Logger::~Logger()
 {
   Factory.SetStopping();
   StopControlServer();
+
+  if (ControlSsl)
+  {
+    delete ControlSsl;
+    ControlSsl = nullptr;
+  }
+
   DeleteAllChannels();
 }
 

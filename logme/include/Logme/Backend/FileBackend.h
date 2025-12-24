@@ -3,6 +3,7 @@
 #include <Logme/Backend/Backend.h>
 #include <Logme/DayChangeDetector.h>
 #include <Logme/File/file_io.h>
+#include <Logme/Obfuscate.h>
 #include <Logme/Types.h>
 
 #include <condition_variable>
@@ -61,6 +62,8 @@ namespace Logme
 
     static size_t MaxSizeDefault;
     static size_t QueueSizeLimitDefault;
+
+    NonceGen Nonce;
   
   public:
     enum 
@@ -115,6 +118,7 @@ namespace Logme
     class FileManagerFactory& GetFactory() const;
 
     void Truncate();
+    void AppendObfuscated(const char* text, size_t add);
     void AppendOutputData(const char* text, size_t add);
     void RequestFlush(uint64_t when = RIGHT_NOW);
     void GetOutputData(CharBuffer& data, SizeArray& size);

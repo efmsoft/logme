@@ -11,6 +11,7 @@
 #include <Logme/Channel.h>
 #include <Logme/File/DirectorySizeWatchdog.h>
 #include <Logme/File/FileManagerFactory.h>
+#include <Logme/Obfuscate.h>
 #include <Logme/Stream.h>
 #include <Logme/Utils.h>
 
@@ -72,6 +73,9 @@ namespace Logme
 
     typedef std::map<int, ControlThread> ThreadMap;
     ThreadMap ControlThreads;
+
+    ObfKey Key;
+    bool Obfuscate;
 
   public:
     TCondition Condition;
@@ -209,6 +213,10 @@ namespace Logme
 
     LOGMELNK void SetEnableVTMode(bool enable);
     LOGMELNK bool GetEnableVTMode() const;
+
+    LOGMELNK void SetObfuscationKey(const ObfKey* key);
+    LOGMELNK const ObfKey* GetObfuscationKey() const;
+    LOGMELNK bool DeobfuscateRecord(const uint8_t* r, size_t len, std::string& line) const;
 
   protected:
     ChannelPtr CreateChannelInternal(

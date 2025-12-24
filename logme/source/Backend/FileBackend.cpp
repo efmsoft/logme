@@ -56,6 +56,7 @@ FileBackend::FileBackend(ChannelPtr owner)
   , MaxParts(2)
 {
   OutBuffer.reserve(QUEUE_GROW_SIZE);
+  NonceGenInit(&Nonce);
 }
 
 FileBackend::~FileBackend()
@@ -358,8 +359,32 @@ void FileBackend::AppendString(const char* text, size_t len)
     if (len == (size_t)-1)
       len = strlen(text);
 
-    AppendOutputData(text, len);
+    AppendObfuscated(text, len);
   }
+}
+
+void FileBackend::AppendObfuscated(const char* text, size_t add)
+{
+  auto key = Owner->GetOwner()->GetObfuscationKey();
+  if (key == nullptr)
+  {
+    AppendOutputData(text, add);
+    return;
+  }
+
+  auto output = ObfCalcRecordSize(add);
+  if (output < 4ULL * 1024)
+  {
+    size_t size = 0;
+    uint8_t buffer[4ULL * 1024];
+    if (ObfEncryptRecord(key, &Nonce, (const uint8_t*)text, add, buffer, sizeof(buffer), &size))
+      AppendOutputData((const char*)buffer, size);
+  }
+
+  size_t size = 0;
+  std::vector<uint8_t> buffer(output);
+  if (ObfEncryptRecord(key, &Nonce, (const uint8_t*)text, add, buffer.data(), buffer.size(), &size))
+    AppendOutputData((const char*)buffer.data(), size);
 }
 
 void FileBackend::AppendOutputData(const char* text, size_t add)

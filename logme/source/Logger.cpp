@@ -31,6 +31,7 @@ Logger::Logger()
   , NumDeleting(0)
   , Condition(&Logger::DefaultCondition)
   , EnableVTMode(false)
+  , Obfuscate(false)
 {
   CreateDefaultChannelLayout();
 
@@ -127,6 +128,22 @@ void Logger::SetEnableVTMode(bool enable)
 bool Logger::GetEnableVTMode() const
 {
   return EnableVTMode;
+}
+
+void Logger::SetObfuscationKey(const ObfKey* key)
+{
+  if (key == nullptr)
+    Obfuscate = false;
+  else
+  {
+    Key = *key;
+    Obfuscate = true;
+  }
+}
+
+const ObfKey* Logger::GetObfuscationKey() const
+{
+  return Obfuscate ? &Key : nullptr;
 }
 
 bool Logger::TestFileInUse(const std::string& file)

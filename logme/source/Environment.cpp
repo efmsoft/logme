@@ -20,7 +20,7 @@ void Logme::EnvSetVar(const char* name, const char* value)
   if (!name)
     return;
 
-  Guard guard(EnvLock);
+  std::lock_guard guard(EnvLock);
 
   if (!value || !*value)
   {
@@ -37,7 +37,7 @@ std::string Logme::EnvGetVar(const char* name)
   if (!name)
     return "";
 
-  Guard guard(EnvLock);
+  std::lock_guard guard(EnvLock);
 
   std::string value;
   Environment::iterator it = Env.find(name);

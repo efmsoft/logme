@@ -68,7 +68,6 @@ namespace Logme
     int Value;
   };
 
-  #define Guard std::lock_guard
   typedef void* HANDLE;
 
   class Logger;

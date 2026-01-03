@@ -6,7 +6,9 @@
 #include <Logme/Procedure.h>
 #include <Logme/ArgumentList.h>
 
-Logme::ID CHT{ "procedure_print" };
+using namespace Logme; 
+
+ID CHT{ "procedure_print" };
 std::shared_ptr<TestBackend> Be;
 std::shared_ptr<TestBackend> Be2;
 
@@ -80,30 +82,30 @@ static uint8_t ProcUint8Default()
   return r;
 }
 
-static Logme::xint8_t ProcXInt8()
+static xint8_t ProcXInt8()
 {
-  Logme::xint8_t r((int8_t)-1);
+  xint8_t r((int8_t)-1);
   LogmeP(r, CHT);
   return r;
 }
 
-static Logme::xint8_t ProcXInt8Default()
+static xint8_t ProcXInt8Default()
 {
-  Logme::xint8_t r((int8_t)-1);
+  xint8_t r((int8_t)-1);
   LogmeP(r);
   return r;
 }
 
-static Logme::xuint8_t ProcXUint8()
+static xuint8_t ProcXUint8()
 {
-  Logme::xuint8_t r((uint8_t)0xAB);
+  xuint8_t r((uint8_t)0xAB);
   LogmeP(r, CHT);
   return r;
 }
 
-static Logme::xuint8_t ProcXUint8Default()
+static xuint8_t ProcXUint8Default()
 {
-  Logme::xuint8_t r((uint8_t)0xAB);
+  xuint8_t r((uint8_t)0xAB);
   LogmeP(r);
   return r;
 }
@@ -136,16 +138,16 @@ static uint16_t ProcUint16Default()
   return r;
 }
 
-static Logme::xuint16_t ProcXUint16()
+static xuint16_t ProcXUint16()
 {
-  Logme::xuint16_t r((uint16_t)0xBEEF);
+  xuint16_t r((uint16_t)0xBEEF);
   LogmeP(r, CHT);
   return r;
 }
 
-static Logme::xuint16_t ProcXUint16Default()
+static xuint16_t ProcXUint16Default()
 {
-  Logme::xuint16_t r((uint16_t)0xBEEF);
+  xuint16_t r((uint16_t)0xBEEF);
   LogmeP(r);
   return r;
 }
@@ -178,16 +180,16 @@ static uint32_t ProcUint32Default()
   return r;
 }
 
-static Logme::xuint32_t ProcXUint32()
+static xuint32_t ProcXUint32()
 {
-  Logme::xuint32_t r(0xDEADBEEFu);
+  xuint32_t r(0xDEADBEEFu);
   LogmeP(r, CHT);
   return r;
 }
 
-static Logme::xuint32_t ProcXUint32Default()
+static xuint32_t ProcXUint32Default()
 {
-  Logme::xuint32_t r(0xDEADBEEFu);
+  xuint32_t r(0xDEADBEEFu);
   LogmeP(r);
   return r;
 }
@@ -220,16 +222,16 @@ static uint64_t ProcUint64Default()
   return r;
 }
 
-static Logme::xuint64_t ProcXUint64()
+static xuint64_t ProcXUint64()
 {
-  Logme::xuint64_t r(0x1122334455667788ull);
+  xuint64_t r(0x1122334455667788ull);
   LogmeP(r, CHT);
   return r;
 }
 
-static Logme::xuint64_t ProcXUint64Default()
+static xuint64_t ProcXUint64Default()
 {
-  Logme::xuint64_t r(0x1122334455667788ull);
+  xuint64_t r(0x1122334455667788ull);
   LogmeP(r);
   return r;
 }
@@ -331,14 +333,14 @@ static int ProcDebugLevelDefault(bool& called)
 }
 
 
-static int ProcArgs2(Logme::xint64_t p1, const char* p2)
+static int ProcArgs2(xint64_t p1, const char* p2)
 {
   int r = 7;
   LogmeP(r, CHT, ARGS2(p1, p2));
   return r;
 }
 
-static int ProcArgs2Default(Logme::xint64_t p1, const char* p2)
+static int ProcArgs2Default(xint64_t p1, const char* p2)
 {
   int r = 7;
   LogmeP(r, ARGS2(p1, p2));
@@ -369,33 +371,34 @@ static void ProcArgs4Default(bool a, const char* b, const std::string& c, const 
   LogmePV(ARGS4(a, b, c, d));
 }
 
-static Logme::xuint32_t ProcArgs5(uint8_t a, Logme::xuint16_t b, int64_t c, const char* d, MyEnum e)
+static xuint32_t ProcArgs5(uint8_t a, xuint16_t b, int64_t c, const char* d, MyEnum e)
 {
-  Logme::xuint32_t r = (Logme::xuint32_t)0xAABBCCDDu;
+  xuint32_t r(0xAABBCCDDu);
   LogmeP(r, CHT, ARGS5(a, b, c, d, e));
   return r;
 }
 
-static Logme::xuint32_t ProcArgs5Default(uint8_t a, Logme::xuint16_t b, int64_t c, const char* d, MyEnum e)
+static xuint32_t ProcArgs5Default(uint8_t a, xuint16_t b, int64_t c, const char* d, MyEnum e)
 {
-  Logme::xuint32_t r = (Logme::xuint32_t)0xAABBCCDDu;
+  xuint32_t r(0xAABBCCDDu);
   LogmeP(r, ARGS5(a, b, c, d, e));
   return r;
 }
 
-static int ProcArgsUnnamed(Logme::xint64_t p1, const char* p2)
+static int ProcArgsUnnamed(xint64_t p1, const char* p2)
 {
   int r = 5;
   LogmeP(r, CHT, ARGS(p1, p2));
   return r;
 }
 
-static int ProcArgsUnnamedDefault(Logme::xint64_t p1, const char* p2)
+static int ProcArgsUnnamedDefault(xint64_t p1, const char* p2)
 {
   int r = 5;
   LogmeP(r, ARGS(p1, p2));
   return r;
 }
+
 TEST(ProcedurePrint, BuiltinAndHexAndCustom)
 {
   Be->Clear();
@@ -551,11 +554,11 @@ TEST(ProcedurePrint, BuiltinAndHexAndCustom)
   ExpectLast2Backend(Be2, ">> ProcVoidDefault()\n", "<< ProcVoidDefault()\n");
 
   Be->Clear();
-  ProcArgs2((Logme::xint64_t)0x2A, "qq");
+  ProcArgs2((xint64_t)0x2A, "qq");
   ExpectLast2(">> ProcArgs2(): p1=0x2a, p2=qq", "<< ProcArgs2(): 7");
 
   Be2->Clear();
-  ProcArgs2Default((Logme::xint64_t)0x2A, "qq");
+  ProcArgs2Default((xint64_t)0x2A, "qq");
   ExpectLast2Backend(Be2, ">> ProcArgs2Default(): p1=0x2a, p2=qq\n", "<< ProcArgs2Default(): 7\n");
 
   Be->Clear();
@@ -575,19 +578,19 @@ TEST(ProcedurePrint, BuiltinAndHexAndCustom)
   ExpectLast2Backend(Be2, ">> ProcArgs4Default(): a=true, b=xx, c=yy, d=Custom(7)\n", "<< ProcArgs4Default()\n");
 
   Be->Clear();
-  ProcArgs5((uint8_t)200, (Logme::xuint16_t)0xBEEF, -5, "zz", MyEnum::One);
+  ProcArgs5((uint8_t)200, (xuint16_t)0xBEEF, -5, "zz", MyEnum::One);
   ExpectLast2(">> ProcArgs5(): a=200, b=0xbeef, c=-5, d=zz, e=One", "<< ProcArgs5(): 0xaabbccdd");
 
   Be2->Clear();
-  ProcArgs5Default((uint8_t)200, (Logme::xuint16_t)0xBEEF, -5, "zz", MyEnum::One);
+  ProcArgs5Default((uint8_t)200, (xuint16_t)0xBEEF, -5, "zz", MyEnum::One);
   ExpectLast2Backend(Be2, ">> ProcArgs5Default(): a=200, b=0xbeef, c=-5, d=zz, e=One\n", "<< ProcArgs5Default(): 0xaabbccdd\n");
 
   Be->Clear();
-  ProcArgsUnnamed((Logme::xint64_t)0x2A, "qq");
+  ProcArgsUnnamed((xint64_t)0x2A, "qq");
   ExpectLast2(">> ProcArgsUnnamed(): 0x2a, qq", "<< ProcArgsUnnamed(): 5");
 
   Be2->Clear();
-  ProcArgsUnnamedDefault((Logme::xint64_t)0x2A, "qq");
+  ProcArgsUnnamedDefault((xint64_t)0x2A, "qq");
   ExpectLast2Backend(Be2, ">> ProcArgsUnnamedDefault(): 0x2a, qq\n", "<< ProcArgsUnnamedDefault(): 5\n");
 }
 
@@ -595,27 +598,27 @@ TEST(ProcedurePrint, LevelFiltering)
 {
   bool called = false;
 
-  Be->Owner->SetFilterLevel(Logme::LEVEL_INFO);
+  Be->Owner->SetFilterLevel(LEVEL_INFO);
   Be->Clear();
   ProcDebugLevel(called);
   EXPECT_TRUE(called);
   EXPECT_TRUE(Be->History.empty());
 
-  Be->Owner->SetFilterLevel(Logme::LEVEL_DEBUG);
+  Be->Owner->SetFilterLevel(LEVEL_DEBUG);
   called = false;
   Be->Clear();
   ProcDebugLevel(called);
   EXPECT_TRUE(called);
   ExpectLast2(">> ProcDebugLevel()", "<< ProcDebugLevel(): 1");
 
-  Be2->Owner->SetFilterLevel(Logme::LEVEL_INFO);
+  Be2->Owner->SetFilterLevel(LEVEL_INFO);
   called = false;
   Be2->Clear();
   ProcDebugLevelDefault(called);
   EXPECT_TRUE(called);
   EXPECT_TRUE(Be2->History.empty());
 
-  Be2->Owner->SetFilterLevel(Logme::LEVEL_DEBUG);
+  Be2->Owner->SetFilterLevel(LEVEL_DEBUG);
   called = false;
   Be2->Clear();
   ProcDebugLevelDefault(called);
@@ -627,24 +630,24 @@ int main(int argc, char* argv[])
 {
   ::testing::InitGoogleTest(&argc, argv);
 
-  auto ch = Logme::Instance->CreateChannel(CHT);
+  auto ch = Instance->CreateChannel(CHT);
   Be = std::make_shared<TestBackend>(ch);
   ch->AddBackend(Be);
   ch->AddLink(::CH);
 
-  auto ch2 = Logme::Instance->GetExistingChannel(::CH);
+  auto ch2 = Instance->GetExistingChannel(::CH);
   Be2 = std::make_shared<TestBackend>(ch2);
   ch2->AddBackend(Be2);
 
-  Logme::OutputFlags flags;
+  OutputFlags flags;
   flags.Value = 0;
 
   ch->SetFlags(flags);
-  ch->SetFilterLevel(Logme::LEVEL_DEBUG);
+  ch->SetFilterLevel(LEVEL_DEBUG);
 
   flags.Eol = true; 
   ch2->SetFlags(flags);
-  ch2->SetFilterLevel(Logme::LEVEL_DEBUG);
+  ch2->SetFilterLevel(LEVEL_DEBUG);
 
   return RUN_ALL_TESTS();
 }

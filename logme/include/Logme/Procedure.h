@@ -54,7 +54,7 @@ namespace Logme
 
 #define _LogmePV(level, ...) \
   const Logme::Context& _procContext = LOGME_CONTEXT(level, &CH, &SUBSID, ## __VA_ARGS__); \
-  Logme::Procedure logme_proc(_procContext, nullptr)
+  Logme::Procedure logme_proc(_procContext, nullptr, ## __VA_ARGS__)
 #else
 #define _LogmeP(level, retval, ...)
 #define _LogmePV(level)

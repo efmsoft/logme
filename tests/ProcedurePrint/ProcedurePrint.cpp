@@ -5,6 +5,7 @@
 #include <Logme/Logme.h>
 #include <Logme/Procedure.h>
 
+Logme::ID CHT{ "procedure_print" };
 std::shared_ptr<TestBackend> Be;
 
 enum class MyEnum
@@ -42,145 +43,144 @@ static void ExpectLast2(const char* enter, const char* leave)
   ASSERT_GE(Be->History.size(), 2u);
   EXPECT_EQ(Be->History[Be->History.size() - 2], enter);
   EXPECT_EQ(Be->History[Be->History.size() - 1], leave);
-  printf("\n");
 }
 
 static int8_t ProcInt8()
 {
   int8_t r = (int8_t)-1;
-  LogmeP(r, CH);
+  LogmeP(r, CHT);
   return r;
 }
 
 static uint8_t ProcUint8()
 {
   uint8_t r = (uint8_t)200;
-  LogmeP(r, CH);
+  LogmeP(r, CHT);
   return r;
 }
 
 static Logme::xint8_t ProcXInt8()
 {
   Logme::xint8_t r((int8_t)-1);
-  LogmeP(r, CH);
+  LogmeP(r, CHT);
   return r;
 }
 
 static Logme::xuint8_t ProcXUint8()
 {
   Logme::xuint8_t r((uint8_t)0xAB);
-  LogmeP(r, CH);
+  LogmeP(r, CHT);
   return r;
 }
 
 static int16_t ProcInt16()
 {
   int16_t r = (int16_t)-1234;
-  LogmeP(r, CH);
+  LogmeP(r, CHT);
   return r;
 }
 
 static uint16_t ProcUint16()
 {
   uint16_t r = (uint16_t)60000;
-  LogmeP(r, CH);
+  LogmeP(r, CHT);
   return r;
 }
 
 static Logme::xuint16_t ProcXUint16()
 {
   Logme::xuint16_t r((uint16_t)0xBEEF);
-  LogmeP(r, CH);
+  LogmeP(r, CHT);
   return r;
 }
 
 static int32_t ProcInt32()
 {
   int32_t r = -123456;
-  LogmeP(r, CH);
+  LogmeP(r, CHT);
   return r;
 }
 
 static uint32_t ProcUint32()
 {
   uint32_t r = 4000000000u;
-  LogmeP(r, CH);
+  LogmeP(r, CHT);
   return r;
 }
 
 static Logme::xuint32_t ProcXUint32()
 {
   Logme::xuint32_t r(0xDEADBEEFu);
-  LogmeP(r, CH);
+  LogmeP(r, CHT);
   return r;
 }
 
 static int64_t ProcInt64()
 {
   int64_t r = (int64_t)-1234567890123ll;
-  LogmeP(r, CH);
+  LogmeP(r, CHT);
   return r;
 }
 
 static uint64_t ProcUint64()
 {
   uint64_t r = 1234567890123456789ull;
-  LogmeP(r, CH);
+  LogmeP(r, CHT);
   return r;
 }
 
 static Logme::xuint64_t ProcXUint64()
 {
   Logme::xuint64_t r(0x1122334455667788ull);
-  LogmeP(r, CH);
+  LogmeP(r, CHT);
   return r;
 }
 
 static bool ProcBool()
 {
   bool r = true;
-  LogmeP(r, CH);
+  LogmeP(r, CHT);
   return r;
 }
 
 static const char* ProcCStr()
 {
   const char* r = "abc";
-  LogmeP(r, CH);
+  LogmeP(r, CHT);
   return r;
 }
 
 static std::string ProcString()
 {
   std::string r = "str";
-  LogmeP(r, CH);
+  LogmeP(r, CHT);
   return r;
 }
 
 static MyEnum ProcEnum()
 {
   MyEnum r = MyEnum::Two;
-  LogmeP(r, CH);
+  LogmeP(r, CHT);
   return r;
 }
 
 static CustomType ProcCustom()
 {
   CustomType r{ 7 };
-  LogmeP(r, CH);
+  LogmeP(r, CHT);
   return r;
 }
 
 static void ProcVoid()
 {
-  LogmePV(CH);
+  LogmePV(CHT);
 }
 
 static int ProcDebugLevel(bool& called)
 {
   int r = 1;
   called = true;
-  LogmePD(r, CH);
+  LogmePD(r, CHT);
   return r;
 }
 
@@ -285,9 +285,10 @@ int main(int argc, char* argv[])
 {
   ::testing::InitGoogleTest(&argc, argv);
 
-  auto ch = Logme::Instance->GetExistingChannel(CH);
+  auto ch = Logme::Instance->CreateChannel(CHT);
   Be = std::make_shared<TestBackend>(ch);
   ch->AddBackend(Be);
+  ch->AddLink(::CH);
 
   Logme::OutputFlags flags;
   flags.Value = 0;

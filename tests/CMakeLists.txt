@@ -25,6 +25,7 @@ FetchContent_MakeAvailable(googletest)
 add_subdirectory(ChannelRedirect)
 add_subdirectory(LevelFilter)
 add_subdirectory(OutputFlags)
+add_subdirectory(ProcedurePrint)
 
 set_target_properties(gmock PROPERTIES FOLDER "Tests/gtest")
 set_target_properties(gmock_main PROPERTIES FOLDER "Tests/gtest")

@@ -65,3 +65,33 @@ namespace Logme
 
 #define LogmePV(...) \
   _LogmePV(Logme::Level::LEVEL_INFO, ## __VA_ARGS__)
+
+#define LogmePI(retval, ...) \
+  _LogmeP(Logme::Level::LEVEL_INFO, retval, ## __VA_ARGS__)
+
+#define LogmePVI(...) \
+  _LogmePV(Logme::Level::LEVEL_INFO, ## __VA_ARGS__)
+
+#define LogmePD(retval, ...) \
+  _LogmeP(Logme::Level::LEVEL_DEBUG, retval, ## __VA_ARGS__)
+
+#define LogmePVD(...) \
+  _LogmePV(Logme::Level::LEVEL_DEBUG, ## __VA_ARGS__)
+
+#define LogmePW(retval, ...) \
+  _LogmeP(Logme::Level::LEVEL_WARN, retval, ## __VA_ARGS__)
+
+#define LogmePVW(...) \
+  _LogmePV(Logme::Level::LEVEL_WARN, ## __VA_ARGS__)
+
+#define LogmePE(retval, ...) \
+  _LogmeP(Logme::Level::LEVEL_ERROR, retval, ## __VA_ARGS__)
+
+#define LogmePVE(...) \
+  _LogmePV(Logme::Level::LEVEL_ERROR, ## __VA_ARGS__)
+
+#define LogmePC(retval, ...) \
+  _LogmeP(Logme::Level::LEVEL_CRITICAL, retval, ## __VA_ARGS__)
+
+#define LogmePVC(...) \
+  _LogmePV(Logme::Level::LEVEL_CRITICAL, ## __VA_ARGS__)

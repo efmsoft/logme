@@ -24,6 +24,34 @@ template<typename T> std::string StdXFormat(const T& v)
   return ss.str();
 }
 
+template<> std::string StdFormat<int8_t>(const int8_t& v)
+{
+  std::stringstream ss;
+  ss << (int)v;
+  return ss.str();
+}
+
+template<> std::string StdFormat<uint8_t>(const uint8_t& v)
+{
+  std::stringstream ss;
+  ss << (unsigned)v;
+  return ss.str();
+}
+
+template<> std::string StdXFormat<int8_t>(const int8_t& v)
+{
+  std::stringstream ss;
+  ss << "0x" << std::hex << (unsigned)(uint8_t)v;
+  return ss.str();
+}
+
+template<> std::string StdXFormat<uint8_t>(const uint8_t& v)
+{
+  std::stringstream ss;
+  ss << "0x" << std::hex << (unsigned)v;
+  return ss.str();
+}
+
 #define GENERATE_TYPE_FORMATTER(T) \
   template<> LOGMELNK std::string FormatValue(const T& v) { return StdFormat<T>((T)v); } \
   template<> LOGMELNK std::string FormatValue(const x##T& v) { return StdXFormat<T>((T)v); } \

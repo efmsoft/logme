@@ -118,7 +118,7 @@ void FileManager::ManagementThread()
   RenameThread(-1, "FileManager::ManagementThread");
 
 #ifdef _WIN32
-  ThreadID = GetCurrentThreadId();
+  ThreadID = (unsigned)GetCurrentThreadId();
 #endif
 
   std::unique_lock lock(Lock);

@@ -1,9 +1,15 @@
-project(ProcedurePrint)
-
-add_executable(ProcedurePrint
-  ProcedurePrint.cpp
-)
-
-target_link_libraries(ProcedurePrint logme gtest_main)
-
-set_target_properties(ProcedurePrint PROPERTIES FOLDER "Tests")
+project(ProcedurePrint)
+
+add_executable(ProcedurePrint
+  ProcedurePrint.cpp
+)
+
+if(WIN32)
+  set(WINDOWS_LIBRARIES Ws2_32.lib)
+endif()
+
+target_link_libraries(ProcedurePrint logme gtest_main ${WINDOWS_LIBRARIES})
+target_compile_definitions(${PROJECT_NAME} PRIVATE _LOGME_STATIC_BUILD_)
+
+set_target_properties(ProcedurePrint PROPERTIES FOLDER "Tests")
+

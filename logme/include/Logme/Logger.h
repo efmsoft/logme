@@ -1,6 +1,8 @@
 #pragma once
 
+#if LOGME_ENABLE_STD_FORMAT
 #include <format>
+#endif
 #include <functional>
 #include <map>
 #include <memory>
@@ -22,7 +24,9 @@ namespace Logme
   typedef bool (*TCondition)();
   typedef std::function<void(const std::string&, const ChannelPtr&)> TChannelCallback;
 
+#if LOGME_ENABLE_STD_FORMAT
   struct StdFormat{};
+#endif
   struct ControlSslContext;
 
   class Logger : public std::enable_shared_from_this<Logger>
@@ -116,39 +120,48 @@ namespace Logme
     LOGMELNK Stream Log(const Context& context, const ID& id, const SID& sid, Override& ovr); // @10
     LOGMELNK Stream Log(const Context& context, ChannelPtr ch, const SID& sid, Override& ovr); // @11
 
-    template<typename... Args>
+    #if LOGME_ENABLE_STD_FORMAT
+template<typename... Args>
     void Log(const Context& context, const StdFormat*, const ID& id, const char* fmt, Args&&... args)
     {
       std::string out = std::vformat(fmt, std::make_format_args(args...));
       Log(context, id, "%s", out.c_str());
     }
-    template<typename... Args>
+#endif
+    #if LOGME_ENABLE_STD_FORMAT
+template<typename... Args>
     void Log(const Context& context, const StdFormat*, ChannelPtr ch, const char* fmt, Args&&... args)
     {
       std::string out = std::vformat(fmt, std::make_format_args(args...));
       Log(context, ch, "%s", out.c_str());
     }
+#endif
     LOGMELNK void Log(const Context& context, const ID& id, const char* format, ...);
     LOGMELNK void Log(const Context& context, ChannelPtr ch, const char* format, ...);
     
     LOGMELNK void Log(const Context& context, const ID& id,  const SID& sid, const char* format, ...);
     LOGMELNK void Log(const Context& context, ChannelPtr ch, const SID& sid, const char* format, ...);
 
-    template<typename... Args>
+    #if LOGME_ENABLE_STD_FORMAT
+template<typename... Args>
     void Log(const Context& context, const StdFormat*, Override& ovr, const char* fmt, Args&&... args)
     {
       std::string out = std::vformat(fmt, std::make_format_args(args...));
       Log(context, ovr, "%s", out.c_str());
     }
+#endif
     LOGMELNK void Log(const Context& context, Override& ovr, const char* format, ...);
 
-    template<typename... Args>
+    #if LOGME_ENABLE_STD_FORMAT
+template<typename... Args>
     void Log(const Context& context, const StdFormat*, const ID& id, Override& ovr, const char* fmt, Args&&... args)
     {
       std::string out = std::vformat(fmt, std::make_format_args(args...));
       Log(context, id, ovr, "%s", out.c_str());
     }
-    template<typename... Args>
+#endif
+    #if LOGME_ENABLE_STD_FORMAT
+template<typename... Args>
     void Log(const Context& context, const StdFormat*, ChannelPtr ch, Override& ovr, const char* fmt, Args&&... args)
     {
       if (ch && context.ErrorLevel < ch->GetFilterLevel())
@@ -157,15 +170,18 @@ namespace Logme
       std::string out = std::vformat(fmt, std::make_format_args(args...));
       Log(context, ch, ovr, "%s", out.c_str());
     }
+#endif
     LOGMELNK void Log(const Context& context, const ID& id, Override& ovr, const char* format, ...);
     LOGMELNK void Log(const Context& context, ChannelPtr ch, Override& ovr, const char* format, ...);
 
-    template<typename... Args>
+    #if LOGME_ENABLE_STD_FORMAT
+template<typename... Args>
     void Log(const Context& context, const StdFormat*, const char* fmt, Args&&... args)
     {
       std::string out = std::vformat(fmt, std::make_format_args(args...));
       Log(context, "%s", out.c_str());
     }
+#endif
     LOGMELNK void Log(const Context& context, const char* format, ...);
 
     LOGMELNK ChannelPtr GetChannel(const ID& id);
@@ -244,9 +260,11 @@ namespace Logme
   LOGMELNK extern LoggerPtr Instance;
   LOGMELNK extern bool ShutdownCalled;
 
+#if LOGME_ENABLE_STD_FORMAT
   inline StdFormat* GetStdFormat()
   {
     return nullptr;
   }
+#endif
 }
 

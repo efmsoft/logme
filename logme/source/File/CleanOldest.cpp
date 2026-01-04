@@ -61,14 +61,16 @@ static void DeleteExcessFiles(
   size_t toDelete = files.size() - limit;
   for (size_t i = 0; i < toDelete; ++i)
   {
-    if (files[i].Path.string() == keep)
+    std::string path = files[i].Path.string();
+
+    if (path == keep)
       continue;
 
     std::error_code ec;
     fs::remove(files[i].Path, ec);
  
     if (ec)
-      fLogmeE(CHINT, "Failed to delete: {}", files[i].Path.string());
+      LogmeE(CHINT, "Failed to delete: %s", path.c_str());
   }
 }
 

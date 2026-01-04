@@ -417,13 +417,17 @@ bool DeobfuscateLogFile(
   {
     if (ferror(fi))
     {
-      fLogmeE(
-        ch
-        , "DeobfuscateLogFile: failed to read signature: path='{}' errno={} ({})"
-        , PathToUtf8String(in)
-        , errno
-        , ErrnoText(errno)
-      );
+      {
+        std::string path = PathToUtf8String(in);
+
+        LogmeE(
+          ch
+          , "DeobfuscateLogFile: failed to read signature: path='%s' errno=%d (%s)"
+          , path.c_str()
+          , errno
+          , ErrnoText(errno)
+        );
+      }
       fclose(fi);
       return false;
     }
@@ -452,13 +456,19 @@ bool DeobfuscateLogFile(
     );
     if (ec)
     {
-      fLogmeE(
+      {
+      std::string inPath = PathToUtf8String(in);
+      std::string outPath = PathToUtf8String(out);
+      std::string ecText = ec.message();
+
+      LogmeE(
         ch
-        , "DeobfuscateLogFile: copy_file failed: in='{}' out='{}' ec={}"
-        , PathToUtf8String(in)
-        , PathToUtf8String(out)
-        , ec.message().c_str()
+        , "DeobfuscateLogFile: copy_file failed: in='%s' out='%s' ec=%s"
+        , inPath.c_str()
+        , outPath.c_str()
+        , ecText.c_str()
       );
+    }
       return false;
     }
 
@@ -468,13 +478,17 @@ bool DeobfuscateLogFile(
   // Rewind to the beginning for the normal decode flow.
   if (fseek(fi, 0, SEEK_SET) != 0)
   {
-    fLogmeE(
+    {
+    std::string path = PathToUtf8String(in);
+
+    LogmeE(
       ch
-      , "DeobfuscateLogFile: fseek(0) failed: path='{}' errno={} ({})"
-      , PathToUtf8String(in)
+      , "DeobfuscateLogFile: fseek(0) failed: path='%s' errno=%d (%s)"
+      , path.c_str()
       , errno
       , ErrnoText(errno)
     );
+  }
     fclose(fi);
     return false;
   }
@@ -612,7 +626,8 @@ bool DeobfuscateLogFile(
     if (ec)
     {
       std::filesystem::remove(tmp);
-      fLogmeE(ch, "Unable to remove {}", PathToUtf8String(tmp.string()));
+      std::string tmpPath = PathToUtf8String(tmp.string());
+      LogmeE(ch, "Unable to remove %s", tmpPath.c_str());
       return false;
     }
   }

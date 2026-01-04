@@ -1,4 +1,5 @@
-#include <format>
+#include <cstdio>
+#include <string>
 
 #include <Logme/Logger.h>
 
@@ -7,6 +8,13 @@
 using namespace Logme;
 
 COMMAND_DESCRIPTOR2("channel", Logger::CommandChannel);
+
+static std::string ToHexUpper(uint64_t value)
+{
+  char buf[32];
+  snprintf(buf, sizeof(buf), "%llX", (unsigned long long)value);
+  return std::string(buf);
+}
 
 bool Logger::CommandChannel(Logme::StringArray& arr, std::string& response)
 {
@@ -29,15 +37,15 @@ bool Logger::CommandChannel(Logme::StringArray& arr, std::string& response)
     return true;
   }
 
-  auto e = ch->GetEnabled() ? "Enabled" : "Disabled";
-  auto action = ch->GetEnabled() ? " <a href='#'>Disable</a>" : " <a href='#'>Enable</a>";
-  
-  response += std::format("Channel: {}\n", name);
-  response += std::format("Status: {}{}\n", std::string(e), action);
-  response += std::format("Access count: {}\n", ch->GetAccessCount());
+  const char* e = ch->GetEnabled() ? "Enabled" : "Disabled";
+  const char* action = ch->GetEnabled() ? " <a href='#'>Disable</a>" : " <a href='#'>Enable</a>";
 
-  response += std::format("Flags: 0x{:X} {}\n", ch->GetFlags().Value, ch->GetFlags().ToString(" ", true));
-  response += std::format("Level: {}\n", GetLevelName(ch->GetFilterLevel()));
+  response += "Channel: " + name + "\n";
+  response += "Status: " + std::string(e) + action + "\n";
+  response += "Access count: " + std::to_string(ch->GetAccessCount()) + "\n";
+
+  response += "Flags: 0x" + ToHexUpper(ch->GetFlags().Value) + " " + ch->GetFlags().ToString(" ", true) + "\n";
+  response += "Level: " + std::string(GetLevelName(ch->GetFilterLevel())) + "\n";
 
   ChannelPtr link = ch->GetLinkPtr();
   if (link)
@@ -46,23 +54,22 @@ bool Logger::CommandChannel(Logme::StringArray& arr, std::string& response)
     if (lname.empty())
       lname = "<default>";
 
-    response += std::format("Linked to: {}\n", lname);
+    response += "Linked to: " + lname + "\n";
   }
 
   auto bc = ch->NumberOfBackends();
   if (bc)
   {
-    response += std::format("Backends: {}\n", bc);
+    response += "Backends: " + std::to_string(bc) + "\n";
     for (size_t i = 0; i < bc; ++i)
     {
       auto backend = ch->GetBackend(i);
       if (backend)
       {
-        response += std::format("  {} {}\n", backend->GetType(), backend->FormatDetails());
+        response += std::string("  ") + backend->GetType() + " " + backend->FormatDetails() + "\n";
       }
     }
   }
 
   return true;
 }
-

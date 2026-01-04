@@ -9,16 +9,53 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF) 
 
+if (NOT DEFINED LOGME_STD_FORMAT)
+  set(LOGME_STD_FORMAT "AUTO" CACHE STRING "std::format logging API: AUTO, ON, or OFF")
+endif()
+set_property(CACHE LOGME_STD_FORMAT PROPERTY STRINGS AUTO ON OFF)
+
 if (CMAKE_BUILD_TYPE STREQUAL "")
-    message(STATUS "  Diag: Build type was unspecified, set to Release")
-    set(CMAKE_BUILD_TYPE Release)
+  message(STATUS "  Diag: Build type was unspecified, set to Release")
+  set(CMAKE_BUILD_TYPE Release)
 else ()
-    message(STATUS "  Diag: Build type specified as '${CMAKE_BUILD_TYPE}'")
+  message(STATUS "  Diag: Build type specified as '${CMAKE_BUILD_TYPE}'")
 endif ()
 
 if (${CMAKE_BUILD_TYPE} STREQUAL Debug)
     set_directory_properties(PROPERTIES COMPILE_DEFINITIONS "_DEBUG")
 endif ()
+
+include(CheckCXXSourceCompiles)
+set(_LOGME_STD_FORMAT_TEST [=[
+#include <format>
+#include <string>
+#include <utility>
+
+int main()
+{
+  auto s = std::vformat("{}", std::make_format_args(1));
+  (void)s;
+  return 0;
+}
+]=])
+
+string(TOUPPER "${LOGME_STD_FORMAT}" _LOGME_STD_FORMAT_MODE)
+if (_LOGME_STD_FORMAT_MODE STREQUAL "OFF")
+  set(LOGME_ENABLE_STD_FORMAT 0)
+else()
+  check_cxx_source_compiles("${_LOGME_STD_FORMAT_TEST}" LOGME_HAS_STD_FORMAT)
+  if (LOGME_HAS_STD_FORMAT)
+    set(LOGME_ENABLE_STD_FORMAT 1)
+  else()
+    if (_LOGME_STD_FORMAT_MODE STREQUAL "ON")
+      message(FATAL_ERROR "LOGME_STD_FORMAT=ON but <format>/std::format is not available in this toolchain. Use GCC 13+ or Clang with libc++.")
+    endif()
+    set(LOGME_ENABLE_STD_FORMAT 0)
+  endif()
+endif()
+
+set(LOGME_ENABLE_STD_FORMAT ${LOGME_ENABLE_STD_FORMAT} CACHE INTERNAL "Resolved std::format availability" FORCE)
+add_compile_definitions(LOGME_ENABLE_STD_FORMAT=${LOGME_ENABLE_STD_FORMAT})
 
 enable_testing()
 

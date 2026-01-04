@@ -32,6 +32,14 @@ namespace Logme
     LOGMELNK Procedure(
       const Context& context
       , Printer* printer
+      , ChannelPtr pch
+      , const char* format = nullptr
+      , ...
+    );
+
+    LOGMELNK Procedure(
+      const Context& context
+      , Printer* printer
       , const char* format = nullptr
       , ...
     );

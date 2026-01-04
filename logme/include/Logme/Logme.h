@@ -101,6 +101,8 @@
 
 // std::format
 
+#if LOGME_ENABLE_STD_FORMAT
+
 #define fLogmeD(...) \
   Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), ## __VA_ARGS__)
 
@@ -160,6 +162,50 @@
 
 #define fLogmeC_Ifg(condition, ...) \
   Logme_Ifg(condition, Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), ## __VA_ARGS__)
+
+#else
+
+#define fLogmeC(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
+
+#define fLogmeC_If(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
+
+#define fLogmeC_Ifg(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
+
+#define fLogmeCg(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
+
+#define fLogmeD(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
+
+#define fLogmeD_If(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
+
+#define fLogmeDg(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
+
+#define fLogmeDg_If(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
+
+#define fLogmeE(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
+
+#define fLogmeE_If(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
+
+#define fLogmeE_Ifg(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
+
+#define fLogmeEg(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
+
+#define fLogmeI(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
+
+#define fLogmeI_If(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
+
+#define fLogmeI_Ifg(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
+
+#define fLogmeIg(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
+
+#define fLogmeW(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
+
+#define fLogmeW_If(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
+
+#define fLogmeW_Ifg(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
+
+#define fLogmeWg(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
+
+#endif
 
 // Thread channel 
 

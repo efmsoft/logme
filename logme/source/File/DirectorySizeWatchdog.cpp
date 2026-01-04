@@ -142,11 +142,11 @@ bool DirectorySizeWatchdog::LimitExeeded(uintmax_t& total_size)
 
   if (total_size > MaximalSize)
   {
-    fLogmeW(
+    LogmeW(
       CHINT
-      , "The log directory size limit has been exceeded {} > {}"
-      , total_size
-      , MaximalSize
+      , "The log directory size limit has been exceeded %llu > %llu"
+      , (unsigned long long)total_size
+      , (unsigned long long)MaximalSize
     );
 
     return true;
@@ -198,10 +198,16 @@ void DirectorySizeWatchdog::DeleteFiles(
 
     if (ec)
     {
-      fLogmeE(CHINT, "unable to delete {}: {}", file.Path.string(), ec.message());
+      std::string path = file.Path.string();
+      std::string err = ec.message();
+
+      LogmeE(CHINT, "unable to delete %s: %s", path.c_str(), err.c_str());
     }
     else
-      fLogmeW(CHINT, "{} was deleted", file.Path.string());
+    {
+      std::string path = file.Path.string();
+      LogmeW(CHINT, "%s was deleted", path.c_str());
+    }
   }
 }
 

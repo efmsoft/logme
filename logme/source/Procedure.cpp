@@ -30,6 +30,26 @@ Procedure::Procedure(
 Procedure::Procedure(
   const Context& context
   , Printer* printer
+  , ChannelPtr pch
+  , const char* format
+  , ...
+)
+  : BeginContext(context)
+  , RValPrinter(printer)
+  , Channel(pch->GetID())
+  , Begin(std::chrono::system_clock::now())
+{
+  va_list args;
+  va_start(args, format);
+  std::string params = Format(format, args);
+  va_end(args);
+
+  Print(true, params.c_str());
+}
+
+Procedure::Procedure(
+  const Context& context
+  , Printer* printer
   , const char* format
   , ...
 )

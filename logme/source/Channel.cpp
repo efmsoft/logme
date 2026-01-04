@@ -3,6 +3,7 @@
 #include <Logme/SafeID.h>
 
 #include <cassert>
+#include <cstdio>
 #include <string.h>
 
 using namespace Logme;
@@ -468,7 +469,11 @@ void Channel::SetThreadName(uint64_t id, const char* name, bool log)
       r.Name = name;
 
       if (log)
-        r.Prev = std::format("{:X}", id);
+      {
+        char buf[32];
+        snprintf(buf, sizeof(buf), LLX, (unsigned long long)id);
+        r.Prev = buf;
+      }
 
       ThreadName[id] = r;
     }

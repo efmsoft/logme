@@ -1,5 +1,7 @@
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.12)
 project(logme VERSION 1.1.0)
+
+cmake_policy(SET CMP0067 NEW)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
@@ -26,6 +28,7 @@ if (${CMAKE_BUILD_TYPE} STREQUAL Debug)
 endif ()
 
 include(CheckCXXSourceCompiles)
+
 set(_LOGME_STD_FORMAT_TEST [=[
 #include <format>
 #include <string>
@@ -33,7 +36,7 @@ set(_LOGME_STD_FORMAT_TEST [=[
 
 int main()
 {
-  auto s = std::vformat("{}", std::make_format_args(1));
+  auto s = std::format("{}", 1);
   (void)s;
   return 0;
 }

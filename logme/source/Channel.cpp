@@ -471,7 +471,7 @@ void Channel::SetThreadName(uint64_t id, const char* name, bool log)
       if (log)
       {
         char buf[32];
-        snprintf(buf, sizeof(buf), LLX, (unsigned long long)id);
+        snprintf(buf, sizeof(buf), LLX, (uint64_t)id);
         r.Prev = buf;
       }
 

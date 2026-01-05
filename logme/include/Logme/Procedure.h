@@ -54,6 +54,12 @@ namespace Logme
 
 #define NoRetval  Logme::None
 
+#if defined(__cpp_va_opt) && (__cpp_va_opt >= 201907L)
+  #define LOGME_OPT_COMMA_ARGS(...) __VA_OPT__(,) __VA_ARGS__
+#else
+  #define LOGME_OPT_COMMA_ARGS(...) , ## __VA_ARGS__
+#endif
+
 #if _LOGME_ACTIVE
 #define _LogmeP(level, retval, ...) \
   unsigned char _procStorage[sizeof(Logme::PrinterT<int>)]; \
@@ -62,7 +68,7 @@ namespace Logme
 
 #define _LogmePV(level, ...) \
   const Logme::Context& _procContext = LOGME_CONTEXT(level, &CH, &SUBSID, ## __VA_ARGS__); \
-  Logme::Procedure logme_proc(_procContext, nullptr, ## __VA_ARGS__)
+  Logme::Procedure logme_proc(_procContext, nullptr LOGME_OPT_COMMA_ARGS(__VA_ARGS__))
 #else
 #define _LogmeP(level, retval, ...)
 #define _LogmePV(level)

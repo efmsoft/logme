@@ -66,9 +66,10 @@ namespace Logme
   const Logme::Context& _procContext = LOGME_CONTEXT(level, &CH, &SUBSID, ## __VA_ARGS__); \
   Logme::Procedure logme_proc(_procContext, Logme::CreatePrinter(retval, _procStorage), ## __VA_ARGS__)
 
-#define _LogmePV(level, ...) \
-  const Logme::Context& _procContext = LOGME_CONTEXT(level, &CH, &SUBSID, ## __VA_ARGS__); \
-  Logme::Procedure logme_proc(_procContext, nullptr LOGME_OPT_COMMA_ARGS(__VA_ARGS__))
+#define _LogmePV(level, ...)
+  //const Logme::Context& _procContext = LOGME_CONTEXT(level, &CH, &SUBSID, ## __VA_ARGS__); \
+  //Logme::Procedure logme_proc(_procContext, nullptr LOGME_OPT_COMMA_ARGS(__VA_ARGS__)) \
+  
 #else
 #define _LogmeP(level, retval, ...)
 #define _LogmePV(level)

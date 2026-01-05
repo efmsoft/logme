@@ -1,8 +1,5 @@
 get_filename_component(LOGME_ROOT "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE) 
 
-if (NOT DEFINED LOGME_ENABLE_STD_FORMAT)
-  set(LOGME_ENABLE_STD_FORMAT 0)
-endif()
 
 file(TO_CMAKE_PATH ${LOGME_ROOT}/logme SRCROOT)
 file(GLOB_RECURSE SOURCES ${SRCROOT}/*.cpp)
@@ -16,7 +13,9 @@ target_include_directories(logmed PRIVATE
 )
 
 target_compile_definitions(logmed PRIVATE _LOGME_DLL_BUILD_ _WINSOCK_DEPRECATED_NO_WARNINGS _CRT_SECURE_NO_WARNINGS _DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR)
-target_compile_definitions(logmed PUBLIC LOGME_ENABLE_STD_FORMAT=${LOGME_ENABLE_STD_FORMAT})
+if (LOGME_DISABLE_STD_FORMAT)
+  target_compile_definitions(logmed PUBLIC LOGME_DISABLE_STD_FORMAT)
+endif()
 target_link_libraries(logmed LINK_PUBLIC ${ALLSTAT_LIBRARIES} ${JSONCPP_LIBRARIES})
 
 if(NOT WIN32)

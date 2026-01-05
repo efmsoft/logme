@@ -101,7 +101,7 @@
 
 // std::format
 
-#if LOGME_ENABLE_STD_FORMAT
+#ifndef LOGME_DISABLE_STD_FORMAT
 
 #define fLogmeD(...) \
   Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), ## __VA_ARGS__)

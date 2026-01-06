@@ -1,5 +1,7 @@
 # logme
 
+![Colored console output example](docs/assets/example.png)
+
 **logme** is a lightweight, cross-platform logging framework for C/C++ with **channels**, **message routing**, and **pluggable backends** (console, debugger, file, etc.). It is designed to be simple to integrate, flexible at runtime, and comfortable for day-to-day development.
 
 > **Key idea:** messages are written to a *channel*, and the channel decides *where* they go via one or more backends. Channels can also **link** to other channels for redirection / fan-out.
@@ -216,3 +218,4 @@ Please include:
 ## License
 
 See the `LICENSE` file.
+

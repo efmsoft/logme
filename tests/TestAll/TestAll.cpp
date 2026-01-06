@@ -157,10 +157,12 @@ const char* CppOutput()
   return ret;
 }
 
+#if !defined(LOGME_DISABLE_STD_FORMAT)
 void FormattedOutput()
 {
   fLogmeI("Some {} string. Integer: {}", "format", 123);
 }
+#endif
 
 int main()
 {
@@ -177,7 +179,9 @@ int main()
 
   ProcReturningEnumValue();
   CppOutput();
+#if !defined(LOGME_DISABLE_STD_FORMAT)
   FormattedOutput();
+#endif
 
   return 0;
 }

@@ -1,10 +1,20 @@
-project(Multithread)
+add_executable(Multithread
+  Multithread.cpp
+)
 
-add_executable(${PROJECT_NAME} Multithread.cpp)
+target_link_libraries(Multithread PRIVATE logme)
 
-find_package(Threads REQUIRED)
-target_link_libraries(${PROJECT_NAME} LINK_PUBLIC Threads::Threads)
+target_compile_definitions(Multithread PRIVATE
+  LOGME_INRELEASE
+  _LOGME_STATIC_BUILD_
+)
 
-target_link_libraries(${PROJECT_NAME} LINK_PUBLIC logme)
-target_compile_definitions(${PROJECT_NAME} PRIVATE _LOGME_STATIC_BUILD_ LOGME_INRELEASE)
-set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Examples")
+if (WIN32)
+  target_link_libraries(Multithread PRIVATE ws2_32)
+endif()
+
+set_target_properties(Multithread PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Examples"
+)
+
+set_target_properties(Multithread PROPERTIES FOLDER "Examples")

@@ -26,6 +26,11 @@ static std::ostream& operator<<(std::ostream& os, const Point& p)
   return os;
 }
 
+template<> std::string FormatValue<Point>(const Point& value)
+{
+  return "Point(" + std::to_string(value.X) + ", " + std::to_string(value.Y) + ")";
+}
+
 static int Sum(int a, int b)
 {
   int r = a + b;
@@ -73,7 +78,7 @@ int main()
 
   // 4) Thread channel: route library logs without passing ChannelPtr.
   {
-    LogmeThreadChannel tc(ch);
+    LogmeThreadChannel(ch->GetID());
     LibraryFunctionThatDoesNotKnowTheChannel();
   }
 

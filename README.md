@@ -25,7 +25,7 @@
 ### Default channel (simplest)
 
 ```cpp
-#include <logme/logme.h>
+#include <Logme/Logme.h>
 
 int main()
 {
@@ -47,8 +47,8 @@ int main()
 If you create a new channel, **you must attach at least one backend**, otherwise no output will be produced.
 
 ```cpp
-#include <logme/logme.h>
-#include <logme/backends/console_backend.h>
+#include <Logme/Logme.h>
+#include <Logme/Backend/ConsoleBackend.h>
 
 int main()
 {
@@ -67,8 +67,8 @@ int main()
 A linked channel forwards messages to another channel after its own backends:
 
 ```cpp
-#include <logme/logme.h>
-#include <logme/backends/console_backend.h>
+#include <Logme/Logme.h>
+#include <Logme/Backend/ConsoleBackend.h>
 
 int main()
 {

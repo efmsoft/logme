@@ -68,5 +68,11 @@ include_directories(${CMAKE_SOURCE_DIR}/logme/include)
 
 add_subdirectory(logme ../out/Static)
 add_subdirectory(dynamic ../out/Dynamic)
+option(LOGME_BUILD_EXAMPLES "Build logme examples" ON)
+
+if(LOGME_BUILD_EXAMPLES)
+  add_subdirectory(examples ../out/Examples)
+endif()
+
 add_subdirectory(tests ../out/Tests)
 

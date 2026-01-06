@@ -1,0 +1,7 @@
+add_subdirectory(Basic)
+add_subdirectory(Channels)
+add_subdirectory(Override)
+add_subdirectory(FormatApi)
+add_subdirectory(Multithread)
+add_subdirectory(ChannelSetup)
+add_subdirectory(Procedure)

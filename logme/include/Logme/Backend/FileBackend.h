@@ -97,7 +97,7 @@ namespace Logme
     LOGMELNK BackendConfigPtr CreateConfig() override;
     LOGMELNK bool ApplyConfig(BackendConfigPtr c) override;
     LOGMELNK bool IsIdle() const override;
-    LOGMELNK void Freeze();
+    LOGMELNK void Freeze() override;
     LOGMELNK void Flush() override;
     LOGMELNK std::string FormatDetails() override;
 

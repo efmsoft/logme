@@ -1,4 +1,3 @@
-#define LOGME_INRELEASE
 #include <Logme/Logme.h>
 #include <Logme/Backend/FileBackend.h>
 

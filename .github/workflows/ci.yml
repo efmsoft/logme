@@ -8,38 +8,24 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-test:
-    name: ${{ matrix.os }} / ${{ matrix.compiler }} / ${{ matrix.config }} / stdformat-${{ matrix.stdformat }}
-    runs-on: ${{ matrix.os }}
-
+  linux:
+    name: Linux / ${{ matrix.compiler }} / ${{ matrix.config }} / stdformat-${{ matrix.stdformat }}
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest ]
+        compiler: [ gcc, clang ]
         config: [ Debug, Release ]
         stdformat: [ on, off ]
-        compiler: [ default ]
         include:
-          # Linux compilers
-          - os: ubuntu-latest
-            compiler: gcc
+          - compiler: gcc
             cxx: g++
-          - os: ubuntu-latest
-            compiler: clang
+          - compiler: clang
             cxx: clang++
-        exclude:
-          # windows: we keep only "default" compiler entry
-          - os: windows-latest
-            compiler: gcc
-          - os: windows-latest
-            compiler: clang
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Ninja
-        uses: seanmiddleditch/gha-setup-ninja@v5
+      - uses: actions/checkout@v4
+      - uses: seanmiddleditch/gha-setup-ninja@v5
 
       - name: Configure
         shell: bash
@@ -47,13 +33,11 @@ jobs:
           CXX: ${{ matrix.cxx }}
         run: |
           set -euxo pipefail
-
           extra_cxx_flags=""
           if [ "${{ matrix.stdformat }}" = "off" ]; then
             extra_cxx_flags="-DLOGME_DISABLE_STD_FORMAT"
           fi
-
-          cmake -S . -B "build/${{ matrix.os }}/${{ matrix.compiler }}/${{ matrix.config }}/stdformat-${{ matrix.stdformat }}" \
+          cmake -S . -B "build/linux/${{ matrix.compiler }}/${{ matrix.config }}/stdformat-${{ matrix.stdformat }}" \
             -G Ninja \
             -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
             -DCMAKE_CXX_STANDARD=20 \
@@ -63,10 +47,50 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-          cmake --build "build/${{ matrix.os }}/${{ matrix.compiler }}/${{ matrix.config }}/stdformat-${{ matrix.stdformat }}" --config ${{ matrix.config }}
+          cmake --build "build/linux/${{ matrix.compiler }}/${{ matrix.config }}/stdformat-${{ matrix.stdformat }}" --config ${{ matrix.config }}
 
       - name: Test
         shell: bash
         run: |
           set -euxo pipefail
-          ctest --test-dir "build/${{ matrix.os }}/${{ matrix.compiler }}/${{ matrix.config }}/stdformat-${{ matrix.stdformat }}" --output-on-failure
+          ctest --test-dir "build/linux/${{ matrix.compiler }}/${{ matrix.config }}/stdformat-${{ matrix.stdformat }}" --output-on-failure
+
+  windows:
+    name: Windows / msvc / ${{ matrix.config }} / stdformat-${{ matrix.stdformat }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [ Debug, Release ]
+        stdformat: [ on, off ]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: seanmiddleditch/gha-setup-ninja@v5
+
+      - name: Setup MSVC dev cmd
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure
+        shell: pwsh
+        run: |
+          $extra = ""
+          if ("${{ matrix.stdformat }}" -eq "off") { $extra = "-DLOGME_DISABLE_STD_FORMAT" }
+
+          cmake -S . -B "build/windows/msvc/${{ matrix.config }}/stdformat-${{ matrix.stdformat }}" `
+            -G Ninja `
+            -DCMAKE_BUILD_TYPE=${{ matrix.config }} `
+            -DCMAKE_CXX_STANDARD=20 `
+            -DCMAKE_CXX_COMPILER=cl `
+            -DCMAKE_C_COMPILER=cl `
+            -DCMAKE_CXX_FLAGS="$extra"
+
+      - name: Build
+        shell: pwsh
+        run: |
+          cmake --build "build/windows/msvc/${{ matrix.config }}/stdformat-${{ matrix.stdformat }}" --config ${{ matrix.config }}
+
+      - name: Test
+        shell: pwsh
+        run: |
+          ctest --test-dir "build/windows/msvc/${{ matrix.config }}/stdformat-${{ matrix.stdformat }}" --output-on-failure

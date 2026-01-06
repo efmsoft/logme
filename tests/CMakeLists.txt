@@ -12,26 +12,21 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 endif()
 
 if(GTEST)
-include(FetchContent)
-FetchContent_Declare(
-  googletest
-  URL https://github.com/google/googletest/archive/609281088cfefc76f9d0ce82e1ff6c30cc3591e5.zip
-)
+  find_package(GTest QUIET)
+  if (NOT GTest_FOUND)
+    message("WARNING: GTest not found. gtest-based tests are disabled.")
+  else()
+    add_library(gtest INTERFACE)
+    target_link_libraries(gtest INTERFACE GTest::gtest)
 
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-set(gtest_disable_pthreads OFF CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
+    add_library(gtest_main INTERFACE)
+    target_link_libraries(gtest_main INTERFACE GTest::gtest_main)
 
-add_subdirectory(ChannelRedirect)
-add_subdirectory(LevelFilter)
-add_subdirectory(OutputFlags)
-add_subdirectory(ProcedurePrint)
-
-set_target_properties(gmock PROPERTIES FOLDER "Tests/gtest")
-set_target_properties(gmock_main PROPERTIES FOLDER "Tests/gtest")
-set_target_properties(gtest PROPERTIES FOLDER "Tests/gtest")
-set_target_properties(gtest_main PROPERTIES FOLDER "Tests/gtest")
-
+    add_subdirectory(ChannelRedirect)
+    add_subdirectory(LevelFilter)
+    add_subdirectory(OutputFlags)
+    add_subdirectory(ProcedurePrint)
+  endif()
 endif()
 
 add_subdirectory(TestAll)

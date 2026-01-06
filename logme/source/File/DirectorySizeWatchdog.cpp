@@ -255,9 +255,9 @@ std::deque<DirectorySizeWatchdog::FileInfo> DirectorySizeWatchdog::Collect(
     auto ftime = fs::last_write_time(entry, ec);
     if (ec)
       continue;
-
-    auto sctp = std::chrono::clock_cast<std::chrono::system_clock>(ftime);
-
+    auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+      ftime - decltype(ftime)::clock::now() + std::chrono::system_clock::now()
+    );
     InsertSorted(
       candidate_files
       , { fsize, entry.path(), sctp }

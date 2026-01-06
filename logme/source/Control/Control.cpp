@@ -19,6 +19,7 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <unistd.h>
 #include <dlfcn.h>
 
 #define SD_SEND SHUT_WR

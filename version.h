@@ -1,0 +1,7 @@
+#pragma once
+
+#define LOGME_VERSION_MAJOR 1
+#define LOGME_VERSION_MINOR 0
+#define LOGME_VERSION_PATCH 0
+
+#define LOGME_VERSION_STRING "1.0.0"

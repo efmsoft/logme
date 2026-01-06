@@ -12,3 +12,7 @@ target_compile_definitions(logme PRIVATE _WINSOCK_DEPRECATED_NO_WARNINGS _CRT_SE
 if (LOGME_DISABLE_STD_FORMAT)
   target_compile_definitions(logme PUBLIC LOGME_DISABLE_STD_FORMAT)
 endif()
+if (NOT WIN32)
+  find_package(Threads REQUIRED)
+  target_link_libraries(logme PUBLIC Threads::Threads ${CMAKE_DL_LIBS})
+endif()

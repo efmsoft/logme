@@ -27,11 +27,13 @@ TEST(ChannelRedirect, Global)
   EXPECT_EQ(Be->Line, "");
   EXPECT_EQ(Ge->Line, Lorem);
 
+#ifndef LOGME_DISABLE_STD_FORMAT
   Be->Clear();
   Ge->Clear();
   fLogmeW("{}", Lorem);
   EXPECT_EQ(Be->Line, "");
   EXPECT_EQ(Ge->Line, Lorem);
+#endif
 }
 
 TEST(ChannelRedirect, Local)
@@ -54,12 +56,14 @@ TEST(ChannelRedirect, Local)
   EXPECT_EQ(Be->Line, Lorem);
   EXPECT_EQ(Ge->Line, "");
 
+#ifndef LOGME_DISABLE_STD_FORMAT
   CH = ::CH;
   Be->Clear();
   Ge->Clear();
   fLogmeE("{}", Lorem);
   EXPECT_EQ(Be->Line, "");
   EXPECT_EQ(Ge->Line, Lorem);
+#endif
 }
 
 TEST(ChannelRedirect, Custom)
@@ -80,11 +84,13 @@ TEST(ChannelRedirect, Custom)
   EXPECT_EQ(Be->Line, Lorem);
   EXPECT_EQ(Ge->Line, "");
 
+#ifndef LOGME_DISABLE_STD_FORMAT
   Be->Clear();
   Ge->Clear();
   fLogmeE(CHT, "{}", Lorem);
   EXPECT_EQ(Be->Line, Lorem);
   EXPECT_EQ(Ge->Line, "");
+#endif
 }
 
 TEST(ChannelRedirect, Override)
@@ -106,11 +112,13 @@ TEST(ChannelRedirect, Override)
   EXPECT_EQ(Be->Line, Lorem);
   EXPECT_EQ(Ge->Line, "");
 
+#ifndef LOGME_DISABLE_STD_FORMAT
   Be->Clear();
   Ge->Clear();
   fLogmeE(CHT, ovr, "{}", Lorem);
   EXPECT_EQ(Be->Line, Lorem);
   EXPECT_EQ(Ge->Line, "");
+#endif
 }
 
 int main(int argc, char* argv[])

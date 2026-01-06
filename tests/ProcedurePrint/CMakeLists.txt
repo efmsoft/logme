@@ -10,6 +10,7 @@ endif()
 
 target_link_libraries(ProcedurePrint logme gtest_main ${WINDOWS_LIBRARIES})
 target_compile_definitions(${PROJECT_NAME} PRIVATE _LOGME_STATIC_BUILD_)
+target_compile_definitions(${PROJECT_NAME} PRIVATE LOGME_INRELEASE)
 
 set_target_properties(ProcedurePrint PROPERTIES FOLDER "Tests")
 

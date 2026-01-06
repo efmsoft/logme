@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    name: ${{ matrix.os }} / ${{ matrix.compiler }} / ${{ matrix.config }} / stdformat-${{ matrix.stdformat }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest ]
+        config: [ Debug, Release ]
+        stdformat: [ on, off ]
+        compiler: [ default ]
+        include:
+          # Linux compilers
+          - os: ubuntu-latest
+            compiler: gcc
+            cxx: g++
+          - os: ubuntu-latest
+            compiler: clang
+            cxx: clang++
+        exclude:
+          # windows: we keep only "default" compiler entry
+          - os: windows-latest
+            compiler: gcc
+          - os: windows-latest
+            compiler: clang
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Ninja
+        uses: seanmiddleditch/gha-setup-ninja@v5
+
+      - name: Configure
+        shell: bash
+        env:
+          CXX: ${{ matrix.cxx }}
+        run: |
+          set -euxo pipefail
+
+          extra_cxx_flags=""
+          if [ "${{ matrix.stdformat }}" = "off" ]; then
+            extra_cxx_flags="-DLOGME_DISABLE_STD_FORMAT"
+          fi
+
+          cmake -S . -B "build/${{ matrix.os }}/${{ matrix.compiler }}/${{ matrix.config }}/stdformat-${{ matrix.stdformat }}" \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
+            -DCMAKE_CXX_STANDARD=20 \
+            -DCMAKE_CXX_FLAGS="${extra_cxx_flags}"
+
+      - name: Build
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cmake --build "build/${{ matrix.os }}/${{ matrix.compiler }}/${{ matrix.config }}/stdformat-${{ matrix.stdformat }}" --config ${{ matrix.config }}
+
+      - name: Test
+        shell: bash
+        run: |
+          set -euxo pipefail
+          ctest --test-dir "build/${{ matrix.os }}/${{ matrix.compiler }}/${{ matrix.config }}/stdformat-${{ matrix.stdformat }}" --output-on-failure

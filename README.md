@@ -29,11 +29,13 @@
 
 int main()
 {
-  fLogmeI("Hello from default channel");
-  fLogmeW("Warning: {}", 123); // if std::format API is enabled
+  LogmeI("Hello from logme (%s style)", "C");
+  LogmeW() << "Hello from logme (C++ style)";
+  fLogmeE("Hello from logme ({} style)", "std::format"); // if enabled
   return 0;
 }
 ```
+![Output result](docs/assets/base.png)
 
 > The default channel is created automatically.
 > On Windows it typically includes a console backend and a debugger backend (via `OutputDebugStringA`).

@@ -30,3 +30,4 @@ if(GTEST)
 endif()
 
 add_subdirectory(TestAll)
+add_subdirectory(NoInRelease)   

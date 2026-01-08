@@ -35,8 +35,8 @@
       logger->Log(LOGME_CONTEXT(level, &::CH, &::SUBSID) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 #else
-  #define Logme_If(condition, logger, level, ...)
-  #define Logme_Ifg(condition, logger, level, ...)
+  #define Logme_If(condition, logger, level, ...) if (true) { } else std::stringstream()
+  #define Logme_Ifg(condition, logger, level, ...) if (true) { } else std::stringstream()
 #endif
 
 #define LogmeD(...) \

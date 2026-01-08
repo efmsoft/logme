@@ -11,21 +11,20 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF) 
 
-if (NOT DEFINED LOGME_STD_FORMAT)
-  set(LOGME_STD_FORMAT "AUTO" CACHE STRING "std::format logging API: AUTO, ON, or OFF")
-endif()
+option(LOGME_BUILD_EXAMPLES "Build logme examples" ON)
+option(LOGME_BUILD_TESTS "Build logme tests" ON)
+option(LOGME_BUILD_STATIC "Build logme as static library" ON)
+option(LOGME_BUILD_DYNAMIC "Build logme as dynamic library" ON)
+
+set(LOGME_STD_FORMAT "AUTO" CACHE STRING "std::format logging API: AUTO, ON, or OFF")
 set_property(CACHE LOGME_STD_FORMAT PROPERTY STRINGS AUTO ON OFF)
 
-if (CMAKE_BUILD_TYPE STREQUAL "")
-  message(STATUS "  Diag: Build type was unspecified, set to Release")
-  set(CMAKE_BUILD_TYPE Release)
-else ()
-  message(STATUS "  Diag: Build type specified as '${CMAKE_BUILD_TYPE}'")
-endif ()
-
-if (${CMAKE_BUILD_TYPE} STREQUAL Debug)
-    set_directory_properties(PROPERTIES COMPILE_DEFINITIONS "_DEBUG")
-endif ()
+get_property(_isMultiConfig GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+if (NOT _isMultiConfig)
+  if (CMAKE_BUILD_TYPE STREQUAL "")
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "" FORCE)
+  endif()
+endif()
 
 include(CheckCXXSourceCompiles)
 
@@ -62,17 +61,21 @@ if (LOGME_DISABLE_STD_FORMAT)
   add_compile_definitions(LOGME_DISABLE_STD_FORMAT)
 endif()
 
-enable_testing()
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/logme/include)
 
-include_directories(${CMAKE_SOURCE_DIR}/logme/include)
+if(LOGME_BUILD_STATIC)
+ add_subdirectory(logme ../out/Static)
+endif()
 
-add_subdirectory(logme ../out/Static)
-add_subdirectory(dynamic ../out/Dynamic)
-option(LOGME_BUILD_EXAMPLES "Build logme examples" ON)
+if(LOGME_BUILD_DYNAMIC)
+  add_subdirectory(dynamic ../out/Dynamic)
+endif()
 
 if(LOGME_BUILD_EXAMPLES)
   add_subdirectory(examples ../out/Examples)
 endif()
 
-add_subdirectory(tests ../out/Tests)
-
+if(LOGME_BUILD_TESTS)
+  enable_testing()
+  add_subdirectory(tests ../out/Tests)
+endif()

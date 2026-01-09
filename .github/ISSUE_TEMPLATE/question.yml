@@ -1,0 +1,26 @@
+name: Question
+description: Ask a question about using logme
+labels: [question]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: Describe your question or problem.
+      placeholder: |
+        What are you trying to do?
+        How are you integrating logme?
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, compiler, CMake options
+      placeholder: |
+        OS:
+        Compiler:
+        CMake options:
+    validations:
+      required: false

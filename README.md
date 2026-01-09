@@ -13,6 +13,14 @@
 
 ---
 
+## Support and feedback
+
+Questions, bug reports, and feature requests are welcome:
+
+👉 https://github.com/efmsoft/logme/issues
+
+---
+
 ## Features
 
 - **Channels**: independent log streams identified by an ID.

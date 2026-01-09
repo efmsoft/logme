@@ -98,13 +98,29 @@ static void AlignHelpColumns(std::string& s)
 
 static bool CommandHelp(Logme::StringArray& arr, std::string& response)
 {
+  (void)arr;
+
   response +=
-    "channel [name]             Display channel information\n"
-    "help                       Print this help text\n"
-    "list                       List channels\n"
+    "backend [--channel name] --add type           Add backend to a channel\n"
+    "backend [--channel name] --delete type        Delete backend from a channel\n"
+    "channel --create name                         Create a channel\n"
+    "channel --delete name                         Delete a channel (not default)\n"
+    "channel --disable name                        Disable a channel\n"
+    "channel --enable name                         Enable a channel\n"
+    "channel [name]                                Display channel information\n"
+    "flags [--channel name] [flag[=value] ...]      Set or display channel flags\n"
+    "help                                           Print this help text\n"
+    "level [--channel name] [level]                 Get or set channel level\n"
+    "list                                           List channels\n"
+    "subsystem --block-reported                     Block reported subsystems\n"
+    "subsystem --report name                        Add reported subsystem\n"
+    "subsystem --unblock-reported                   Unblock reported subsystems\n"
+    "subsystem --unreport name                      Remove reported subsystem\n"
+    "subsystem [name]                               Query reported subsystem\n"
   ;
 
   SortLines(response);
   AlignHelpColumns(response);
   return true;
 }
+

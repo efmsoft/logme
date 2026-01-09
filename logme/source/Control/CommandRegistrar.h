@@ -11,7 +11,7 @@ namespace Logme
 }
 
 #define COMMAND_DESCRIPTOR(c, h) \
-  static bool h(Logme::StringArray& arr, std::string& response); \
+  bool h(Logme::StringArray& arr, std::string& response); \
   static Logme::CommandDescriptor Descriptor(c, h); \
   static Logme::CommandRegistrar Registrar(&Descriptor);
 

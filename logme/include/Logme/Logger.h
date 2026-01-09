@@ -254,6 +254,10 @@ template<typename... Args>
   public:
     static bool CommandList(StringArray& arr, std::string& response);
     static bool CommandChannel(StringArray& arr, std::string& response);
+    static bool CommandSubsystem(StringArray& arr, std::string& response);
+    static bool CommandBackend(StringArray& arr, std::string& response);
+    static bool CommandFlags(StringArray& arr, std::string& response);
+    static bool CommandLevel(StringArray& arr, std::string& response);
   };
 
   typedef std::shared_ptr<Logger> LoggerPtr;

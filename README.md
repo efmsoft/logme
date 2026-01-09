@@ -181,6 +181,7 @@ ctest --test-dir build --output-on-failure
 | `LOGME_BUILD_TESTS` | `ON/OFF` | `ON` | Build tests (if available). |
 | `LOGME_BUILD_STATIC` | `ON/OFF` | `ON` | Build static library target (`logme`). |
 | `LOGME_BUILD_DYNAMIC` | `ON/OFF` | `ON` | Build shared library target (`logmed`). |
+| `LOGME_BUILD_TOOLS` | `ON/OFF` | `ON` | Build tools (e.g. `logmectl`). |
 
 ---
 
@@ -210,6 +211,9 @@ See the `Examples/` directory for small runnable samples:
 - basic console logging,
 - format API usage,
 - channel routing and redirect.
+
+Dynamic control demo (control server + runtime changes via CLI):
+- `examples/DynamicControl` (see its README)
 
 ---
 

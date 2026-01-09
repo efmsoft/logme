@@ -22,8 +22,91 @@ static std::string ToHexUpper(uint64_t value)
   return std::string(buf);
 }
 
+static bool IsOption(const std::string& s)
+{
+  return s.rfind("--", 0) == 0;
+}
+
 bool Logger::CommandChannel(Logme::StringArray& arr, std::string& response)
 {
+  if (arr.size() >= 2 && IsOption(arr[1]))
+  {
+    if (arr.size() < 3)
+    {
+      response = "missing channel name";
+      return true;
+    }
+
+    std::string opt = arr[1];
+    std::string name = arr[2];
+
+    std::lock_guard guard(Instance->DataLock);
+
+    if (opt == "--enable" || opt == "--disable")
+    {
+      auto ch = Instance->GetExistingChannel(ID{name.c_str()});
+      if (ch == nullptr)
+      {
+        response = "no such channel: " + name;
+        return true;
+      }
+
+      ch->SetEnabled(opt == "--enable");
+      response = "ok";
+      return true;
+    }
+
+    if (opt == "--create")
+    {
+      auto existing = Instance->GetExistingChannel(ID{name.c_str()});
+      if (existing != nullptr)
+      {
+        response = "channel already exists: " + name;
+        return true;
+      }
+
+      Instance->CreateChannel(ID{name.c_str()});
+      response = "ok";
+      return true;
+    }
+
+    if (opt == "--delete")
+    {
+      if (name.empty())
+      {
+        response = "invalid channel name";
+        return true;
+      }
+
+      if (name == "<default>")
+      {
+        response = "cannot delete default channel";
+        return true;
+      }
+
+      auto existing = Instance->GetExistingChannel(ID{name.c_str()});
+      if (existing == nullptr)
+      {
+        response = "no such channel: " + name;
+        return true;
+      }
+
+      // Default channel is represented by empty name.
+      if (existing->GetName().empty())
+      {
+        response = "cannot delete default channel";
+        return true;
+      }
+
+      Instance->DeleteChannel(ID{name.c_str()});
+      response = "ok";
+      return true;
+    }
+
+    response = "unknown option: " + opt;
+    return true;
+  }
+
   ChannelPtr ch;
   std::string name;
   if (arr.size() > 1)

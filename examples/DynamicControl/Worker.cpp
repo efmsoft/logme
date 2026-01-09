@@ -11,7 +11,7 @@ Worker::Worker(
   , const char* subsystemB
 )
   : Name(name ? name : "")
-  , ChannelId(channel ? channel : "")
+  , ChannelId{channel ? channel : ""}
   , SubsystemA(Logme::SID::Build(subsystemA ? subsystemA : ""))
   , SubsystemB(Logme::SID::Build(subsystemB ? subsystemB : ""))
   , SubsystemAName(subsystemA ? subsystemA : "")

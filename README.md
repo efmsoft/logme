@@ -156,7 +156,7 @@ cmake --build build -j
 ### Tests
 
 ```bash
-cmake -S . -B build -G Ninja -DBUILD_TESTING=ON
+cmake -S . -B build -G Ninja -DLOGME_BUILD_TESTS=ON
 cmake --build build -j
 ctest --test-dir build --output-on-failure
 ```
@@ -169,8 +169,10 @@ ctest --test-dir build --output-on-failure
 |------|--------|---------|-------------|
 | `LOGME_STD_FORMAT` | `AUTO`, `ON`, `OFF` | `AUTO` | Enable/disable `std::format` API. `AUTO` enables it when `<format>` is available. |
 | `LOGME_DISABLE_STD_FORMAT` | `0/1` | internal | Legacy/internal switch; prefer `LOGME_STD_FORMAT`. |
-| `BUILD_TESTING` | `ON/OFF` | `OFF` | Build tests. |
-| `BUILD_SHARED_LIBS` | `ON/OFF` | `OFF` | Build shared library (if supported). |
+| `LOGME_BUILD_EXAMPLES` | `ON/OFF` | `ON` | Build examples (if available). |
+| `LOGME_BUILD_TESTS` | `ON/OFF` | `ON` | Build tests (if available). |
+| `LOGME_BUILD_STATIC` | `ON/OFF` | `ON` | Build static library target (`logme`). |
+| `LOGME_BUILD_DYNAMIC` | `ON/OFF` | `ON` | Build shared library target (`logmed`). |
 
 ---
 

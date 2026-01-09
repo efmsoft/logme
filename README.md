@@ -6,6 +6,11 @@
 
 > **Key idea:** messages are written to a *channel*, and the channel decides *where* they go via one or more backends. Channels can also **link** to other channels for redirection / fan-out.
 
+> 📦 **CMake integration example**  
+> A complete, real-world example of integrating **logme** into a CMake project
+> (static/shared build, optional jsoncpp and allstat support) is available here:  
+> 👉 https://github.com/efmsoft/logme_cmake_submodule_example
+
 ---
 
 ## Features

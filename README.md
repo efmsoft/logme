@@ -180,7 +180,7 @@ ctest --test-dir build --output-on-failure
 
 ### Language standard
 
-- C++17 or newer (see project CMake configuration).
+- C++20 (required).
 
 ### `std::format` support
 

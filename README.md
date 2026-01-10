@@ -25,7 +25,6 @@
 ### Minimal usage (out of the box)
 
 The simplest possible usage. This works **out of the box** and requires no configuration.
-Internally, logme writes to the **default channel**, but you do not need to know what a channel is yet.
 
 ```cpp
 #include <Logme/Logme.h>

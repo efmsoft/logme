@@ -2,9 +2,9 @@
 
 ![Colored console output example](docs/assets/example.png)
 
-**logme** is a lightweight, cross-platform C/C++ logging framework suitable for both **high-load servers** and **simple applications**.
+**logme** is a cross-platform C/C++ logging framework that allows applications to dynamically control what is logged and where, without restarting or recompiling.
 
-It provides a clear separation of log output by component, configurable message formatting, and full runtime control, allowing applications to collect exactly the information they need while keeping logging configuration simple and unobtrusive.
+It is designed for both high-load servers and simple applications, providing selective, on-demand logging with minimal overhead and full runtime control.
 
 - 📚 **Documentation (Wiki):** https://github.com/efmsoft/logme/wiki
 - 💬 **Support / feedback:** [GitHub issues](https://github.com/efmsoft/logme/issues) and [discussions](https://github.com/efmsoft/logme/discussions) are welcome.

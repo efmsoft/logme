@@ -46,11 +46,6 @@ This produces colored console output similar to the following:
 
 ![Output result](docs/assets/base.png)
 
-This example uses the default configuration and is meant as a minimal introduction.
-For real applications, logme is typically configured via a **configuration file** (channels, backends, links, levels, flags), so you can change logging behavior without recompiling.
-
-See the **Wiki** for the configuration format and examples.
-
 ## Configuration files (recommended)
 
 For most applications, logme is configured via a configuration file:

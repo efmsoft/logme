@@ -2,21 +2,25 @@
 
 ![Colored console output example](docs/assets/example.png)
 
-**logme** is a lightweight, cross-platform C/C++ logging framework focused on **channels**, **multiple backends**, and **runtime control**.
+**logme** is a lightweight, cross-platform C/C++ logging framework suitable for both **high-load servers** and **simple applications**.
+
+It provides a clear separation of log output by component, configurable message formatting, and full runtime control, allowing applications to collect exactly the information they need while keeping logging configuration simple and unobtrusive.
 
 - 📚 **Documentation (Wiki):** https://github.com/efmsoft/logme/wiki
-- 💬 **Support / feedback:** GitHub issues and discussions are welcome.
+- 💬 **Support / feedback:** [GitHub issues](https://github.com/efmsoft/logme/issues) and [discussions](https://github.com/efmsoft/logme/discussions) are welcome.
 
 ---
 
 ## Key features
 
-- **Channels**: logically separate log streams by subsystem / module / feature.
-- **Multiple backends per channel**: console, debugger, files, etc.
-- **Links between channels**: redirection / fan-out without duplicating backend setup.
 - **C-style, stream-style, and (optionally) `std::format` style APIs**.
+- **Channels**: logically separate log streams by subsystem / module / feature.
+- **Runtime control** via a built-in control server (dynamic channel and backend management).
+- **Flexible verbosity control**: fine-grained control over logged data volume using log levels (Debug / Info / Warn / Error), subsystem identifiers, and hierarchical channels.
+- **Log file obfuscation**: optional obfuscation of log data written to files.
+- **Retention rules**: limits for maximum size of individual log files and total disk usage across all logs.
+- **Multiple backends per channel**: console, debugger, files, etc.
 - **Cross-platform**: Windows / Linux.
-- **Runtime control** via the control server and `logmectl` (enable/disable channels, manage backends, flags, levels, subsystems).
 
 ---
 
@@ -46,9 +50,11 @@ This produces colored console output similar to the following:
 
 ![Output result](docs/assets/base.png)
 
+---
+
 ## Configuration files (recommended)
 
-For most applications, logme is configured via a configuration file:
+For most applications, logme is configured via a JSON configuration file, which can describe the following elements:
 
 - channels
 - backends
@@ -65,9 +71,7 @@ For details and examples, see the project Wiki.
 
 ### Programmatic configuration (advanced)
 
-This section demonstrates configuring logme directly from C++.
-It is useful for small tools, embedded scenarios, or when configuration files are not desired.
-
+All aspects of logme behavior can be configured directly from C++ application code. This approach is useful for small tools, embedded scenarios, or when configuration files are not desired.
 ```cpp
 #include <Logme/Logme.h>
 #include <Logme/Backend/ConsoleBackend.h>
@@ -86,33 +90,49 @@ int main()
 
 ---
 
-## Runtime control (logmectl)
+## Runtime control (built-in control server)
 
-If you build the **DynamicControl** example, it starts a control server and prints from two worker threads.
+Applications using **logme** can optionally enable a **built-in control server** that allows logging behavior to be **fully managed at runtime**.
 
-There are **two channels** (`ch1`, `ch2`), and **two subsystems per channel**.
-Initially the channels are inactive because they have **no backends attached**.
+The control server exposes a management interface for:
 
-Activate a channel by adding a backend, for example:
+- creating and removing channels,
+- attaching or detaching backends,
+- enabling, disabling, or blocking channels,
+- controlling subsystems, levels, and routing.
 
-```text
-logmectl -p <port> backend --channel ch1 --add console
-```
+A command-line utility is provided with the library to send control commands to a running process, but the **specific tool is not important** — the key point is that logging can be **reconfigured dynamically while the application is running**.
 
-When the "block reported subsystems" mode is enabled, you will see messages sent to the channel **and** to subsystems.
+### Why this matters
 
-Switch the mode off:
+A common use case is a modular application where each component writes to its own channel.
 
-```text
-logmectl -p <port> subsystem --unblock-reported
-```
+At startup:
+- channels may **not exist at all**,
+- messages sent to non-existent or inactive channels are **silently dropped**,
+- no log files are created,
+- no console output is produced.
 
-Then only messages with the **channel** specified will be visible.
-To see messages with both **channel and subsystem** again, report a subsystem:
+When diagnostics are required:
+- a channel can be **created remotely**,
+- backends can be attached (file, console, debugger),
+- messages from the selected component immediately start appearing.
 
-```text
-logmectl -p <port> subsystem --report t1s1
-```
+Later:
+- the channel can be removed,
+- blocked,
+- or detached from all backends,
+- instantly stopping further output.
+
+### Result
+
+This model allows **selective, on-demand logging**:
+
+- only for specific components,
+- only when needed,
+- only to selected destinations.
+
+It keeps production systems quiet by default while still allowing **deep, targeted diagnostics** without restarting the application or recompiling it.
 
 ---
 
@@ -129,6 +149,11 @@ A **channel** is where you write messages. A channel can have:
 
 A **backend** defines where messages go (console, debugger, file, etc.).
 Multiple backends can be attached to the same channel.
+
+### Subsystem
+
+A **subsystem** is an optional identifier that provides an additional level of classification inside a channel.
+Subsystems allow grouping and filtering messages within the same channel, making it possible to enable or disable logging for specific functional parts of a component without affecting the entire channel.
 
 ### Link (redirect)
 
@@ -162,6 +187,7 @@ add_subdirectory(external/logme)
 
 target_link_libraries(your_target PRIVATE logme)
 ```
+An example of integrating logme as a git submodule can be found here: https://github.com/efmsoft/logme_cmake_submodule_example
 
 ---
 
@@ -205,13 +231,6 @@ ctest --test-dir build
 `std::format` is optional. If your standard library does not provide `<format>`, disable it via:
 
 - `-DLOGME_STD_FORMAT=OFF` (or define `LOGME_DISABLE_STD_FORMAT`)
-
----
-
-## Examples
-
-- `Examples/Basic`
-- `Examples/DynamicControl`
 
 ---
 

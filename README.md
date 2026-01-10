@@ -13,14 +13,16 @@ It is designed for both high-load servers and simple applications, providing sel
 
 ## Key features
 
-- **C-style, stream-style, and (optionally) `std::format` style APIs**.
-- **Channels**: logically separate log streams by subsystem / module / feature.
-- **Runtime control** via a built-in control server (dynamic channel and backend management).
-- **Flexible verbosity control**: fine-grained control over logged data volume using log levels (Debug / Info / Warn / Error), subsystem identifiers, and hierarchical channels.
+- **Runtime control** via a built-in control server: enable, disable, and reconfigure logging dynamically without restarting or recompiling the application.
+- **Channels and subsystems**: logically separate log output by component, module, or functional area.
+- **Hierarchical channels**: build structured logging trees and control groups of components together.
+- **Flexible verbosity control**: fine-grained filtering using log levels (Debug / Info / Warn / Error), subsystems, and channel hierarchy.
+- **Multiple backends per channel**: console, debugger, files, and other output destinations.
+- **Channel links**: redirect or fan-out log messages between channels without duplicating backend configuration.
+- **Retention rules**: limit the size of individual log files and the total disk usage across all logs.
 - **Log file obfuscation**: optional obfuscation of log data written to files.
-- **Retention rules**: limits for maximum size of individual log files and total disk usage across all logs.
-- **Multiple backends per channel**: console, debugger, files, etc.
-- **Cross-platform**: Windows / Linux.
+- **Multiple APIs**: C-style macros, C++ stream-style logging, and optional `std::format`-based formatting.
+- **Cross-platform**: Windows and Linux support.
 
 ---
 

@@ -1,12 +1,14 @@
 #pragma once
 
 #include <Logme/AllStatI.h>
+#include <Logme/AnsiColorEscape.h>
 #include <Logme/ArgumentList.h>
 #include <Logme/Channel.h>
 #include <Logme/Convert.h>
 #include <Logme/Logger.h>
 #include <Logme/Procedure.h>
 #include <Logme/Stream.h>
+#include <Logme/Template.h>
 #include <Logme/ThreadChannel.h>
 #include <Logme/ThreadName.h>
 #include <Logme/ThreadOverride.h>

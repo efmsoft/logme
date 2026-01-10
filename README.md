@@ -84,41 +84,6 @@ int main()
 }
 ```
 
-### Channel link (redirect / fan-out)
-
-A linked channel forwards messages to another channel after its own backends.
-
-```cpp
-#include <Logme/Logme.h>
-#include <Logme/Backend/ConsoleBackend.h>
-
-#include <memory>
-
-int main()
-{
-  auto root = Logme::Instance->CreateChannel("root");
-  root->AddBackend(std::make_shared<Logme::ConsoleBackend>(root));
-
-  auto http = Logme::Instance->CreateChannel("http");
-  http->AddLink(root);
-
-  // Goes to http backends (if any), then to root
-  fLogmeI(http, "GET {} -> {}", "/index.html", 200);
-  return 0;
-}
-```
-
----
-
-<!-- Features moved above Quick start -->
-
-- **Channels**: logically separate log streams by subsystem / module / feature.
-- **Multiple backends per channel**: console, debugger, files, etc.
-- **Links between channels**: redirection / fan-out without duplicating backend setup.
-- **C-style, stream-style, and (optionally) `std::format` style APIs**.
-- **Cross-platform**: Windows / Linux.
-- **Runtime control** via the control server and `logmectl` (enable/disable channels, manage backends, flags, levels, subsystems).
-
 ---
 
 ## Runtime control (logmectl)

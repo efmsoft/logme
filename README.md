@@ -2,42 +2,30 @@
 
 ![Colored console output example](docs/assets/example.png)
 
-**logme** is a lightweight, cross-platform logging framework for C/C++ with **channels**, **message routing**, and **pluggable backends** (console, debugger, file, etc.). It is designed to be simple to integrate, flexible at runtime, and comfortable for day-to-day development.
+**logme** is a lightweight, cross-platform C/C++ logging framework focused on **channels**, **multiple backends**, and **runtime control**.
 
-For detailed documentation and usage examples, see the project Wiki - https://github.com/efmsoft/logme/wiki
-
-> **Key idea:** messages are written to a *channel*, and the channel decides *where* they go via one or more backends. Channels can also **link** to other channels for redirection / fan-out.
-
-> 📦 **CMake integration example**  
-> A complete, real-world example of integrating **logme** into a CMake project
-> (static/shared build, optional jsoncpp and allstat support) is available here:  
-> 👉 https://github.com/efmsoft/logme_cmake_submodule_example
+- 📚 **Documentation (Wiki):** https://github.com/efmsoft/logme/wiki
+- 💬 **Support / feedback:** GitHub issues and discussions are welcome.
 
 ---
 
-## Support and feedback
+## Key features
 
-Questions, bug reports, and feature requests are welcome:
-
-👉 https://github.com/efmsoft/logme/issues
-
----
-
-## Features
-
-- **Channels**: independent log streams identified by an ID.
-- **Backends**: one channel can have **one or more backends** that define where messages are emitted.
-- **Channel links (redirect)**: a channel can be linked to another channel; it first writes to its own backends and then forwards to the linked channel.
-- **Routing & filtering**: route messages by channel / level, optionally redirect them.
-- **Color output**: optional VT100/ANSI colored console output.
-- **Cross-platform**: Windows + Linux.
-- **`std::format` support (optional)**: enabled automatically when available; can be forced ON/OFF.
+- **Channels**: logically separate log streams by subsystem / module / feature.
+- **Multiple backends per channel**: console, debugger, files, etc.
+- **Links between channels**: redirection / fan-out without duplicating backend setup.
+- **C-style, stream-style, and (optionally) `std::format` style APIs**.
+- **Cross-platform**: Windows / Linux.
+- **Runtime control** via the control server and `logmectl` (enable/disable channels, manage backends, flags, levels, subsystems).
 
 ---
 
 ## Quick start
 
-### Default channel (simplest)
+### Minimal usage (out of the box)
+
+The simplest possible usage. This works **out of the box** and requires no configuration.
+Internally, logme writes to the **default channel**, but you do not need to know what a channel is yet.
 
 ```cpp
 #include <Logme/Logme.h>
@@ -45,50 +33,77 @@ Questions, bug reports, and feature requests are welcome:
 int main()
 {
   LogmeI("Hello from logme (%s style)", "C");
-  LogmeW() << "Hello from logme (C++ style)";
-  fLogmeE("Hello from logme ({} style)", "std::format"); // if enabled
+  LogmeW() << "Hello from logme (C++ stream style)";
+
+#ifndef LOGME_DISABLE_STD_FORMAT
+  fLogmeE("Hello from logme ({} style)", "std::format");
+#endif
+
   return 0;
 }
 ```
+
+This produces colored console output similar to the following:
+
 ![Output result](docs/assets/base.png)
 
-> The default channel is created automatically.
-> On Windows it typically includes a console backend and a debugger backend (via `OutputDebugStringA`).
+This example uses the default configuration and is meant as a minimal introduction.
+For real applications, logme is typically configured via a **configuration file** (channels, backends, links, levels, flags), so you can change logging behavior without recompiling.
+
+See the **Wiki** for the configuration format and examples.
+
+## Configuration files (recommended)
+
+For most applications, logme is configured via a configuration file:
+
+- channels
+- backends
+- links
+- levels
+- flags
+- subsystems
+
+This lets you adjust logging behavior at runtime or between runs without recompiling.
+
+For details and examples, see the project Wiki.
 
 ---
 
-### Create a channel and add a backend (recommended)
+### Programmatic configuration (advanced)
 
-If you create a new channel, **you must attach at least one backend**, otherwise no output will be produced.
+This section demonstrates configuring logme directly from C++.
+It is useful for small tools, embedded scenarios, or when configuration files are not desired.
 
 ```cpp
 #include <Logme/Logme.h>
 #include <Logme/Backend/ConsoleBackend.h>
+
+#include <memory>
 
 int main()
 {
-  auto ch = Logme::Instance->CreateChannel("net");
-  ch->AddBackend(std::make_shared<ConsoleBackend>(ch));
+  auto ch = Logme::Instance->CreateChannel("http");
+  ch->AddBackend(std::make_shared<Logme::ConsoleBackend>(ch));
 
-  fLogmeI(ch, "Connected: {}", "127.0.0.1");
+  fLogmeI(ch, "GET {} -> {}", "/index.html", 200);
   return 0;
 }
 ```
 
----
+### Channel link (redirect / fan-out)
 
-### Channel link (redirect)
-
-A linked channel forwards messages to another channel after its own backends:
+A linked channel forwards messages to another channel after its own backends.
 
 ```cpp
 #include <Logme/Logme.h>
 #include <Logme/Backend/ConsoleBackend.h>
+
+#include <memory>
 
 int main()
 {
   auto root = Logme::Instance->CreateChannel("root");
-  root->AddBackend(std::make_shared<ConsoleBackend>(root));
+  root->AddBackend(std::make_shared<Logme::ConsoleBackend>(root));
 
   auto http = Logme::Instance->CreateChannel("http");
   http->AddLink(root);
@@ -101,27 +116,65 @@ int main()
 
 ---
 
+<!-- Features moved above Quick start -->
+
+- **Channels**: logically separate log streams by subsystem / module / feature.
+- **Multiple backends per channel**: console, debugger, files, etc.
+- **Links between channels**: redirection / fan-out without duplicating backend setup.
+- **C-style, stream-style, and (optionally) `std::format` style APIs**.
+- **Cross-platform**: Windows / Linux.
+- **Runtime control** via the control server and `logmectl` (enable/disable channels, manage backends, flags, levels, subsystems).
+
+---
+
+## Runtime control (logmectl)
+
+If you build the **DynamicControl** example, it starts a control server and prints from two worker threads.
+
+There are **two channels** (`ch1`, `ch2`), and **two subsystems per channel**.
+Initially the channels are inactive because they have **no backends attached**.
+
+Activate a channel by adding a backend, for example:
+
+```text
+logmectl -p <port> backend --channel ch1 --add console
+```
+
+When the "block reported subsystems" mode is enabled, you will see messages sent to the channel **and** to subsystems.
+
+Switch the mode off:
+
+```text
+logmectl -p <port> subsystem --unblock-reported
+```
+
+Then only messages with the **channel** specified will be visible.
+To see messages with both **channel and subsystem** again, report a subsystem:
+
+```text
+logmectl -p <port> subsystem --report t1s1
+```
+
+---
+
 ## Concepts
 
 ### Channel
 
-A channel is a named stream. You can:
-- create it with `CreateChannel(id)`,
-- add one or more backends with `AddBackend(...)`,
-- optionally link it to another channel with `AddLink(...)`.
+A **channel** is where you write messages. A channel can have:
+
+- one or more **backends** (output destinations),
+- optional **links** to other channels (redirect / fan-out).
 
 ### Backend
 
-A backend is an output sink (console, debugger, file, etc.).
-Backends define:
-- output destination,
-- formatting style (colors, timestamps, prefixes).
+A **backend** defines where messages go (console, debugger, file, etc.).
+Multiple backends can be attached to the same channel.
 
 ### Link (redirect)
 
-A link connects a channel to another channel:
-- the channel writes to its own backends,
-- then forwards the message to the linked channel.
+A **link** forwards messages from one channel to another after local backends are processed.
+This is useful for building routing trees (e.g., `http` → `root`).
 
 ---
 
@@ -135,7 +188,7 @@ include(FetchContent)
 FetchContent_Declare(
   logme
   GIT_REPOSITORY https://github.com/efmsoft/logme.git
-  GIT_TAG        v1.0.0  # use a release tag when available
+  GIT_TAG        main  # Prefer a release tag when available
 )
 
 FetchContent_MakeAvailable(logme)
@@ -143,12 +196,11 @@ FetchContent_MakeAvailable(logme)
 target_link_libraries(your_target PRIVATE logme)
 ```
 
----
-
 ### Option B: Add as a subdirectory
 
 ```cmake
 add_subdirectory(external/logme)
+
 target_link_libraries(your_target PRIVATE logme)
 ```
 
@@ -159,31 +211,27 @@ target_link_libraries(your_target PRIVATE logme)
 ### Configure and build
 
 ```bash
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build -j
+cmake -S . -B build
+cmake --build build
 ```
 
 ### Tests
 
 ```bash
-cmake -S . -B build -G Ninja -DLOGME_BUILD_TESTS=ON
-cmake --build build -j
-ctest --test-dir build --output-on-failure
+cmake -S . -B build -DLOGME_BUILD_TESTS=ON
+cmake --build build
+ctest --test-dir build
 ```
 
 ---
 
 ## CMake options
 
-| Option | Values | Default | Description |
-|------|--------|---------|-------------|
-| `LOGME_STD_FORMAT` | `AUTO`, `ON`, `OFF` | `AUTO` | Enable/disable `std::format` API. `AUTO` enables it when `<format>` is available. |
-| `LOGME_DISABLE_STD_FORMAT` | `0/1` | internal | Legacy/internal switch; prefer `LOGME_STD_FORMAT`. |
-| `LOGME_BUILD_EXAMPLES` | `ON/OFF` | `ON` | Build examples (if available). |
-| `LOGME_BUILD_TESTS` | `ON/OFF` | `ON` | Build tests (if available). |
-| `LOGME_BUILD_STATIC` | `ON/OFF` | `ON` | Build static library target (`logme`). |
-| `LOGME_BUILD_DYNAMIC` | `ON/OFF` | `ON` | Build shared library target (`logmed`). |
-| `LOGME_BUILD_TOOLS` | `ON/OFF` | `ON` | Build tools (e.g. `logmectl`). |
+- `LOGME_BUILD_EXAMPLES` (ON/OFF)
+- `LOGME_BUILD_TESTS` (ON/OFF)
+- `LOGME_BUILD_STATIC` (ON/OFF)
+- `LOGME_BUILD_DYNAMIC` (ON/OFF)
+- `LOGME_STD_FORMAT` (`AUTO`, `ON`, `OFF`)
 
 ---
 
@@ -191,39 +239,27 @@ ctest --test-dir build --output-on-failure
 
 ### Language standard
 
-- C++20 (required).
+- C++20 is used.
 
 ### `std::format` support
 
-`std::format` requires a standard library that provides the `<format>` header.
+`std::format` is optional. If your standard library does not provide `<format>`, disable it via:
 
-Typical cases:
-- **Ubuntu 22.04 (GCC 11)**: `<format>` is not available → format disabled.
-- **Debian / GCC 13+**: `<format>` is available → format enabled.
-
-You can explicitly control this behavior:
-- `-DLOGME_STD_FORMAT=OFF` — force-disable `std::format`.
-- `-DLOGME_STD_FORMAT=ON` — require `std::format` (configuration will fail if unavailable).
+- `-DLOGME_STD_FORMAT=OFF` (or define `LOGME_DISABLE_STD_FORMAT`)
 
 ---
 
 ## Examples
 
-See the `Examples/` directory for small runnable samples:
-- basic console logging,
-- format API usage,
-- channel routing and redirect.
-
-Dynamic control demo (control server + runtime changes via CLI):
-- `examples/DynamicControl` (see its README)
+- `Examples/Basic`
+- `Examples/DynamicControl`
 
 ---
 
 ## Roadmap
 
-- GitHub Releases and changelog.
-- CI matrix (Linux GCC/Clang, Windows MSVC).
-- Packaging (vcpkg / Conan).
+- More backends and routing presets
+- Improved documentation and more integration examples
 
 ---
 

@@ -53,6 +53,7 @@ namespace Logme
 
     int ControlSocket;
     ControlConfig ControlCfg;
+    std::string ControlPassword;
     TControlHandler ControlExtension;
     ControlSslContext* ControlSsl;
     
@@ -69,8 +70,11 @@ namespace Logme
     {
       ThreadPtr Thread;
       bool Stopped;
+      bool Authorized;
 
-      ControlThread() : Stopped(false)
+      ControlThread()
+        : Stopped(false)
+        , Authorized(false)
       {
       }
     };

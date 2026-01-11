@@ -17,9 +17,14 @@
 static void PrintInstructions(
   int port
   , bool ssl
+  , const std::string& pass
 )
 {
   const char* sslArg = ssl ? " --ssl" : "";
+  std::string passArg;
+
+  if (!pass.empty())
+    passArg = " --pass " + pass;
 
   std::cout
     << "Dynamic control demo\n"
@@ -30,12 +35,12 @@ static void PrintInstructions(
     << "Control server: 127.0.0.1:" << port << "\n"
     << "\n"
     << "Useful commands:\n"
-    << "  logmectl" << sslArg << " -p " << port << " backend --channel ch1 --add console\n"
-    << "  logmectl" << sslArg << " -p " << port << " subsystem --unblock-reported\n"
-    << "  logmectl" << sslArg << " -p " << port << " subsystem --report s1\n"
-    << "  logmectl" << sslArg << " -p " << port << " channel --disable ch1\n"
-    << "  logmectl" << sslArg << " -p " << port << " backend --channel ch2 --add console\n"
-    << "  logmectl" << sslArg << " -p " << port << " channel --enable ch1\n"
+    << "  logmectl" << sslArg << passArg << " -p " << port << " backend --channel ch1 --add console\n"
+    << "  logmectl" << sslArg << passArg << " -p " << port << " subsystem --unblock-reported\n"
+    << "  logmectl" << sslArg << passArg << " -p " << port << " subsystem --report s1\n"
+    << "  logmectl" << sslArg << passArg << " -p " << port << " channel --disable ch1\n"
+    << "  logmectl" << sslArg << passArg << " -p " << port << " backend --channel ch2 --add console\n"
+    << "  logmectl" << sslArg << passArg << " -p " << port << " channel --enable ch1\n"
     << "\n";
 
   if (ssl)
@@ -54,9 +59,11 @@ static bool ParseArgs(
   , bool& ssl
   , std::string& certFile
   , std::string& keyFile
+  , std::string& pass
 )
 {
   ssl = false;
+  pass.clear();
   for (int i = 1; i < argc; ++i)
   {
     const std::string a = argv[i];
@@ -79,6 +86,12 @@ static bool ParseArgs(
       continue;
     }
 
+    if (a == "--pass" && i + 1 < argc)
+    {
+      pass = argv[++i];
+      continue;
+    }
+
     if (a == "--help" || a == "help")
       return false;
   }
@@ -90,7 +103,7 @@ static void PrintUsage(const char* exe)
 {
   std::cout
     << "Usage:\n"
-    << "  " << exe << " [--ssl [--cert file] [--key file]]\n"
+    << "  " << exe << " [--ssl [--cert file] [--key file]] [--pass password]\n"
     << std::endl;
 }
 
@@ -110,8 +123,9 @@ int main(int argc, char* argv[])
   bool ssl = false;
   std::string certFile;
   std::string keyFile;
+  std::string pass;
 
-  if (!ParseArgs(argc, argv, ssl, certFile, keyFile))
+  if (!ParseArgs(argc, argv, ssl, certFile, keyFile, pass))
   {
     PrintUsage(argv[0]);
     return 1;
@@ -122,6 +136,7 @@ int main(int argc, char* argv[])
   cfg.Enable = true;
   cfg.Port = port;
   cfg.Interface = 0;
+  cfg.Password = pass.empty() ? nullptr : pass.c_str();
 
   X509* cert = nullptr;
   EVP_PKEY* key = nullptr;
@@ -176,7 +191,7 @@ int main(int argc, char* argv[])
     return 2;
   }
 
-  PrintInstructions(port, ssl);
+  PrintInstructions(port, ssl, pass);
 
   Worker w1("t1", "ch1", "s1", "s2");
   Worker w2("t2", "ch2", "s1", "s2");

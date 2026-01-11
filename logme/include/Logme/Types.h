@@ -60,6 +60,7 @@ namespace Logme
     uint32_t Interface;
     X509* Cert;
     EVP_PKEY* Key;
+    const char* Password;
   };
 
   struct NAMED_VALUE

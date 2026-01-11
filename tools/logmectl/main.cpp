@@ -407,7 +407,7 @@ static void PrintUsage()
   std::cout
     << "Logme control\n\n"
     << "Usage:\n"
-    << "  logmectl -p <port> [-i <ip>] [--ssl] [--format text|json] <command...>\n\n"
+    << "  logmectl -p <port> [-i <ip>] [--ssl] [--pass <password>] [--format text|json] <command...>\n\n"
     << "Run with \"help\" to see available commands.\n";
 }
 
@@ -417,6 +417,7 @@ static bool ParseArgs(
   , std::string& ip
   , int& port
   , bool& useSsl
+  , std::string& pass
   , std::string& format
   , std::string& command
 )
@@ -424,6 +425,7 @@ static bool ParseArgs(
   ip = "127.0.0.1";
   port = 0;
   useSsl = false;
+  pass.clear();
   format = "text";
 
   std::vector<std::string> cmd;
@@ -452,6 +454,12 @@ static bool ParseArgs(
     if ((strcmp(a, "-i") == 0 || strcmp(a, "--ip") == 0) && i + 1 < argc)
     {
       ip = argv[++i];
+      continue;
+    }
+
+    if (strcmp(a, "--pass") == 0 && i + 1 < argc)
+    {
+      pass = argv[++i];
       continue;
     }
 
@@ -577,10 +585,11 @@ int main(int argc, char** argv)
   std::string ip;
   int port = 0;
   bool useSsl = false;
+  std::string pass;
   std::string format;
   std::string cmd;
 
-  if (!ParseArgs(argc, argv, ip, port, useSsl, format, cmd))
+  if (!ParseArgs(argc, argv, ip, port, useSsl, pass, format, cmd))
   {
     PrintUsage();
     return 2;
@@ -624,14 +633,138 @@ int main(int argc, char** argv)
     }
   }
 
-  int sent = 0;
+  auto DoRequest = [&](const std::string& request, std::string& response) -> bool
+  {
+    int sent = 0;
 
-  if (useSsl)
-    sent = sslCtx.Write(ssl, cmd.c_str(), (int)cmd.size());
-  else
-    sent = send(s, cmd.c_str(), (int)cmd.size(), 0);
+    if (useSsl)
+      sent = sslCtx.Write(ssl, request.c_str(), (int)request.size());
+    else
+      sent = send(s, request.c_str(), (int)request.size(), 0);
 
-  if (sent <= 0)
+    if (sent <= 0)
+      return false;
+
+    response.clear();
+
+    // Wait for the first response packet with a hard timeout, then drain
+    // any remaining packets with a short inter-packet timeout.
+    (void)SetRecvTimeout(s, 5000);
+    bool gotFirst = false;
+
+    for (;;)
+    {
+      char buf[4096];
+      int n = 0;
+
+      if (useSsl)
+        n = sslCtx.Read(ssl, buf, (int)sizeof(buf));
+      else
+        n = (int)recv(s, buf, (int)sizeof(buf), 0);
+
+      if (n > 0)
+      {
+        response.append(buf, n);
+
+        if (!gotFirst)
+        {
+          gotFirst = true;
+          (void)SetRecvTimeout(s, 100);
+        }
+
+        continue;
+      }
+
+      if (n == 0)
+        break;
+
+#ifdef _WIN32
+      int e = WSAGetLastError();
+      if (e == WSAETIMEDOUT || e == WSAEWOULDBLOCK)
+        break;
+#else
+      if (errno == EAGAIN || errno == EWOULDBLOCK)
+        break;
+#endif
+
+      break;
+    }
+
+    return true;
+  };
+
+  auto Trim = [](std::string& s)
+  {
+    while (!s.empty() && (s[0] == ' ' || s[0] == '\t' || s[0] == '\r' || s[0] == '\n'))
+      s.erase(0, 1);
+    while (!s.empty() && (s.back() == ' ' || s.back() == '\t' || s.back() == '\r' || s.back() == '\n'))
+      s.pop_back();
+  };
+
+  auto IsOkTextResponse = [&](const std::string& s) -> bool
+  {
+    std::string t = s;
+    Trim(t);
+    return t.rfind("ok", 0) == 0;
+  };
+
+  if (!pass.empty())
+  {
+    std::string authCmd = (format == "json")
+      ? (std::string("format json auth ") + pass)
+      : (std::string("auth ") + pass);
+
+    std::string authResponse;
+
+    if (!DoRequest(authCmd, authResponse))
+    {
+      std::cerr << "ERROR: send failed\n";
+
+      if (useSsl)
+        sslCtx.Shutdown(ssl);
+
+      CloseSocket(s);
+      return 1;
+    }
+
+    if (format == "json")
+    {
+      bool ok = false;
+      if (!ExtractJsonOk(authResponse, ok) || !ok)
+      {
+        if (!authResponse.empty())
+          std::cout << authResponse;
+        else
+          std::cerr << "ERROR: auth failed\n";
+
+        if (useSsl)
+          sslCtx.Shutdown(ssl);
+
+        CloseSocket(s);
+        return 1;
+      }
+    }
+    else
+    {
+      if (!IsOkTextResponse(authResponse))
+      {
+        if (!authResponse.empty())
+          std::cout << authResponse;
+        else
+          std::cerr << "ERROR: auth failed\n";
+
+        if (useSsl)
+          sslCtx.Shutdown(ssl);
+
+        CloseSocket(s);
+        return 1;
+      }
+    }
+  }
+
+  std::string response;
+
+  if (!DoRequest(cmd, response))
   {
     std::cerr << "ERROR: send failed\n";
 
@@ -640,51 +773,6 @@ int main(int argc, char** argv)
 
     CloseSocket(s);
     return 1;
-  }
-
-  std::string response;
-
-  // Wait for the first response packet with a hard timeout, then drain
-  // any remaining packets with a short inter-packet timeout.
-  (void)SetRecvTimeout(s, 5000);
-  bool gotFirst = false;
-
-  for (;;)
-  {
-    char buf[4096];
-    int n = 0;
-
-    if (useSsl)
-      n = sslCtx.Read(ssl, buf, (int)sizeof(buf));
-    else
-      n = (int)recv(s, buf, (int)sizeof(buf), 0);
-
-    if (n > 0)
-    {
-      response.append(buf, n);
-
-      if (!gotFirst)
-      {
-        gotFirst = true;
-        (void)SetRecvTimeout(s, 100);
-      }
-
-      continue;
-    }
-
-    if (n == 0)
-      break;
-
-#ifdef _WIN32
-    int e = WSAGetLastError();
-    if (e == WSAETIMEDOUT || e == WSAEWOULDBLOCK)
-      break;
-#else
-    if (errno == EAGAIN || errno == EWOULDBLOCK)
-      break;
-#endif
-
-    break;
   }
 
   if (!response.empty())

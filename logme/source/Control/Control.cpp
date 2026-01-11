@@ -4,11 +4,6 @@
 #include <cstring>
 #include <vector>
 
-#ifndef _WIN32
-#include <pthread.h>
-#include <signal.h>
-#endif
-
 #ifdef _WIN32
 #include <io.h> 
 #include <winsock2.h>
@@ -25,6 +20,8 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <pthread.h>
+#include <signal.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -97,10 +94,6 @@ namespace
       dlclose(handle);
 #endif
   }
-}
-
-namespace Logme
-{
 
 #ifndef _WIN32
   void ControlBlockSigPipeForThread()
@@ -111,7 +104,10 @@ namespace Logme
     pthread_sigmask(SIG_BLOCK, &set, nullptr);
   }
 #endif
+}
 
+namespace Logme
+{
   struct ControlSslContext
   {
     ControlLibHandle LibSsl;
@@ -500,6 +496,8 @@ bool Logger::StartControlServer(const ControlConfig& c)
   std::lock_guard guard(DataLock);
 
   ControlCfg = c;
+  ControlPassword = c.Password ? c.Password : "";
+  ControlCfg.Password = ControlPassword.empty() ? nullptr : ControlPassword.c_str();
 
   if (c.Cert && c.Key)
   {
@@ -576,6 +574,10 @@ void Logger::ControlListener()
 {
   RenameThread(-1, "LogCtrlListener");
 
+#ifndef _WIN32
+  ControlBlockSigPipeForThread();
+#endif
+
   for (;;)
   {
     // Listen for new connection
@@ -588,6 +590,14 @@ void Logger::ControlListener()
     {
       ControlThread ct{};
       ct.Stopped = false;
+
+      bool hasPassword = false;
+      {
+        std::lock_guard guard(DataLock);
+        hasPassword = (ControlCfg.Password && *ControlCfg.Password);
+      }
+
+      ct.Authorized = !hasPassword;
 
       std::lock_guard guard(DataLock);
       ControlThreads[accept_sock] = ct;
@@ -646,6 +656,10 @@ void Logger::ControlHandler(int socket)
 {
   RenameThread(-1, "LogCtrlHandler");
 
+#ifndef _WIN32
+  ControlBlockSigPipeForThread();
+#endif
+
   ControlSslContext* sslCtx = nullptr;
   {
     std::lock_guard guard(DataLock);
@@ -666,6 +680,76 @@ void Logger::ControlHandler(int socket)
 
       return;
     }
+  }
+
+  auto SplitRemainderAfterWords = [](const std::string& s, int words) -> std::string
+  {
+    int w = 0;
+    bool inWord = false;
+
+    for (size_t i = 0; i < s.size(); ++i)
+    {
+      unsigned char ch = (unsigned char)s[i];
+      bool ws = (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n');
+
+      if (!ws)
+      {
+        if (!inWord)
+        {
+          inWord = true;
+          ++w;
+          if (w == words + 1)
+            return s.substr(i);
+        }
+      }
+      else
+      {
+        inWord = false;
+      }
+    }
+
+    return std::string();
+  };
+
+  auto Trim = [](std::string& s)
+  {
+    while (!s.empty() && (s[0] == ' ' || s[0] == '\t' || s[0] == '\r' || s[0] == '\n'))
+      s.erase(0, 1);
+    while (!s.empty() && (s.back() == ' ' || s.back() == '\t' || s.back() == '\r' || s.back() == '\n'))
+      s.pop_back();
+  };
+
+  auto GetCommandName = [&](const std::string& cmd, std::string& outNameLower, int& outPrefixWords) -> bool
+  {
+    outNameLower.clear();
+    outPrefixWords = 0;
+
+    std::string k(cmd);
+    std::transform(k.begin(), k.end(), k.begin(), ::tolower);
+
+    StringArray items;
+    size_t n = WordSplit(k, items);
+    if (!n)
+      return false;
+
+    if (items[0] == "format" && n >= 3 && items[1] == "json")
+    {
+      outNameLower = items[2];
+      outPrefixWords = 2;
+      return true;
+    }
+
+    outNameLower = items[0];
+    outPrefixWords = 0;
+    return true;
+  };
+
+  bool authorized = false;
+  {
+    std::lock_guard guard(DataLock);
+    auto it = ControlThreads.find(socket);
+    if (it != ControlThreads.end())
+      authorized = it->second.Authorized;
   }
     
   for (;;)
@@ -690,13 +774,69 @@ void Logger::ControlHandler(int socket)
     }
 
     std::string command(buff, n);
-    std::string response = Control(command);
+    std::string cmdName;
+    int prefixWords = 0;
+    (void)GetCommandName(command, cmdName, prefixWords);
+
+    std::string response;
+
+    bool hasPassword = false;
+    std::string password;
+
+    {
+      std::lock_guard guard(DataLock);
+      hasPassword = (ControlCfg.Password && *ControlCfg.Password);
+      if (hasPassword)
+        password = ControlCfg.Password;
+    }
+
+    if (cmdName == "auth")
+    {
+      std::string pass = SplitRemainderAfterWords(command, prefixWords + 1);
+      Trim(pass);
+
+      if (!hasPassword)
+      {
+        authorized = true;
+        response = "ok";
+      }
+      else
+      {
+        if (!pass.empty() && pass == password)
+        {
+          authorized = true;
+          response = "ok";
+        }
+        else
+        {
+          response = "error: invalid password";
+        }
+      }
+
+      {
+        std::lock_guard guard(DataLock);
+        auto it = ControlThreads.find(socket);
+        if (it != ControlThreads.end())
+          it->second.Authorized = authorized;
+      }
+    }
+    else if (cmdName == "help")
+    {
+      response = Control(command);
+    }
+    else
+    {
+      if (hasPassword && !authorized)
+        response = "error: unauthorized";
+      else
+        response = Control(command);
+    }
+
+    if (!response.empty() && response.back() != '\n')
+      response.push_back('\n');
 
     if (!response.empty())
     {
-      if (response.back() != '\n')
-        response.push_back('\n');
-
       if (sslCtx)
         n = sslCtx->Write(ssl, response.c_str(), (int)response.size());
       else
@@ -705,12 +845,7 @@ void Logger::ControlHandler(int socket)
 #ifdef MSG_NOSIGNAL
         flags |= MSG_NOSIGNAL;
 #endif
-        n = (int)send(
-          socket
-          , response.c_str()
-          , (int)response.size()
-          , flags
-        );
+        n = (int)send(socket, response.c_str(), (int)response.size(), flags);
       }
 
       if (sslCtx)

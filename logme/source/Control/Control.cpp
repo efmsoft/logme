@@ -4,6 +4,11 @@
 #include <cstring>
 #include <vector>
 
+#ifndef _WIN32
+#include <pthread.h>
+#include <signal.h>
+#endif
+
 #ifdef _WIN32
 #include <io.h> 
 #include <winsock2.h>
@@ -96,6 +101,17 @@ namespace
 
 namespace Logme
 {
+
+#ifndef _WIN32
+  void ControlBlockSigPipeForThread()
+  {
+    sigset_t set;
+    sigemptyset(&set);
+    sigaddset(&set, SIGPIPE);
+    pthread_sigmask(SIG_BLOCK, &set, nullptr);
+  }
+#endif
+
   struct ControlSslContext
   {
     ControlLibHandle LibSsl;
@@ -681,7 +697,16 @@ void Logger::ControlHandler(int socket)
       if (sslCtx)
         n = sslCtx->Write(ssl, response.c_str(), (int)response.size());
       else
-        n = (int)send(socket, response.c_str(), (int)response.size(), 0);
+        int flags = 0;
+#ifdef MSG_NOSIGNAL
+        flags |= MSG_NOSIGNAL;
+#endif
+        n = (int)send(
+          socket
+          , response.c_str()
+          , (int)response.size()
+          , flags
+        );
 
       if (sslCtx)
       {

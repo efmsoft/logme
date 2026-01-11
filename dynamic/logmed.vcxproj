@@ -26,36 +26,57 @@
     <ClCompile Include="..\logme\source\Backend\DebugBackend.cpp" />
     <ClCompile Include="..\logme\source\Backend\FileBackend.cpp" />
     <ClCompile Include="..\logme\source\Backend\FileBackendConfig.cpp" />
+    <ClCompile Include="..\logme\source\Backend\SharedFileBackend.cpp" />
+    <ClCompile Include="..\logme\source\Backend\SharedFileBackendConfig.cpp" />
     <ClCompile Include="..\logme\source\BindAllStat.cpp" />
     <ClCompile Include="..\logme\source\Channel.cpp" />
     <ClCompile Include="..\logme\source\Colorizer.cpp" />
+    <ClCompile Include="..\logme\source\Config\ByteSizeValue.cpp" />
     <ClCompile Include="..\logme\source\Config\Config.cpp" />
     <ClCompile Include="..\logme\source\Config\Helper.cpp" />
     <ClCompile Include="..\logme\source\Config\ParseChannel.cpp" />
     <ClCompile Include="..\logme\source\Config\ParseControl.cpp" />
     <ClCompile Include="..\logme\source\Config\ParseFlags.cpp" />
+    <ClCompile Include="..\logme\source\Config\ParseHomeDirectory.cpp" />
+    <ClCompile Include="..\logme\source\Config\ParseSubsystem.cpp" />
+    <ClCompile Include="..\logme\source\Config\TimeIntervalValue.cpp" />
     <ClCompile Include="..\logme\source\Context.cpp" />
     <ClCompile Include="..\logme\source\Control\CommandDescriptor.cpp" />
     <ClCompile Include="..\logme\source\Control\CommandRegistrar.cpp" />
-    <ClCompile Include="..\logme\source\Control\Command\Help.cpp" />
-    <ClCompile Include="..\logme\source\Control\Command\List.cpp" />
+    <ClCompile Include="..\logme\source\Control\Command\CmdBackend.cpp" />
+    <ClCompile Include="..\logme\source\Control\Command\CmdChannel.cpp" />
+    <ClCompile Include="..\logme\source\Control\Command\CmdFlags.cpp" />
+    <ClCompile Include="..\logme\source\Control\Command\CmdHelp.cpp" />
+    <ClCompile Include="..\logme\source\Control\Command\CmdLevel.cpp" />
+    <ClCompile Include="..\logme\source\Control\Command\CmdList.cpp" />
+    <ClCompile Include="..\logme\source\Control\Command\CmdSubsystem.cpp" />
     <ClCompile Include="..\logme\source\Control\Control.cpp" />
+    <ClCompile Include="..\logme\source\Control\Json.cpp" />
     <ClCompile Include="..\logme\source\Convert.cpp" />
+    <ClCompile Include="..\logme\source\DayChangeDetector.cpp" />
     <ClCompile Include="..\logme\source\Environment.cpp" />
+    <ClCompile Include="..\logme\source\File\CleanOldest.cpp" />
+    <ClCompile Include="..\logme\source\File\DirectorySizeWatchdog.cpp" />
     <ClCompile Include="..\logme\source\File\exe_path.cpp" />
     <ClCompile Include="..\logme\source\File\FileManager.cpp" />
     <ClCompile Include="..\logme\source\File\FileManagerFactory.cpp" />
     <ClCompile Include="..\logme\source\File\file_io.cpp" />
+    <ClCompile Include="..\logme\source\Json\Loader.cpp" />
     <ClCompile Include="..\logme\source\Logger.cpp" />
     <ClCompile Include="..\logme\source\Module.cpp" />
+    <ClCompile Include="..\logme\source\Obfuscate.cpp" />
     <ClCompile Include="..\logme\source\OutputFlags.cpp" />
     <ClCompile Include="..\logme\source\Override.cpp" />
     <ClCompile Include="..\logme\source\Printer.cpp" />
     <ClCompile Include="..\logme\source\Procedure.cpp" />
     <ClCompile Include="..\logme\source\SafeID.cpp" />
+    <ClCompile Include="..\logme\source\SID.cpp" />
+    <ClCompile Include="..\logme\source\Ssl\Ssl.cpp" />
     <ClCompile Include="..\logme\source\Stream.cpp" />
     <ClCompile Include="..\logme\source\Template.cpp" />
     <ClCompile Include="..\logme\source\ThreadChannel.cpp" />
+    <ClCompile Include="..\logme\source\ThreadName.cpp" />
+    <ClCompile Include="..\logme\source\ThreadOverride.cpp" />
     <ClCompile Include="..\logme\source\Time\datetime_common.cpp" />
     <ClCompile Include="..\logme\source\Time\datetime_lx.cpp" />
     <ClCompile Include="..\logme\source\Time\datetime_utils.cpp" />
@@ -66,6 +87,8 @@
     <ClInclude Include="..\logme\source\Config\Helper.h" />
     <ClInclude Include="..\logme\source\Control\CommandDescriptor.h" />
     <ClInclude Include="..\logme\source\Control\CommandRegistrar.h" />
+    <ClInclude Include="..\logme\source\Control\Json.h" />
+    <ClInclude Include="..\logme\source\File\CleanOldest.h" />
     <ClInclude Include="..\logme\source\StringHelpers.h" />
     <ClInclude Include="..\logme\source\Time\utils.h" />
   </ItemGroup>
@@ -145,7 +168,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_LOGME_DLL_BUILD_;WIN32;_DEBUG;LOGMED_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_LOGME_DLL_BUILD_;WIN32;_DEBUG;LOGMED_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -165,7 +188,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_LOGME_DLL_BUILD_;WIN32;NDEBUG;LOGMED_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_LOGME_DLL_BUILD_;WIN32;NDEBUG;LOGMED_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -185,7 +208,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_LOGME_DLL_BUILD_;_DEBUG;LOGMED_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_LOGME_DLL_BUILD_;_DEBUG;LOGMED_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -205,7 +228,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_LOGME_DLL_BUILD_;NDEBUG;LOGMED_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_LOGME_DLL_BUILD_;NDEBUG;LOGMED_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>

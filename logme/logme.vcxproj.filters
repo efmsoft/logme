@@ -42,6 +42,12 @@
     <Filter Include="source\Control\Command">
       <UniqueIdentifier>{8d0718b4-6906-4bec-8aae-3095fc24f5fd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="source\Ssl">
+      <UniqueIdentifier>{aab4d14b-809c-40b9-81e2-e9590e66b816}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source\Json">
+      <UniqueIdentifier>{ebe182d3-18ee-4e03-b531-d25068445ace}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Logme\Backend\Backend.h">
@@ -128,9 +134,6 @@
     <ClInclude Include="include\Logme\Json\RSJparser.hpp">
       <Filter>include\Logme\Json</Filter>
     </ClInclude>
-    <ClInclude Include="source\StringHelpers.h">
-      <Filter>source</Filter>
-    </ClInclude>
     <ClInclude Include="source\Config\Helper.h">
       <Filter>source\Config</Filter>
     </ClInclude>
@@ -139,6 +142,15 @@
     </ClInclude>
     <ClInclude Include="source\Control\CommandRegistrar.h">
       <Filter>source\Control</Filter>
+    </ClInclude>
+    <ClInclude Include="source\StringHelpers.h">
+      <Filter>source</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Control\Json.h">
+      <Filter>source\Control</Filter>
+    </ClInclude>
+    <ClInclude Include="source\File\CleanOldest.h">
+      <Filter>source\File</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -153,57 +165,6 @@
     </ClCompile>
     <ClCompile Include="source\Time\datetime_utils.cpp">
       <Filter>source\Time</Filter>
-    </ClCompile>
-    <ClCompile Include="source\BindAllStat.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="source\Channel.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="source\Colorizer.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="source\Context.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="source\Convert.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="source\Environment.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="source\Logger.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="source\Module.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="source\OutputFlags.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="source\Override.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="source\Printer.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="source\Procedure.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="source\SafeID.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="source\Stream.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="source\Template.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="source\ThreadChannel.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="source\Utils.cpp">
-      <Filter>source</Filter>
     </ClCompile>
     <ClCompile Include="source\Backend\Backend.cpp">
       <Filter>source\Backend</Filter>
@@ -225,18 +186,6 @@
     </ClCompile>
     <ClCompile Include="source\Backend\FileBackendConfig.cpp">
       <Filter>source\Backend</Filter>
-    </ClCompile>
-    <ClCompile Include="source\File\exe_path.cpp">
-      <Filter>source\File</Filter>
-    </ClCompile>
-    <ClCompile Include="source\File\file_io.cpp">
-      <Filter>source\File</Filter>
-    </ClCompile>
-    <ClCompile Include="source\File\FileManager.cpp">
-      <Filter>source\File</Filter>
-    </ClCompile>
-    <ClCompile Include="source\File\FileManagerFactory.cpp">
-      <Filter>source\File</Filter>
     </ClCompile>
     <ClCompile Include="source\Config\Config.cpp">
       <Filter>source\Config</Filter>
@@ -262,10 +211,136 @@
     <ClCompile Include="source\Control\Control.cpp">
       <Filter>source\Control</Filter>
     </ClCompile>
-    <ClCompile Include="source\Control\Command\Help.cpp">
+    <ClCompile Include="source\Backend\SharedFileBackend.cpp">
+      <Filter>source\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Backend\SharedFileBackendConfig.cpp">
+      <Filter>source\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="source\BindAllStat.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Channel.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Colorizer.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Context.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Convert.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\DayChangeDetector.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Environment.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Logger.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Module.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Obfuscate.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\OutputFlags.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Override.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Printer.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Procedure.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\SafeID.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\SID.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Stream.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Template.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\ThreadChannel.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\ThreadName.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\ThreadOverride.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Utils.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Control\Json.cpp">
+      <Filter>source\Control</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Config\ByteSizeValue.cpp">
+      <Filter>source\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Config\ParseHomeDirectory.cpp">
+      <Filter>source\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Config\ParseSubsystem.cpp">
+      <Filter>source\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Config\TimeIntervalValue.cpp">
+      <Filter>source\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Ssl\Ssl.cpp">
+      <Filter>source\Ssl</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Json\Loader.cpp">
+      <Filter>source\Json</Filter>
+    </ClCompile>
+    <ClCompile Include="source\File\CleanOldest.cpp">
+      <Filter>source\File</Filter>
+    </ClCompile>
+    <ClCompile Include="source\File\DirectorySizeWatchdog.cpp">
+      <Filter>source\File</Filter>
+    </ClCompile>
+    <ClCompile Include="source\File\exe_path.cpp">
+      <Filter>source\File</Filter>
+    </ClCompile>
+    <ClCompile Include="source\File\file_io.cpp">
+      <Filter>source\File</Filter>
+    </ClCompile>
+    <ClCompile Include="source\File\FileManager.cpp">
+      <Filter>source\File</Filter>
+    </ClCompile>
+    <ClCompile Include="source\File\FileManagerFactory.cpp">
+      <Filter>source\File</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Control\Command\CmdBackend.cpp">
       <Filter>source\Control\Command</Filter>
     </ClCompile>
-    <ClCompile Include="source\Control\Command\List.cpp">
+    <ClCompile Include="source\Control\Command\CmdChannel.cpp">
+      <Filter>source\Control\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Control\Command\CmdFlags.cpp">
+      <Filter>source\Control\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Control\Command\CmdHelp.cpp">
+      <Filter>source\Control\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Control\Command\CmdLevel.cpp">
+      <Filter>source\Control\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Control\Command\CmdList.cpp">
+      <Filter>source\Control\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Control\Command\CmdSubsystem.cpp">
       <Filter>source\Control\Command</Filter>
     </ClCompile>
   </ItemGroup>

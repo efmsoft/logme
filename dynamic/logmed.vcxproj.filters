@@ -19,25 +19,14 @@
     <Filter Include="Control\Command">
       <UniqueIdentifier>{116cab6f-6ae4-46b1-82d6-b9270e1d3e7b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Json">
+      <UniqueIdentifier>{e5a61172-7c47-49d0-b71d-1fe5b28b234f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Ssl">
+      <UniqueIdentifier>{104556a7-ed40-4c47-8793-65377809ea5b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\logme\source\BindAllStat.cpp" />
-    <ClCompile Include="..\logme\source\Channel.cpp" />
-    <ClCompile Include="..\logme\source\Colorizer.cpp" />
-    <ClCompile Include="..\logme\source\Context.cpp" />
-    <ClCompile Include="..\logme\source\Convert.cpp" />
-    <ClCompile Include="..\logme\source\Environment.cpp" />
-    <ClCompile Include="..\logme\source\Logger.cpp" />
-    <ClCompile Include="..\logme\source\Module.cpp" />
-    <ClCompile Include="..\logme\source\OutputFlags.cpp" />
-    <ClCompile Include="..\logme\source\Override.cpp" />
-    <ClCompile Include="..\logme\source\Printer.cpp" />
-    <ClCompile Include="..\logme\source\Procedure.cpp" />
-    <ClCompile Include="..\logme\source\SafeID.cpp" />
-    <ClCompile Include="..\logme\source\Stream.cpp" />
-    <ClCompile Include="..\logme\source\Template.cpp" />
-    <ClCompile Include="..\logme\source\ThreadChannel.cpp" />
-    <ClCompile Include="..\logme\source\Utils.cpp" />
     <ClCompile Include="..\logme\source\Backend\Backend.cpp">
       <Filter>Backend</Filter>
     </ClCompile>
@@ -107,15 +96,84 @@
     <ClCompile Include="..\logme\source\Control\Control.cpp">
       <Filter>Control</Filter>
     </ClCompile>
-    <ClCompile Include="..\logme\source\Control\Command\Help.cpp">
+    <ClCompile Include="..\logme\source\Backend\SharedFileBackend.cpp">
+      <Filter>Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Backend\SharedFileBackendConfig.cpp">
+      <Filter>Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Config\ByteSizeValue.cpp">
+      <Filter>Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Config\ParseHomeDirectory.cpp">
+      <Filter>Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Config\ParseSubsystem.cpp">
+      <Filter>Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Config\TimeIntervalValue.cpp">
+      <Filter>Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Control\Json.cpp">
+      <Filter>Control</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\File\CleanOldest.cpp">
+      <Filter>File</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\File\DirectorySizeWatchdog.cpp">
+      <Filter>File</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Json\Loader.cpp">
+      <Filter>Json</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Ssl\Ssl.cpp">
+      <Filter>Ssl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\BindAllStat.cpp" />
+    <ClCompile Include="..\logme\source\Channel.cpp" />
+    <ClCompile Include="..\logme\source\Colorizer.cpp" />
+    <ClCompile Include="..\logme\source\Context.cpp" />
+    <ClCompile Include="..\logme\source\Convert.cpp" />
+    <ClCompile Include="..\logme\source\DayChangeDetector.cpp" />
+    <ClCompile Include="..\logme\source\Environment.cpp" />
+    <ClCompile Include="..\logme\source\Logger.cpp" />
+    <ClCompile Include="..\logme\source\Module.cpp" />
+    <ClCompile Include="..\logme\source\Obfuscate.cpp" />
+    <ClCompile Include="..\logme\source\OutputFlags.cpp" />
+    <ClCompile Include="..\logme\source\Override.cpp" />
+    <ClCompile Include="..\logme\source\Printer.cpp" />
+    <ClCompile Include="..\logme\source\Procedure.cpp" />
+    <ClCompile Include="..\logme\source\SafeID.cpp" />
+    <ClCompile Include="..\logme\source\SID.cpp" />
+    <ClCompile Include="..\logme\source\Stream.cpp" />
+    <ClCompile Include="..\logme\source\Template.cpp" />
+    <ClCompile Include="..\logme\source\ThreadChannel.cpp" />
+    <ClCompile Include="..\logme\source\ThreadName.cpp" />
+    <ClCompile Include="..\logme\source\ThreadOverride.cpp" />
+    <ClCompile Include="..\logme\source\Utils.cpp" />
+    <ClCompile Include="..\logme\source\Control\Command\CmdBackend.cpp">
       <Filter>Control\Command</Filter>
     </ClCompile>
-    <ClCompile Include="..\logme\source\Control\Command\List.cpp">
+    <ClCompile Include="..\logme\source\Control\Command\CmdChannel.cpp">
+      <Filter>Control\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Control\Command\CmdFlags.cpp">
+      <Filter>Control\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Control\Command\CmdHelp.cpp">
+      <Filter>Control\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Control\Command\CmdLevel.cpp">
+      <Filter>Control\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Control\Command\CmdList.cpp">
+      <Filter>Control\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Control\Command\CmdSubsystem.cpp">
       <Filter>Control\Command</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\logme\source\StringHelpers.h" />
     <ClInclude Include="..\logme\source\Time\utils.h">
       <Filter>Time</Filter>
     </ClInclude>
@@ -128,5 +186,12 @@
     <ClInclude Include="..\logme\source\Control\CommandRegistrar.h">
       <Filter>Control</Filter>
     </ClInclude>
+    <ClInclude Include="..\logme\source\Control\Json.h">
+      <Filter>Control</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\source\File\CleanOldest.h">
+      <Filter>File</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\source\StringHelpers.h" />
   </ItemGroup>
 </Project>

@@ -94,7 +94,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_LOGME_STATIC_BUILD_;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_LOGME_STATIC_BUILD_;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalIncludeDirectories>include</AdditionalIncludeDirectories>
@@ -111,7 +111,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_LOGME_STATIC_BUILD_;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_LOGME_STATIC_BUILD_;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalIncludeDirectories>include</AdditionalIncludeDirectories>
@@ -128,7 +128,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_LOGME_STATIC_BUILD_;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_LOGME_STATIC_BUILD_;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalIncludeDirectories>include</AdditionalIncludeDirectories>
@@ -145,7 +145,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_LOGME_STATIC_BUILD_;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_LOGME_STATIC_BUILD_;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalIncludeDirectories>include</AdditionalIncludeDirectories>
@@ -189,6 +189,8 @@
     <ClInclude Include="source\Config\Helper.h" />
     <ClInclude Include="source\Control\CommandDescriptor.h" />
     <ClInclude Include="source\Control\CommandRegistrar.h" />
+    <ClInclude Include="source\Control\Json.h" />
+    <ClInclude Include="source\File\CleanOldest.h" />
     <ClInclude Include="source\StringHelpers.h" />
     <ClInclude Include="source\Time\utils.h" />
   </ItemGroup>
@@ -200,36 +202,57 @@
     <ClCompile Include="source\Backend\DebugBackend.cpp" />
     <ClCompile Include="source\Backend\FileBackend.cpp" />
     <ClCompile Include="source\Backend\FileBackendConfig.cpp" />
+    <ClCompile Include="source\Backend\SharedFileBackend.cpp" />
+    <ClCompile Include="source\Backend\SharedFileBackendConfig.cpp" />
     <ClCompile Include="source\BindAllStat.cpp" />
     <ClCompile Include="source\Channel.cpp" />
     <ClCompile Include="source\Colorizer.cpp" />
+    <ClCompile Include="source\Config\ByteSizeValue.cpp" />
     <ClCompile Include="source\Config\Config.cpp" />
     <ClCompile Include="source\Config\Helper.cpp" />
     <ClCompile Include="source\Config\ParseChannel.cpp" />
     <ClCompile Include="source\Config\ParseControl.cpp" />
     <ClCompile Include="source\Config\ParseFlags.cpp" />
+    <ClCompile Include="source\Config\ParseHomeDirectory.cpp" />
+    <ClCompile Include="source\Config\ParseSubsystem.cpp" />
+    <ClCompile Include="source\Config\TimeIntervalValue.cpp" />
     <ClCompile Include="source\Context.cpp" />
     <ClCompile Include="source\Control\CommandDescriptor.cpp" />
     <ClCompile Include="source\Control\CommandRegistrar.cpp" />
-    <ClCompile Include="source\Control\Command\Help.cpp" />
-    <ClCompile Include="source\Control\Command\List.cpp" />
+    <ClCompile Include="source\Control\Command\CmdBackend.cpp" />
+    <ClCompile Include="source\Control\Command\CmdChannel.cpp" />
+    <ClCompile Include="source\Control\Command\CmdFlags.cpp" />
+    <ClCompile Include="source\Control\Command\CmdHelp.cpp" />
+    <ClCompile Include="source\Control\Command\CmdLevel.cpp" />
+    <ClCompile Include="source\Control\Command\CmdList.cpp" />
+    <ClCompile Include="source\Control\Command\CmdSubsystem.cpp" />
     <ClCompile Include="source\Control\Control.cpp" />
+    <ClCompile Include="source\Control\Json.cpp" />
     <ClCompile Include="source\Convert.cpp" />
+    <ClCompile Include="source\DayChangeDetector.cpp" />
     <ClCompile Include="source\Environment.cpp" />
+    <ClCompile Include="source\File\CleanOldest.cpp" />
+    <ClCompile Include="source\File\DirectorySizeWatchdog.cpp" />
     <ClCompile Include="source\File\exe_path.cpp" />
     <ClCompile Include="source\File\FileManager.cpp" />
     <ClCompile Include="source\File\FileManagerFactory.cpp" />
     <ClCompile Include="source\File\file_io.cpp" />
+    <ClCompile Include="source\Json\Loader.cpp" />
     <ClCompile Include="source\Logger.cpp" />
     <ClCompile Include="source\Module.cpp" />
+    <ClCompile Include="source\Obfuscate.cpp" />
     <ClCompile Include="source\OutputFlags.cpp" />
     <ClCompile Include="source\Override.cpp" />
     <ClCompile Include="source\Printer.cpp" />
     <ClCompile Include="source\Procedure.cpp" />
     <ClCompile Include="source\SafeID.cpp" />
+    <ClCompile Include="source\SID.cpp" />
+    <ClCompile Include="source\Ssl\Ssl.cpp" />
     <ClCompile Include="source\Stream.cpp" />
     <ClCompile Include="source\Template.cpp" />
     <ClCompile Include="source\ThreadChannel.cpp" />
+    <ClCompile Include="source\ThreadName.cpp" />
+    <ClCompile Include="source\ThreadOverride.cpp" />
     <ClCompile Include="source\Time\datetime_common.cpp" />
     <ClCompile Include="source\Time\datetime_lx.cpp" />
     <ClCompile Include="source\Time\datetime_win.cpp" />

@@ -694,6 +694,9 @@ void Logger::ControlHandler(int socket)
 
     if (!response.empty())
     {
+      if (response.back() != '\n')
+        response.push_back('\n');
+
       if (sslCtx)
         n = sslCtx->Write(ssl, response.c_str(), (int)response.size());
       else

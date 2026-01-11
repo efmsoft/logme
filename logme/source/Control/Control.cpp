@@ -697,6 +697,7 @@ void Logger::ControlHandler(int socket)
       if (sslCtx)
         n = sslCtx->Write(ssl, response.c_str(), (int)response.size());
       else
+      {
         int flags = 0;
 #ifdef MSG_NOSIGNAL
         flags |= MSG_NOSIGNAL;
@@ -707,6 +708,7 @@ void Logger::ControlHandler(int socket)
           , (int)response.size()
           , flags
         );
+      }
 
       if (sslCtx)
       {

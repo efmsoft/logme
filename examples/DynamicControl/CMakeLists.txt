@@ -9,7 +9,10 @@ set_target_properties(DynamicControl PROPERTIES
 )
 
 target_link_libraries(DynamicControl PRIVATE logme)
-target_compile_definitions(DynamicControl PRIVATE _LOGME_STATIC_BUILD_)
+target_compile_definitions(DynamicControl PRIVATE
+  LOGME_INRELEASE
+  _LOGME_STATIC_BUILD_
+)
 
 if (WIN32)
   target_link_libraries(DynamicControl PRIVATE Ws2_32)
@@ -24,3 +27,8 @@ elseif(UNIX AND NOT APPLE)
     "-Wl,--whole-archive" "$<TARGET_LINKER_FILE:logme>" "-Wl,--no-whole-archive"
   )
 endif()
+
+set_target_properties(DynamicControl PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Examples"
+)
+

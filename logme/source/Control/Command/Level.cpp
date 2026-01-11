@@ -99,7 +99,7 @@ bool Logger::CommandLevel(Logme::StringArray& arr, std::string& response)
 
   if (!GetChannelFromArgs(arr, index, ch, error))
   {
-    response = error;
+    response = "error: " + error;
     return true;
   }
 
@@ -112,7 +112,7 @@ bool Logger::CommandLevel(Logme::StringArray& arr, std::string& response)
   int level = 0;
   if (!FindNamed(LevelValues, arr[index], level))
   {
-    response = "invalid level: " + arr[index];
+    response = "error: invalid level: " + arr[index];
     return true;
   }
 

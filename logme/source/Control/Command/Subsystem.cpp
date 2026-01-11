@@ -59,6 +59,12 @@ bool Logger::CommandSubsystem(Logme::StringArray& arr, std::string& response)
 
   if (arr.size() == 1 || (arr.size() == 2 && (arr[1] == "--block-reported" || arr[1] == "--unblock-reported")))
   {
+    if (Instance->Subsystems.empty())
+    {
+      response += "Reported subsystems: none\n";
+      return true;
+    }
+
     response += "Reported subsystems:\n";
     for (auto id : Instance->Subsystems)
       response += "  " + SidToString(id) + "\n";
@@ -71,13 +77,13 @@ bool Logger::CommandSubsystem(Logme::StringArray& arr, std::string& response)
     auto sid = SID::Build(name);
     if (sid.Name == 0)
     {
-      response += "invalid subsystem name";
+      response += "error: invalid subsystem name";
       return true;
     }
 
     if (HasSubsystem(Instance->Subsystems, sid.Name))
     {
-      response += "already reported: " + name;
+      response += "error: already reported: " + name;
       return true;
     }
 
@@ -92,13 +98,13 @@ bool Logger::CommandSubsystem(Logme::StringArray& arr, std::string& response)
     auto sid = SID::Build(name);
     if (sid.Name == 0)
     {
-      response += "invalid subsystem name";
+      response += "error: invalid subsystem name";
       return true;
     }
 
     if (!HasSubsystem(Instance->Subsystems, sid.Name))
     {
-      response += "no such reported subsystem: " + name;
+      response += "error: no such reported subsystem: " + name;
       return true;
     }
 
@@ -114,7 +120,7 @@ bool Logger::CommandSubsystem(Logme::StringArray& arr, std::string& response)
     auto sid = SID::Build(name);
     if (sid.Name == 0)
     {
-      response += "invalid subsystem name";
+      response += "error: invalid subsystem name";
       return true;
     }
 
@@ -122,6 +128,6 @@ bool Logger::CommandSubsystem(Logme::StringArray& arr, std::string& response)
     return true;
   }
 
-  response += "invalid arguments";
+  response += "error: invalid arguments";
   return true;
 }

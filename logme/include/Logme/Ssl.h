@@ -22,6 +22,15 @@ namespace Logme
     , std::string& error
   );
 
+
+
+// Generates a self-signed certificate and a private key in PEM format.
+// Intended for testing only.
+LOGMELNK bool GenerateSelfSignedCertificateFiles(
+  const char* certFilename
+  , const char* keyFilename
+  , std::string& error
+);
   // Frees objects returned from LoadSslCertificateFromFile / LoadSslPrivateKeyFromFile.
   // It is safe to call these functions with nullptr.
   LOGMELNK void FreeSslCertificate(X509* cert);

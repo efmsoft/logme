@@ -169,7 +169,7 @@ bool Logger::CommandFlags(Logme::StringArray& arr, std::string& response)
 
   if (!GetChannelFromArgs(arr, index, ch, error))
   {
-    response = error;
+    response = "error: " + error;
     return true;
   }
 
@@ -211,7 +211,7 @@ bool Logger::CommandFlags(Logme::StringArray& arr, std::string& response)
       {
         if (!ParseBool(value, b))
         {
-          response = "invalid value for " + name + ": " + value;
+          response = "error: invalid value for " + name + ": " + value;
           return false;
         }
       }
@@ -229,7 +229,7 @@ bool Logger::CommandFlags(Logme::StringArray& arr, std::string& response)
       }
       else if (!FindNamed(TimeStampValues, value, v) && !ParseInt(value, v))
       {
-        response = "invalid value for timestamp: " + value;
+        response = "error: invalid value for timestamp: " + value;
         return true;
       }
       f.Timestamp = v;
@@ -246,7 +246,7 @@ bool Logger::CommandFlags(Logme::StringArray& arr, std::string& response)
       }
       else if (!FindNamed(LocationValues, value, v) && !ParseInt(value, v))
       {
-        response = "invalid value for location: " + value;
+        response = "error: invalid value for location: " + value;
         return true;
       }
       f.Location = v;
@@ -263,7 +263,7 @@ bool Logger::CommandFlags(Logme::StringArray& arr, std::string& response)
       }
       else if (!FindNamed(ConsoleValues, value, v) && !ParseInt(value, v))
       {
-        response = "invalid value for console: " + value;
+        response = "error: invalid value for console: " + value;
         return true;
       }
       f.Console = v;
@@ -380,7 +380,7 @@ bool Logger::CommandFlags(Logme::StringArray& arr, std::string& response)
       continue;
     }
 
-    response = "unknown flag: " + name;
+    response = "error: unknown flag: " + name;
     return true;
   }
 

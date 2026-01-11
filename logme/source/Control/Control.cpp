@@ -1,4 +1,8 @@
 #include <algorithm>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <vector>
 
 #ifdef _WIN32
 #include <io.h> 
@@ -709,34 +713,393 @@ void Logger::SetControlExtension(Logme::TControlHandler handler)
 
 std::string Logger::Control(const std::string& command)
 {
+  auto SplitRemainderAfterWords = [](const std::string& s, int words) -> std::string
+  {
+    int w = 0;
+    bool inWord = false;
+
+    for (size_t i = 0; i < s.size(); ++i)
+    {
+      unsigned char ch = (unsigned char)s[i];
+      bool ws = (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n');
+
+      if (!ws)
+      {
+        if (!inWord)
+        {
+          inWord = true;
+          ++w;
+          if (w == words + 1)
+            return s.substr(i);
+        }
+      }
+      else
+      {
+        inWord = false;
+      }
+    }
+
+    return std::string();
+  };
+
+  auto JsonEscape = [](const std::string& s) -> std::string
+  {
+    std::string out;
+    out.reserve(s.size() + 16);
+
+    for (unsigned char ch : s)
+    {
+      switch (ch)
+      {
+        case '\\': out += "\\\\"; break;
+        case '"': out += "\\\""; break;
+        case '\b': out += "\\b"; break;
+        case '\f': out += "\\f"; break;
+        case '\n': out += "\\n"; break;
+        case '\r': out += "\\r"; break;
+        case '\t': out += "\\t"; break;
+        default:
+          if (ch < 0x20)
+          {
+            char b[7];
+            std::snprintf(b, sizeof(b), "\\u%04x", (unsigned int)ch);
+            out += b;
+          }
+          else
+          {
+            out.push_back((char)ch);
+          }
+          break;
+      }
+    }
+
+    return out;
+  };
+
+  auto ControlInternal = [&](const std::string& cmd) -> std::string
+  {
+    std::string k(cmd);
+    std::transform(k.begin(), k.end(), k.begin(), ::tolower);
+
+    StringArray items;
+    size_t n = WordSplit(k, items);
+
+    std::string response;
+    if (ControlExtension)
+    {
+      if (ControlExtension(cmd, response))
+      {
+        if (!n || items[0] != "help")
+          return response;
+      }
+    }
+
+    if (n)
+    {
+      const std::string& c = items[0];
+      for (CommandDescriptor* d = CommandDescriptor::Head; d; d = d->Next)
+      {
+        if (d->Command != c)
+          continue;
+
+        if (d->Handler(items, response))
+          return response;
+      }
+    }
+
+    return std::string("error: unsupported command: ") + (n ? items[0] : "<empty>");
+  };
+
   std::string k(command);
   std::transform(k.begin(), k.end(), k.begin(), ::tolower);
 
   StringArray items;
   size_t n = WordSplit(k, items);
 
-  std::string response;
-  if (ControlExtension)
+  if (n >= 2 && items[0] == "format")
   {
-    if (ControlExtension(command, response))
+    if (items[1] == "json")
     {
-      if (!n || items[0] != "help")
-        return response;
+      std::string remainder = SplitRemainderAfterWords(command, 2);
+      std::string text = ControlInternal(remainder);
+      bool ok = !(text.rfind("error:", 0) == 0);
+
+      std::string remainderLower = remainder;
+      std::transform(remainderLower.begin(), remainderLower.end(), remainderLower.begin(), ::tolower);
+
+      StringArray remainderItems;
+      (void)WordSplit(remainderLower, remainderItems);
+
+      auto FirstLine = [&](const std::string& s) -> std::string
+      {
+        size_t e = s.find('\n');
+        if (e == std::string::npos)
+          return s;
+        return s.substr(0, e);
+      };
+
+      auto Trim = [&](std::string& s)
+      {
+        while (!s.empty() && (s[0] == ' ' || s[0] == '\t' || s[0] == '\r' || s[0] == '\n'))
+          s.erase(0, 1);
+        while (!s.empty() && (s.back() == ' ' || s.back() == '\t' || s.back() == '\r' || s.back() == '\n'))
+          s.pop_back();
+      };
+
+      auto SplitLines = [&](const std::string& s, std::vector<std::string>& out)
+      {
+        out.clear();
+        size_t p = 0;
+        for (;;)
+        {
+          size_t e = s.find('\n', p);
+          std::string line;
+          if (e == std::string::npos)
+            line = s.substr(p);
+          else
+            line = s.substr(p, e - p);
+
+          if (!line.empty() && line.back() == '\r')
+            line.pop_back();
+
+          out.push_back(line);
+
+          if (e == std::string::npos)
+            break;
+          p = e + 1;
+        }
+      };
+
+      auto JsonBoolField = [&](std::string& out, const char* name, bool value, bool& first)
+      {
+        if (!first)
+          out += ',';
+        first = false;
+        out += '"';
+        out += name;
+        out += "\":";
+        out += value ? "true" : "false";
+      };
+
+      auto JsonStringField = [&](std::string& out, const char* name, const std::string& value, bool& first)
+      {
+        if (!first)
+          out += ',';
+        first = false;
+        out += '"';
+        out += name;
+        out += "\":\"";
+        out += JsonEscape(value);
+        out += '"';
+      };
+
+      auto JsonIntField = [&](std::string& out, const char* name, uint64_t value, bool& first)
+      {
+        if (!first)
+          out += ',';
+        first = false;
+        out += '"';
+        out += name;
+        out += "\":";
+        out += std::to_string(value);
+      };
+
+      auto JsonStringArrayField = [&](std::string& out, const char* name, const std::vector<std::string>& values, bool& first)
+      {
+        if (!first)
+          out += ',';
+        first = false;
+        out += '"';
+        out += name;
+        out += "\":[";
+        for (size_t i = 0; i < values.size(); ++i)
+        {
+          if (i)
+            out += ',';
+          out += '"';
+          out += JsonEscape(values[i]);
+          out += '"';
+        }
+        out += ']';
+      };
+
+      std::string data;
+      data.reserve(text.size() + 128);
+      data += "{";
+      bool dataFirst = true;
+
+      if (ok && !remainderItems.empty())
+      {
+        const std::string& cmdName = remainderItems[0];
+
+        if (cmdName == "subsystem")
+        {
+          std::vector<std::string> lines;
+          SplitLines(text, lines);
+
+          bool hasBlock = false;
+          bool block = false;
+          bool hasReported = false;
+          std::vector<std::string> subs;
+
+          for (size_t i = 0; i < lines.size(); ++i)
+          {
+            std::string line = lines[i];
+            Trim(line);
+
+            if (line.rfind("BlockReportedSubsystems:", 0) == 0)
+            {
+              std::string v = line.substr(std::strlen("BlockReportedSubsystems:"));
+              Trim(v);
+              hasBlock = true;
+              block = (v == "true");
+              continue;
+            }
+
+            if (line == "Reported subsystems: none")
+            {
+              hasReported = true;
+              subs.clear();
+              continue;
+            }
+
+            if (line == "Reported subsystems:")
+            {
+              hasReported = true;
+              subs.clear();
+              for (size_t j = i + 1; j < lines.size(); ++j)
+              {
+                std::string s = lines[j];
+                Trim(s);
+                if (s.empty())
+                  continue;
+                subs.push_back(s);
+              }
+              break;
+            }
+          }
+
+          if (hasBlock)
+            JsonBoolField(data, "blockReportedSubsystems", block, dataFirst);
+          if (hasReported)
+            JsonStringArrayField(data, "reportedSubsystems", subs, dataFirst);
+        }
+        else if (cmdName == "list")
+        {
+          std::vector<std::string> lines;
+          SplitLines(text, lines);
+
+          std::vector<std::string> channels;
+          for (auto& l : lines)
+          {
+            std::string line = l;
+            Trim(line);
+            if (line.empty())
+              continue;
+            if (line == "<default>")
+              channels.push_back("");
+            else
+              channels.push_back(line);
+          }
+
+          JsonStringArrayField(data, "channels", channels, dataFirst);
+        }
+        else if (cmdName == "flags")
+        {
+          std::string line = FirstLine(text);
+          Trim(line);
+
+          if (line.rfind("Flags:", 0) == 0)
+          {
+            std::string rest = line.substr(std::strlen("Flags:"));
+            Trim(rest);
+
+            size_t sp = rest.find(' ');
+            std::string hex = rest;
+            std::string names;
+            if (sp != std::string::npos)
+            {
+              hex = rest.substr(0, sp);
+              names = rest.substr(sp + 1);
+            }
+
+            Trim(hex);
+            Trim(names);
+
+            uint64_t value = 0;
+            if (!hex.empty())
+              value = (uint64_t)std::strtoull(hex.c_str(), nullptr, 0);
+
+            std::vector<std::string> arr;
+            if (!names.empty())
+            {
+              StringArray tokens;
+              WordSplit(names, tokens);
+              for (auto& t : tokens)
+              {
+                if (!t.empty())
+                  arr.push_back(t);
+              }
+            }
+
+            JsonIntField(data, "value", value, dataFirst);
+            JsonStringArrayField(data, "names", arr, dataFirst);
+          }
+        }
+        else if (cmdName == "level")
+        {
+          std::string line = FirstLine(text);
+          Trim(line);
+          if (line.rfind("Level:", 0) == 0)
+          {
+            std::string v = line.substr(std::strlen("Level:"));
+            Trim(v);
+            if (!v.empty())
+              JsonStringField(data, "level", v, dataFirst);
+          }
+        }
+      }
+
+      JsonStringField(data, "text", text, dataFirst);
+      data += "}";
+      std::string json;
+
+      json.reserve(text.size() + 64);
+      json += "{";
+      json += "\"ok\":";
+      json += ok ? "true" : "false";
+      json += ",\"error\":";
+
+      if (ok)
+      {
+        json += "null";
+      }
+      else
+      {
+        std::string err = text;
+        if (err.rfind("error:", 0) == 0)
+        {
+          err.erase(0, 6);
+          while (!err.empty() && (err[0] == ' ' || err[0] == '\t'))
+            err.erase(0, 1);
+        }
+        json += "\"" + JsonEscape(err) + "\"";
+      }
+
+      json += ",\"data\":";
+      json += data;
+      json += "}";
+      return json;
     }
+
+    if (items[1] == "text" || items[1] == "plain" || items[1] == "plain/text")
+    {
+      std::string remainder = SplitRemainderAfterWords(command, 2);
+      return ControlInternal(remainder);
+    }
+
+    return "error: invalid format";
   }
 
-  if (n)
-  {
-    const std::string& c = items[0];
-    for (CommandDescriptor* d = CommandDescriptor::Head; d; d = d->Next)
-    {
-      if (d->Command != c)
-        continue;
-
-      if (d->Handler(items, response))
-        return response;
-    }
-  }
-
-  return std::string("unsupported command: ") + (n ? items[0] : "<empty>");
+  return ControlInternal(command);
 }

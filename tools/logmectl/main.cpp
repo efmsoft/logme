@@ -373,12 +373,41 @@ static bool SetRecvTimeout(
 }
 
 
+static bool ExtractJsonOk(const std::string& s, bool& ok)
+{
+  size_t p = s.find("\"ok\"");
+  if (p == std::string::npos)
+    return false;
+
+  p = s.find(':', p);
+  if (p == std::string::npos)
+    return false;
+
+  ++p;
+  while (p < s.size() && (s[p] == ' ' || s[p] == '\t' || s[p] == '\r' || s[p] == '\n'))
+    ++p;
+
+  if (s.compare(p, 4, "true") == 0)
+  {
+    ok = true;
+    return true;
+  }
+
+  if (s.compare(p, 5, "false") == 0)
+  {
+    ok = false;
+    return true;
+  }
+
+  return false;
+}
+
 static void PrintUsage()
 {
   std::cout
     << "Logme control\n\n"
     << "Usage:\n"
-    << "  logmectl -p <port> [-i <ip>] [--ssl] <command...>\n\n"
+    << "  logmectl -p <port> [-i <ip>] [--ssl] [--format text|json] <command...>\n\n"
     << "Run with \"help\" to see available commands.\n";
 }
 
@@ -388,12 +417,14 @@ static bool ParseArgs(
   , std::string& ip
   , int& port
   , bool& useSsl
+  , std::string& format
   , std::string& command
 )
 {
   ip = "127.0.0.1";
   port = 0;
   useSsl = false;
+  format = "text";
 
   std::vector<std::string> cmd;
 
@@ -424,6 +455,20 @@ static bool ParseArgs(
       continue;
     }
 
+    if (strcmp(a, "--format") == 0 && i + 1 < argc)
+    {
+      format = argv[++i];
+      if (format != "text" && format != "json")
+        return false;
+      continue;
+    }
+
+    if (strcmp(a, "--format") == 0 && i + 1 < argc)
+    {
+      format = argv[++i];
+      continue;
+    }
+
     cmd.emplace_back(argv[i]);
   }
 
@@ -443,6 +488,12 @@ static bool ParseArgs(
       command += cmd[i];
     }
   }
+
+  if (format != "text" && format != "json")
+    return false;
+
+  if (format == "json")
+    command = "format json " + command;
 
   return true;
 }
@@ -526,12 +577,19 @@ int main(int argc, char** argv)
   std::string ip;
   int port = 0;
   bool useSsl = false;
+  std::string format;
   std::string cmd;
 
-  if (!ParseArgs(argc, argv, ip, port, useSsl, cmd))
+  if (!ParseArgs(argc, argv, ip, port, useSsl, format, cmd))
   {
     PrintUsage();
     return 2;
+  }
+
+  if (format == "json")
+  {
+    if (cmd.rfind("format ", 0) != 0)
+      cmd = "format json " + cmd;
   }
 
   SOCKET s = INVALID_SOCKET;
@@ -640,6 +698,19 @@ int main(int argc, char** argv)
 #ifdef _WIN32
   WSACleanup();
 #endif
+
+  if (format == "json")
+  {
+    bool ok = false;
+    if (!ExtractJsonOk(response, ok))
+    {
+      std::cerr << "ERROR: invalid json response\n";
+      return 1;
+    }
+
+    if (!ok)
+      return 1;
+  }
 
   return 0;
 }

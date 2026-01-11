@@ -33,7 +33,7 @@ bool Logger::CommandChannel(Logme::StringArray& arr, std::string& response)
   {
     if (arr.size() < 3)
     {
-      response = "missing channel name";
+      response = "error: missing channel name";
       return true;
     }
 
@@ -47,7 +47,7 @@ bool Logger::CommandChannel(Logme::StringArray& arr, std::string& response)
       auto ch = Instance->GetExistingChannel(ID{name.c_str()});
       if (ch == nullptr)
       {
-        response = "no such channel: " + name;
+        response = "error: no such channel: " + name;
         return true;
       }
 
@@ -61,7 +61,7 @@ bool Logger::CommandChannel(Logme::StringArray& arr, std::string& response)
       auto existing = Instance->GetExistingChannel(ID{name.c_str()});
       if (existing != nullptr)
       {
-        response = "channel already exists: " + name;
+        response = "error: channel already exists: " + name;
         return true;
       }
 
@@ -74,27 +74,27 @@ bool Logger::CommandChannel(Logme::StringArray& arr, std::string& response)
     {
       if (name.empty())
       {
-        response = "invalid channel name";
+        response = "error: invalid channel name";
         return true;
       }
 
       if (name == "<default>")
       {
-        response = "cannot delete default channel";
+        response = "error: cannot delete default channel";
         return true;
       }
 
       auto existing = Instance->GetExistingChannel(ID{name.c_str()});
       if (existing == nullptr)
       {
-        response = "no such channel: " + name;
+        response = "error: no such channel: " + name;
         return true;
       }
 
       // Default channel is represented by empty name.
       if (existing->GetName().empty())
       {
-        response = "cannot delete default channel";
+        response = "error: cannot delete default channel";
         return true;
       }
 
@@ -103,7 +103,7 @@ bool Logger::CommandChannel(Logme::StringArray& arr, std::string& response)
       return true;
     }
 
-    response = "unknown option: " + opt;
+    response = "error: unknown option: " + opt;
     return true;
   }
 
@@ -122,7 +122,7 @@ bool Logger::CommandChannel(Logme::StringArray& arr, std::string& response)
 
   if (ch == nullptr)
   {
-    response = "no such channel: " + name;
+    response = "error: no such channel: " + name;
     return true;
   }
 

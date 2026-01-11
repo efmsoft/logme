@@ -107,13 +107,13 @@ bool Logger::CommandBackend(Logme::StringArray& arr, std::string& response)
 
   if (!GetChannelFromArgs(arr, index, ch, error))
   {
-    response = error;
+    response = "error: " + error;
     return true;
   }
 
   if (index + 2 > arr.size())
   {
-    response = "missing operation";
+    response = "error: missing operation";
     return true;
   }
 
@@ -123,19 +123,19 @@ bool Logger::CommandBackend(Logme::StringArray& arr, std::string& response)
 
   if (op != "--add" && op != "--delete")
   {
-    response = "unknown option: " + op;
+    response = "error: unknown option: " + op;
     return true;
   }
 
   if (typeInput.empty())
   {
-    response = "invalid backend type";
+    response = "error: invalid backend type";
     return true;
   }
 
   if (type.empty())
   {
-    response = "unknown backend type: " + typeInput;
+    response = "error: unknown backend type: " + typeInput;
     return true;
   }
 
@@ -144,14 +144,14 @@ bool Logger::CommandBackend(Logme::StringArray& arr, std::string& response)
     int ctx = 0;
     if (ch->FindFirstBackend(type.c_str(), ctx))
     {
-      response = "backend already exists: " + typeInput;
+      response = "error: backend already exists: " + typeInput;
       return true;
     }
 
     auto backend = Backend::Create(type.c_str(), ch);
     if (!backend)
     {
-      response = "unknown backend type: " + typeInput;
+      response = "error: unknown backend type: " + typeInput;
       return true;
     }
 
@@ -164,13 +164,13 @@ bool Logger::CommandBackend(Logme::StringArray& arr, std::string& response)
   auto backend = ch->FindFirstBackend(type.c_str(), ctx);
   if (!backend)
   {
-    response = "no such backend: " + typeInput;
+    response = "error: no such backend: " + typeInput;
     return true;
   }
 
   if (!ch->RemoveBackend(backend))
   {
-    response = "failed to remove backend: " + typeInput;
+    response = "error: failed to remove backend: " + typeInput;
     return true;
   }
 

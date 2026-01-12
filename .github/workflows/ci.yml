@@ -108,7 +108,7 @@ jobs:
           ctest --test-dir "build/macos/${{ matrix.os }}/${{ matrix.config }}/stdformat-${{ matrix.stdformat }}" --output-on-failure
 
   windows:
-    name: Windows / MSBuild / ${{ matrix.config }} / stdformat-${{ matrix.stdformat }}
+    name: Windows / msvc / ${{ matrix.config }} / stdformat-${{ matrix.stdformat }}
     runs-on: windows-latest
     strategy:
       fail-fast: false
@@ -118,6 +118,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - uses: seanmiddleditch/gha-setup-ninja@v5
 
       - name: Setup MSVC dev cmd
         uses: ilammy/msvc-dev-cmd@v1
@@ -129,9 +130,11 @@ jobs:
           if ("${{ matrix.stdformat }}" -eq "off") { $extra = "-DLOGME_DISABLE_STD_FORMAT" }
 
           cmake -S . -B "build/windows/msvc/${{ matrix.config }}/stdformat-${{ matrix.stdformat }}" `
-            -G "Visual Studio 17 2022" `
-            -A x64 `
+            -G Ninja `
+            -DCMAKE_BUILD_TYPE=${{ matrix.config }} `
             -DCMAKE_CXX_STANDARD=20 `
+            -DCMAKE_CXX_COMPILER=cl `
+            -DCMAKE_C_COMPILER=cl `
             -DCMAKE_CXX_FLAGS="$extra"
 
       - name: Build
@@ -142,4 +145,26 @@ jobs:
       - name: Test
         shell: pwsh
         run: |
-          ctest --test-dir "build/windows/msvc/${{ matrix.config }}/stdformat-${{ matrix.stdformat }}" -C ${{ matrix.config }} --output-on-failure
+          ctest --test-dir "build/windows/msvc/${{ matrix.config }}/stdformat-${{ matrix.stdformat }}" --output-on-failure
+
+  windows_msbuild_sln:
+    name: Windows / MSBuild (repo .sln) / ${{ matrix.config }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [ Debug, Release ]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup MSVC dev cmd
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Build solution (repo logme.sln)
+        shell: pwsh
+        run: |
+          msbuild .\logme.sln `
+            /m `
+            /p:Configuration=${{ matrix.config }} `
+            /p:Platform=x64

@@ -1,6 +1,7 @@
 #include <Logme/Channel.h>
 #include <Logme/Context.h>
 #include <Logme/Time/datetime.h>
+#include <Logme/Utils.h>
 #include "StringHelpers.h"
 
 #include <cassert>

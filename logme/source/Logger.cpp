@@ -21,7 +21,7 @@ LoggerPtr Logme::Instance = std::make_shared<Logger>();
 bool Logme::ShutdownCalled = false;
 
 Logger::Logger()
-  : HomeDirectoryWatchDog(HomeDirectory, std::bind_front(&Logger::TestFileInUse, this))
+  : HomeDirectoryWatchDog(HomeDirectory, std::bind(&Logger::TestFileInUse, this, std::placeholders::_1))
   , BlockReportedSubsystems(true)
   , IDGenerator(1)
   , ControlSocket(-1)

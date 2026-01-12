@@ -3,6 +3,9 @@
 
 #if defined(__GNUC__) && !defined(__DJGPP__)
 #include <pthread.h> 
+#if defined(__linux__)
+#include <sys/syscall.h>
+#endif
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -109,7 +112,23 @@ uint32_t Logme::GetCurrentProcessId()
 
 uint64_t Logme::GetCurrentThreadId()
 {
-  static thread_local uint64_t tid = gettid();
+  static thread_local uint64_t tid = 0;
+  if (tid != 0)
+  {
+    return tid;
+  }
+
+#if defined(__APPLE__)
+  uint64_t appleTid = 0;
+  pthread_threadid_np(nullptr, &appleTid);
+  tid = appleTid;
+#elif defined(__linux__)
+  tid = (uint64_t)syscall(SYS_gettid);
+#else
+  // Fallback: use pthread id cast.
+  tid = (uint64_t)(uintptr_t)pthread_self();
+#endif
+
   return tid;
 }   
 

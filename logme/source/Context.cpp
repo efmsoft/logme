@@ -21,7 +21,7 @@ using namespace Logme;
 #define _stricmp strcasecmp
 #endif
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__APPLE__)
 #  define LLX "%llX"
 #else
 #  define LLX "%lX"
@@ -213,10 +213,8 @@ void Context::InitThreadProcessID(ChannelPtr ch, OutputFlags flags)
     auto thread = GetCurrentThreadId();
     static auto process = GetCurrentProcessId();
 #else
-    static thread_local uint64_t tid = gettid();
-    static uint64_t pid = getpid();
-
-    auto thread = tid;
+    auto thread = GetCurrentThreadId();
+    static uint64_t pid = (uint64_t)GetCurrentProcessId();
     auto process = pid;
 #endif
 
@@ -224,7 +222,7 @@ void Context::InitThreadProcessID(ChannelPtr ch, OutputFlags flags)
     *p++ = '[';
 
     if (flags.ProcessID)
-      p += sprintf(p, "%lX", process);
+      p += sprintf(p, LLX, (uint64_t)process);
 
     if (flags.ThreadID)
     {

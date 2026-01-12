@@ -22,7 +22,7 @@ It is designed for both high-load servers and simple applications, providing sel
 - **Retention rules**: limit the size of individual log files and the total disk usage across all logs.
 - **Log file obfuscation**: optional obfuscation of log data written to files.
 - **Multiple APIs**: C-style macros, C++ stream-style logging, and optional `std::format`-based formatting.
-- **Cross-platform**: Windows and Linux support.
+- **Cross-platform**: Windows, Linux and macOS support.
 
 ---
 

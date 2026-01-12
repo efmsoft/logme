@@ -3,8 +3,12 @@ file(GLOB_RECURSE HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.h")
 add_library(logme STATIC ${SOURCES} ${HEADERS}) 
 
 
-target_include_directories(logme PRIVATE 
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
+target_include_directories(logme PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
+target_include_directories(logme PRIVATE
   ${ALLSTAT_INCLUDE_DIR}
 )
 

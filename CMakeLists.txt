@@ -62,7 +62,6 @@ if (LOGME_DISABLE_STD_FORMAT)
   add_compile_definitions(LOGME_DISABLE_STD_FORMAT)
 endif()
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/logme/include)
 
 if(LOGME_BUILD_STATIC)
  add_subdirectory(logme ../out/Static)
@@ -70,6 +69,58 @@ endif()
 
 if(LOGME_BUILD_DYNAMIC)
   add_subdirectory(dynamic ../out/Dynamic)
+endif()
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
+# Install headers
+install(
+  DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/logme/include/"
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+)
+
+# Install libraries (whatever was built)
+set(_logme_install_targets "")
+if(TARGET logme)
+  list(APPEND _logme_install_targets logme)
+endif()
+if(TARGET logmed)
+  list(APPEND _logme_install_targets logmed)
+endif()
+
+if(_logme_install_targets)
+  install(
+    TARGETS ${_logme_install_targets}
+    EXPORT logmeTargets
+    ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+    LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+    RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  )
+
+  install(
+    EXPORT logmeTargets
+    NAMESPACE logme::
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/logme"
+  )
+
+  configure_package_config_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/logmeConfig.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/logmeConfig.cmake"
+    INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/logme"
+  )
+
+  write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/logmeConfigVersion.cmake"
+    VERSION "${PROJECT_VERSION}"
+    COMPATIBILITY SameMajorVersion
+  )
+
+  install(
+    FILES
+      "${CMAKE_CURRENT_BINARY_DIR}/logmeConfig.cmake"
+      "${CMAKE_CURRENT_BINARY_DIR}/logmeConfigVersion.cmake"
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/logme"
+  )
 endif()
 
 if(LOGME_BUILD_EXAMPLES)

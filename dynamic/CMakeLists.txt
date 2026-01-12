@@ -7,8 +7,12 @@ file(GLOB_RECURSE HEADERS ${SRCROOT}/*.h)
 
 add_library(logmed SHARED ${SOURCES} ${HEADERS} ${LOGME_VERSION_RC})
 
-target_include_directories(logmed PRIVATE 
-  ${LOGME_INCLUDE_DIR}
+target_include_directories(logmed PUBLIC
+  $<BUILD_INTERFACE:${SRCROOT}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
+target_include_directories(logmed PRIVATE
   ${ALLSTAT_INCLUDE_DIR}
 )
 

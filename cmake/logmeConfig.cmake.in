@@ -1,0 +1,11 @@
+@PACKAGE_INIT@
+
+include("${CMAKE_CURRENT_LIST_DIR}/logmeTargets.cmake")
+
+# Stable consumer target:
+# - static build exports logme::logme
+# - shared build exports logme::logmed
+if(NOT TARGET logme::logme AND TARGET logme::logmed)
+  add_library(logme::logme INTERFACE IMPORTED)
+  target_link_libraries(logme::logme INTERFACE logme::logmed)
+endif()

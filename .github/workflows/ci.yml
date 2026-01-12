@@ -55,6 +55,58 @@ jobs:
           set -euxo pipefail
           ctest --test-dir "build/linux/${{ matrix.compiler }}/${{ matrix.config }}/stdformat-${{ matrix.stdformat }}" --output-on-failure
 
+  macos:
+    name: macOS / ${{ matrix.os }} / ${{ matrix.config }} / stdformat-${{ matrix.stdformat }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ macos-latest, macos-12 ]
+        config: [ Debug, Release ]
+        stdformat: [ on, off ]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: seanmiddleditch/gha-setup-ninja@v5
+
+      - name: Install deps
+        shell: bash
+        run: |
+          set -euxo pipefail
+          brew update
+          brew install googletest pkg-config
+
+      - name: Configure
+        shell: bash
+        run: |
+          set -euxo pipefail
+          extra_cxx_flags=""
+          if [ "${{ matrix.stdformat }}" = "off" ]; then
+            extra_cxx_flags="-DLOGME_DISABLE_STD_FORMAT"
+          fi
+
+          gtest_dir="$(brew --prefix googletest)/lib/cmake/GTest"
+
+          cmake -S . -B "build/macos/${{ matrix.os }}/${{ matrix.config }}/stdformat-${{ matrix.stdformat }}" \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
+            -DCMAKE_CXX_STANDARD=20 \
+            -DBUILD_TESTING=ON \
+            -DGTest_DIR="${gtest_dir}" \
+            -DCMAKE_CXX_FLAGS="${extra_cxx_flags}"
+
+      - name: Build
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cmake --build "build/macos/${{ matrix.os }}/${{ matrix.config }}/stdformat-${{ matrix.stdformat }}" --config ${{ matrix.config }}
+
+      - name: Test
+        shell: bash
+        run: |
+          set -euxo pipefail
+          ctest --test-dir "build/macos/${{ matrix.os }}/${{ matrix.config }}/stdformat-${{ matrix.stdformat }}" --output-on-failure
+
   windows:
     name: Windows / msvc / ${{ matrix.config }} / stdformat-${{ matrix.stdformat }}
     runs-on: windows-latest

@@ -7,6 +7,9 @@ file(GLOB_RECURSE HEADERS ${SRCROOT}/*.h)
 
 add_library(logmed SHARED ${SOURCES} ${HEADERS} ${LOGME_VERSION_RC})
 
+target_compile_definitions(logmed PRIVATE _LOGME_DLL_BUILD_)
+
+
 target_include_directories(logmed PUBLIC
   $<BUILD_INTERFACE:${SRCROOT}/include>
   $<INSTALL_INTERFACE:include>

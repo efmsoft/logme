@@ -70,6 +70,26 @@ endif()
 if(LOGME_BUILD_DYNAMIC)
   add_subdirectory(dynamic ../out/Dynamic)
 endif()
+
+# Select which library target examples/tools/tests should link against.
+# The selection is controlled by USE_LOGME_SHARED if it is defined by the root
+# project or by a parent that calls add_subdirectory().
+if(NOT TARGET logme::logme)
+  if(DEFINED USE_LOGME_SHARED AND USE_LOGME_SHARED)
+    if(TARGET logmed)
+      add_library(logme::logme ALIAS logmed)
+    else()
+      message(FATAL_ERROR "USE_LOGME_SHARED is ON, but target 'logmed' is not available. Enable LOGME_BUILD_DYNAMIC.")
+    endif()
+  else()
+    if(TARGET logme)
+      add_library(logme::logme ALIAS logme)
+    else()
+      message(FATAL_ERROR "Target 'logme' is not available. Enable LOGME_BUILD_STATIC or set USE_LOGME_SHARED=ON with LOGME_BUILD_DYNAMIC.")
+    endif()
+  endif()
+endif()
+
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 

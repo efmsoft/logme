@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Logme/Time/types.h>
+#include <Logme/Types.h>
 
 namespace Logme
 {
@@ -14,178 +15,178 @@ namespace Logme
     /**
     * Represents the number of milliseconds per second
     */
-    static TicksType const MillisecondsPerSecond = 1000;
+    LOGMELNK static TicksType const MillisecondsPerSecond = 1000;
 
     /**
     * Represents the number of seconds per minute
     */
-    static TicksType const SecondsPerMinute = 60;
+    LOGMELNK static TicksType const SecondsPerMinute = 60;
 
     /**
     * Represents the number of minutes per hour
     */
-    static TicksType const MinutesPerHour = 60;
+    LOGMELNK static TicksType const MinutesPerHour = 60;
 
     /**
     * Represents the number of seconds per hour
     */
-    static TicksType const SecondsPerHour = SecondsPerMinute * MinutesPerHour;
+    LOGMELNK static TicksType const SecondsPerHour = SecondsPerMinute * MinutesPerHour;
 
     /**
     * Represents the number of hours per day
     */
-    static TicksType const HoursPerDay = 24;
+    LOGMELNK static TicksType const HoursPerDay = 24;
 
     /**
     * Represents the number of minutes per day
     */
-    static TicksType const MinutesPerDay = MinutesPerHour * HoursPerDay;
+    LOGMELNK static TicksType const MinutesPerDay = MinutesPerHour * HoursPerDay;
 
     /**
     * Represents the number of secods per day
     */
-    static TicksType const SecondsPerDay = SecondsPerHour * HoursPerDay;
+    LOGMELNK static TicksType const SecondsPerDay = SecondsPerHour * HoursPerDay;
 
     /**
     * Represents the number of days per week
     */
-    static TicksType const DaysPerWeek = 7;
+    LOGMELNK static TicksType const DaysPerWeek = 7;
 
     /**
     * default ctor
     */
-    DateTime();
+    LOGMELNK DateTime();
 
     /**
     * Initializes a new instance of the DateTime structure 
     * to the specified year, month, day and kind - UTC or local time.
     */
-    DateTime(DateTimeKind kind, int year, int month, int day);
+    LOGMELNK DateTime(DateTimeKind kind, int year, int month, int day);
 
     /**
     * Initializes a new instance of the DateTime structure 
     * to the specified year, month, day, hour, minute, second, 
     * and Coordinated Universal Time (UTC) or local time. 
     */
-    DateTime(DateTimeKind kind, int year, int month, int day, 
+    LOGMELNK DateTime(DateTimeKind kind, int year, int month, int day, 
       int hour, int minute, int second, int millisecond = 0);
 
     /**
     * Gets the milliseconds component of the date 
     * represented by this instance. 
     */
-    int GetMillisecond() const;
+    LOGMELNK int GetMillisecond() const;
 
     /**
     * Gets the seconds component of the date represented by this instance. 
     */
-    int GetSecond() const;
+    LOGMELNK int GetSecond() const;
 
     /**
     * Gets the minute component of the date represented by this instance. 
     */
-    int GetMinute() const;
+    LOGMELNK int GetMinute() const;
 
     /**
     * Gets the hour component of the date represented by this instance. 
     */
-    int GetHour() const;
+    LOGMELNK int GetHour() const;
 
     /**
     * Gets the day of the month represented by this instance
     */
-    int GetDay() const;
+    LOGMELNK int GetDay() const;
 
     /**
     * Gets the day of the week represented by this instance
     */
-    DayOfWeek GetDayOfWeek() const;
+    LOGMELNK DayOfWeek GetDayOfWeek() const;
 
     /**
     * Gets the month component of the date represented by this instance. 
     */
-    int GetMonth() const;
+    LOGMELNK int GetMonth() const;
 
     /**
     * Gets the year component of the date represented by this instance. 
     */
-    int GetYear() const;
+    LOGMELNK int GetYear() const;
 
     /**
     * Gets the day of the year represented by this instance. 
     */
-    int GetDayOfYear() const;
+    LOGMELNK int GetDayOfYear() const;
 
     /**
     * Gets a value that indicates whether the time represented by this 
     * instance is based on local time, Coordinated Universal Time (UTC), 
     * or neither. 
     */
-    DateTimeKind GetKind() const;
+    LOGMELNK DateTimeKind GetKind() const;
 
     /**
     * Gets a DateTime object that is set to the current date and time 
     * on this computer, expressed as the local time. 
     */
-    static DateTime Now();
+    LOGMELNK static DateTime Now();
 
     /**
     * Gets a DateTime object that is set to the current date and time 
     * on this computer, expressed as the Coordinated Universal Time (UTC). 
     */
-    static DateTime NowUtc();
+    LOGMELNK static DateTime NowUtc();
 
     /**
     * Gets the date of this instance, expressed as local time
     * Time of returned value is set as 00::00
     */
-    DateTime GetDateLocal() const;
+    LOGMELNK DateTime GetDateLocal() const;
 
     /**
     * Gets the date of this instance, expressed as utc time.
     * Time of returned value is set as 00::00
     */
-    DateTime GetDateUtc() const;
+    LOGMELNK DateTime GetDateUtc() const;
 
     /**
     * Adds the specified number of milliseconds to the value of this instance.  
     */
-    DateTime& AddMilliseconds(TicksType value);
+    LOGMELNK DateTime& AddMilliseconds(TicksType value);
 
     /**
     * Adds the specified number of seconds to the value of this instance. 
     */
-    DateTime& AddSeconds(TicksType value);
+    LOGMELNK DateTime& AddSeconds(TicksType value);
 
     /**
     * Adds the specified number of minutes to the value of this instance.  
     */
-    DateTime& AddMinutes(TicksType value);
+    LOGMELNK DateTime& AddMinutes(TicksType value);
 
     /**
     * Adds the specified number of hours to the value of this instance.  
     */
-    DateTime& AddHours(TicksType value);
+    LOGMELNK DateTime& AddHours(TicksType value);
 
     /**
     * Adds the specified number of days to the value of this instance.
     */
-    DateTime& AddDays(TicksType value);
+    LOGMELNK DateTime& AddDays(TicksType value);
 
     /**
     * Adds the specified number of months to the value of this instance.  
     */
-    DateTime& AddMonths(TicksType value);
+    LOGMELNK DateTime& AddMonths(TicksType value);
 
     /**
     * Adds the specified number of years to the value of this instance.
     */
-    DateTime& AddYears(TicksType value);
+    LOGMELNK DateTime& AddYears(TicksType value);
 
     /**
     * Compares two instances of DateTime and returns an indication of their relative values.  
     */
-    int Compare(DateTime const&) const;
+    LOGMELNK int Compare(DateTime const&) const;
 
     /**
     * Creates a new DateTime object that represents the same time 
@@ -193,13 +194,13 @@ namespace Logme
     * Coordinated Universal Time (UTC), or neither, as indicated 
     * by the specified DateTimeKind value.  
     */
-    static DateTime SpecifyKind(DateTime const& value, DateTimeKind kind);
+    LOGMELNK static DateTime SpecifyKind(DateTime const& value, DateTimeKind kind);
 
     /**
     * Indicates whether this instance of DateTime is within the 
     * Daylight Saving Time range for the current time zone. 
     */
-    bool IsDaylightSavingTime() const;
+    LOGMELNK bool IsDaylightSavingTime() const;
 
     // convert section
 
@@ -207,47 +208,47 @@ namespace Logme
     * Converts the value of the current DateTime object to 
     * Coordinated Universal Time (UTC).
     */
-    DateTime ToUniversalTime() const;
+    LOGMELNK DateTime ToUniversalTime() const;
 
     /**
     * Converts the value of the current DateTime object to local time.  
     */
-    DateTime ToLocalTime() const;
+    LOGMELNK DateTime ToLocalTime() const;
 
     /**
     * Converts the value of the time_t object to DateTime object 
     * represented in UTC.
     */
-    static DateTime FromTimeT(uni_time_t);
+    LOGMELNK static DateTime FromTimeT(uni_time_t);
 
     /**
     * Converts the value to the time_t object 
     */
-    uni_time_t ToTimeT() const;
+    LOGMELNK uni_time_t ToTimeT() const;
 
     /**
     * Converts the value of the std::tm object with local time to DateTime object
     * represented in local time
     */
-    static DateTime FromTmLocal(std::tm const&);
+    LOGMELNK static DateTime FromTmLocal(std::tm const&);
 
     /**
     * Converts the value of the std::tm object with UTC time to DateTime object
     * represented in UTC
     */
-    static DateTime FromTmUtc(std::tm const&);
+    LOGMELNK static DateTime FromTmUtc(std::tm const&);
 
     /**
     * Converts the value of the current DateTime object to std::tm represented 
     * as local view.  
     */
-    std::tm ToTmLocal() const;
+    LOGMELNK std::tm ToTmLocal() const;
 
     /**
     * Converts the value of the current DateTime object to std::tm represented 
     * as UTC view.  
     */
-    std::tm ToTmUtc() const;
+    LOGMELNK std::tm ToTmUtc() const;
 
     /**
     * Checks whether this instance of DateTime is valid
@@ -260,68 +261,68 @@ namespace Logme
     /**
     * Addition operator
     */
-    DateTime const operator +(TicksType rhs) const;
+    LOGMELNK DateTime const operator +(TicksType rhs) const;
     
     /**
     * Addition operator
     */
-    DateTime& operator +=(TicksType rhs);
+    LOGMELNK DateTime& operator +=(TicksType rhs);
 
     /**
     * Subtraction operator
     */
-    DateTime const operator -(TicksType rhs) const;
+    LOGMELNK DateTime const operator -(TicksType rhs) const;
 
     /**
     * Subtraction operator
     */
-    DateTime& operator -=(TicksType rhs);
+    LOGMELNK DateTime& operator -=(TicksType rhs);
     
     /**
     * Subtraction operator. The result of DateTime subtraction 
     * is millisecond interval
     */
-    TicksType operator -(DateTime const& rhs) const;
+    LOGMELNK TicksType operator -(DateTime const& rhs) const;
 
     /**
     * Comparison < operator
     */
-    bool operator <(DateTime const& rhs) const;
+    LOGMELNK bool operator <(DateTime const& rhs) const;
     
     /**
     * Comparison > operator
     */
-    bool operator >(DateTime const& rhs) const;
+    LOGMELNK bool operator >(DateTime const& rhs) const;
     
     /**
     * Comparison <= operator
     */
-    bool operator <=(DateTime const& rhs) const;
+    LOGMELNK bool operator <=(DateTime const& rhs) const;
 
     /**
     * Comparison >= operator
     */
-    bool operator >=(DateTime const& rhs) const;
+    LOGMELNK bool operator >=(DateTime const& rhs) const;
 
     /**
     * Comparison == operator
     */
-    bool operator ==(DateTime const& rhs) const;
+    LOGMELNK bool operator ==(DateTime const& rhs) const;
 
     /**
     * Comparison != operator
     */
-    bool operator !=(DateTime const& rhs) const;
+    LOGMELNK bool operator !=(DateTime const& rhs) const;
 
     /**
     * Gets minimum supported date for this platform
     */
-    static const DateTime GetMinSupportedDateTime();
+    LOGMELNK static const DateTime GetMinSupportedDateTime();
 
     /**
     * Gets maximum supported date for this platform
     */
-    static const DateTime GetMaxSupportedDateTime();
+    LOGMELNK static const DateTime GetMaxSupportedDateTime();
 
   private:
     /**
@@ -386,15 +387,14 @@ namespace Logme
   * Checks whether two instances of DateTime have same Date not depending
   * on their representation
   */
-  bool AreDatesEqual(DateTime const& lhs, DateTime const& rhs);
+  LOGMELNK bool AreDatesEqual(DateTime const& lhs, DateTime const& rhs);
 
   /**
   * Checks whether two instances of DateTime have same Time of day
   * not depending on their representation
   */
-  bool AreTimesEqual(DateTime const& lhs, DateTime const& rhs);
+  LOGMELNK bool AreTimesEqual(DateTime const& lhs, DateTime const& rhs);
 
-  unsigned GetTimeInMillisec();
-  void Sleep(unsigned millisec);
-  
+  LOGMELNK unsigned GetTimeInMillisec();
+  LOGMELNK void Sleep(unsigned millisec);
 }

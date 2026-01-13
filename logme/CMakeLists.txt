@@ -2,6 +2,9 @@ file(GLOB_RECURSE SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "source/*.cpp")
 file(GLOB_RECURSE HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.h")
 add_library(logme STATIC ${SOURCES} ${HEADERS}) 
 
+target_compile_definitions(logme PUBLIC _LOGME_STATIC_BUILD_)
+
+
 
 target_include_directories(logme PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

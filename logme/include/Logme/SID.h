@@ -3,15 +3,17 @@
 #include <memory>
 #include <string>
 
+#include <Logme/Types.h>
+
 namespace Logme
 {
   struct SID
   {
     uint64_t Name;
 
-    static SID Build(uint64_t name);
-    static SID Build(const char* name_upto8chars);
-    static SID Build(const std::string& name_upto8chars);
+    LOGMELNK static SID Build(uint64_t name);
+    LOGMELNK static SID Build(const char* name_upto8chars);
+    LOGMELNK static SID Build(const std::string& name_upto8chars);
   };
 
   typedef std::shared_ptr<SID> SIDPtr;

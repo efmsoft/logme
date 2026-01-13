@@ -1,21 +1,21 @@
 # logme release notes
 
-## [1.2.0] - 2026-01-13
+## v1.3.0
 
-### Added
-- Proper CMake install and export rules for `logme` and `logmed` targets.
-- CMake package configuration support (`logmeConfig.cmake`, version file, and exported targets).
-- Stable consumer target alias `logme::logme` for both static and shared builds.
-- Improved compatibility with package managers (vcpkg overlays and ports).
+### Highlights
+- Improved CMake packaging for vcpkg and other package managers: install/export rules and stable `find_package(logme CONFIG)` integration.
+- Added `USE_LOGME_SHARED` switch so in-tree examples/tests/tools can link against the shared library (`logmed`) when desired (e.g., vcpkg dynamic builds), while keeping static as the default when the switch is not defined.
+- Fixed GoogleTest discovery and enabled building gtest-based tests when `GTest` is available.
 
-### Changed
-- CMake build system updated to support standard `cmake --install` workflow.
-- Static and shared library builds are now fully compatible with `find_package(logme CONFIG)`.
-- Installation layout aligned with GNUInstallDirs conventions.
+### Notes
+- For static builds on Windows, consumers require `_LOGME_STATIC_BUILD_` (propagated via targets in installed packages).
+- For shared builds, `_LOGME_DLL_BUILD_` is used only while building the DLL (dllexport) and is not propagated to consumers (dllimport).
 
-### Fixed
-- Missing `install` target in CMake/Ninja generators.
-- Issues preventing successful packaging and installation via vcpkg.
+## v1.2.0
+
+### Highlights
+- CMake and documentation improvements for easier integration.
+- Build system and example updates.
 
 ## v1.1.0 (Jan 12, 2026)
 

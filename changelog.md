@@ -1,5 +1,27 @@
 # logme release notes
 
+## v1.4.0 — 2026-01-13
+
+### Packaging / Build system
+- Fixed shared build usability on Windows: test, example, and tool executables now correctly locate `logmed.dll` at runtime.
+- In shared builds, `logmed.dll` is copied next to each executable (tests, examples, tools) to ensure reliable execution during build and test discovery.
+- This resolves failures of `gtest_discover_tests()` on Windows when building with shared libraries.
+
+### vcpkg integration
+- Improved compatibility with vcpkg dynamic builds when `examples`, `tests`, or `tools` features are enabled.
+- Shared builds with enabled features now build and execute correctly without requiring PATH hacks or manual DLL copying.
+- The build flag `USE_LOGME_SHARED` is now fully respected by all in-tree examples, tests, and tools.
+
+### CMake / Project structure
+- All examples, tests, and tools consistently select `logme` or `logmed` by name based on `USE_LOGME_SHARED`.
+- No dependency on alias targets inside subprojects; direct `add_subdirectory()` usage remains fully supported.
+- Static build behavior remains unchanged.
+
+### Notes
+- No public API changes.
+- No behavioral changes for static builds.
+- This release focuses on build robustness and package-manager friendliness, especially on Windows.
+
 ## v1.3.0
 
 ### Highlights

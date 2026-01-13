@@ -2,27 +2,20 @@ add_executable(Override
   Override.cpp
 )
 
-set(logme_target logme)
-if(DEFINED USE_LOGME_SHARED AND USE_LOGME_SHARED)
-  set(logme_target logmed)
-endif()
-
-if(NOT TARGET ${logme_target})
-  message(FATAL_ERROR "Requested ${logme_target} but it is not built. Check LOGME_BUILD_STATIC/LOGME_BUILD_DYNAMIC and USE_LOGME_SHARED.")
-endif()
+target_link_libraries(Override PRIVATE logme)
 
 
-target_link_libraries(Override PRIVATE ${logme_target})
-
-target_compile_definitions(Override PRIVATE
-  LOGME_INRELEASE
-)
-
-if(NOT (DEFINED USE_LOGME_SHARED AND USE_LOGME_SHARED))
-  target_compile_definitions(Override PRIVATE
-    _LOGME_STATIC_BUILD_
+if(WIN32 AND DEFINED USE_LOGME_SHARED AND USE_LOGME_SHARED)
+  add_custom_command(TARGET Override POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      $<TARGET_FILE:logmed>
+      $<TARGET_FILE_DIR:Override>
   )
 endif()
+target_compile_definitions(Override PRIVATE
+  LOGME_INRELEASE
+  _LOGME_STATIC_BUILD_
+)
 
 if (WIN32)
   target_link_libraries(Override PRIVATE ws2_32)

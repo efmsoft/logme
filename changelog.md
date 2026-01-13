@@ -1,5 +1,24 @@
 # logme release notes
 
+## v1.6.0 — 2026-01-13
+
+### Highlights
+- Fixed Windows shared builds with `tests` enabled under vcpkg: test discovery (`gtest_discover_tests`) no longer fails due to missing runtime DLLs.
+- Improved build-tree runtime behavior for shared builds: required DLLs are copied next to produced executables so tests and examples can run reliably without PATH tweaks.
+
+### Packaging / Build system
+- For Windows shared builds (`USE_LOGME_SHARED=ON`), executables built in subfolders (tests/examples/tools) receive required runtime DLLs in their output directory.
+- This addresses `0xc0000135` launch failures during build-time test discovery on Windows.
+
+### vcpkg integration
+- Shared builds with `examples`, `tests`, and `tools` features enabled build and execute correctly in vcpkg environments.
+
+### Notes
+- No public API changes.
+- Static build behavior remains unchanged.
+
+---
+
 ## v1.4.0 — 2026-01-13
 
 ### Packaging / Build system

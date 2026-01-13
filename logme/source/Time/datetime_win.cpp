@@ -503,5 +503,8 @@ namespace Logme
     ::Sleep(millisec);
   } 
 }
-
+#else
+extern "C" void LogmeDatetimeWinDummy()
+{
+}
 #endif // #ifdef _WIN32

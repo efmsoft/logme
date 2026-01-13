@@ -70,7 +70,9 @@ static void DeleteExcessFiles(
     fs::remove(files[i].Path, ec);
  
     if (ec)
+    {
       LogmeE(CHINT, "Failed to delete: %s", path.c_str());
+    }
   }
 }
 

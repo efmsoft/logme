@@ -94,8 +94,9 @@ bool Logger::LoadConfiguration(
 
   bool exitcode = StartControlServer(cc) && rc;
   if (exitcode == false)
+  {
     LogmeE(CHINT, "LoadConfiguration() failed");
-
+  }
   return exitcode;
 #else
   return false;

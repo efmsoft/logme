@@ -1,5 +1,22 @@
 # logme release notes
 
+## [1.2.0] - 2026-01-13
+
+### Added
+- Proper CMake install and export rules for `logme` and `logmed` targets.
+- CMake package configuration support (`logmeConfig.cmake`, version file, and exported targets).
+- Stable consumer target alias `logme::logme` for both static and shared builds.
+- Improved compatibility with package managers (vcpkg overlays and ports).
+
+### Changed
+- CMake build system updated to support standard `cmake --install` workflow.
+- Static and shared library builds are now fully compatible with `find_package(logme CONFIG)`.
+- Installation layout aligned with GNUInstallDirs conventions.
+
+### Fixed
+- Missing `install` target in CMake/Ninja generators.
+- Issues preventing successful packaging and installation via vcpkg.
+
 ## v1.1.0 (Jan 12, 2026)
 
 ### Highlights

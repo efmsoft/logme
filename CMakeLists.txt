@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-project(logme VERSION 1.6.0)
+project(logme VERSION 1.8.0)
 
 cmake_policy(SET CMP0067 NEW)
 
@@ -71,69 +71,75 @@ if(LOGME_BUILD_DYNAMIC)
   add_subdirectory(dynamic ../out/Dynamic)
 endif()
 
-# Select which library target examples/tools/tests should link against.
-# The selection is controlled by USE_LOGME_SHARED if it is defined by the root
-# project or by a parent that calls add_subdirectory().
-if(TARGET logme::logme)
-  if(DEFINED USE_LOGME_SHARED AND USE_LOGME_SHARED)
-    add_library(logme::logme ALIAS logmed)
-  endif()
-  if(DEFINED LOGME_BUILD_DYNAMIC AND LOGME_BUILD_DYNAMIC)
-    add_library(logme::logme ALIAS logmed)
-  endif()
-endif()
-
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
-# Install headers
-install(
-  DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/logme/include/"
-  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-)
+# Install/package rules (disabled automatically for internal dual-build)
+option(LOGME_ENABLE_INSTALL "Enable install/package rules" ON)
 
-# Install libraries (whatever was built)
-set(_logme_install_targets "")
+set(_logme_has_static 0)
+set(_logme_has_shared 0)
 if(TARGET logme)
-  list(APPEND _logme_install_targets logme)
+  set(_logme_has_static 1)
 endif()
 if(TARGET logmed)
-  list(APPEND _logme_install_targets logmed)
+  set(_logme_has_shared 1)
 endif()
 
-if(_logme_install_targets)
+set(_logme_both_built 0)
+if(_logme_has_static AND _logme_has_shared)
+  set(_logme_both_built 1)
+endif()
+
+if(LOGME_ENABLE_INSTALL AND NOT _logme_both_built)
+  # Install headers
   install(
-    TARGETS ${_logme_install_targets}
-    EXPORT logmeTargets
-    ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-    LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-    RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/logme/include/"
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
   )
 
-  install(
-    EXPORT logmeTargets
-    NAMESPACE logme::
-    DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/logme"
-  )
+  # Install exactly one library target (static OR shared)
+  set(_logme_install_targets "")
+  if(_logme_has_static)
+    list(APPEND _logme_install_targets logme)
+  elseif(_logme_has_shared)
+    list(APPEND _logme_install_targets logmed)
+  endif()
 
-  configure_package_config_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/logmeConfig.cmake.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/logmeConfig.cmake"
-    INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/logme"
-  )
+  if(_logme_install_targets)
+    install(
+      TARGETS ${_logme_install_targets}
+      EXPORT logmeTargets
+      ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+      LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+      RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+    )
 
-  write_basic_package_version_file(
-    "${CMAKE_CURRENT_BINARY_DIR}/logmeConfigVersion.cmake"
-    VERSION "${PROJECT_VERSION}"
-    COMPATIBILITY SameMajorVersion
-  )
+    install(
+      EXPORT logmeTargets
+      NAMESPACE logme::
+      DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/logme"
+    )
 
-  install(
-    FILES
+    configure_package_config_file(
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/logmeConfig.cmake.in"
       "${CMAKE_CURRENT_BINARY_DIR}/logmeConfig.cmake"
+      INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/logme"
+    )
+
+    write_basic_package_version_file(
       "${CMAKE_CURRENT_BINARY_DIR}/logmeConfigVersion.cmake"
-    DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/logme"
-  )
+      VERSION "${PROJECT_VERSION}"
+      COMPATIBILITY SameMajorVersion
+    )
+
+    install(
+      FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/logmeConfig.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/logmeConfigVersion.cmake"
+      DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/logme"
+    )
+  endif()
 endif()
 
 if(LOGME_BUILD_EXAMPLES)

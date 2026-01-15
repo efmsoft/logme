@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-project(logme VERSION 1.8.0)
+project(logme VERSION 1.9.0)
 
 cmake_policy(SET CMP0067 NEW)
 

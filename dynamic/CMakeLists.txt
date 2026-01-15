@@ -1,14 +1,16 @@
 get_filename_component(LOGME_ROOT "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE) 
 
-
 file(TO_CMAKE_PATH ${LOGME_ROOT}/logme SRCROOT)
 file(GLOB_RECURSE SOURCES ${SRCROOT}/*.cpp)
 file(GLOB_RECURSE HEADERS ${SRCROOT}/*.h)
 
 add_library(logmed SHARED ${SOURCES} ${HEADERS} ${LOGME_VERSION_RC})
 
-target_compile_definitions(logmed PRIVATE _LOGME_DLL_BUILD_)
+if(NOT TARGET logme)
+  set_target_properties(logmed PROPERTIES EXPORT_NAME logme)
+endif()
 
+target_compile_definitions(logmed PRIVATE _LOGME_DLL_BUILD_)
 
 target_include_directories(logmed PUBLIC
   $<BUILD_INTERFACE:${SRCROOT}/include>

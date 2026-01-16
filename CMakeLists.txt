@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-project(logme VERSION 2.3.0)
+project(logme VERSION 2.4.0)
 
 cmake_policy(SET CMP0067 NEW)
 
@@ -76,16 +76,6 @@ endif()
 
 if(LOGME_BUILD_DYNAMIC)
   add_subdirectory(dynamic ../out/Dynamic)
-endif()
-
-if(USE_JSONCPP)
-  if(TARGET logme)
-    target_compile_definitions(logme PUBLIC USE_JSONCPP)
-    target_link_libraries(logme PUBLIC JsonCpp::JsonCpp)
-  endif()
-  if(TARGET logmed)
-    target_compile_definitions(logmed PUBLIC USE_JSONCPP)
-  endif()
 endif()
 
 include(GNUInstallDirs)

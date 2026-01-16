@@ -4,7 +4,10 @@ add_library(logme STATIC ${SOURCES} ${HEADERS})
 
 target_compile_definitions(logme PUBLIC _LOGME_STATIC_BUILD_)
 
-
+if(USE_JSONCPP)
+  target_compile_definitions(logme PUBLIC USE_JSONCPP)
+  target_link_libraries(logme PUBLIC JsonCpp::JsonCpp)
+endif()
 
 target_include_directories(logme PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

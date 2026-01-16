@@ -12,6 +12,10 @@ endif()
 
 target_compile_definitions(logmed PRIVATE _LOGME_DLL_BUILD_)
 
+if(USE_JSONCPP)
+  target_compile_definitions(logmed PUBLIC USE_JSONCPP)
+endif()
+
 target_include_directories(logmed PUBLIC
   $<BUILD_INTERFACE:${SRCROOT}/include>
   $<INSTALL_INTERFACE:include>

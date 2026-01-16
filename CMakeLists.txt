@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-project(logme VERSION 1.9.0)
+project(logme VERSION 2.1.0)
 
 cmake_policy(SET CMP0067 NEW)
 
@@ -16,6 +16,8 @@ option(LOGME_BUILD_TESTS "Build logme tests" ON)
 option(LOGME_BUILD_STATIC "Build logme as static library" ON)
 option(LOGME_BUILD_DYNAMIC "Build logme as dynamic library" ON)
 option(LOGME_BUILD_TOOLS "Build logme tools" ON)
+
+option(USE_JSONCPP "Enable JsonCpp support" OFF)
 
 set(LOGME_STD_FORMAT "AUTO" CACHE STRING "std::format logging API: AUTO, ON, or OFF")
 set_property(CACHE LOGME_STD_FORMAT PROPERTY STRINGS AUTO ON OFF)
@@ -63,12 +65,26 @@ if (LOGME_DISABLE_STD_FORMAT)
 endif()
 
 
+if(USE_JSONCPP)
+  find_package(jsoncpp CONFIG REQUIRED)
+  set(JSONCPP_LIBRARIES JsonCpp::JsonCpp)
+endif()
+
 if(LOGME_BUILD_STATIC)
  add_subdirectory(logme ../out/Static)
 endif()
 
 if(LOGME_BUILD_DYNAMIC)
   add_subdirectory(dynamic ../out/Dynamic)
+endif()
+
+if(USE_JSONCPP)
+  if(TARGET logme)
+    target_compile_definitions(logme PUBLIC USE_JSONCPP)
+  endif()
+  if(TARGET logmed)
+    target_compile_definitions(logmed PUBLIC USE_JSONCPP)
+  endif()
 endif()
 
 include(GNUInstallDirs)

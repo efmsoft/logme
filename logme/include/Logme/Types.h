@@ -39,10 +39,14 @@ namespace Logme
     LEVEL_CRITICAL,
   };
 
+#if defined(_MSC_VER)
   #pragma warning(push)
   #pragma warning(disable : 26812)
+#endif
   static constexpr const Level DEFAULT_LEVEL = Level::LEVEL_INFO;
+#if defined(_MSC_VER)
   #pragma warning(pop)
+#endif
 
   enum Detality
   {

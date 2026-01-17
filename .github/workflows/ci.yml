@@ -37,10 +37,12 @@ jobs:
           if [ "${{ matrix.stdformat }}" = "off" ]; then
             extra_cxx_flags="-DLOGME_DISABLE_STD_FORMAT"
           fi
+          extra_cxx_flags="${extra_cxx_flags} -Wall -Wextra -Wpedantic -Werror"
           cmake -S . -B "build/linux/${{ matrix.compiler }}/${{ matrix.config }}/stdformat-${{ matrix.stdformat }}" \
             -G Ninja \
             -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
             -DCMAKE_CXX_STANDARD=20 \
+            -DCMAKE_C_FLAGS="-Wall -Wextra -Wpedantic -Werror" \
             -DCMAKE_CXX_FLAGS="${extra_cxx_flags}"
 
       - name: Build
@@ -84,6 +86,7 @@ jobs:
           if [ "${{ matrix.stdformat }}" = "off" ]; then
             extra_cxx_flags="-DLOGME_DISABLE_STD_FORMAT"
           fi
+          extra_cxx_flags="${extra_cxx_flags} -Wall -Wextra -Wpedantic -Werror"
 
           gtest_dir="$(brew --prefix googletest)/lib/cmake/GTest"
 
@@ -93,6 +96,7 @@ jobs:
             -DCMAKE_CXX_STANDARD=20 \
             -DBUILD_TESTING=ON \
             -DGTest_DIR="${gtest_dir}" \
+            -DCMAKE_C_FLAGS="-Wall -Wextra -Wpedantic -Werror" \
             -DCMAKE_CXX_FLAGS="${extra_cxx_flags}"
 
       - name: Build
@@ -127,7 +131,8 @@ jobs:
         shell: pwsh
         run: |
           $extra = ""
-          if ("${{ matrix.stdformat }}" -eq "off") { $extra = "-DLOGME_DISABLE_STD_FORMAT" }
+          if ("${{ matrix.stdformat }}" -eq "off") { $extra = "/DLOGME_DISABLE_STD_FORMAT" }
+          $extra = "$extra /W4 /WX"
 
           cmake -S . -B "build/windows/msvc/${{ matrix.config }}/stdformat-${{ matrix.stdformat }}" `
             -G Ninja `
@@ -135,6 +140,7 @@ jobs:
             -DCMAKE_CXX_STANDARD=20 `
             -DCMAKE_CXX_COMPILER=cl `
             -DCMAKE_C_COMPILER=cl `
+            -DCMAKE_C_FLAGS="/W4 /WX" `
             -DCMAKE_CXX_FLAGS="$extra"
 
       - name: Build
@@ -167,4 +173,70 @@ jobs:
           msbuild .\logme.sln `
             /m `
             /p:Configuration=${{ matrix.config }} `
-            /p:Platform=x64
+            /p:Platform=x64 `
+            /p:WarningLevel=Level4 `
+            /p:TreatWarningsAsErrors=true
+
+  linux_x86:
+    name: Linux / gcc / Release / x86 (warnings-as-errors)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: seanmiddleditch/gha-setup-ninja@v5
+
+      - name: Install deps (multilib)
+        shell: bash
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends g++-multilib
+
+      - name: Configure
+        shell: bash
+        env:
+          CXX: g++
+        run: |
+          set -euxo pipefail
+          cmake -S . -B "build/linux/gcc/Release/x86" \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_STANDARD=20 \
+            -DCMAKE_C_FLAGS="-m32 -Wall -Wextra -Wpedantic -Werror" \
+            -DCMAKE_CXX_FLAGS="-m32 -Wall -Wextra -Wpedantic -Werror"
+
+      - name: Build
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cmake --build "build/linux/gcc/Release/x86" --config Release
+
+  windows_x86:
+    name: Windows / msvc / Release / x86 (warnings-as-errors)
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: seanmiddleditch/gha-setup-ninja@v5
+
+      - name: Setup MSVC dev cmd (x86)
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x86
+
+      - name: Configure
+        shell: pwsh
+        run: |
+          cmake -S . -B "build/windows/msvc/Release/x86" `
+            -G Ninja `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_CXX_STANDARD=20 `
+            -DCMAKE_CXX_COMPILER=cl `
+            -DCMAKE_C_COMPILER=cl `
+            -DCMAKE_CXX_FLAGS="/W4 /WX" `
+            -DCMAKE_C_FLAGS="/W4 /WX"
+
+      - name: Build
+        shell: pwsh
+        run: |
+          cmake --build "build/windows/msvc/Release/x86" --config Release

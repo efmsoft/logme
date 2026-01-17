@@ -6,8 +6,24 @@
 
 #include <Logme/Types.h>
 
-#pragma warning(push)
-#pragma warning(disable : 4201)
+#if defined(_MSC_VER)
+  // Anonymous struct/union inside union is a common extension (matches existing API).
+  #pragma warning(push)
+  #pragma warning(disable : 4201)
+#endif
+
+#if defined(__clang__)
+  #pragma clang diagnostic push
+  // -pedantic complains about anonymous structs (this file relies on that for API ergonomics)
+  #pragma clang diagnostic ignored "-Wpedantic"
+  // These are often the *actual* warnings behind pedantic for this pattern
+  #pragma clang diagnostic ignored "-Wgnu-anonymous-struct"
+  #pragma clang diagnostic ignored "-Wnested-anon-types"
+#elif defined(__GNUC__)
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wpedantic"
+#endif
+
 
 namespace Logme
 {
@@ -49,4 +65,12 @@ namespace Logme
   typedef std::map<std::string, OutputFlags> OutputFlagsMap;
 }
 
-#pragma warning(pop)
+#if defined(__clang__)
+  #pragma clang diagnostic pop
+#elif defined(__GNUC__)
+  #pragma GCC diagnostic pop
+#endif
+
+#if defined(_MSC_VER)
+  #pragma warning(pop)
+#endif

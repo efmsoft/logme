@@ -22,6 +22,8 @@ SharedFileBackendConfig::~SharedFileBackendConfig()
 
 bool SharedFileBackendConfig::Parse(const Json::Value* po)
 {
+  (void)po;
+
 #ifdef USE_JSONCPP
   const Json::Value& o = *po;
 

@@ -45,8 +45,8 @@ FileBackend::FileBackend(ChannelPtr owner)
   , MaxSize(MaxSizeDefault)
   , QueueSizeLimit(QueueSizeLimitDefault)
   , Registered(false)
-  , DataReady(false)
   , CallScheduled(false)
+  , DataReady(false)
   , ShutdownFlag(false)
   , ShutdownCalled(owner == nullptr)
   , FlushTime(0)
@@ -494,27 +494,6 @@ bool FileBackend::WorkerFunc()
   // one or more threads call Log() very frequently
   const int maxWriteLoops = 5;
   CallScheduled = false;
-
-  static uint64_t n = 0;
-  static uint64_t sum = 0;
-  static uint64_t avg = 0;
-  static uint64_t minm = static_cast<uint64_t>(-1);
-  static uint64_t maxm = 0;
-  if (FlushTime && FlushTime != RIGHT_NOW)
-  {
-    auto now = GetTimeInMillisec();
-    auto diff = now - (FlushTime - FLUSH_AFTER);
-
-    n++;
-    sum += diff;
-    avg = sum / n;
-
-    if (diff < minm)
-      minm = diff;
-
-    if (diff > maxm)
-      maxm = diff;
-  }
 
   if (DataReady)
   {

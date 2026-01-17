@@ -15,7 +15,7 @@ static std::string FromWideString(const wchar_t* src)
 #else
   n = wcstombs(nullptr, src, 0);
 #endif
-  if (n == -1)
+  if (n == size_t(-1))
     return "";
 
   std::vector<char> buffer(++n);
@@ -26,7 +26,7 @@ static std::string FromWideString(const wchar_t* src)
 #else
   n = wcstombs(&buffer[0], src, n);
 #endif
-  if (n == -1)
+  if (n == size_t(-1))
     return "";
 
   return &buffer[0];
@@ -43,7 +43,7 @@ static std::wstring FromString(const char* src)
   n = mbstowcs(nullptr, src, 0);
 #endif
 
-  if (n == -1)
+  if (n == size_t(-1))
     return L"";
 
   std::vector<wchar_t> buffer(++n);
@@ -55,7 +55,7 @@ static std::wstring FromString(const char* src)
   n = mbstowcs(&buffer[0], src, n);
 #endif
 
-  if (n == -1)
+  if (n == size_t(-1))
     return L"";
 
   return &buffer[0];

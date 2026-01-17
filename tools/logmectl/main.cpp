@@ -359,7 +359,7 @@ static bool SetRecvTimeout(
     , (int)sizeof(tv)
   ) == 0;
 #else
-  timeval tv = {0};
+  timeval tv = {};
   tv.tv_sec = timeoutMs / 1000;
   tv.tv_usec = (timeoutMs % 1000) * 1000;
   return setsockopt(

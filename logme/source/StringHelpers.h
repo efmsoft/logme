@@ -6,6 +6,7 @@
 
 inline void strcpy_s(char* dst, size_t n, const char* src)
 {
+  (void)n;
   strcpy(dst, src);
 }
 
@@ -22,6 +23,8 @@ inline int sprintf_s(char* dst, const char* format, ...)
 
 inline int sprintf_s(char* dst, size_t n, const char* format, ...)
 {
+  (void)n;
+
   va_list args;
   va_start(args, format);
 

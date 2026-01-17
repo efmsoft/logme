@@ -13,7 +13,9 @@
 #include <unistd.h>
 #endif
 
+#ifdef _WIN32
 #pragma warning(disable : 26812)
+#endif
 
 using namespace Logme;
 
@@ -21,7 +23,6 @@ using namespace Logme;
 #define strtok_s strtok_r
 #define _stricmp strcasecmp
 #endif
-
 
 Context::Context(Level level, const ID* ch, const SID* sid)
   : ChannelStg{}
@@ -300,7 +301,6 @@ const char* Context::Apply(ChannelPtr ch, OutputFlags flags, const char* text, i
   }
 
   *Buffer = '\0';
-  int offset = 0;
 
   int nTimestamp = 0;
   if (flags.Timestamp != TIME_FORMAT_NONE)
@@ -397,7 +397,7 @@ const char* Context::Apply(ChannelPtr ch, OutputFlags flags, const char* text, i
 
   char* buffer = Buffer;
   int n = nTimestamp + nSignature + nID + nChannel + nSubsystem + nFile + nError + nMethod + nLine + nAppend + nEol + 1;
-  if (n > sizeof(Buffer))
+  if (n > (int)sizeof(Buffer))
   {
     if (ExtBuffer.size() < size_t(n))
       ExtBuffer.resize(n);

@@ -28,10 +28,15 @@ using namespace std::chrono_literals;
 #define _lseek lseek
 #define _read read
 #define _write write
-#define sprintf_s sprintf
+
+#define LOGME_SPRINTF_S(buf, bufsz, fmt, ...) \
+  snprintf((buf), (bufsz), (fmt), __VA_ARGS__)
 #else
 #include <io.h>
 #define ftruncate _chsize
+
+#define LOGME_SPRINTF_S(buf, bufsz, fmt, ...) \
+  sprintf_s((buf), (bufsz), (fmt), __VA_ARGS__)
 #endif
 
 using namespace Logme;

@@ -14,6 +14,7 @@ DebugBackend::DebugBackend(ChannelPtr owner)
 
 void DebugBackend::Display(Context& context, const char* line)
 {
+  (void)context;
   (void)line;
 
 #ifdef _WIN32

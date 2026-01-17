@@ -41,6 +41,12 @@
   #define Logme_Ifg(condition, logger, level, ...) if (true) { } else std::stringstream()
 #endif
 
+
+
+#if defined(__clang__)
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
+#endif
 #define LogmeD(...) \
   Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, ## __VA_ARGS__)
 
@@ -207,6 +213,10 @@
 
 #define fLogmeWg(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
 
+#endif
+
+#if defined(__clang__)
+  #pragma clang diagnostic pop
 #endif
 
 // Thread channel 

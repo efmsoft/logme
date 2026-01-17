@@ -219,7 +219,7 @@ size_t FileBackend::GetSize()
   if (File == -1)
     return -1;
 
-  return Seek(0, SEEK_END);
+  return (size_t)Seek(0, SEEK_END);
 }
 
 void FileBackend::Write(CharBuffer& data, SizeArray& msgSize)

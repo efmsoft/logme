@@ -4,6 +4,21 @@
 #include <mutex>
 #include <stdint.h>
 
+// printf-format for uint64_t as uppercase hex (no 0x prefix).
+// Use LOGME_ prefix to avoid collisions with other projects.
+#if !defined(LOGME_FMT_U64_HEX_UPPER)
+  #if defined(_MSC_VER)
+    #define LOGME_FMT_U64_HEX_UPPER "%I64X"
+  #else
+    #if defined(__cplusplus)
+      #include <cinttypes>
+    #else
+      #include <inttypes.h>
+    #endif
+    #define LOGME_FMT_U64_HEX_UPPER "%" PRIX64
+  #endif
+#endif
+
 typedef struct x509_st X509;
 typedef struct evp_pkey_st EVP_PKEY;
 

@@ -22,11 +22,6 @@ using namespace Logme;
 #define _stricmp strcasecmp
 #endif
 
-#if defined(_WIN32) || defined(__APPLE__)
-#  define LLX "%llX"
-#else
-#  define LLX "%lX"
-#endif
 
 Context::Context(Level level, const ID* ch, const SID* sid)
   : ChannelStg{}
@@ -223,7 +218,7 @@ void Context::InitThreadProcessID(ChannelPtr ch, OutputFlags flags)
     *p++ = '[';
 
     if (flags.ProcessID)
-      p += sprintf(p, LLX, (uint64_t)process);
+      p += sprintf(p, LOGME_FMT_U64_HEX_UPPER, (uint64_t)process);
 
     if (flags.ThreadID)
     {
@@ -261,7 +256,7 @@ void Context::InitThreadProcessID(ChannelPtr ch, OutputFlags flags)
           p += strlen(name);
         }
         else
-          p += sprintf(p, LLX, (uint64_t)thread);
+          p += sprintf(p, LOGME_FMT_U64_HEX_UPPER, (uint64_t)thread);
       
       } while (false);
     }

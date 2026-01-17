@@ -8,12 +8,6 @@
 
 using namespace Logme;
 
-#if defined(_WIN32) || defined(__APPLE__)
-#  define LLX "%llX"
-#else
-#  define LLX "%lX"
-#endif
-
 Channel::Channel(
   Logger* owner
   , const char* name
@@ -471,7 +465,7 @@ void Channel::SetThreadName(uint64_t id, const char* name, bool log)
       if (log)
       {
         char buf[32];
-        snprintf(buf, sizeof(buf), LLX, (uint64_t)id);
+        snprintf(buf, sizeof(buf), LOGME_FMT_U64_HEX_UPPER, (uint64_t)id);
         r.Prev = buf;
       }
 

@@ -7,18 +7,13 @@
 
 using namespace Logme;
 
-#if defined(_WIN32) || defined(__APPLE__)
-#  define LLX "%llX"
-#else
-#  define LLX "%lX"
-#endif
 
 COMMAND_DESCRIPTOR2("channel", Logger::CommandChannel);
 
 static std::string ToHexUpper(uint64_t value)
 {
   char buf[32];
-  snprintf(buf, sizeof(buf), LLX, (uint64_t)value);
+  snprintf(buf, sizeof(buf), LOGME_FMT_U64_HEX_UPPER, (uint64_t)value);
   return std::string(buf);
 }
 

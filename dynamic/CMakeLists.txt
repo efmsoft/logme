@@ -12,6 +12,18 @@ endif()
 
 target_compile_definitions(logmed PRIVATE _LOGME_DLL_BUILD_)
 
+if (MSVC)
+  target_compile_options(logmed PRIVATE
+    /wd4100  # unreferenced formal parameter
+    /wd4101  # unreferenced local variable
+  )
+else()
+  target_compile_options(logmed PRIVATE
+    -Wno-unused-parameter
+    -Wno-unused-variable
+  )
+endif()
+
 if(USE_JSONCPP)
   target_compile_definitions(logmed PUBLIC USE_JSONCPP)
 endif()

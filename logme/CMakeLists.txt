@@ -4,6 +4,18 @@ add_library(logme STATIC ${SOURCES} ${HEADERS})
 
 target_compile_definitions(logme PUBLIC _LOGME_STATIC_BUILD_)
 
+if (MSVC)
+  target_compile_options(logme PRIVATE
+    /wd4100  # unreferenced formal parameter
+    /wd4101  # unreferenced local variable
+  )
+else()
+  target_compile_options(logme PRIVATE
+    -Wno-unused-parameter
+    -Wno-unused-variable
+  )
+endif()
+
 if(USE_JSONCPP)
   target_compile_definitions(logme PUBLIC USE_JSONCPP)
   target_link_libraries(logme PUBLIC JsonCpp::JsonCpp)

@@ -6,7 +6,6 @@
 #include <Logme/Logger.h>
 #include <Logme/Logme.h>
 
-
 static const char* ErrnoText(int e)
 {
   const char* s = std::strerror(e);
@@ -376,6 +375,7 @@ bool DeobfuscateLogFile(
   , const std::string& outPath
 )
 {
+  (void)ch;
   if (key == NULL)
     return false;
 

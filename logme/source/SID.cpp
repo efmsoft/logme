@@ -12,7 +12,7 @@ SID SID::Build(const char* name_upto8chars)
   SID sid{};
 
   char* p = (char*)&sid.Name;
-  for (int i = 0; i < sizeof(sid.Name) && *name_upto8chars; ++i)
+  for (size_t i = 0; i < sizeof(sid.Name) && *name_upto8chars; ++i)
     *p++ = *name_upto8chars++;
 
   return sid;

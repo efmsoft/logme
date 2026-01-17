@@ -8,7 +8,11 @@
 using namespace Logme;
 
 Printer Logme::None;
-template<> LOGMELNK std::string FormatValue(const Printer& v) { return std::string(); }
+template<> LOGMELNK std::string FormatValue(const Printer& v) 
+{ 
+  (void)v;
+  return std::string(); 
+}
 
 template<typename T> std::string StdFormat(const T& v)
 {

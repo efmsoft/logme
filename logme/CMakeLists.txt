@@ -19,6 +19,10 @@ target_include_directories(logme PRIVATE
 )
 
 target_compile_definitions(logme PRIVATE _WINSOCK_DEPRECATED_NO_WARNINGS _CRT_SECURE_NO_WARNINGS _LOGME_STATIC_BUILD_)
+
+if(MSVC)
+  target_compile_options(logme PRIVATE /EHsc)
+endif()
 if (LOGME_DISABLE_STD_FORMAT)
   target_compile_definitions(logme PUBLIC LOGME_DISABLE_STD_FORMAT)
 endif()

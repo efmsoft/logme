@@ -49,6 +49,7 @@ BackendConfigPtr Backend::CreateConfig()
 
 bool Backend::ApplyConfig(BackendConfigPtr c)
 {
+  (void)c;
   assert(c->Type == Type);
   return true;
 }

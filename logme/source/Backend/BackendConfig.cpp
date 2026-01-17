@@ -8,5 +8,6 @@ BackendConfig::~BackendConfig()
 
 bool BackendConfig::Parse(const Json::Value* po)
 {
+  (void)po;
   return true;
 }

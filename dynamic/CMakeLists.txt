@@ -26,6 +26,10 @@ target_include_directories(logmed PRIVATE
 )
 
 target_compile_definitions(logmed PRIVATE _LOGME_DLL_BUILD_ _WINSOCK_DEPRECATED_NO_WARNINGS _CRT_SECURE_NO_WARNINGS _DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR)
+
+if(MSVC)
+  target_compile_options(logmed PRIVATE /EHsc)
+endif()
 if (LOGME_DISABLE_STD_FORMAT)
   target_compile_definitions(logmed PUBLIC LOGME_DISABLE_STD_FORMAT)
 endif()

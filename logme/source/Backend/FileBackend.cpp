@@ -217,13 +217,14 @@ bool FileBackend::TestFileInUse(const std::string& file) const
 size_t FileBackend::GetSize()
 {
   if (File == -1)
-    return -1;
+    return static_cast<size_t>(-1);
 
   return (size_t)Seek(0, SEEK_END);
 }
 
 void FileBackend::Write(CharBuffer& data, SizeArray& msgSize)
 {
+  (void)msgSize;
   std::lock_guard guard(IoLock);
   
   char* head = &data[0];
@@ -247,7 +248,7 @@ bool FileBackend::ChangePart()
     return false;
   }
 
-  ProcessTemplateParam param(TEMPLATE_ALL & (~TEMPLATE_DATE_AND_TIME));
+  ProcessTemplateParam param(static_cast<uint32_t>(TEMPLATE_ALL) & ~static_cast<uint32_t>(TEMPLATE_DATE_AND_TIME));
   std::string re = ProcessTemplate(NameTemplate.c_str(), param);
 
   re = ReplaceDatetimePlaceholders(re, ".+");
@@ -393,7 +394,7 @@ void FileBackend::AppendObfuscated(const char* text, size_t add)
 void FileBackend::AppendOutputData(const char* text, size_t add)
 {
   size_t queued = 0;
-  size_t pos = -1;
+  size_t pos = static_cast<size_t>(-1);
 
   if (true)
   {
@@ -497,7 +498,7 @@ bool FileBackend::WorkerFunc()
   static uint64_t n = 0;
   static uint64_t sum = 0;
   static uint64_t avg = 0;
-  static uint64_t minm = -1;
+  static uint64_t minm = static_cast<uint64_t>(-1);
   static uint64_t maxm = 0;
   if (FlushTime && FlushTime != RIGHT_NOW)
   {

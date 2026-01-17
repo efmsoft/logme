@@ -27,6 +27,7 @@ static WORD ColorFlags[] =
 bool VTModeEnabled = false;
 #endif
 
+#ifndef _WIN32
 static bool IsTTY(FILE* stream)
 {
 #ifdef _WIN32
@@ -35,6 +36,7 @@ static bool IsTTY(FILE* stream)
   return (isatty(fileno(stream)) != 0);
 #endif
 }
+#endif
 
 Colorizer::Colorizer(bool isStdErr)
 #ifdef _WIN32

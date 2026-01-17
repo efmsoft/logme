@@ -69,19 +69,6 @@ static int GetModuleFileNameA(int, char* buff, size_t maxLen)
 }
 #endif
 
-static std::string GetExeDirectory()
-{
-  char buff[MAX_PATH + 1];
-  GetModuleFileNameA(0, buff, MAX_PATH);
-  buff[MAX_PATH] = '\0';
-
-  char* e = strrchr(buff, PATH_SEPARATOR);
-  if (e)
-    *e = '\0';
-
-  return buff;
-}
-
 static std::string GetExeName()
 {
   char buff[MAX_PATH + 1];

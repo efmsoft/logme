@@ -44,6 +44,9 @@ bool Logger::LoadConfiguration(
   , const std::string& section
 )
 {
+  (void)config_data;
+  (void)section;
+
 #ifdef USE_JSONCPP
   Json::Value root;
   Json::Reader reader;

@@ -4,6 +4,7 @@
 #include <regex>
 #include <stdint.h>
 #include <string.h>
+#include <stdio.h>
 #include <vector>
 
 #include <Logme/Backend/FileBackend.h>
@@ -326,7 +327,7 @@ void FileBackend::Truncate()
       return;
 
     char buffer[128];
-    sprintf_s(buffer, "--- dropped %u characters\n", readPos + n);
+    LOGME_SPRINTF_S(buffer, sizeof(buffer), "--- dropped %u characters\n", readPos + n);
     if (FileIo::WriteRaw(buffer, (int)strlen(buffer)) < 0)
       return;
 

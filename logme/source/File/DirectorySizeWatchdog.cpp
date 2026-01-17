@@ -43,6 +43,7 @@ void DirectorySizeWatchdog::SetPeriodicity(int periodicity)
 
 int DirectorySizeWatchdog::GetPeriodicity(int Periodicity) const
 {
+  (void)Periodicity;
   return CheckPeriodicity;
 }
 
@@ -80,7 +81,7 @@ bool DirectorySizeWatchdog::Run()
   if (Extensions.empty())
     return false;
 
-  if (MaximalSize == 0 || MaximalSize == -1)
+  if (MaximalSize == 0 || MaximalSize == uint64_t(-1))
     return false;
 
   if (CheckPeriodicity == 0 || CheckPeriodicity == -1)
@@ -111,7 +112,7 @@ void DirectorySizeWatchdog::WorkerProc()
 
 bool DirectorySizeWatchdog::LimitExeeded(uintmax_t& total_size)
 {
-  if (Extensions.empty() || MaximalSize == 0 || MaximalSize == -1)
+  if (Extensions.empty() || MaximalSize == 0 || MaximalSize == uint64_t(-1))
     return false;
 
   std::unordered_set<std::string> ext_set(Extensions.begin(), Extensions.end());

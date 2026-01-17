@@ -93,6 +93,7 @@ void FileManager::SetStopping()
 
 void FileManager::Notify(FileBackend* backend, uint64_t when)
 {
+  (void)backend;
   std::lock_guard lock(Lock);
   
   if (when == FileBackend::RIGHT_NOW || when < CurrentEarliestTime)

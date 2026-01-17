@@ -5,7 +5,9 @@
 
 using namespace Logme;
 
+#if defined(_MSC_VER)
 #pragma warning(disable : 6255 6386)
+#endif
 
 Procedure::Procedure(
   const Context& context
@@ -15,8 +17,8 @@ Procedure::Procedure(
   , ...
 )
   : BeginContext(context)
-  , RValPrinter(printer)
   , Channel(ch)
+  , RValPrinter(printer)
   , Begin(std::chrono::system_clock::now())
 {
   va_list args;

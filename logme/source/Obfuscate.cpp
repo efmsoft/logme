@@ -6,11 +6,13 @@
 #include <Logme/Logger.h>
 #include <Logme/Logme.h>
 
+#if _LOGME_ACTIVE
 static const char* ErrnoText(int e)
 {
   const char* s = std::strerror(e);
   return (s != NULL) ? s : "unknown";
 }
+#endif
 
 static std::string PathToUtf8String(const std::filesystem::path& path)
 {

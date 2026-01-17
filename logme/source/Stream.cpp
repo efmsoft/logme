@@ -11,7 +11,8 @@ Stream::Stream(LoggerPtr logger, const Context& context, OverridePtr ovr)
 }
 
 Stream::Stream(const Stream& src)
-  : Destination(src.Destination)
+  : std::stringstream()
+  , Destination(src.Destination)
   , OutputContext(src.OutputContext)
   , Ovr(src.Ovr)
 {

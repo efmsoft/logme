@@ -13,7 +13,9 @@
 #include <functional>
 #include <stdarg.h>
 
+#if defined(_MSC_VER)
 #pragma warning(disable : 6255)
+#endif
 
 using namespace Logme;
 

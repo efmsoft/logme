@@ -544,7 +544,7 @@ bool Logger::StartControlServer(const ControlConfig& c)
   struct sockaddr_in servaddr{};
   servaddr.sin_family = AF_INET;
   servaddr.sin_addr.s_addr = htonl(c.Interface);
-  servaddr.sin_port = htons(c.Port);
+  servaddr.sin_port = htons((unsigned short)c.Port);
 
   if (bind(ControlSocket, (sockaddr*)&servaddr, sizeof(servaddr)) != 0)
   {
@@ -572,7 +572,7 @@ bool Logger::StartControlServer(const ControlConfig& c)
 
 void Logger::ControlListener()
 {
-  RenameThread(-1, "LogCtrlListener");
+  RenameThread(uint64_t(-1), "LogCtrlListener");
 
 #ifndef _WIN32
   ControlBlockSigPipeForThread();
@@ -654,7 +654,7 @@ void Logger::ControlListener()
 
 void Logger::ControlHandler(int socket)
 {
-  RenameThread(-1, "LogCtrlHandler");
+  RenameThread(uint64_t(-1), "LogCtrlHandler");
 
 #ifndef _WIN32
   ControlBlockSigPipeForThread();
@@ -725,7 +725,7 @@ void Logger::ControlHandler(int socket)
     outPrefixWords = 0;
 
     std::string k(cmd);
-    std::transform(k.begin(), k.end(), k.begin(), ::tolower);
+    ToLowerAsciiInplace(k);
 
     StringArray items;
     size_t n = WordSplit(k, items);
@@ -944,7 +944,7 @@ std::string Logger::Control(const std::string& command)
   auto ControlInternal = [&](const std::string& cmd) -> std::string
   {
     std::string k(cmd);
-    std::transform(k.begin(), k.end(), k.begin(), ::tolower);
+    ToLowerAsciiInplace(k);
 
     StringArray items;
     size_t n = WordSplit(k, items);
@@ -976,7 +976,7 @@ std::string Logger::Control(const std::string& command)
   };
 
   std::string k(command);
-  std::transform(k.begin(), k.end(), k.begin(), ::tolower);
+  ToLowerAsciiInplace(k);
 
   StringArray items;
   size_t n = WordSplit(k, items);
@@ -990,7 +990,7 @@ std::string Logger::Control(const std::string& command)
       bool ok = !(text.rfind("error:", 0) == 0);
 
       std::string remainderLower = remainder;
-      std::transform(remainderLower.begin(), remainderLower.end(), remainderLower.begin(), ::tolower);
+      ToLowerAsciiInplace(remainderLower);
 
       StringArray remainderItems;
       (void)WordSplit(remainderLower, remainderItems);

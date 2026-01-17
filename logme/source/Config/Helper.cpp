@@ -85,7 +85,14 @@ bool Name2Value(
   std::string s(name);
 
   if (caseSensitive == false)
-    std::transform(s.begin(), s.end(), s.begin(), ::tolower);
+  {
+    std::transform(
+      s.begin()
+      , s.end()
+      , s.begin()
+      , [](unsigned char c) { return (char)std::tolower(c); }
+    );
+  }
 
   for (; pv->Name; pv++)
   {

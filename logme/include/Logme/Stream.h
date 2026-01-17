@@ -16,7 +16,11 @@ namespace Logme
 
   public:
     LOGMELNK Stream(LoggerPtr logger, const Context& context, OverridePtr ovr = OverridePtr());
-    LOGMELNK Stream(Stream&&) noexcept = default;
+    Stream(const Stream&) = delete;
+    Stream& operator=(const Stream&) = delete;
+
+    Stream(Stream&&) = delete;
+    Stream& operator=(Stream&&) = delete;
     LOGMELNK ~Stream();
   };
 }

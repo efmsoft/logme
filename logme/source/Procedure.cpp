@@ -37,8 +37,8 @@ Procedure::Procedure(
   , ...
 )
   : BeginContext(context)
-  , RValPrinter(printer)
   , Channel(pch->GetID())
+  , RValPrinter(printer)
   , Begin(std::chrono::system_clock::now())
 {
   va_list args;

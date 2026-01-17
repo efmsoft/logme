@@ -31,9 +31,9 @@ Logger::Logger()
   , ControlSsl(nullptr)
   , LastDoAutodelete(0)
   , NumDeleting(0)
-  , Condition(&Logger::DefaultCondition)
   , EnableVTMode(false)
   , Obfuscate(false)
+  , Condition(&Logger::DefaultCondition)
 {
   CreateDefaultChannelLayout();
 

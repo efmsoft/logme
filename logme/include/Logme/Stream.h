@@ -16,7 +16,7 @@ namespace Logme
 
   public:
     LOGMELNK Stream(LoggerPtr logger, const Context& context, OverridePtr ovr = OverridePtr());
-    LOGMELNK Stream(const Stream& src);
+    LOGMELNK Stream(Stream&&) noexcept = default;
     LOGMELNK ~Stream();
   };
 }

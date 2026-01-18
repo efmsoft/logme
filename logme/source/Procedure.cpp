@@ -9,6 +9,11 @@ using namespace Logme;
 #pragma warning(disable : 6255 6386)
 #endif
 
+#if defined(__clang__)
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 Procedure::Procedure(
   const Context& context
   , Printer* printer

@@ -116,7 +116,7 @@ bool FileManager::TestFileInUse(const std::string& file)
 
 void FileManager::ManagementThread()
 {
-  RenameThread(-1, "FileManager::ManagementThread");
+  RenameThread(uint64_t(-1), "FileManager::ManagementThread");
 
 #ifdef _WIN32
   ThreadID = (unsigned)GetCurrentThreadId();

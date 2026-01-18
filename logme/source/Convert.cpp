@@ -11,7 +11,7 @@ static std::string FromWideString(const wchar_t* src)
 #ifdef _WIN32
   auto e = wcstombs_s(&n, nullptr, 0, src, 0);
   if (e)
-    n = -1;
+    n = size_t(-1);
 #else
   n = wcstombs(nullptr, src, 0);
 #endif
@@ -22,7 +22,7 @@ static std::string FromWideString(const wchar_t* src)
 #ifdef _WIN32
   e = wcstombs_s(&n, &buffer[0], n, src, n);
   if (e)
-    n = -1;
+    n = size_t(-1);
 #else
   n = wcstombs(&buffer[0], src, n);
 #endif
@@ -38,7 +38,7 @@ static std::wstring FromString(const char* src)
 #ifdef _WIN32
   auto e = mbstowcs_s(&n, nullptr, 0, src, 0);
   if (e)
-    n = -1;
+    n = size_t(-1);
 #else
   n = mbstowcs(nullptr, src, 0);
 #endif
@@ -50,7 +50,7 @@ static std::wstring FromString(const char* src)
 #ifdef _WIN32
   e = mbstowcs_s(&n, &buffer[0], n, src, n);
   if (e)
-    n = -1;
+    n = size_t(-1);
 #else
   n = mbstowcs(&buffer[0], src, n);
 #endif

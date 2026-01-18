@@ -4,6 +4,10 @@
 #include <string.h>
 #include <thread>
 
+#if defined(_MSC_VER)
+#pragma warning(disable: 4459)
+#endif
+
 static void OutputToDefaultChannel()
 {
   LogmeI("Line1");

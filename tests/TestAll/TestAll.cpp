@@ -4,7 +4,7 @@
 #include <string.h>
 #include <thread>
 
-void OutputToDefaultChannel()
+static void OutputToDefaultChannel()
 {
   LogmeI("Line1");
   LogmeE("Line %i", 2);
@@ -13,7 +13,7 @@ void OutputToDefaultChannel()
   using namespace Logme;
 
   auto ch = Instance->GetChannel(CH);
-  auto flags = ch->GetFlags();
+  OutputFlags flags = ch->GetFlags();
   flags.Location = DETALITY_SHORT;
   ch->SetFlags(flags);
 
@@ -28,7 +28,7 @@ void OutputToDefaultChannel()
   ch->SetFlags(flags);
 }
 
-std::string OutputToChannel1()
+static std::string OutputToChannel1()
 {
   std::string ret("str value");
   LogmeP(ret);
@@ -48,7 +48,7 @@ std::string OutputToChannel1()
   return ret;
 }
 
-int OutputToNamespaceChannel(int arg1, const char* argv, const std::string& str)
+static int OutputToNamespaceChannel(int arg1, const char* argv, const std::string& str)
 {
   int rc = 8;
   LogmeP(rc, ARGS3(arg1, argv, str));
@@ -66,7 +66,7 @@ int OutputToNamespaceChannel(int arg1, const char* argv, const std::string& str)
   return rc;
 }
 
-void TestRetention()
+static void TestRetention()
 {
   using namespace Logme;
   LOGME_CHANNEL(CH2, "channel2");
@@ -133,9 +133,9 @@ template<> std::string FormatValue<MyEnum>(const MyEnum& value)
   return "";
 }
 
-MyEnum ProcReturningEnumValue()
+static MyEnum ProcReturningEnumValue()
 {
-  MyEnum value;
+  MyEnum value{};
   LogmeP(value);
 
   std::this_thread::sleep_for(std::chrono::milliseconds(122));
@@ -144,7 +144,7 @@ MyEnum ProcReturningEnumValue()
   return value;
 }
 
-const char* CppOutput()
+static const char* CppOutput()
 {
   const char* ret = "const string";
   LogmeP(ret);
@@ -172,7 +172,7 @@ int main()
 
   using namespace Logme;
   auto ch = Instance->GetChannel(CH);
-  auto flags = ch->GetFlags();
+  OutputFlags flags = ch->GetFlags();
   flags.Duration = true;
   ch->SetFlags(flags);
 

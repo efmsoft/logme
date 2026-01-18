@@ -30,8 +30,8 @@ using namespace Logme;
 
 #define IO_ERROR(op) \
   {Error = errno; \
-  std::string pathName = GetPathName(); \
-  LogmeE(CHINT, "FileIo(%s): " #op " failed: %s", pathName.c_str(), ERRNO_STR(Error)); }
+  std::string name = GetPathName(); \
+  LogmeE(CHINT, "FileIo(%s): " #op " failed: %s", name.c_str(), ERRNO_STR(Error)); }
 
 FileIo::FileIo()
   : File(-1)
@@ -96,7 +96,7 @@ bool FileIo::Open(bool append, unsigned timeout, const char* fileName)
   for (unsigned start = GetTimeInMillisec();; Sleep(1))
   {
 #ifdef _WIN32
-    errno_t err = _sopen_s(&File, fileName, mode | _O_NOINHERIT, _SH_DENYWR, _S_IREAD | _S_IWRITE);
+    _sopen_s(&File, fileName, mode | _O_NOINHERIT, _SH_DENYWR, _S_IREAD | _S_IWRITE);
 #else
     const int pmode = S_IROTH | S_IWOTH | S_IWGRP | S_IRGRP | S_IWUSR | S_IRUSR;
     File = open(fileName, mode, pmode);

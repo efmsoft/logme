@@ -11,7 +11,9 @@ if(NOT TARGET ${logme_target})
   message(FATAL_ERROR "Requested ${logme_target} but it is not built. Check LOGME_BUILD_STATIC/LOGME_BUILD_DYNAMIC and USE_LOGME_SHARED.")
 endif()
 
- target_compile_options(Multithread PRIVATE /wd4840)
+if(MSVC)
+  target_compile_options(Multithread PRIVATE /wd4840)
+endif()
 
 target_link_libraries(Multithread PRIVATE ${logme_target})
 

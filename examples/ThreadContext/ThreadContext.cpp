@@ -3,6 +3,10 @@
 #include <thread>
 #include <vector>
 
+#if defined(_MSC_VER)
+#pragma warning(disable: 4840)
+#endif
+
 static void LibraryWork(const char* tag)
 {
   // This code does not know anything about channels.

@@ -5,6 +5,10 @@
 #include <thread>
 #include <vector>
 
+#if defined(_MSC_VER)
+#pragma warning(disable: 4840)
+#endif
+
 using namespace Logme;
 
 static ChannelPtr EnsureVisibleChannel(const ID& id)

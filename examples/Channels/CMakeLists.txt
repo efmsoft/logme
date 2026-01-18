@@ -11,13 +11,7 @@ if(NOT TARGET ${logme_target})
   message(FATAL_ERROR "Requested ${logme_target} but it is not built. Check LOGME_BUILD_STATIC/LOGME_BUILD_DYNAMIC and USE_LOGME_SHARED.")
 endif()
 
-if(MSVC)
-  target_compile_options(Channels PRIVATE /wd4840)
-endif()
-
 target_link_libraries(Channels PRIVATE ${logme_target})
-
-
 
 if(WIN32 AND DEFINED USE_LOGME_SHARED AND USE_LOGME_SHARED AND TARGET logmed)
   add_custom_command(TARGET Channels POST_BUILD

@@ -41,7 +41,7 @@ ThreadName::~ThreadName()
       c.Ovr = &ovr;
 
       // After returning the initial name, a message should be printed. 
-      // The text of the message doesn’t matter. Otherwise, it might 
+      // The text of the message doesn't matter. Otherwise, it might 
       // happen that the next message to the channel will be output much 
       // later, and the channel name change will appear as if it happened 
       // much later than it actually did

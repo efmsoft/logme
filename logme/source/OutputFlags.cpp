@@ -4,6 +4,11 @@
 #include <Logme/OutputFlags.h>
 #include <Logme/Utils.h>
 
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
+#endif
+
 using namespace Logme;
 
 OutputFlags::OutputFlags()
@@ -32,11 +37,6 @@ static std::string FormatFlag(const char* name, FormatFlagFunc func = FormatFlag
 
   return std::string(name);
 }
-
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
-#endif
 
 #define APPEND_FLAG(name, ...) \
   if (name) \

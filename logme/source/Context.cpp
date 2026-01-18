@@ -17,6 +17,11 @@
 #pragma warning(disable : 26812)
 #endif
 
+#if defined(__clang__)
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 using namespace Logme;
 
 #ifndef _WIN32

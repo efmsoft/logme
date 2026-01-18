@@ -4,6 +4,11 @@
 #include <stdarg.h>
 #include <string.h>
 
+#if defined(__clang__)
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 inline void strcpy_s(char* dst, size_t n, const char* src)
 {
   (void)n;
@@ -33,5 +38,9 @@ inline int sprintf_s(char* dst, size_t n, const char* format, ...)
   va_end(args);
   return rc;
 }
+
+#if defined(__clang__)
+  #pragma clang diagnostic pop
+#endif
 
 #endif

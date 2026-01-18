@@ -5,6 +5,10 @@
 #include <thread>
 #include <vector>
 
+#if defined(_MSC_VER)
+#pragma warning(disable: 4840)
+#endif
+
 static void Worker(Logme::ChannelPtr ch, int workerId, int messages, std::atomic<int>& counter)
 {
   // Set default thread channel so channel-less logs in this thread go to 'ch'.

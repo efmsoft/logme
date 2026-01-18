@@ -4,6 +4,10 @@
 
 #include <memory>
 
+#if defined(_MSC_VER)
+#pragma warning(disable: 4840)
+#endif
+
 int main()
 {
   // NOTE:

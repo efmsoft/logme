@@ -33,6 +33,11 @@ static std::string FormatFlag(const char* name, FormatFlagFunc func = FormatFlag
   return std::string(name);
 }
 
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
+#endif
+
 #define APPEND_FLAG(name, ...) \
   if (name) \
     flags.push_back(FormatFlag(#name, ## __VA_ARGS__))
@@ -102,3 +107,7 @@ std::string OutputFlags::ToString(const char* separator, bool brackets) const
 
   return result;
 }
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif

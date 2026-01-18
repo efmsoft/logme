@@ -458,19 +458,14 @@ bool DeobfuscateLogFile(
     );
     if (ec)
     {
-      {
-      std::string inPath = PathToUtf8String(in);
-      std::string outPath = PathToUtf8String(out);
-      std::string ecText = ec.message();
-
       LogmeE(
         ch
         , "DeobfuscateLogFile: copy_file failed: in='%s' out='%s' ec=%s"
-        , inPath.c_str()
-        , outPath.c_str()
-        , ecText.c_str()
+        , PathToUtf8String(in).c_str()
+        , PathToUtf8String(out).c_str()
+        , ec.message().c_str()
       );
-    }
+
       return false;
     }
 

@@ -266,6 +266,7 @@ std::string Logme::ProcessTemplate(
     name += *p++;
   }
 
+  (void)tstr;
   (void)ftemplate;
   LogmeI_If(ftemplate, CHINT, "ProcessTemplate: %s -> %s", tstr, name.c_str());
 

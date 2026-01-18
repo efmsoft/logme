@@ -1,10 +1,16 @@
 #include <Common/TestBackend.h>
 #include <Common/TestData.h>
 
+#if defined(_MSC_VER)
 #pragma warning(push)
 #pragma warning(disable : 26495)
+#endif
+
 #include <gtest/gtest.h>
+
+#if defined(_MSC_VER)
 #pragma warning(pop)
+#endif
 
 #include <Logme/Logme.h>
 #include <Logme/Time/datetime.h>

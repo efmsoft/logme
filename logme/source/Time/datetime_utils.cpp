@@ -69,7 +69,7 @@ bool Logme::SystemTimeToUnixTime(const SystemTime& stime, uni_time_t& time)
 {
   time = static_cast<uni_time_t>(-1);
   FILETIME ft = {0};
-  BOOLEAN success = SystemTimeToFileTime(reinterpret_cast<const SYSTEMTIME*>(&stime), &ft);
+  BOOL success = SystemTimeToFileTime(reinterpret_cast<const SYSTEMTIME*>(&stime), &ft);
   if (!success)
   {
     return false;
@@ -100,14 +100,14 @@ bool Logme::DateTimeToSystemTime(const DateTime& time, SystemTime& stime)
   {
     return false;
   }
-  stime.Year = time.GetYear();
-  stime.Month = time.GetMonth();
-  stime.DayOfWeek = time.GetDayOfWeek();
-  stime.Day = time.GetDay();
-  stime.Hour = time.GetHour();
-  stime.Minute = time.GetMinute();
-  stime.Second = time.GetSecond();
-  stime.Milliseconds = time.GetMillisecond();
+  stime.Year = static_cast<uint16_t>(time.GetYear());
+  stime.Month = static_cast<uint16_t>(time.GetMonth());
+  stime.DayOfWeek = static_cast<uint16_t>(time.GetDayOfWeek());
+  stime.Day = static_cast<uint16_t>(time.GetDay());
+  stime.Hour = static_cast<uint16_t>(time.GetHour());
+  stime.Minute = static_cast<uint16_t>(time.GetMinute());
+  stime.Second = static_cast<uint16_t>(time.GetSecond());
+  stime.Milliseconds = static_cast<uint16_t>(time.GetMillisecond());
   return true;
 }
 #endif

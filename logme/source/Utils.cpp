@@ -147,7 +147,7 @@ std::string Logme::TrimSpaces(const std::string& str)
 std::string& Logme::ToLowerAsciiInplace(std::string& v)
 {
   std::transform(v.begin(), v.end(), v.begin(), [](char c) {
-    return ::tolower((unsigned char)c);
+    return static_cast<char>(::tolower((unsigned char)c));
   });
 
   return v;

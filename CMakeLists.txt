@@ -11,6 +11,10 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF) 
 
+if(MSVC)
+  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/EHsc>)
+endif()
+
 option(LOGME_BUILD_EXAMPLES "Build logme examples" ON)
 option(LOGME_BUILD_TESTS "Build logme tests" ON)
 option(LOGME_BUILD_STATIC "Build logme as static library" ON)

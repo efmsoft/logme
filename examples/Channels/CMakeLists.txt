@@ -11,6 +11,7 @@ if(NOT TARGET ${logme_target})
   message(FATAL_ERROR "Requested ${logme_target} but it is not built. Check LOGME_BUILD_STATIC/LOGME_BUILD_DYNAMIC and USE_LOGME_SHARED.")
 endif()
 
+target_compile_options(Channels PRIVATE /wd4840)
 
 target_link_libraries(Channels PRIVATE ${logme_target})
 

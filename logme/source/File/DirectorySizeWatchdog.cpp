@@ -15,7 +15,7 @@ DirectorySizeWatchdog::DirectorySizeWatchdog(
 )
   : TargetDirectory(target)
   , TestInUse(testInUse)
-  , MaximalSize(-1)
+  , MaximalSize(uint64_t(-1))
   , CheckPeriodicity(0)
   , StopFlag(false)
 {
@@ -95,7 +95,7 @@ bool DirectorySizeWatchdog::Run()
 
 void DirectorySizeWatchdog::WorkerProc()
 {
-  RenameThread(-1, "DirectorySizeWatchdog");
+  RenameThread(uint64_t(-1), "DirectorySizeWatchdog");
 
   while (!StopFlag.load()) 
   {

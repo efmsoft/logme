@@ -56,6 +56,16 @@ namespace Logme
 
 #if _LOGME_ACTIVE
 
+#if defined(__cplusplus) && (__cplusplus >= 202002L) && defined(__clang__)
+#define _LogmeP(level, retval, ...) \
+  unsigned char _procStorage[sizeof(Logme::PrinterT<int>)]; \
+  const Logme::Context& _procContext = LOGME_CONTEXT(level, &CH, &SUBSID __VA_OPT__(,) __VA_ARGS__); \
+  Logme::Procedure logme_proc(_procContext, Logme::CreatePrinter(retval, _procStorage) __VA_OPT__(,) __VA_ARGS__)
+
+#define _LogmePV(level, ...) \
+  const Logme::Context& _procContext = LOGME_CONTEXT(level, &CH, &SUBSID __VA_OPT__(,) __VA_ARGS__); \
+  Logme::Procedure logme_proc(_procContext, nullptr _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+#else
 #define _LogmeP(level, retval, ...) \
   unsigned char _procStorage[sizeof(Logme::PrinterT<int>)]; \
   const Logme::Context& _procContext = LOGME_CONTEXT(level, &CH, &SUBSID, ## __VA_ARGS__); \
@@ -64,11 +74,50 @@ namespace Logme
 #define _LogmePV(level, ...) \
   const Logme::Context& _procContext = LOGME_CONTEXT(level, &CH, &SUBSID, ## __VA_ARGS__); \
   Logme::Procedure logme_proc(_procContext, nullptr _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
- 
+#endif 
 #else
 #define _LogmeP(level, retval, ...)
 #define _LogmePV(level)
 #endif
+
+#if defined(__cplusplus) && (__cplusplus >= 202002L) && defined(__clang__)
+#define LogmeP(retval, ...) \
+  _LogmeP(Logme::Level::LEVEL_INFO, retval __VA_OPT__(,) __VA_ARGS__)
+
+#define LogmePV(...) \
+  _LogmePV(Logme::Level::LEVEL_INFO __VA_OPT__(,) __VA_ARGS__)
+
+#define LogmePI(retval, ...) \
+  _LogmeP(Logme::Level::LEVEL_INFO, retval __VA_OPT__(,) __VA_ARGS__)
+
+#define LogmePVI(...) \
+  _LogmePV(Logme::Level::LEVEL_INFO __VA_OPT__(,) __VA_ARGS__)
+
+#define LogmePD(retval, ...) \
+  _LogmeP(Logme::Level::LEVEL_DEBUG, retval __VA_OPT__(,) __VA_ARGS__)
+
+#define LogmePVD(...) \
+  _LogmePV(Logme::Level::LEVEL_DEBUG __VA_OPT__(,) __VA_ARGS__)
+
+#define LogmePW(retval, ...) \
+  _LogmeP(Logme::Level::LEVEL_WARN, retval __VA_OPT__(,) __VA_ARGS__)
+
+#define LogmePVW(...) \
+  _LogmePV(Logme::Level::LEVEL_WARN __VA_OPT__(,) __VA_ARGS__)
+
+#define LogmePE(retval, ...) \
+  _LogmeP(Logme::Level::LEVEL_ERROR, retval __VA_OPT__(,) __VA_ARGS__)
+
+#define LogmePVE(...) \
+  _LogmePV(Logme::Level::LEVEL_ERROR __VA_OPT__(,) __VA_ARGS__)
+
+#define LogmePC(retval, ...) \
+  _LogmeP(Logme::Level::LEVEL_CRITICAL, retval __VA_OPT__(,) __VA_ARGS__)
+
+#define LogmePVC(...) \
+  _LogmePV(Logme::Level::LEVEL_CRITICAL __VA_OPT__(,) __VA_ARGS__)
+
+#else
 
 #define LogmeP(retval, ...) \
   _LogmeP(Logme::Level::LEVEL_INFO, retval, ## __VA_ARGS__)
@@ -105,3 +154,5 @@ namespace Logme
 
 #define LogmePVC(...) \
   _LogmePV(Logme::Level::LEVEL_CRITICAL, ## __VA_ARGS__)
+
+#endif

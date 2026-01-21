@@ -1,11 +1,11 @@
+# logme
+
 [![CI](https://github.com/efmsoft/logme/actions/workflows/ci.yml/badge.svg)](https://github.com/efmsoft/logme/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/efmsoft/logme)](https://github.com/efmsoft/logme/releases)
 ![License](https://img.shields.io/github/license/efmsoft/logme)
 ![C++](https://img.shields.io/badge/std-C%2B%2B20-blue)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-blue)
 [![Docs](https://img.shields.io/badge/docs-wiki-blue)](https://github.com/efmsoft/logme/wiki)
-
-# logme
 
 ![Colored console output example](docs/assets/example.png)
 

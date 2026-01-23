@@ -370,6 +370,31 @@ static bool ReadLe16FromFile(FILE* f, uint16_t& v)
   return true;
 }
 
+
+bool IsObfuscatedLogFile(
+  const std::string& path
+)
+{
+  std::filesystem::path p(path);
+
+  std::error_code ec;
+  if (!std::filesystem::is_regular_file(p, ec) || ec)
+    return false;
+
+  FILE* f = fopen(p.string().c_str(), "rb");
+  if (f == NULL)
+    return false;
+
+  uint16_t sig = 0;
+  bool ok = ReadLe16FromFile(f, sig);
+  fclose(f);
+
+  if (!ok)
+    return false;
+
+  return sig == LOGOBF_SIGNATURE;
+}
+
 bool DeobfuscateLogFile(
   const Logme::ID& ch
   , const ObfKey* key

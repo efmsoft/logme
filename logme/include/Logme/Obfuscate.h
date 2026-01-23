@@ -61,6 +61,11 @@ LOGMELNK size_t ObfCalcRecordSize(
   size_t plaintextLen
 );
 
+
+LOGMELNK bool IsObfuscatedLogFile(
+  const std::string& path
+);
+
 LOGMELNK bool DeobfuscateLogFile(
   const Logme::ID& ch
   , const ObfKey* key

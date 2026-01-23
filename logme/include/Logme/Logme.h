@@ -6,6 +6,7 @@
 #include <Logme/Channel.h>
 #include <Logme/Convert.h>
 #include <Logme/Logger.h>
+#include <Logme/ObfString.h>
 #include <Logme/Procedure.h>
 #include <Logme/Stream.h>
 #include <Logme/Template.h>

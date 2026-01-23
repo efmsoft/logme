@@ -29,10 +29,16 @@ static void ChannelAndOverride()
   LogmeI(ch, ovr, "Override printf: %s", "ok");
 }
 
+static void ObfuscatedPrint()
+{
+  LogmeI(OBF("This line cannot be found when viewing the exe"));
+}
+
 int main()
 {
   BasicStream();
   BasicPrintf();
   ChannelAndOverride();
+  ObfuscatedPrint();
   return 0;
 }

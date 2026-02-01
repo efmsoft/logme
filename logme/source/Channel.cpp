@@ -1,5 +1,6 @@
 #include <Logme/Channel.h>
 #include <Logme/Logme.h>
+#include <Logme/ReentryGuard.h>
 #include <Logme/SafeID.h>
 
 #include <cassert>
@@ -87,6 +88,10 @@ void Channel::SetDisplayFilter(TDisplayFilter filter)
 void Channel::Display(Context& context, const char* line)
 {
   if (ShutdownCalled)
+    return;
+
+  DisplayReentryGuard guard;
+  if (guard.IsActive() == false)
     return;
 
   DataLock.lock();

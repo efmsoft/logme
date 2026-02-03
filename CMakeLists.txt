@@ -1,6 +1,28 @@
 cmake_minimum_required(VERSION 3.12)
-project(logme VERSION 2.4.1)
+project(logme VERSION 2.4.2)
 
+
+# Select which logme library target examples/tools/tests should link against.
+# Priority:
+#   1) Explicit USE_LOGME_SHARED
+#   2) When only dynamic is enabled (LOGME_BUILD_DYNAMIC=ON, LOGME_BUILD_STATIC=OFF)
+set(LOGME_LINK_TARGET logme)
+if(DEFINED USE_LOGME_SHARED AND USE_LOGME_SHARED)
+  set(LOGME_LINK_TARGET logmed)
+elseif(LOGME_BUILD_DYNAMIC AND NOT LOGME_BUILD_STATIC)
+  set(LOGME_LINK_TARGET logmed)
+endif()
+
+# Copy shared logme runtime next to an executable on Windows.
+function(LogmeCopyRuntime target)
+  if(WIN32 AND TARGET logmed)
+    add_custom_command(TARGET ${target} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:logmed>
+        $<TARGET_FILE_DIR:${target}>
+    )
+  endif()
+endfunction()
 cmake_policy(SET CMP0067 NEW)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})

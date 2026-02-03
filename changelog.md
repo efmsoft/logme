@@ -1,6 +1,14 @@
+## 2.4.2
+
+### Fixed
+- Fixed vcpkg CI failures when building examples/tests/tools with shared or static configurations.
+- Centralized library selection via `LOGME_LINK_TARGET` for all examples, tests, and tools.
+- Centralized Windows runtime DLL copy (`logmed`) using `LogmeCopyRuntime()` helper.
+- Made `_LOGME_STATIC_BUILD_` consistently follow `LOGME_LINK_TARGET` (including `logmectl`).
+
 # logme release notes
 
-## v1.6.0 — 2026-01-13
+## v1.6.0  2026-01-13
 
 ### Highlights
 - Fixed Windows shared builds with `tests` enabled under vcpkg: test discovery (`gtest_discover_tests`) no longer fails due to missing runtime DLLs.
@@ -19,7 +27,7 @@
 
 ---
 
-## v1.4.0 — 2026-01-13
+## v1.4.0  2026-01-13
 
 ### Packaging / Build system
 - Fixed shared build usability on Windows: test, example, and tool executables now correctly locate `logmed.dll` at runtime.

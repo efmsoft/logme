@@ -2,33 +2,14 @@ add_executable(ExampleProcedure
   Procedure.cpp
 )
 
-set(logme_target logme)
-if(DEFINED USE_LOGME_SHARED AND USE_LOGME_SHARED)
-  set(logme_target logmed)
-endif()
-
-if(NOT TARGET ${logme_target})
-  message(FATAL_ERROR "Requested ${logme_target} but it is not built. Check LOGME_BUILD_STATIC/LOGME_BUILD_DYNAMIC and USE_LOGME_SHARED.")
-endif()
-
-
-target_link_libraries(ExampleProcedure PRIVATE ${logme_target})
-
-
-
-if(WIN32 AND DEFINED USE_LOGME_SHARED AND USE_LOGME_SHARED AND TARGET logmed)
-  add_custom_command(TARGET ExampleProcedure POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-      $<TARGET_FILE:logmed>
-      $<TARGET_FILE_DIR:ExampleProcedure>
-  )
-endif()
+target_link_libraries(ExampleProcedure PRIVATE ${LOGME_LINK_TARGET})
+LogmeCopyRuntime(ExampleProcedure)
 
 target_compile_definitions(ExampleProcedure PRIVATE
   LOGME_INRELEASE
 )
 
-if(NOT (DEFINED USE_LOGME_SHARED AND USE_LOGME_SHARED))
+if(LOGME_LINK_TARGET STREQUAL "logme")
   target_compile_definitions(ExampleProcedure PRIVATE
     _LOGME_STATIC_BUILD_
   )

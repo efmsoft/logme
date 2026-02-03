@@ -27,7 +27,7 @@ endif()
 
 
 # Force link all objects from logme static library to keep command registrars in static builds.
-if(NOT (DEFINED USE_LOGME_SHARED AND USE_LOGME_SHARED))
+if(LOGME_LINK_TARGET STREQUAL "logme")
   if (MSVC)
     target_link_options(DynamicControl PRIVATE "/WHOLEARCHIVE:$<TARGET_LINKER_FILE:logme>")
   elseif(UNIX AND NOT APPLE)

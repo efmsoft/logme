@@ -1,0 +1,216 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  prepare-release-notes:
+    name: prepare-release-notes
+    runs-on: ubuntu-latest
+    outputs:
+      notes_path: ${{ steps.notes.outputs.notes_path }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract release notes from CHANGELOG.md
+        id: notes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          tag="${GITHUB_REF_NAME}"
+          out="release-notes-${tag}.md"
+
+          if [ ! -f "CHANGELOG.md" ]; then
+            echo "CHANGELOG.md not found, using fallback notes" > "$out"
+            echo "" >> "$out"
+            echo "Release: $tag" >> "$out"
+            echo "notes_path=$out" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Try to extract a section like:
+          # ## [2.4.3] - 2026-...
+          # or ## 2.4.3
+          # for tag v2.4.3 -> version 2.4.3
+          ver="${tag#v}"
+
+          awk -v ver="$ver" '
+            BEGIN { in=0; found=0 }
+            {
+              if ($0 ~ "^##[[:space:]]*\\[?" ver "\\]?") { in=1; found=1; print; next }
+              if (in && $0 ~ "^##[[:space:]]") { exit }
+              if (in) { print }
+            }
+            END {
+              if (!found) {
+                print "Release: v" ver
+                print ""
+                print "(No matching section found in CHANGELOG.md; please update it or adjust the header format.)"
+              }
+            }
+          ' CHANGELOG.md > "$out"
+
+          echo "notes_path=$out" >> "$GITHUB_OUTPUT"
+
+      - name: Upload notes artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-notes
+          path: ${{ steps.notes.outputs.notes_path }}
+          if-no-files-found: error
+
+  windows-msvc-x64:
+    name: windows-msvc-x64-${{ matrix.kind }}
+    runs-on: windows-latest
+    needs: prepare-release-notes
+    strategy:
+      fail-fast: false
+      matrix:
+        kind: [static, shared]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure
+        shell: pwsh
+        run: |
+          $kind = "${{ matrix.kind }}"
+          $bdir = "build/$kind"
+          $prefix = "stage/logme-${{ github.ref_name }}-windows-msvc-x64-$kind"
+
+          New-Item -ItemType Directory -Force -Path $bdir | Out-Null
+          New-Item -ItemType Directory -Force -Path $prefix | Out-Null
+
+          $static = "OFF"
+          $shared = "OFF"
+          if ($kind -eq "static") { $static = "ON" }
+          if ($kind -eq "shared") { $shared = "ON" }
+
+          cmake -S . -B $bdir -G "Visual Studio 17 2022" -A x64 `
+            -DLOGME_BUILD_STATIC=$static `
+            -DLOGME_BUILD_DYNAMIC=$shared `
+            -DLOGME_BUILD_EXAMPLES=OFF `
+            -DLOGME_BUILD_TESTS=OFF `
+            -DLOGME_BUILD_TOOLS=OFF `
+            -DUSE_JSONCPP=OFF `
+            -DLOGME_STD_FORMAT=AUTO
+
+      - name: Build (Release)
+        shell: pwsh
+        run: |
+          $bdir = "build/${{ matrix.kind }}"
+          cmake --build $bdir --config Release
+
+      - name: Install
+        shell: pwsh
+        run: |
+          $bdir = "build/${{ matrix.kind }}"
+          $prefix = "stage/logme-${{ github.ref_name }}-windows-msvc-x64-${{ matrix.kind }}"
+          cmake --install $bdir --config Release --prefix $prefix
+
+      - name: Add docs to staging
+        shell: pwsh
+        run: |
+          $prefix = "stage/logme-${{ github.ref_name }}-windows-msvc-x64-${{ matrix.kind }}"
+          New-Item -ItemType Directory -Force -Path (Join-Path $prefix "share/logme") | Out-Null
+
+          $files = @("LICENSE", "README.md", "CHANGELOG.md")
+          foreach ($f in $files)
+          {
+            if (Test-Path $f)
+            {
+              Copy-Item $f (Join-Path $prefix "share/logme/$f") -Force
+            }
+          }
+
+      - name: Pack + SHA256
+        shell: pwsh
+        run: |
+          $root = "stage"
+          $name = "logme-${{ github.ref_name }}-windows-msvc-x64-${{ matrix.kind }}"
+          $dir = Join-Path $root $name
+          $zip = "$name.zip"
+          $sha = "$zip.sha256.txt"
+
+          if (Test-Path $zip) { Remove-Item -Force $zip }
+          Compress-Archive -Path (Join-Path $dir "*") -DestinationPath $zip
+
+          $hashLine = (certutil -hashfile $zip SHA256 | Select-String -Pattern "^[0-9A-Fa-f]{64}$").Line
+          "$hashLine  $zip" | Out-File -Encoding ascii $sha
+
+      - name: Download release notes artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-notes
+          path: .
+
+      - name: Create/Update GitHub Release and upload assets
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: release-notes-${{ github.ref_name }}.md
+          files: |
+            logme-${{ github.ref_name }}-windows-msvc-x64-${{ matrix.kind }}.zip
+            logme-${{ github.ref_name }}-windows-msvc-x64-${{ matrix.kind }}.zip.sha256.txt
+
+  linux-ubuntu-22:
+    name: linux-ubuntu-22.04-release
+    runs-on: ubuntu-22.04
+    needs: prepare-release-notes
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure
+        shell: bash
+        run: |
+          set -euo pipefail
+          bdir="build/linux"
+          prefix="stage/logme-${GITHUB_REF_NAME}-linux-ubuntu-22.04-x64"
+          cmake -S . -B "$bdir" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DLOGME_BUILD_STATIC=ON \
+            -DLOGME_BUILD_DYNAMIC=OFF \
+            -DLOGME_BUILD_EXAMPLES=OFF \
+            -DLOGME_BUILD_TESTS=OFF \
+            -DLOGME_BUILD_TOOLS=OFF \
+            -DUSE_JSONCPP=OFF \
+            -DLOGME_STD_FORMAT=AUTO
+          cmake --build "$bdir" --config Release
+          cmake --install "$bdir" --prefix "$prefix"
+
+          mkdir -p "$prefix/share/logme"
+          for f in LICENSE README.md CHANGELOG.md; do
+            if [ -f "$f" ]; then
+              cp -f "$f" "$prefix/share/logme/$f"
+            fi
+          done
+
+      - name: Pack + SHA256
+        shell: bash
+        run: |
+          set -euo pipefail
+          name="logme-${GITHUB_REF_NAME}-linux-ubuntu-22.04-x64"
+          (cd stage && tar -czf "../${name}.tar.gz" "${name}")
+          sha256sum "${name}.tar.gz" > "${name}.tar.gz.sha256.txt"
+
+      - name: Download release notes artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-notes
+          path: .
+
+      - name: Create/Update GitHub Release and upload assets
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: release-notes-${{ github.ref_name }}.md
+          files: |
+            logme-${{ github.ref_name }}-linux-ubuntu-22.04-x64.tar.gz
+            logme-${{ github.ref_name }}-linux-ubuntu-22.04-x64.tar.gz.sha256.txt

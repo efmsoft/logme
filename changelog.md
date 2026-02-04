@@ -1,3 +1,9 @@
+## 2.4.4
+
+### Fixed
+- Fixed CMake build directory escaping in `add_subdirectory()` calls (`../out/...` → `out/...`).
+  This prevents debug/release build races when building in parallel (e.g. vcpkg).
+  
 ## 2.4.2
 
 ### Fixed

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-project(logme VERSION 2.4.2)
+project(logme VERSION 2.4.4)
 
 
 # Select which logme library target examples/tools/tests should link against.
@@ -97,11 +97,11 @@ if(USE_JSONCPP)
 endif()
 
 if(LOGME_BUILD_STATIC)
- add_subdirectory(logme ../out/Static)
+ add_subdirectory(logme out/Static)
 endif()
 
 if(LOGME_BUILD_DYNAMIC)
-  add_subdirectory(dynamic ../out/Dynamic)
+  add_subdirectory(dynamic out/Dynamic)
 endif()
 
 include(GNUInstallDirs)
@@ -176,14 +176,14 @@ if(LOGME_ENABLE_INSTALL AND NOT _logme_both_built)
 endif()
 
 if(LOGME_BUILD_EXAMPLES)
-  add_subdirectory(examples ../out/Examples)
+  add_subdirectory(examples out/Examples)
 endif()
 
 if(LOGME_BUILD_TESTS)
   enable_testing()
-  add_subdirectory(tests ../out/Tests)
+  add_subdirectory(tests out/Tests)
 endif()
 
 if(LOGME_BUILD_TOOLS)
-  add_subdirectory(tools ../out/Tools)
+  add_subdirectory(tools out/Tools)
 endif()

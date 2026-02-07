@@ -42,11 +42,11 @@ jobs:
           ver="${tag#v}"
 
           awk -v ver="$ver" '
-            BEGIN { in=0; found=0 }
+            BEGIN { inside=0; found=0 }
             {
-              if ($0 ~ "^##[[:space:]]*\\[?" ver "\\]?") { in=1; found=1; print; next }
-              if (in && $0 ~ "^##[[:space:]]") { exit }
-              if (in) { print }
+              if ($0 ~ "^##[[:space:]]*\\[?" ver "\\]?") { inside=1; found=1; print; next }
+              if (inside && $0 ~ "^##[[:space:]]") { exit }
+              if (inside) { print }
             }
             END {
               if (!found) {

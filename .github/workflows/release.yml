@@ -100,6 +100,7 @@ jobs:
             -DLOGME_BUILD_EXAMPLES=OFF `
             -DLOGME_BUILD_TESTS=OFF `
             -DLOGME_BUILD_TOOLS=OFF `
+            -DLOGME_ENABLE_INSTALL=ON `
             -DUSE_JSONCPP=OFF `
             -DLOGME_STD_FORMAT=AUTO
 
@@ -181,6 +182,7 @@ jobs:
             -DLOGME_BUILD_EXAMPLES=OFF \
             -DLOGME_BUILD_TESTS=OFF \
             -DLOGME_BUILD_TOOLS=OFF \
+            -DLOGME_ENABLE_INSTALL=ON \
             -DUSE_JSONCPP=OFF \
             -DLOGME_STD_FORMAT=AUTO
           cmake --build "$bdir" --config Release

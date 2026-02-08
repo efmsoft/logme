@@ -210,20 +210,14 @@ jobs:
             if (-not (Test-Path (Join-Path $prefix "lib\logmed.lib"))) { throw "Missing lib/logmed.lib" }
           }
 
-      - name: Add docs to staging
+      - name: Add docs to archive root
         shell: pwsh
         run: |
           $prefix = "stage/logme-${{ github.ref_name }}-windows-msvc-x64-${{ matrix.kind }}"
-          New-Item -ItemType Directory -Force -Path (Join-Path $prefix "share/logme") | Out-Null
 
-          $files = @("LICENSE", "README.md", "changelog.md")
-          foreach ($f in $files)
-          {
-            if (Test-Path $f)
-            {
-              Copy-Item $f (Join-Path $prefix "share/logme/$f") -Force
-            }
-          }
+          if (Test-Path "LICENSE")      { Copy-Item "LICENSE"      (Join-Path $prefix "LICENSE")      -Force }
+          if (Test-Path "README.md")    { Copy-Item "README.md"    (Join-Path $prefix "README.md")    -Force }
+          if (Test-Path "changelog.md") { Copy-Item "changelog.md" (Join-Path $prefix "changelog.md") -Force }
 
       - name: Pack + SHA256
         shell: pwsh
@@ -272,10 +266,9 @@ jobs:
           cmake --build "$bdir" --config Release
           cmake --install "$bdir" --prefix "$prefix"
 
-          mkdir -p "$prefix/share/logme"
           for f in LICENSE README.md changelog.md; do
             if [ -f "$f" ]; then
-              cp -f "$f" "$prefix/share/logme/$f"
+              cp -f "$f" "$prefix/$f"
             fi
           done
 

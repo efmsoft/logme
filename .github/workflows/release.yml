@@ -35,10 +35,6 @@ jobs:
             exit 0
           fi
 
-          # Try to extract a section like:
-          # ## [2.4.3] - 2026-...
-          # or ## 2.4.3
-          # for tag v2.4.3 -> version 2.4.3
           ver="${tag#v}"
 
           awk -v ver="$ver" '
@@ -82,9 +78,15 @@ jobs:
       - name: Configure
         shell: pwsh
         run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = "Stop"
+
           $kind = "${{ matrix.kind }}"
-          $bdir = "build/$kind"
-          $prefix = "stage/logme-${{ github.ref_name }}-windows-msvc-x64-$kind"
+          $ws = $env:GITHUB_WORKSPACE
+
+          $bdir = Join-Path $ws ("build\" + $kind)
+          $stageRoot = Join-Path $ws "stage"
+          $prefix = Join-Path $stageRoot ("logme-${{ github.ref_name }}-windows-msvc-x64-" + $kind)
 
           New-Item -ItemType Directory -Force -Path $bdir | Out-Null
           New-Item -ItemType Directory -Force -Path $prefix | Out-Null
@@ -94,7 +96,7 @@ jobs:
           if ($kind -eq "static") { $static = "ON" }
           if ($kind -eq "shared") { $shared = "ON" }
 
-          cmake -S . -B $bdir -G "Visual Studio 17 2022" -A x64 `
+          cmake -S $ws -B $bdir -G "Visual Studio 17 2022" -A x64 `
             -DLOGME_BUILD_STATIC=$static `
             -DLOGME_BUILD_DYNAMIC=$shared `
             -DLOGME_BUILD_EXAMPLES=OFF `
@@ -103,49 +105,139 @@ jobs:
             -DLOGME_ENABLE_INSTALL=ON `
             -DUSE_JSONCPP=OFF `
             -DLOGME_STD_FORMAT=AUTO
+          if ($LASTEXITCODE -ne 0) { throw "cmake configure failed: $LASTEXITCODE" }
 
       - name: Build (Release)
         shell: pwsh
         run: |
-          $bdir = "build/${{ matrix.kind }}"
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = "Stop"
+
+          $kind = "${{ matrix.kind }}"
+          $ws = $env:GITHUB_WORKSPACE
+          $bdir = Join-Path $ws ("build\" + $kind)
+
           cmake --build $bdir --config Release
+          if ($LASTEXITCODE -ne 0) { throw "cmake build failed: $LASTEXITCODE" }
 
       - name: Install
         shell: pwsh
         run: |
-          $bdir = "build/${{ matrix.kind }}"
-          $prefix = "stage/logme-${{ github.ref_name }}-windows-msvc-x64-${{ matrix.kind }}"
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = "Stop"
+
+          $kind = "${{ matrix.kind }}"
+          $ws = $env:GITHUB_WORKSPACE
+
+          $bdir = Join-Path $ws ("build\" + $kind)
+          $stageRoot = Join-Path $ws "stage"
+          $prefix = Join-Path $stageRoot ("logme-${{ github.ref_name }}-windows-msvc-x64-" + $kind)
+
           cmake --install $bdir --config Release --prefix $prefix
+          if ($LASTEXITCODE -ne 0) { throw "cmake install failed: $LASTEXITCODE" }
+
+      - name: Verify staging contains headers and libraries
+        shell: pwsh
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = "Stop"
+
+          $kind = "${{ matrix.kind }}"
+          $ws = $env:GITHUB_WORKSPACE
+          $stageRoot = Join-Path $ws "stage"
+          $prefix = Join-Path $stageRoot ("logme-${{ github.ref_name }}-windows-msvc-x64-" + $kind)
+
+          Write-Host "Staging prefix: $prefix"
+          if (-not (Test-Path $prefix))
+          {
+            Write-Host "ERROR: prefix directory does not exist"
+            exit 1
+          }
+
+          $inc = Join-Path $prefix "include"
+          $lib = Join-Path $prefix "lib"
+          $bin = Join-Path $prefix "bin"
+          $missing = @()
+
+          if (-not (Test-Path $inc)) { $missing += "include/" }
+          if (-not (Test-Path $lib)) { $missing += "lib/" }
+
+          if ($kind -eq "static")
+          {
+            $staticLib = Join-Path $lib "logme.lib"
+            if (-not (Test-Path $staticLib)) { $missing += "lib/logme.lib" }
+          }
+          else
+          {
+            if (-not (Test-Path $bin)) { $missing += "bin/" }
+            $dll = Join-Path $bin "logmed.dll"
+            $implib = Join-Path $lib "logmed.lib"
+            if (-not (Test-Path $dll)) { $missing += "bin/logmed.dll" }
+            if (-not (Test-Path $implib)) { $missing += "lib/logmed.lib" }
+          }
+
+          $cmakeDir = Join-Path $lib "cmake\logme"
+          if (-not (Test-Path $cmakeDir)) { $missing += "lib/cmake/logme/" }
+
+          if ($missing.Count -gt 0)
+          {
+            Write-Host "ERROR: staging is missing required files:"
+            $missing | ForEach-Object { Write-Host "  - $_" }
+
+            Write-Host ""
+            Write-Host "Directory tree (prefix):"
+            Get-ChildItem -Recurse -Force $prefix | Select-Object FullName
+
+            exit 1
+          }
+
+          Write-Host "OK: staging contains headers and libraries."
 
       - name: Add docs to staging
         shell: pwsh
         run: |
-          $prefix = "stage/logme-${{ github.ref_name }}-windows-msvc-x64-${{ matrix.kind }}"
-          New-Item -ItemType Directory -Force -Path (Join-Path $prefix "share/logme") | Out-Null
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = "Stop"
+
+          $kind = "${{ matrix.kind }}"
+          $ws = $env:GITHUB_WORKSPACE
+          $stageRoot = Join-Path $ws "stage"
+          $prefix = Join-Path $stageRoot ("logme-${{ github.ref_name }}-windows-msvc-x64-" + $kind)
+
+          $shareDir = Join-Path $prefix "share\logme"
+          New-Item -ItemType Directory -Force -Path $shareDir | Out-Null
 
           $files = @("LICENSE", "README.md", "changelog.md")
           foreach ($f in $files)
           {
-            if (Test-Path $f)
+            if (Test-Path (Join-Path $ws $f))
             {
-              Copy-Item $f (Join-Path $prefix "share/logme/$f") -Force
+              Copy-Item (Join-Path $ws $f) (Join-Path $shareDir $f) -Force
             }
           }
 
       - name: Pack + SHA256
         shell: pwsh
         run: |
-          $root = "stage"
-          $name = "logme-${{ github.ref_name }}-windows-msvc-x64-${{ matrix.kind }}"
-          $dir = Join-Path $root $name
-          $zip = "$name.zip"
-          $sha = "$zip.sha256.txt"
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = "Stop"
+
+          $kind = "${{ matrix.kind }}"
+          $ws = $env:GITHUB_WORKSPACE
+          $stageRoot = Join-Path $ws "stage"
+
+          $name = "logme-${{ github.ref_name }}-windows-msvc-x64-$kind"
+          $dir = Join-Path $stageRoot $name
+          $zip = Join-Path $ws ("$name.zip")
+          $sha = Join-Path $ws ("$name.zip.sha256.txt")
 
           if (Test-Path $zip) { Remove-Item -Force $zip }
+
           Compress-Archive -Path (Join-Path $dir "*") -DestinationPath $zip
+          if ($LASTEXITCODE -ne 0) { throw "Compress-Archive failed: $LASTEXITCODE" }
 
           $hashLine = (certutil -hashfile $zip SHA256 | Select-String -Pattern "^[0-9A-Fa-f]{64}$").Line
-          "$hashLine  $zip" | Out-File -Encoding ascii $sha
+          "$hashLine  $name.zip" | Out-File -Encoding ascii $sha
 
       - name: Download release notes artifact
         uses: actions/download-artifact@v4

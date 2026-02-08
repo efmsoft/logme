@@ -1,3 +1,12 @@
+## 2.4.6
+
+### Fixed
+- Updated GitHub release workflow (`release.yml`): corrected Windows artifacts packaging (headers and libraries are now included in release archives).
+
+### Notes
+- No library code changes since 2.4.4.
+- This release only affects CI/release packaging.
+
 ## 2.4.4
 
 ### Fixed

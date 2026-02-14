@@ -21,4 +21,6 @@ namespace Logme
     LOGMELNK SafeID& operator=(const SafeID& id);
     LOGMELNK SafeID& operator=(const char* name);
   };
+  
+  typedef std::shared_ptr<SafeID> IDPtr;
 }

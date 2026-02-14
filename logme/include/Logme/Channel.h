@@ -2,8 +2,9 @@
 
 #include <Logme/Backend/Backend.h>
 #include <Logme/Context.h>
-#include <Logme/Override.h>
 #include <Logme/OutputFlags.h>
+#include <Logme/Override.h>
+#include <Logme/SafeID.h>
 #include <Logme/Types.h>
 
 #include <functional>
@@ -45,7 +46,7 @@ namespace Logme
 
     class Logger* Owner;
     std::string Name;
-    ID ChannelID;
+    SafeID ChannelID;
     OutputFlags Flags;
     Level LevelFilter;
     bool Enabled;

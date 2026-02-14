@@ -10,7 +10,7 @@ namespace Logme
   class ThreadChannel
   {
     LoggerPtr Logger;
-    ID PrevChannel;
+    SafeID PrevChannel;
 
   public:
     LOGMELNK ThreadChannel(LoggerPtr logger, const ID& ch);

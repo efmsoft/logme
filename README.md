@@ -7,6 +7,9 @@
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-blue)
 [![Docs](https://img.shields.io/badge/docs-wiki-blue)](https://github.com/efmsoft/logme/wiki)
 
+[![vcpkg](https://img.shields.io/badge/vcpkg-available-blue?logo=vcpkg)](https://vcpkg.io/en/package/logme)
+[![Conan Center](https://img.shields.io/badge/conan-center-blue?logo=conan)](https://conan.io/center/recipes/logme)
+
 ![Colored console output example](docs/assets/example.png)
 
 **logme** is a cross-platform C/C++ logging framework that allows applications to dynamically control what is logged and where, without restarting or recompiling.
@@ -199,6 +202,32 @@ target_link_libraries(your_target PRIVATE logme)
 An example of integrating logme as a git submodule can be found here: https://github.com/efmsoft/logme_cmake_submodule_example
 
 ---
+### Option C: vcpkg
+
+```bash
+vcpkg install logme
+```
+
+```cmake
+find_package(logme CONFIG REQUIRED)
+target_link_libraries(your_target PRIVATE logme::logme)
+```
+
+---
+
+### Option D: Conan
+
+```bash
+conan install --requires=logme/<version>
+```
+
+```cmake
+find_package(logme REQUIRED)
+target_link_libraries(your_target PRIVATE logme::logme)
+```
+
+---
+
 
 ## Build
 

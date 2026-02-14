@@ -1,0 +1,295 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  prepare-release-notes:
+    name: prepare-release-notes
+    runs-on: ubuntu-latest
+    outputs:
+      notes_path: ${{ steps.notes.outputs.notes_path }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract release notes from changelog.md
+        id: notes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          tag="${GITHUB_REF_NAME}"
+          out="release-notes-${tag}.md"
+
+          if [ ! -f "changelog.md" ]; then
+            echo "changelog.md not found, using fallback notes" > "$out"
+            echo "" >> "$out"
+            echo "Release: $tag" >> "$out"
+            echo "notes_path=$out" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Try to extract a section like:
+          # ## [2.4.3] - 2026-...
+          # or ## 2.4.3
+          # for tag v2.4.3 -> version 2.4.3
+          ver="${tag#v}"
+
+          awk -v ver="$ver" '
+            BEGIN { inside=0; found=0 }
+            {
+              if ($0 ~ "^##[[:space:]]*\[?" ver "\]?") { inside=1; found=1; print; next }
+              if (inside && $0 ~ "^##[[:space:]]") { exit }
+              if (inside) { print }
+            }
+            END {
+              if (!found) {
+                print "Release: v" ver
+                print ""
+                print "(No matching section found in changelog.md; please update it or adjust the header format.)"
+              }
+            }
+          ' changelog.md > "$out"
+
+          echo "notes_path=$out" >> "$GITHUB_OUTPUT"
+
+      - name: Upload notes artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-notes
+          path: ${{ steps.notes.outputs.notes_path }}
+          if-no-files-found: error
+
+  windows-msvc-x64:
+    name: windows-msvc-x64-${{ matrix.kind }}
+    runs-on: windows-latest
+    needs: prepare-release-notes
+    strategy:
+      fail-fast: false
+      matrix:
+        kind: [static, shared]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure
+        shell: pwsh
+        run: |
+          $kind = "${{ matrix.kind }}"
+          $bdir = "build/$kind"
+          $prefix = "stage/logme-${{ github.ref_name }}-windows-msvc-x64-$kind"
+
+          New-Item -ItemType Directory -Force -Path $bdir | Out-Null
+          New-Item -ItemType Directory -Force -Path $prefix | Out-Null
+
+          $static = "OFF"
+          $shared = "OFF"
+          if ($kind -eq "static") { $static = "ON" }
+          if ($kind -eq "shared") { $shared = "ON" }
+
+          cmake -S . -B $bdir -G "Visual Studio 17 2022" -A x64 `
+            -DLOGME_BUILD_STATIC=$static `
+            -DLOGME_BUILD_DYNAMIC=$shared `
+            -DLOGME_BUILD_EXAMPLES=OFF `
+            -DLOGME_BUILD_TESTS=OFF `
+            -DLOGME_BUILD_TOOLS=OFF `
+            -DLOGME_ENABLE_INSTALL=ON `
+            -DUSE_JSONCPP=OFF `
+            -DLOGME_STD_FORMAT=AUTO
+          if ($LASTEXITCODE -ne 0) { throw "cmake configure failed: $LASTEXITCODE" }
+
+      - name: Build (Release)
+        shell: pwsh
+        run: |
+          $bdir = "build/${{ matrix.kind }}"
+          cmake --build $bdir --config Release
+          if ($LASTEXITCODE -ne 0) { throw "cmake build failed: $LASTEXITCODE" }
+
+      - name: Stage headers + binaries (no CMake install)
+        shell: pwsh
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = "Stop"
+
+          $kind = "${{ matrix.kind }}"
+          $bdir = "build/$kind"
+          $prefix = "stage/logme-${{ github.ref_name }}-windows-msvc-x64-$kind"
+
+          $incDst = Join-Path $prefix "include"
+          $libDst = Join-Path $prefix "lib"
+          $binDst = Join-Path $prefix "bin"
+
+          New-Item -ItemType Directory -Force -Path $incDst | Out-Null
+          New-Item -ItemType Directory -Force -Path $libDst | Out-Null
+          New-Item -ItemType Directory -Force -Path $binDst | Out-Null
+
+          # Headers: repo path is logme/include
+          if (-not (Test-Path "logme/include"))
+          {
+            throw "Missing repo folder: logme/include"
+          }
+          Copy-Item -Recurse -Force "logme/include/*" $incDst
+
+          function Pick-LatestFile($files)
+          {
+            $files | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          }
+
+          if ($kind -eq "static")
+          {
+            $candidates = Get-ChildItem -Recurse -File -Path $bdir -Filter "logme.lib" |
+              Where-Object { $_.FullName -match "\\Release\\" }
+
+            if (-not $candidates) { $candidates = Get-ChildItem -Recurse -File -Path $bdir -Filter "logme.lib" }
+            if (-not $candidates) { throw "Built artifact not found: logme.lib" }
+
+            $lib = Pick-LatestFile $candidates
+            Copy-Item -Force $lib.FullName (Join-Path $libDst "logme.lib")
+
+            $pdbCandidates = Get-ChildItem -Recurse -File -Path $bdir -Filter "logme.pdb" |
+              Where-Object { $_.FullName -match "\\Release\\" }
+            if ($pdbCandidates)
+            {
+              $pdb = Pick-LatestFile $pdbCandidates
+              Copy-Item -Force $pdb.FullName (Join-Path $libDst "logme.pdb")
+            }
+          }
+          else
+          {
+            $dllCandidates = Get-ChildItem -Recurse -File -Path $bdir -Filter "logmed.dll" |
+              Where-Object { $_.FullName -match "\\Release\\" }
+            if (-not $dllCandidates) { $dllCandidates = Get-ChildItem -Recurse -File -Path $bdir -Filter "logmed.dll" }
+            if (-not $dllCandidates) { throw "Built artifact not found: logmed.dll" }
+
+            $dll = Pick-LatestFile $dllCandidates
+            Copy-Item -Force $dll.FullName (Join-Path $binDst "logmed.dll")
+
+            $implibCandidates = Get-ChildItem -Recurse -File -Path $bdir -Filter "logmed.lib" |
+              Where-Object { $_.FullName -match "\\Release\\" }
+            if (-not $implibCandidates) { $implibCandidates = Get-ChildItem -Recurse -File -Path $bdir -Filter "logmed.lib" }
+            if (-not $implibCandidates) { throw "Built artifact not found: logmed.lib" }
+
+            $implib = Pick-LatestFile $implibCandidates
+            Copy-Item -Force $implib.FullName (Join-Path $libDst "logmed.lib")
+
+            $pdbCandidates = Get-ChildItem -Recurse -File -Path $bdir -Filter "logmed.pdb" |
+              Where-Object { $_.FullName -match "\\Release\\" }
+            if ($pdbCandidates)
+            {
+              $pdb = Pick-LatestFile $pdbCandidates
+              Copy-Item -Force $pdb.FullName (Join-Path $binDst "logmed.pdb")
+            }
+          }
+
+      - name: Verify staged files
+        shell: pwsh
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = "Stop"
+
+          $kind = "${{ matrix.kind }}"
+          $prefix = "stage/logme-${{ github.ref_name }}-windows-msvc-x64-$kind"
+
+          if (-not (Test-Path (Join-Path $prefix "include"))) { throw "Missing include/" }
+          if (-not (Test-Path (Join-Path $prefix "lib"))) { throw "Missing lib/" }
+
+          if ($kind -eq "static")
+          {
+            if (-not (Test-Path (Join-Path $prefix "lib\logme.lib"))) { throw "Missing lib/logme.lib" }
+          }
+          else
+          {
+            if (-not (Test-Path (Join-Path $prefix "bin\logmed.dll"))) { throw "Missing bin/logmed.dll" }
+            if (-not (Test-Path (Join-Path $prefix "lib\logmed.lib"))) { throw "Missing lib/logmed.lib" }
+          }
+
+      - name: Add docs to archive root
+        shell: pwsh
+        run: |
+          $prefix = "stage/logme-${{ github.ref_name }}-windows-msvc-x64-${{ matrix.kind }}"
+
+          if (Test-Path "LICENSE")      { Copy-Item "LICENSE"      (Join-Path $prefix "LICENSE")      -Force }
+          if (Test-Path "README.md")    { Copy-Item "README.md"    (Join-Path $prefix "README.md")    -Force }
+          if (Test-Path "changelog.md") { Copy-Item "changelog.md" (Join-Path $prefix "changelog.md") -Force }
+
+      - name: Pack + SHA256
+        shell: pwsh
+        run: |
+          $root = "stage"
+          $name = "logme-${{ github.ref_name }}-windows-msvc-x64-${{ matrix.kind }}"
+          $dir = Join-Path $root $name
+          $zip = "$name.zip"
+          $sha = "$zip.sha256.txt"
+
+          if (Test-Path $zip) { Remove-Item -Force $zip }
+          Compress-Archive -Path (Join-Path $dir "*") -DestinationPath $zip
+
+          $hashLine = (certutil -hashfile $zip SHA256 | Select-String -Pattern "^[0-9A-Fa-f]{64}$").Line
+          "$hashLine  $zip" | Out-File -Encoding ascii $sha
+
+      - name: Download release notes artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-notes
+          path: .
+
+      - name: Create/Update GitHub Release and upload assets
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: release-notes-${{ github.ref_name }}.md
+          files: |
+            logme-${{ github.ref_name }}-windows-msvc-x64-${{ matrix.kind }}.zip
+            logme-${{ github.ref_name }}-windows-msvc-x64-${{ matrix.kind }}.zip.sha256.txt
+
+  linux-ubuntu-22:
+    name: linux-ubuntu-22.04-release
+    runs-on: ubuntu-22.04
+    needs: prepare-release-notes
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure
+        shell: bash
+        run: |
+          set -euo pipefail
+          bdir="build/linux"
+          prefix="stage/logme-${GITHUB_REF_NAME}-linux-ubuntu-22.04-x64"
+          cmake -S . -B "$bdir"             -DCMAKE_BUILD_TYPE=Release             -DLOGME_BUILD_STATIC=ON             -DLOGME_BUILD_DYNAMIC=OFF             -DLOGME_BUILD_EXAMPLES=OFF             -DLOGME_BUILD_TESTS=OFF             -DLOGME_BUILD_TOOLS=OFF             -DLOGME_ENABLE_INSTALL=ON             -DUSE_JSONCPP=OFF             -DLOGME_STD_FORMAT=AUTO
+          cmake --build "$bdir" --config Release
+          cmake --install "$bdir" --prefix "$prefix"
+
+          for f in LICENSE README.md changelog.md; do
+            if [ -f "$f" ]; then
+              cp -f "$f" "$prefix/$f"
+            fi
+          done
+
+      - name: Pack + SHA256
+        shell: bash
+        run: |
+          set -euo pipefail
+          name="logme-${GITHUB_REF_NAME}-linux-ubuntu-22.04-x64"
+          (cd stage && tar -czf "../${name}.tar.gz" "${name}")
+          sha256sum "${name}.tar.gz" > "${name}.tar.gz.sha256.txt"
+
+      - name: Download release notes artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-notes
+          path: .
+
+      - name: Create/Update GitHub Release and upload assets
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: release-notes-${{ github.ref_name }}.md
+          files: |
+            logme-${{ github.ref_name }}-linux-ubuntu-22.04-x64.tar.gz
+            logme-${{ github.ref_name }}-linux-ubuntu-22.04-x64.tar.gz.sha256.txt

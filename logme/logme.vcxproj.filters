@@ -175,6 +175,9 @@
     <ClCompile Include="source\Backend\BufferBackend.cpp">
       <Filter>source\Backend</Filter>
     </ClCompile>
+    <ClCompile Include="source\Backend\BufferBackendConfig.cpp">
+      <Filter>source\Backend</Filter>
+    </ClCompile>
     <ClCompile Include="source\Backend\ConsoleBackend.cpp">
       <Filter>source\Backend</Filter>
     </ClCompile>

@@ -36,6 +36,9 @@
     <ClCompile Include="..\logme\source\Backend\BufferBackend.cpp">
       <Filter>Backend</Filter>
     </ClCompile>
+    <ClCompile Include="..\logme\source\Backend\BufferBackendConfig.cpp">
+      <Filter>Backend</Filter>
+    </ClCompile>
     <ClCompile Include="..\logme\source\Backend\ConsoleBackend.cpp">
       <Filter>Backend</Filter>
     </ClCompile>

@@ -199,6 +199,8 @@
     <ClCompile Include="source\Backend\BackendConfig.cpp" />
     <ClCompile Include="source\Backend\BufferBackend.cpp" />
 	<ClCompile Include="source\Backend\BufferBackendConfig.cpp" />
+    <ClCompile Include="source\Backend\RingBufferBackend.cpp" />
+	<ClCompile Include="source\Backend\RingBufferBackendConfig.cpp" />
     <ClCompile Include="source\Backend\ConsoleBackend.cpp" />
     <ClCompile Include="source\Backend\DebugBackend.cpp" />
     <ClCompile Include="source\Backend\FileBackend.cpp" />

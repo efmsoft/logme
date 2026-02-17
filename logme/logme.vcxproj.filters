@@ -175,6 +175,12 @@
     <ClCompile Include="source\Backend\BufferBackend.cpp">
       <Filter>source\Backend</Filter>
     </ClCompile>
+    <ClCompile Include="source\Backend\RingBufferBackendConfig.cpp">
+      <Filter>source\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Backend\RingBufferBackend.cpp">
+      <Filter>source\Backend</Filter>
+    </ClCompile>
     <ClCompile Include="source\Backend\BufferBackendConfig.cpp">
       <Filter>source\Backend</Filter>
     </ClCompile>

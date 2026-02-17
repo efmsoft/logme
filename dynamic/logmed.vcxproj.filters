@@ -39,7 +39,13 @@
     <ClCompile Include="..\logme\source\Backend\BufferBackendConfig.cpp">
       <Filter>Backend</Filter>
     </ClCompile>
-    <ClCompile Include="..\logme\source\Backend\ConsoleBackend.cpp">
+    <ClCompile Include="..\logme\source\Backend\RingBufferBackend.cpp">
+      <Filter>Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Backend\RingBufferBackendConfig.cpp">
+      <Filter>Backend</Filter>
+    </ClCompile>    
+	<ClCompile Include="..\logme\source\Backend\ConsoleBackend.cpp">
       <Filter>Backend</Filter>
     </ClCompile>
     <ClCompile Include="..\logme\source\Backend\DebugBackend.cpp">

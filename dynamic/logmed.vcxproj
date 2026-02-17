@@ -23,6 +23,8 @@
     <ClCompile Include="..\logme\source\Backend\BackendConfig.cpp" />
     <ClCompile Include="..\logme\source\Backend\BufferBackend.cpp" />
     <ClCompile Include="..\logme\source\Backend\BufferBackendConfig.cpp" />
+    <ClCompile Include="..\logme\source\Backend\RingBufferBackend.cpp" />
+    <ClCompile Include="..\logme\source\Backend\RingBufferBackendConfig.cpp" />
     <ClCompile Include="..\logme\source\Backend\ConsoleBackend.cpp" />
     <ClCompile Include="..\logme\source\Backend\DebugBackend.cpp" />
     <ClCompile Include="..\logme\source\Backend\FileBackend.cpp" />

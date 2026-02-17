@@ -139,6 +139,9 @@ uint64_t FileBackend::GetFlushTime() const
 
 bool FileBackend::ApplyConfig(BackendConfigPtr c)
 {
+  if (c == nullptr || c->Type != TYPE_ID)
+    return false;
+
   FileBackendConfig* p = (FileBackendConfig*)c.get();
 
   SetAppend(p->DailyRotation ? true : p->Append);

@@ -10,7 +10,8 @@
 using namespace Logme;
 
 FileBackendConfig::FileBackendConfig()
-  : Append(true)
+  : BackendConfig(FileBackend::TYPE_ID)
+  , Append(true)
   , MaxSize(FileBackend::GetMaxSizeDefault())
   , DailyRotation(false)
   , MaxParts(2)

@@ -44,7 +44,7 @@ void Backend::Flush()
 
 BackendConfigPtr Backend::CreateConfig()
 {
-  return std::make_shared<BackendConfig>();
+  return std::make_shared<BackendConfig>("");
 }
 
 bool Backend::ApplyConfig(BackendConfigPtr c)

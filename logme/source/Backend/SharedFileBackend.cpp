@@ -24,7 +24,6 @@ void SharedFileBackend::SetMaxSize(size_t size)
 
 void SharedFileBackend::Display(Context& context, const char* line)
 {
-
   if (CreateLog(NameTemplate.c_str()))
   {
     int nc;
@@ -62,6 +61,9 @@ BackendConfigPtr SharedFileBackend::CreateConfig()
 
 bool SharedFileBackend::ApplyConfig(BackendConfigPtr c)
 {
+  if (c == nullptr || c->Type != TYPE_ID)
+    return false;
+
   SharedFileBackendConfig* p = (SharedFileBackendConfig*)c.get();
   
   MaxSize = p->MaxSize;

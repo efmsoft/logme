@@ -16,12 +16,12 @@ namespace Logme
   struct Context;
 
   typedef std::shared_ptr<Channel> ChannelPtr;
-  struct BackendConfig;
-
+  
   struct BackendConfig
   {
     std::string Type;
 
+    LOGMELNK BackendConfig(const char* type);
     LOGMELNK virtual ~BackendConfig();
     LOGMELNK virtual bool Parse(const Json::Value* po);
   };

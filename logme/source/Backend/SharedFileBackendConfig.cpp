@@ -11,7 +11,8 @@
 using namespace Logme;
 
 SharedFileBackendConfig::SharedFileBackendConfig()
-  : MaxSize(FileBackend::GetMaxSizeDefault())
+  : BackendConfig(SharedFileBackend::TYPE_ID)
+  , MaxSize(FileBackend::GetMaxSizeDefault())
   , Timeout(10)
 {
 }

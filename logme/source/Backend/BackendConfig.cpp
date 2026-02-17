@@ -2,6 +2,11 @@
 
 using namespace Logme;
 
+BackendConfig::BackendConfig(const char* type)
+  : Type(type)
+{
+}
+
 BackendConfig::~BackendConfig()
 {
 }

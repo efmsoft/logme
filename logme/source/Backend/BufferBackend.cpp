@@ -13,6 +13,22 @@ BufferBackend::BufferBackend(Logme::ChannelPtr owner)
 {
 }
 
+BackendConfigPtr BufferBackend::CreateConfig()
+{
+  return std::make_shared<BufferBackendConfig>();
+}
+
+bool BufferBackend::ApplyConfig(BackendConfigPtr c)
+{
+  if (c == nullptr || c->Type != TYPE_ID)
+    return false;
+
+  BufferBackendConfig* p = (BufferBackendConfig*)c.get();
+  Config = *p;
+
+  return true;
+}
+
 void BufferBackend::Clear()
 {
   Buffer.clear();
@@ -31,14 +47,48 @@ void BufferBackend::Append(const char* str, int nc)
   if (nc == -1)
     nc = (int)strlen(str);
 
+  if (nc == 0)
+    return;
+
   size_t pos = Buffer.size();
   if (pos)
     pos--; // Overwrite last '\0'
 
+  if (Config.MaxSize != size_t(-1) && pos + nc + 1 > Config.MaxSize)
+  {
+    if (Config.Policy == BufferBackendPolicy::STOP_APPENDING)
+      return;
+
+    if (Config.Policy == BufferBackendPolicy::DELETE_OLDEST)
+    {
+      if (size_t(nc) + 1 > Config.MaxSize)
+        return;
+
+      do
+      {
+        void* p = memchr(Buffer.data(), '\n', Buffer.size());
+        if (p)
+        {
+          size_t n = (char*)p - Buffer.data() + 1;
+          Buffer.erase(Buffer.begin(), Buffer.begin() + n);
+        }
+        else
+        {
+          Buffer.clear();
+        }
+
+        pos = Buffer.size();
+        if (pos)
+          pos--;
+
+      } while (pos + nc + 1 > Config.MaxSize);
+    }
+  }
+
   size_t c = Buffer.capacity();
   size_t s = pos + nc + 1;
 
-  if (pos + nc + 1 < c)
+  if (s > c)
   {
     c = ((s + GROW - 1) / GROW) * GROW;
     Buffer.reserve(c);

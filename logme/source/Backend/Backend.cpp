@@ -6,6 +6,7 @@
 #include <Logme/Backend/ConsoleBackend.h>
 #include <Logme/Backend/DebugBackend.h>
 #include <Logme/Backend/FileBackend.h>
+#include <Logme/Backend/RingBufferBackend.h>
 #include <Logme/Backend/SharedFileBackend.h>
 
 #include <Logme/Logger.h>
@@ -68,6 +69,9 @@ BackendPtr Backend::Create(const char* type, ChannelPtr owner)
 
   if (t == BufferBackend::TYPE_ID)
     return std::make_shared<BufferBackend>(owner);
+
+  if (t == RingBufferBackend::TYPE_ID)
+    return std::make_shared<RingBufferBackend>(owner);
 
   if (t == ConsoleBackend::TYPE_ID)
     return std::make_shared<ConsoleBackend>(owner);

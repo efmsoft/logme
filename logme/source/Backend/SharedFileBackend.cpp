@@ -19,12 +19,15 @@ SharedFileBackend::~SharedFileBackend()
 
 void SharedFileBackend::SetMaxSize(size_t size)
 {
+  std::lock_guard guard(Lock);
   MaxSize = size;
 }
 
 void SharedFileBackend::Display(Context& context, const char* line)
 {
-  if (CreateLog(NameTemplate.c_str()))
+  std::lock_guard guard(Lock);
+
+  if (CreateLog())
   {
     int nc;
     const char* buffer = context.Apply(Owner, Owner->GetFlags(), line, nc);
@@ -39,6 +42,8 @@ std::string SharedFileBackend::GetPathName(int index)
   if (index < 0 || index > 1)
     return "";
 
+  std::lock_guard guard(Lock);
+
   ProcessTemplateParam param;
   std::string name = ProcessTemplate(Name.c_str(), param);
   std::string pathName = name;
@@ -51,6 +56,7 @@ std::string SharedFileBackend::GetPathName(int index)
 
 std::string SharedFileBackend::FormatDetails()
 {
+  std::lock_guard guard(Lock);
   return NameTemplate;
 }
 
@@ -66,6 +72,8 @@ bool SharedFileBackend::ApplyConfig(BackendConfigPtr c)
 
   SharedFileBackendConfig* p = (SharedFileBackendConfig*)c.get();
   
+  std::lock_guard guard(Lock);
+
   MaxSize = p->MaxSize;
   Timeout = p->Timeout;
   NameTemplate = p->Filename;
@@ -73,19 +81,16 @@ bool SharedFileBackend::ApplyConfig(BackendConfigPtr c)
   return true;
 }
 
-bool SharedFileBackend::CreateLog(const char* v)
+bool SharedFileBackend::CreateLog()
 {
-  NameTemplate = v;
-
   ProcessTemplateParam param;
-  std::string name = ProcessTemplate(v, param);
+  std::string name = ProcessTemplate(NameTemplate.c_str(), param);
 
   if (!IsAbsolutePath(name))
     name = Owner->GetOwner()->GetHomeDirectory() + name;
 
   CloseLog();
   Name.clear();
-
   Name = name;
 
   auto dir = std::filesystem::path(Name).parent_path();

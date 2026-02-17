@@ -1,5 +1,8 @@
 #pragma once
 
+#include <mutex>
+#include <string>
+
 #include <Logme/Backend/Backend.h>
 #include <Logme/File/file_io.h>
 #include <Logme/Types.h>
@@ -22,6 +25,8 @@ namespace Logme
     : public Backend
     , public FileIo
   {
+    std::recursive_mutex Lock;
+
     size_t MaxSize;
     size_t Timeout;
     std::string Name;
@@ -49,9 +54,8 @@ namespace Logme
     LOGMELNK std::string FormatDetails() override;
 
   private:
-    bool CreateLog(const char* name);
+    bool CreateLog();
     void CloseLog();
-
   };
 
   typedef std::shared_ptr<class SharedFileBackend> SharedFileBackendPtr;

@@ -1,10 +1,9 @@
 #include <algorithm>
+#include <cstring>
 #include <iterator>
 
 #include <Logme/Backend/BufferBackend.h>
 #include <Logme/Channel.h>
-
-#include <cstring>
 
 using namespace Logme;
 
@@ -24,6 +23,8 @@ bool BufferBackend::ApplyConfig(BackendConfigPtr c)
     return false;
 
   BufferBackendConfig* p = (BufferBackendConfig*)c.get();
+
+  std::lock_guard guard(Lock);
   Config = *p;
 
   return true;
@@ -31,15 +32,25 @@ bool BufferBackend::ApplyConfig(BackendConfigPtr c)
 
 void BufferBackend::Clear()
 {
+  std::lock_guard guard(Lock);
   Buffer.clear();
 }
 
-void BufferBackend::Append(const BufferBackend& bb)
+void BufferBackend::Append(BufferBackend& bb)
 {
-  if (bb.Buffer.empty())
-    return;
+  std::vector<char> copy;
 
-  Append((const char*)bb.Buffer.data(), -1);
+  if (true)
+  {
+    std::lock_guard guard(bb.Lock);
+
+    if (bb.Buffer.empty())
+      return;
+
+    copy = bb.Buffer;
+  }
+
+  Append((const char*)copy.data(), -1);
 } 
 
 void BufferBackend::Append(const char* str, int nc)
@@ -49,6 +60,8 @@ void BufferBackend::Append(const char* str, int nc)
 
   if (nc == 0)
     return;
+
+  std::lock_guard guard(Lock);
 
   size_t pos = Buffer.size();
   if (pos)
@@ -95,7 +108,8 @@ void BufferBackend::Append(const char* str, int nc)
   }
 
   Buffer.resize(s);
-  memcpy(&Buffer[pos], str, size_t(nc) + 1);
+  memcpy(&Buffer[pos], str, size_t(nc));
+  Buffer[pos + nc] = '\0';
 }
 
 void BufferBackend::Display(Logme::Context& context, const char* line)

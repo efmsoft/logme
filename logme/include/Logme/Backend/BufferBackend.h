@@ -1,10 +1,12 @@
 #pragma once
 
+#include <mutex>
+#include <string>
+#include <vector>
+
 #include <Logme/Backend/Backend.h>
 #include <Logme/Channel.h>
 
-#include <string>
-#include <vector>
 
 namespace Logme
 {
@@ -29,6 +31,8 @@ namespace Logme
   struct BufferBackend : public Logme::Backend
   {
     enum { GROW = 4 * 1024 };
+
+    std::mutex Lock;
     std::vector<char> Buffer;
     BufferBackendConfig Config;
 
@@ -39,7 +43,7 @@ namespace Logme
 
     LOGMELNK void Clear();
     LOGMELNK void Display(Logme::Context& context, const char* line) override;
-    LOGMELNK void Append(const BufferBackend& bb);
+    LOGMELNK void Append(BufferBackend& bb);
     LOGMELNK void Append(const char* str, int nc);
 
     LOGMELNK BackendConfigPtr CreateConfig() override;

@@ -29,6 +29,8 @@ void SharedFileBackend::Display(Context& context, const char* line)
 
   if (CreateLog())
   {
+    TruncateToMaxSize(MaxSize);
+
     int nc;
     const char* buffer = context.Apply(Owner, Owner->GetFlags(), line, nc);
     Write(buffer, nc);

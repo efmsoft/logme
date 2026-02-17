@@ -24,6 +24,7 @@ namespace Logme
     int Read(void* p, size_t size);
     long long Seek(size_t offs, int whence);
     int Truncate(size_t offs);
+    void TruncateToMaxSize(size_t maxSize);
 
     unsigned Read(int maxLines, std::string& content, int part);
 

@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <vector>
+#include <cstring>
 
 #ifndef _WIN32
 #include <sys/file.h>
@@ -24,6 +25,14 @@
 
 #ifdef ENABLE_CLOSE_HOOK
 #include <hook_api.h>
+#endif
+
+#ifndef _WIN32
+#define LOGME_SPRINTF_S(buf, bufsz, fmt, ...) \
+  snprintf((buf), (bufsz), (fmt), __VA_ARGS__)
+#else
+#define LOGME_SPRINTF_S(buf, bufsz, fmt, ...) \
+  sprintf_s((buf), (bufsz), (fmt), __VA_ARGS__)
 #endif
 
 using namespace Logme;
@@ -200,6 +209,67 @@ int FileIo::Truncate(size_t offs)
     IO_ERROR(ftruncate());
 
   return rc;
+}
+
+void FileIo::TruncateToMaxSize(size_t maxSize)
+{
+  if (maxSize == 0)
+    return;
+
+  std::lock_guard<std::recursive_mutex> guard(IoLock);
+
+  if (File == -1)
+    return;
+
+  auto rc = Seek(0, SEEK_END);
+  if (rc == -1)
+    return;
+
+  if (rc < (long)maxSize)
+    return;
+
+  uint32_t readPos = uint32_t(maxSize / 2);
+  uint32_t readSize = uint32_t(rc - readPos);
+
+  std::vector<char> data(readSize);
+  rc = Seek(readPos, SEEK_SET);
+  if (rc == -1)
+    return;
+
+  if (Read(&data[0], readSize) < 0)
+    return;
+
+  const char* p = &data[0];
+  while (*p && *p != '\n')
+    p++;
+
+  if (*p++)
+  {
+    uint32_t n = uint32_t(p - &data[0]);
+
+    rc = Seek(0, SEEK_SET);
+    if (rc < 0)
+      return;
+
+    char buffer[128];
+    LOGME_SPRINTF_S(buffer, sizeof(buffer), "--- dropped %u characters\n", (unsigned)(readPos + n));
+    if (WriteRaw(buffer, (int)strlen(buffer)) < 0)
+      return;
+
+    if (WriteRaw(p, size_t(readSize) - n) < 0)
+      return;
+
+    long long nbytes = Seek(0, SEEK_CUR);
+    if (nbytes < 0)
+      return;
+
+    if (Truncate((size_t)nbytes) == -1)
+      return;
+  }
+
+  rc = Seek(0, SEEK_END);
+  if (rc < 0)
+    return;
 }
 
 int FileIo::Write(const void* p, size_t size)

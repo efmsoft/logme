@@ -30,14 +30,10 @@ using namespace std::chrono_literals;
 #define _read read
 #define _write write
 
-#define LOGME_SPRINTF_S(buf, bufsz, fmt, ...) \
-  snprintf((buf), (bufsz), (fmt), __VA_ARGS__)
 #else
 #include <io.h>
 #define ftruncate _chsize
 
-#define LOGME_SPRINTF_S(buf, bufsz, fmt, ...) \
-  sprintf_s((buf), (bufsz), (fmt), __VA_ARGS__)
 #endif
 
 using namespace Logme;
@@ -296,58 +292,7 @@ void FileBackend::Display(Context& context, const char* line)
 
 void FileBackend::Truncate()
 {
-  if (File == -1)
-    return;
-
-  auto rc = Seek(0, SEEK_END);
-  if (rc == -1)
-    return;
-
-  if (rc < (long)MaxSize)
-    return;
-
-  uint32_t readPos = uint32_t(MaxSize / 2);
-  uint32_t readSize = uint32_t(rc - readPos);
-
-  std::vector<char> data(readSize);
-  rc = Seek(readPos, SEEK_SET);
-  if (rc == -1)
-    return;
-
-  if (Read(&data[0], readSize) < 0)
-    return;
-
-  const char* p = &data[0];
-  while (*p && *p != '\n')
-    p++;
-
-  if (*p++)
-  {
-    uint32_t n = uint32_t(p - &data[0]);
-
-    rc = Seek(0, SEEK_SET);
-    if (rc < 0)
-      return;
-
-    char buffer[128];
-    LOGME_SPRINTF_S(buffer, sizeof(buffer), "--- dropped %u characters\n", readPos + n);
-    if (FileIo::WriteRaw(buffer, (int)strlen(buffer)) < 0)
-      return;
-
-    if (FileIo::WriteRaw(p, size_t(readSize) - n) < 0)
-      return;
-
-    long long nbytes = Seek(0, SEEK_CUR);
-    if (nbytes < 0)
-      return;
-
-    if (FileIo::Truncate((size_t)nbytes) == -1)
-      return;
-  }
-
-  rc = Seek(0, SEEK_END);
-  if (rc < 0)
-    return;
+  FileIo::TruncateToMaxSize(MaxSize);
 }
 
 std::string FileBackend::GetPathName(int index)

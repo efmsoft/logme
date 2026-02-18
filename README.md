@@ -81,17 +81,17 @@ For details and examples, see the project [Wiki](https://github.com/efmsoft/logm
 
 All aspects of logme behavior can be configured directly from C++ application code. This approach is useful for small tools, embedded scenarios, or when configuration files are not desired.
 ```cpp
+#include <memory>
+
 #include <Logme/Logme.h>
 #include <Logme/Backend/ConsoleBackend.h>
-
-#include <memory>
 
 int main()
 {
   auto ch = Logme::Instance->CreateChannel("http");
   ch->AddBackend(std::make_shared<Logme::ConsoleBackend>(ch));
 
-  fLogmeI(ch, "GET {} -> {}", "/index.html", 200);
+  fLogmeI(ch, "GET {} -> {}", "/index.html", 200); // -> GET /index.html -> 200
   return 0;
 }
 ```

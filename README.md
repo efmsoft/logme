@@ -48,10 +48,7 @@ int main()
 {
   LogmeI("Hello from logme (%s style)", "C");
   LogmeW() << "Hello from logme (C++ stream style)";
-
-#ifndef LOGME_DISABLE_STD_FORMAT
   fLogmeE("Hello from logme ({} style)", "std::format");
-#endif
 
   return 0;
 }

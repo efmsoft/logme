@@ -73,7 +73,7 @@ For most applications, logme is configured via a JSON configuration file, which 
 
 This lets you adjust logging behavior at runtime or between runs without recompiling.
 
-For details and examples, see the project Wiki.
+For details and examples, see the project [Wiki](https://github.com/efmsoft/logme/wiki/Configuration-JSON).
 
 ---
 

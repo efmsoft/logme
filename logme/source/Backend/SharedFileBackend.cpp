@@ -96,9 +96,14 @@ bool SharedFileBackend::CreateLog()
   Name = name;
 
   auto dir = std::filesystem::path(Name).parent_path();
+  if (!dir.empty())
+  {
+    std::error_code ec;
+    std::filesystem::create_directories(dir, ec);
 
-  if (std::filesystem::exists(dir) == false)
-    std::filesystem::create_directories(dir);
+    if (ec)
+      return false;
+  }
 
   return Open(true, unsigned(Timeout));
 }

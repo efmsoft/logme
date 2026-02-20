@@ -10,7 +10,7 @@ std::string Logme::DumpBuffer(const void* buffer, size_t n, size_t offs, size_t 
   std::string output;
 
   const int maxCols = 16;
-  const int maxLines = lineLimit > 0 ? lineLimit : 65536;
+  const int maxLines = lineLimit > 0 ? int(lineLimit) : 65536;
   const size_t maxSize = size_t(maxCols) * maxLines;
 
   uint8_t* p = (uint8_t*)buffer;

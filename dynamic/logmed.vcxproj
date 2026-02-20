@@ -85,7 +85,8 @@
     <ClCompile Include="..\logme\source\Time\datetime_utils.cpp" />
     <ClCompile Include="..\logme\source\Time\datetime_win.cpp" />
     <ClCompile Include="..\logme\source\Utils.cpp" />
-  </ItemGroup>
+      <ClCompile Include="..\logme\source\Dump.cpp" />
+</ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\logme\source\Config\Helper.h" />
     <ClInclude Include="..\logme\source\Control\CommandDescriptor.h" />

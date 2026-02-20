@@ -261,7 +261,8 @@
     <ClCompile Include="source\Time\datetime_win.cpp" />
     <ClCompile Include="source\Time\datetime_utils.cpp" />
     <ClCompile Include="source\Utils.cpp" />
-  </ItemGroup>
+      <ClCompile Include="source\Dump.cpp" />
+</ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

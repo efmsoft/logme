@@ -25,7 +25,25 @@
     <Filter Include="Ssl">
       <UniqueIdentifier>{104556a7-ed40-4c47-8793-65377809ea5b}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
+      <Filter Include="Dump.cpp">
+      <UniqueIdentifier>{4b91b411-7fdd-5924-95c4-97e635bc2dfb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\logme\include\Logme">
+      <UniqueIdentifier>{786d4ca7-47ac-5f7d-a3e5-3a20d7f4ed1c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\logme\include\Logme\Backend">
+      <UniqueIdentifier>{1d5f23d5-b9e2-5a7d-96cc-7867b3fdd5c9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\logme\include\Logme\File">
+      <UniqueIdentifier>{39a83729-b151-5c08-91ac-d0dbe653522d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\logme\include\Logme\Json">
+      <UniqueIdentifier>{8b50837a-7db3-54c7-a890-b386ff51f2ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\logme\include\Logme\Time">
+      <UniqueIdentifier>{ac0e2f2a-aea1-5f66-8367-6b62d84fd954}</UniqueIdentifier>
+    </Filter>
+</ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\logme\source\Backend\Backend.cpp">
       <Filter>Backend</Filter>
@@ -181,7 +199,10 @@
     <ClCompile Include="..\logme\source\Control\Command\CmdSubsystem.cpp">
       <Filter>Control\Command</Filter>
     </ClCompile>
-  </ItemGroup>
+      <ClCompile Include="..\logme\source\Dump.cpp">
+      <Filter>Dump.cpp</Filter>
+    </ClCompile>
+</ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\logme\source\Time\utils.h">
       <Filter>Time</Filter>
@@ -202,5 +223,143 @@
       <Filter>File</Filter>
     </ClInclude>
     <ClInclude Include="..\logme\source\StringHelpers.h" />
-  </ItemGroup>
+      <ClInclude Include="..\logme\include\Logme\AllStatI.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\AnsiColorEscape.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\ArgumentList.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Backend\Backend.h">
+      <Filter>..\logme\include\Logme\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Backend\BufferBackend.h">
+      <Filter>..\logme\include\Logme\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Backend\ConsoleBackend.h">
+      <Filter>..\logme\include\Logme\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Backend\DebugBackend.h">
+      <Filter>..\logme\include\Logme\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Backend\FileBackend.h">
+      <Filter>..\logme\include\Logme\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Backend\RingBufferBackend.h">
+      <Filter>..\logme\include\Logme\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Backend\SharedFileBackend.h">
+      <Filter>..\logme\include\Logme\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Channel.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Colorizer.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Context.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Convert.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\DayChangeDetector.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\File\DirectorySizeWatchdog.h">
+      <Filter>..\logme\include\Logme\File</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\File\FileManager.h">
+      <Filter>..\logme\include\Logme\File</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\File\FileManagerFactory.h">
+      <Filter>..\logme\include\Logme\File</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\File\exe_path.h">
+      <Filter>..\logme\include\Logme\File</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\File\file_io.h">
+      <Filter>..\logme\include\Logme\File</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\ID.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Json\Loader.h">
+      <Filter>..\logme\include\Logme\Json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Logger.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Logme.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Module.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\ObfString.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Obfuscate.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\OutputFlags.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Override.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Printer.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Procedure.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\ReentryGuard.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\SID.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\SafeID.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Ssl.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Stream.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Template.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\ThreadChannel.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\ThreadName.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\ThreadOverride.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Time\datetime.h">
+      <Filter>..\logme\include\Logme\Time</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Time\reentrant.h">
+      <Filter>..\logme\include\Logme\Time</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Time\types.h">
+      <Filter>..\logme\include\Logme\Time</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Types.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Utils.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\version.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+</ItemGroup>
 </Project>

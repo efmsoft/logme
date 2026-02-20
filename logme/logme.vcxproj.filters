@@ -152,7 +152,67 @@
     <ClInclude Include="source\File\CleanOldest.h">
       <Filter>source\File</Filter>
     </ClInclude>
-  </ItemGroup>
+      <ClInclude Include="include\Logme\AllStatI.h">
+      <Filter>include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\Backend\BufferBackend.h">
+      <Filter>include\Logme\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\Backend\RingBufferBackend.h">
+      <Filter>include\Logme\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\Backend\SharedFileBackend.h">
+      <Filter>include\Logme\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\DayChangeDetector.h">
+      <Filter>include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\File\DirectorySizeWatchdog.h">
+      <Filter>include\Logme\File</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\File\FileManager.h">
+      <Filter>include\Logme\File</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\File\FileManagerFactory.h">
+      <Filter>include\Logme\File</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\Json\Loader.h">
+      <Filter>include\Logme\Json</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\ObfString.h">
+      <Filter>include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\Obfuscate.h">
+      <Filter>include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\Override.h">
+      <Filter>include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\ReentryGuard.h">
+      <Filter>include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\SID.h">
+      <Filter>include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\SafeID.h">
+      <Filter>include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\Ssl.h">
+      <Filter>include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\ThreadChannel.h">
+      <Filter>include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\ThreadName.h">
+      <Filter>include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\ThreadOverride.h">
+      <Filter>include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\version.h">
+      <Filter>include\Logme</Filter>
+    </ClInclude>
+</ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Time\datetime_common.cpp">
       <Filter>source\Time</Filter>
@@ -352,5 +412,8 @@
     <ClCompile Include="source\Control\Command\CmdSubsystem.cpp">
       <Filter>source\Control\Command</Filter>
     </ClCompile>
-  </ItemGroup>
+      <ClCompile Include="source\Dump.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+</ItemGroup>
 </Project>

@@ -389,6 +389,9 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
 
 void FileBackend::RequestFlush(uint64_t when)
 {
+  if (CallScheduled && (FlushTime == RIGHT_NOW || FlushTime <= when))
+    return;
+
   FlushTime = when;
   CallScheduled = true;
 

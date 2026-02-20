@@ -1,3 +1,9 @@
+## 2.4.11
+
+### Improvements
+- Optimized channel behavior when the backend list is empty.
+- Optimized FileBackend under intensive write load by reducing duplicate RequestFlush calls.
+
 ## 2.4.6
 
 ### Fixed

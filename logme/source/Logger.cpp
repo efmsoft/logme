@@ -628,8 +628,11 @@ void Logger::Log(
   if (ShutdownCalled)
     return;
 
-  if (ch && (context.ErrorLevel < ch->GetFilterLevel() || ch->GetEnabled() == false))
-    return;
+  if (ch && ch->IsLinked() == false && context.ErrorLevel < Level::LEVEL_ERROR)
+  {
+    if (context.ErrorLevel < ch->GetFilterLevel() || ch->NumberOfBackends() == 0)
+      return;
+  }
 
   Context& context2 = *(Context*)&context;
   context2.Ch = ch;
@@ -670,8 +673,11 @@ void Logger::Log(const Context& context, ChannelPtr ch, const SID& sid, const ch
   if (ShutdownCalled)
     return;
 
-  if (ch && (context.ErrorLevel < ch->GetFilterLevel() || ch->GetEnabled() == false))
-    return;
+  if (ch && ch->IsLinked() == false && context.ErrorLevel < Level::LEVEL_ERROR)
+  {
+    if (context.ErrorLevel < ch->GetFilterLevel() || ch->NumberOfBackends() == 0)
+      return;
+  }
 
   Context& context2 = *(Context*)&context;
   context2.Ch = ch;
@@ -722,8 +728,11 @@ void Logger::Log(
   if (ShutdownCalled)
     return;
 
-  if (ch && (context.ErrorLevel < ch->GetFilterLevel() || ch->GetEnabled() == false))
-    return;
+  if (ch && ch->IsLinked() == false && context.ErrorLevel < Level::LEVEL_ERROR)
+  {
+    if (context.ErrorLevel < ch->GetFilterLevel() || ch->NumberOfBackends() == 0)
+      return;
+  }
 
   Context& context2 = *(Context*)&context;
   context2.Ch = ch;
@@ -822,7 +831,7 @@ void Logger::DoLog(Context& context, const char* format, va_list args)
   if (ch == nullptr)
     return;
 
-  if (context.ErrorLevel < ch->GetFilterLevel() && !ch->IsLinked())
+  if ((context.ErrorLevel < ch->GetFilterLevel() || !ch->NumberOfBackends()) && !ch->IsLinked())
   {
     if (context.ErrorLevel < Level::LEVEL_ERROR)
       return;

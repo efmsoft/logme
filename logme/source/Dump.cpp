@@ -3,6 +3,8 @@
 
 #include <Logme/Utils.h>
 
+#include "StringHelpers.h"
+
 std::string Logme::DumpBuffer(const void* buffer, size_t n, size_t offs, size_t lineLimit)
 {
   std::string output;
@@ -27,7 +29,7 @@ std::string Logme::DumpBuffer(const void* buffer, size_t n, size_t offs, size_t 
       pos++;
 
       char rune[16]{};
-      sprintf(rune, "%02x ", b);
+      sprintf_s(rune, sizeof(rune), "%02x ", b);
       str += rune;
 
       if (b < ' ' || b > '~')
@@ -37,7 +39,7 @@ std::string Logme::DumpBuffer(const void* buffer, size_t n, size_t offs, size_t 
       }
       else
       {
-        sprintf(rune, "%c", b);
+        sprintf_s(rune, sizeof(rune), "%c", b);
         txt += rune;
       }
     }

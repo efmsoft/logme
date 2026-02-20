@@ -7,9 +7,9 @@ std::string Logme::DumpBuffer(const void* buffer, size_t n, size_t offs, size_t 
 {
   std::string output;
 
-  const size_t maxCols = 16;
-  const size_t maxLines = lineLimit > 0 ? lineLimit : 65536;
-  const size_t maxSize = maxCols * maxLines;
+  const int maxCols = 16;
+  const int maxLines = lineLimit > 0 ? lineLimit : 65536;
+  const size_t maxSize = size_t(maxCols) * maxLines;
 
   uint8_t* p = (uint8_t*)buffer;
   n = std::min(n, maxSize);
@@ -42,7 +42,7 @@ std::string Logme::DumpBuffer(const void* buffer, size_t n, size_t offs, size_t 
       }
     }
 
-    size_t e = 3 * maxCols;
+    size_t e = 3ULL * maxCols;
     while (str.length() < e)
       str += ' ';
 

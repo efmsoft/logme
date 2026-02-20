@@ -13,6 +13,7 @@
 namespace Logme
 {
   LOGMELNK std::string dword2str(uint32_t value);
+  LOGMELNK std::string DumpBuffer(const void* buffer, size_t n, size_t offs, size_t lineLimit = 8);
 
   LOGMELNK uint32_t GetCurrentProcessId();
   LOGMELNK uint64_t GetCurrentThreadId();

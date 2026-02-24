@@ -52,11 +52,11 @@ FileBackend::FileBackend(ChannelPtr owner)
   , ShutdownFlag(false)
   , ShutdownCalled(owner == nullptr)
   , FlushTime(0)
-  , MaxBufferSize(0)
+  , Queue([]{ BufferQueue::Options o; o.BufferSize = QUEUE_GROW_SIZE; return o; }())
+  , QueuedBytes(0)
   , DailyRotation(false)
   , MaxParts(2)
 {
-  OutBuffer.reserve(QUEUE_GROW_SIZE);
   NonceGenInit(&Nonce);
 }
 
@@ -112,7 +112,7 @@ void FileBackend::Flush()
   RequestFlush();
 
   std::unique_lock locker(BufferLock);
-  Done.wait(locker, [this]() {return DataReady == false;});
+  Done.wait(locker, [this]() {return QueuedBytes.load() == 0;});
 }
 
 void FileBackend::Freeze()
@@ -125,7 +125,7 @@ void FileBackend::Freeze()
 
 bool FileBackend::IsIdle() const
 {
-  return DataReady == false && (ShutdownFlag || Registered == false);
+  return QueuedBytes.load() == 0 && (ShutdownFlag || Registered == false);
 }
 
 uint64_t FileBackend::GetFlushTime() const
@@ -232,24 +232,6 @@ size_t FileBackend::GetSize()
   return (size_t)Seek(0, SEEK_END);
 }
 
-void FileBackend::Write(CharBuffer& data, SizeArray& msgSize)
-{
-  (void)msgSize;
-  std::lock_guard guard(IoLock);
-  
-  char* head = &data[0];
-  char* tail = head + data.size();
-
-  Truncate();
-
-  while (head < tail)
-  {
-    long int cb = static_cast<long int>(tail - head);
-    FileIo::Write(head, cb);
-    break;
-  }
-}
-
 bool FileBackend::ChangePart()
 {
   if (!CreateLog(NameTemplate.c_str()))
@@ -343,48 +325,39 @@ void FileBackend::AppendObfuscated(const char* text, size_t add)
     if (ObfEncryptRecord(key, &Nonce, (const uint8_t*)text, add, buffer, sizeof(buffer), &size))
       AppendOutputData((const char*)buffer, size);
   }
-
-  size_t size = 0;
-  std::vector<uint8_t> buffer(output);
-  if (ObfEncryptRecord(key, &Nonce, (const uint8_t*)text, add, buffer.data(), buffer.size(), &size))
-    AppendOutputData((const char*)buffer.data(), size);
+  else
+  {
+    size_t size = 0;
+    std::vector<uint8_t> buffer(output);
+    if (ObfEncryptRecord(key, &Nonce, (const uint8_t*)text, add, buffer.data(), buffer.size(), &size))
+      AppendOutputData((const char*)buffer.data(), size);
+  }
 }
 
 void FileBackend::AppendOutputData(const char* text, size_t add)
 {
-  size_t queued = 0;
-  size_t pos = static_cast<size_t>(-1);
+  if (ShutdownFlag)
+    return;
 
-  if (true)
-  {
-    std::lock_guard guard(BufferLock);
-    
-    if (!ShutdownFlag)
-    {
-      pos = OutBuffer.size();
-      queued = pos + add;
+  if (add == 0)
+    return;
 
-      MessageSize.push_back(add);
-      if (OutBuffer.capacity() < queued)
-      {
-        size_t n = ((queued / QUEUE_GROW_SIZE) + 1) * QUEUE_GROW_SIZE;
-        OutBuffer.reserve(n);
-      }
+  bool needSignal = false;
+  size_t before = QueuedBytes.load();
 
-      OutBuffer.resize(queued);
-      memcpy(&OutBuffer[pos], text, add);
+  if (Queue.Append(text, add, needSignal) == false)
+    return;
 
-      if (MaxBufferSize < queued)
-        MaxBufferSize = (uint32_t)queued;
+  QueuedBytes.fetch_add(add);
+  DataReady = true;
 
-      DataReady = true;
-    }
-  }
-
+  size_t queued = before + add;
   if (queued >= QueueSizeLimit)
     RequestFlush();                         // Speed up data processing
-  else if (pos == 0)
+  else if (before == 0)
     RequestFlush(uint64_t(GetTimeInMillisec()) + FLUSH_AFTER);
+  else if (needSignal)
+    RequestFlush();
 }
 
 void FileBackend::RequestFlush(uint64_t when)
@@ -410,43 +383,62 @@ FileManagerFactory& FileBackend::GetFactory() const
   return logger->GetFileManagerFactory();
 }
 
-void FileBackend::GetOutputData(CharBuffer& data, SizeArray& size)
+bool FileBackend::GetOutputData(std::vector<DataBufferPtr>& data)
 {
-  std::lock_guard guard(BufferLock);
+  data.clear();
 
-  assert(data.size() == 0);
-  assert(size.size() == 0);
+  bool needSignal = false;
+  Queue.FlushCurrent(needSignal);
 
-  data.swap(OutBuffer);
-  size.swap(MessageSize);
-
-  DataReady = false;
-  assert(!data.empty());
-
-  Done.notify_all();
+  return Queue.SwapReady(data);
 }
 
 void FileBackend::WriteData()
 {
-  SizeArray size;
-  CharBuffer data;
-  GetOutputData(data, size);
-
-  Write(data, size);
-
-  // Try to reuse buffers
-  std::lock_guard guard(BufferLock);
-
-  if (OutBuffer.size() == 0)
+  std::vector<DataBufferPtr> data;
+  if (!GetOutputData(data))
   {
-    if (data.capacity() < QueueSizeLimit)
+    if (QueuedBytes.load() == 0)
     {
-      data.resize(0);
-      size.resize(0);
-
-      data.swap(OutBuffer);
-      size.swap(MessageSize);
+      DataReady = false;
+      std::lock_guard guard(BufferLock);
+      Done.notify_all();
     }
+    return;
+  }
+
+  size_t bytes = 0;
+  for (auto& b : data)
+    bytes += b ? b->Size() : 0;
+
+  bool ok = true;
+  {
+    std::lock_guard guard(IoLock);
+
+    Truncate();
+
+    for (auto& b : data)
+    {
+      if (!b)
+        continue;
+
+      if (FileIo::Write(b->Data(), b->Size()) < 0)
+        ok = false;
+    }
+  }
+
+  Queue.ReportWrite(data.size(), bytes, ok);
+
+  if (bytes != 0)
+    QueuedBytes.fetch_sub(bytes);
+
+  Queue.Recycle(data);
+
+  if (QueuedBytes.load() == 0)
+  {
+    DataReady = false;
+    std::lock_guard guard(BufferLock);
+    Done.notify_all();
   }
 }
 
@@ -455,20 +447,20 @@ bool FileBackend::WorkerFunc()
   // Used to limit number of WriteData calls before Done event set if
   // one or more threads call Log() very frequently
   const int maxWriteLoops = 5;
-  CallScheduled = false;
 
-  if (DataReady)
+  if (QueuedBytes.load() != 0)
   {
-    for (int i = 0; DataReady && i < maxWriteLoops; i++)
+    for (int i = 0; QueuedBytes.load() != 0 && i < maxWriteLoops; i++)
       WriteData();
   }
 
+  CallScheduled = (QueuedBytes.load() != 0);
   return !ShutdownFlag;
 }
 
 void FileBackend::OnShutdown()
 {
-  if (DataReady)
+  while (QueuedBytes.load() != 0)
     WriteData();
 
   ShutdownCalled = true;

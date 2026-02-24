@@ -2,13 +2,16 @@
 
 #include <Logme/Backend/Backend.h>
 #include <Logme/DayChangeDetector.h>
+#include <Logme/Buffer/BufferQueue.h>
 #include <Logme/File/file_io.h>
 #include <Logme/Obfuscate.h>
 #include <Logme/Types.h>
 
+#include <atomic>
 #include <condition_variable>
 #include <memory>
 #include <mutex>
+#include <vector>
 
 namespace Logme
 {
@@ -49,9 +52,9 @@ namespace Logme
     uint64_t FlushTime;
 
     std::mutex BufferLock;
-    CharBuffer OutBuffer;
-    SizeArray MessageSize;
-    uint32_t MaxBufferSize;
+
+    BufferQueue Queue;
+    std::atomic<size_t> QueuedBytes;
 
     std::condition_variable Shutdown;
     std::condition_variable Done;
@@ -71,8 +74,8 @@ namespace Logme
       MAX_SIZE_DEFAULT = 8 * 1024 * 1024,
       
       FLUSH_PERIOD = 3000,                  // 3 sec
-      QUEUE_SIZE_LIMIT = 7 * 1024 * 1024,   // force processing if queue size >= limit
-      QUEUE_GROW_SIZE = 64 * 1024,          // grow size
+      QUEUE_SIZE_LIMIT = 24 * 1024 * 1024,  // force processing if queue size >= limit
+      QUEUE_GROW_SIZE = 128 * 1024,         // grow size
       STAT_OUTPUT_PERIOD = 10 * 60 * 1000,  // 10 min
 
       RIGHT_NOW = 1,                        // Force flush right now
@@ -121,12 +124,11 @@ namespace Logme
     void AppendObfuscated(const char* text, size_t add);
     void AppendOutputData(const char* text, size_t add);
     void RequestFlush(uint64_t when = RIGHT_NOW);
-    void GetOutputData(CharBuffer& data, SizeArray& size);
+    bool GetOutputData(std::vector<DataBufferPtr>& data);
     void WriteData();
 
     void WaitForShutdown();
 
-    void Write(CharBuffer&, SizeArray&);
 
     friend class FileManager;
     bool WorkerFunc();

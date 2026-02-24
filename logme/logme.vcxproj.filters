@@ -48,7 +48,13 @@
     <Filter Include="source\Json">
       <UniqueIdentifier>{ebe182d3-18ee-4e03-b531-d25068445ace}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
+      <Filter Include="source\Buffer">
+      <UniqueIdentifier>{b8a8a1e9-d30e-5402-8f1c-e1865d503433}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\Logme\Buffer">
+      <UniqueIdentifier>{18566b96-49d5-5bae-b5da-7de26c181b70}</UniqueIdentifier>
+    </Filter>
+</ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Logme\Backend\Backend.h">
       <Filter>include\Logme\Backend</Filter>
@@ -211,6 +217,15 @@
     </ClInclude>
     <ClInclude Include="include\Logme\version.h">
       <Filter>include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\Buffer\BufferCounters.h">
+      <Filter>include\Logme\Buffer</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\Buffer\BufferQueue.h">
+      <Filter>include\Logme\Buffer</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\Buffer\DataBuffer.h">
+      <Filter>include\Logme\Buffer</Filter>
     </ClInclude>
 </ItemGroup>
   <ItemGroup>
@@ -414,6 +429,12 @@
     </ClCompile>
       <ClCompile Include="source\Dump.cpp">
       <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Buffer\BufferQueue.cpp">
+      <Filter>source\Buffer</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Buffer\DataBuffer.cpp">
+      <Filter>source\Buffer</Filter>
     </ClCompile>
 </ItemGroup>
 </Project>

@@ -262,6 +262,8 @@
     <ClCompile Include="source\Time\datetime_utils.cpp" />
     <ClCompile Include="source\Utils.cpp" />
       <ClCompile Include="source\Dump.cpp" />
+    <ClCompile Include="source\Buffer\BufferQueue.cpp" />
+    <ClCompile Include="source\Buffer\DataBuffer.cpp" />
 </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

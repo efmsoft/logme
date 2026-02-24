@@ -86,6 +86,8 @@
     <ClCompile Include="..\logme\source\Time\datetime_win.cpp" />
     <ClCompile Include="..\logme\source\Utils.cpp" />
       <ClCompile Include="..\logme\source\Dump.cpp" />
+    <ClCompile Include="..\logme\source\Buffer\BufferQueue.cpp" />
+    <ClCompile Include="..\logme\source\Buffer\DataBuffer.cpp" />
 </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\logme\source\Config\Helper.h" />

@@ -43,6 +43,12 @@
     <Filter Include="..\logme\include\Logme\Time">
       <UniqueIdentifier>{ac0e2f2a-aea1-5f66-8367-6b62d84fd954}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Buffer">
+      <UniqueIdentifier>{610d2504-f417-5cc8-bd0d-5f505b3aab63}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\logme\include\Logme\Buffer">
+      <UniqueIdentifier>{bdcc6922-41d6-514c-9ede-5909fedd5473}</UniqueIdentifier>
+    </Filter>
 </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\logme\source\Backend\Backend.cpp">
@@ -202,6 +208,12 @@
       <ClCompile Include="..\logme\source\Dump.cpp">
       <Filter>Dump.cpp</Filter>
     </ClCompile>
+    <ClCompile Include="..\logme\source\Buffer\BufferQueue.cpp">
+      <Filter>Buffer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Buffer\DataBuffer.cpp">
+      <Filter>Buffer</Filter>
+    </ClCompile>
 </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\logme\source\Time\utils.h">
@@ -360,6 +372,15 @@
     </ClInclude>
     <ClInclude Include="..\logme\include\Logme\version.h">
       <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Buffer\BufferCounters.h">
+      <Filter>..\logme\include\Logme\Buffer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Buffer\BufferQueue.h">
+      <Filter>..\logme\include\Logme\Buffer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Buffer\DataBuffer.h">
+      <Filter>..\logme\include\Logme\Buffer</Filter>
     </ClInclude>
 </ItemGroup>
 </Project>

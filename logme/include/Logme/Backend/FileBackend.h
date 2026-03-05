@@ -40,6 +40,7 @@ namespace Logme
   private:
     bool Append;
     size_t MaxSize;
+    size_t CurrentSize;
     size_t QueueSizeLimit;
     std::string Name;
     std::string NameTemplate;

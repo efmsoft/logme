@@ -45,6 +45,7 @@ FileBackend::FileBackend(ChannelPtr owner)
   : Backend(owner, TYPE_ID)
   , Append(true)
   , MaxSize(MaxSizeDefault)
+  , CurrentSize(0)
   , QueueSizeLimit(QueueSizeLimitDefault)
   , Registered(false)
   , CallScheduled(false)
@@ -208,7 +209,22 @@ bool FileBackend::CreateLog(const char* v)
       return false;
   }
 
-  return Open(Append);
+
+  if (!Open(Append))
+    return false;
+
+  if (!Append)
+  {
+    CurrentSize = 0;
+    return true;
+  }
+
+  auto rc = Seek(0, SEEK_END);
+  if (rc < 0)
+    return false;
+
+  CurrentSize = (size_t)rc;
+  return true;
 }
 
 void FileBackend::CloseLog()
@@ -229,7 +245,7 @@ size_t FileBackend::GetSize()
   if (File == -1)
     return static_cast<size_t>(-1);
 
-  return (size_t)Seek(0, SEEK_END);
+  return CurrentSize;
 }
 
 bool FileBackend::ChangePart()
@@ -279,7 +295,14 @@ void FileBackend::Display(Context& context, const char* line)
 
 void FileBackend::Truncate()
 {
+  if (CurrentSize < MaxSize)
+    return;
+
   FileIo::TruncateToMaxSize(MaxSize);
+
+  auto rc = Seek(0, SEEK_END);
+  if (rc >= 0)
+    CurrentSize = (size_t)rc;
 }
 
 std::string FileBackend::GetPathName(int index)
@@ -422,8 +445,15 @@ void FileBackend::WriteData()
       if (!b)
         continue;
 
-      if (FileIo::Write(b->Data(), b->Size()) < 0)
+      int rc = FileIo::WriteRaw(b->Data(), b->Size());
+      if (rc < 0)
+      {
         ok = false;
+      }
+      else
+      {
+        CurrentSize += (size_t)rc;
+      }
     }
   }
 

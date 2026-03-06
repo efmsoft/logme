@@ -1,32 +1,37 @@
+#pragma once
+
+#include <vector>
+
 namespace Logme
 {
-  thread_local int DisplayDepth = 0;
+  class Channel;
 
   class DisplayReentryGuard
   {
-    bool Active;
-
   public:
-    DisplayReentryGuard() : Active(false)
-    {
-      if (DisplayDepth)
-        return;
+    explicit DisplayReentryGuard(const Channel *channel);
+    ~DisplayReentryGuard();
 
-      ++DisplayDepth;
-      Active = true;
-    }
+    bool IsActive() const;
 
-    ~DisplayReentryGuard()
-    {
-      if (Active)
-      {
-        --DisplayDepth;
-      }
-    }
+  private:
+    static constexpr int SMALL_CAPACITY = 8;
 
-    bool IsActive() const
+    struct State
     {
-      return Active;
-    }
+      State();
+
+      int Depth;
+      bool Overflow;
+      const Channel* SmallStack[SMALL_CAPACITY];
+      std::vector<const Channel*> LargeStack;
+    };
+
+    static State &GetState();
+    static void PromoteToOverflow(State &state);
+
+  private:
+    const Channel *ChannelValue;
+    bool EnteredValue;
   };
 }

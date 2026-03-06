@@ -90,6 +90,10 @@ void Channel::Display(Context& context, const char* line)
   if (ShutdownCalled)
     return;
 
+  DisplayReentryGuard guard(this);
+  if (guard.IsActive() == false)
+    return;
+
   DataLock.lock();
   AccessCount++;
 
@@ -141,13 +145,6 @@ void Channel::Display(Context& context, const char* line)
       ch->Display(context, line);
     }
     DataLock.lock();
-  }
-
-  DisplayReentryGuard guard;
-  if (guard.IsActive() == false)
-  {
-    DataLock.unlock();
-    return;
   }
 
   for (auto it = Backends.begin(); it != Backends.end(); ++it)

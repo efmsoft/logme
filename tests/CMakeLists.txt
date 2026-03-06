@@ -29,6 +29,7 @@ if(GTEST)
     add_subdirectory(LevelFilter)
     add_subdirectory(OutputFlags)
     add_subdirectory(ProcedurePrint)
+    add_subdirectory(ReentryGuard)
   endif()
 endif()
 

@@ -10,8 +10,7 @@ DisplayReentryGuard::State::State()
 }
 
 DisplayReentryGuard::DisplayReentryGuard(const Channel *channel)
-  : ChannelValue(channel)
-  , EnteredValue(false)
+  : EnteredValue(false)
 {
   State &state = GetState();
 

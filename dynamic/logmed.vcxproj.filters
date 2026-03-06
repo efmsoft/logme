@@ -49,6 +49,9 @@
     <Filter Include="..\logme\include\Logme\Buffer">
       <UniqueIdentifier>{bdcc6922-41d6-514c-9ede-5909fedd5473}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ReentryGuard.cpp">
+      <UniqueIdentifier>{122f410b-0c20-5348-a9cd-938b3cc62c15}</UniqueIdentifier>
+    </Filter>
 </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\logme\source\Backend\Backend.cpp">
@@ -213,6 +216,9 @@
     </ClCompile>
     <ClCompile Include="..\logme\source\Buffer\DataBuffer.cpp">
       <Filter>Buffer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\ReentryGuard.cpp">
+      <Filter>ReentryGuard.cpp</Filter>
     </ClCompile>
 </ItemGroup>
   <ItemGroup>

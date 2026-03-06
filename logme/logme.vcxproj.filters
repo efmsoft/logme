@@ -436,5 +436,8 @@
     <ClCompile Include="source\Buffer\DataBuffer.cpp">
       <Filter>source\Buffer</Filter>
     </ClCompile>
+    <ClCompile Include="source\ReentryGuard.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
 </ItemGroup>
 </Project>

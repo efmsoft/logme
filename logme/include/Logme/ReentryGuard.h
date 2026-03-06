@@ -8,6 +8,8 @@ namespace Logme
 
   class DisplayReentryGuard
   {
+    bool EnteredValue;
+
   public:
     explicit DisplayReentryGuard(const Channel *channel);
     ~DisplayReentryGuard();
@@ -29,9 +31,5 @@ namespace Logme
 
     static State &GetState();
     static void PromoteToOverflow(State &state);
-
-  private:
-    const Channel *ChannelValue;
-    bool EnteredValue;
   };
 }

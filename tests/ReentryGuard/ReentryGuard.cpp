@@ -12,10 +12,14 @@ namespace
   ID CHA{ "reentry_a" };
   ID CHB{ "reentry_b" };
   ID CHC{ "reentry_c" };
+  ID CHD{ "reentry_d" };
+  ID CHE{ "reentry_e" };
 
   std::shared_ptr<TestBackend> BackendA;
   std::shared_ptr<TestBackend> BackendB;
   std::shared_ptr<TestBackend> BackendC;
+  std::shared_ptr<TestBackend> BackendD;
+  std::shared_ptr<TestBackend> BackendE;
 
   class ForwardToChannelBackend : public Backend
   {
@@ -117,6 +121,20 @@ TEST(ReentryGuard, SameChannelIsBlockedButLinkWorks)
   EXPECT_EQ(ReenterBackend->ReentryAttemptCount, 1);
 }
 
+TEST(ReentryGuard, LinkCycleIsBlocked)
+{
+  BackendD->Clear();
+  BackendE->Clear();
+
+  LogmeI(CHD, Lorem);
+
+  ASSERT_EQ(BackendD->History.size(), 1u);
+  EXPECT_EQ(BackendD->History[0], Lorem);
+
+  ASSERT_EQ(BackendE->History.size(), 1u);
+  EXPECT_EQ(BackendE->History[0], Lorem);
+}
+
 int main(int argc, char *argv[])
 {
   ::testing::InitGoogleTest(&argc, argv);
@@ -124,10 +142,14 @@ int main(int argc, char *argv[])
   auto chA = Instance->CreateChannel(CHA);
   auto chB = Instance->CreateChannel(CHB);
   auto chC = Instance->CreateChannel(CHC);
+  auto chD = Instance->CreateChannel(CHD);
+  auto chE = Instance->CreateChannel(CHE);
 
   BackendA = std::make_shared<TestBackend>(chA);
   BackendB = std::make_shared<TestBackend>(chB);
   BackendC = std::make_shared<TestBackend>(chC);
+  BackendD = std::make_shared<TestBackend>(chD);
+  BackendE = std::make_shared<TestBackend>(chE);
 
   ForwardBackend = std::make_shared<ForwardToChannelBackend>(
     chA
@@ -149,7 +171,13 @@ int main(int argc, char *argv[])
   chC->AddBackend(BackendC);
   chC->AddBackend(ReenterBackend);
 
+  chD->AddBackend(BackendD);
+  chE->AddBackend(BackendE);
+
   chA->AddLink(chB);
+
+  chD->AddLink(chE);
+  chE->AddLink(chD);
 
   OutputFlags flags;
   flags.Value = 0;
@@ -157,10 +185,14 @@ int main(int argc, char *argv[])
   chA->SetFlags(flags);
   chB->SetFlags(flags);
   chC->SetFlags(flags);
+  chD->SetFlags(flags);
+  chE->SetFlags(flags);
 
   chA->SetFilterLevel(LEVEL_DEBUG);
   chB->SetFilterLevel(LEVEL_DEBUG);
   chC->SetFilterLevel(LEVEL_DEBUG);
+  chD->SetFilterLevel(LEVEL_DEBUG);
+  chE->SetFilterLevel(LEVEL_DEBUG);
 
   return RUN_ALL_TESTS();
 }

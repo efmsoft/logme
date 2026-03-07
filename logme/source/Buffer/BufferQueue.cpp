@@ -136,6 +136,25 @@ bool BufferQueue::FlushCurrent(bool& needSignal)
   return true;
 }
 
+
+bool BufferQueue::HasReady() const
+{
+  std::lock_guard<std::mutex> guard(Lock);
+  return !ReadyList.empty();
+}
+
+bool BufferQueue::HasCurrentData() const
+{
+  std::lock_guard<std::mutex> guard(Lock);
+
+  if (!Current)
+  {
+    return false;
+  }
+
+  return Current->Size() != 0;
+}
+
 void BufferQueue::ReportWrite(std::size_t buffers, std::size_t bytes, bool ok)
 {
   std::lock_guard<std::mutex> guard(Lock);

@@ -1,15 +1,15 @@
 #pragma once
 
+#include <memory>
+#include <string>
+#include <vector>
+
 #include <Logme/ID.h>
 #include <Logme/Module.h>
 #include <Logme/OutputFlags.h>
 #include <Logme/Override.h>
 #include <Logme/SID.h>
 #include <Logme/Types.h>
-
-#include <memory>
-#include <string>
-#include <vector>
 
 namespace Logme
 {
@@ -21,7 +21,7 @@ namespace Logme
 
   struct ShortenerContext
   {
-    std::string Buffer;
+    std::shared_ptr<std::string> Buffer;
     char StaticBuffer[256];
 
     ShortenerContext()
@@ -67,7 +67,7 @@ namespace Logme
     int LastLen;
 
     char Buffer[OUTPUT_BUFFER_SIZE];
-    std::vector<char> ExtBuffer;
+    std::shared_ptr<std::vector<char>> ExtBuffer;
 
     ShortenerContext MethodShortener;
 

@@ -70,6 +70,7 @@ void Channel::RemoveLink()
 
 bool Channel::IsLinked() const
 {
+  std::lock_guard guard(DataLock);
   return Link != nullptr || LinkTo != nullptr;
 }
 
@@ -90,14 +91,18 @@ void Channel::Display(Context& context, const char* line)
   if (ShutdownCalled)
     return;
 
-  DisplayReentryGuard guard(this);
-  if (guard.IsActive() == false)
-    return;
+  AccessCount.fetch_add(1, std::memory_order_relaxed);
 
   DataLock.lock();
-  AccessCount++;
 
   if (Enabled == false)
+  {
+    DataLock.unlock();
+    return;
+  }
+
+  DisplayReentryGuard guard(this);
+  if (guard.IsActive() == false)
   {
     DataLock.unlock();
     return;
@@ -130,10 +135,11 @@ void Channel::Display(Context& context, const char* line)
   if ((Link || LinkTo) && !flags.DisableLink)
   {
     IDPtr link = Link;
-    DataLock.unlock();
+    ChannelPtr pch = LinkTo;
 
-    // Owner->GetChannel /  ch->Display have to be called w/o acquired lock!!
-    ChannelPtr ch = LinkTo ? LinkTo : Owner->GetChannel(*link);
+    // Owner->GetChannel / ch->Display have to be called w/o acquired lock!!
+    DataLock.unlock();
+    ChannelPtr ch = pch ? pch : Owner->GetChannel(*link);
 
     if (ch)
     {
@@ -144,6 +150,7 @@ void Channel::Display(Context& context, const char* line)
 
       ch->Display(context, line);
     }
+
     DataLock.lock();
   }
 
@@ -301,27 +308,27 @@ std::string Channel::GetName()
 
 Level Channel::GetFilterLevel() const
 {
-  return LevelFilter;
+  return LevelFilter.load(std::memory_order_relaxed);
 }
 
 void Channel::SetFilterLevel(Level level)
 {
-  LevelFilter = level;
+  LevelFilter.store(level, std::memory_order_relaxed);
 }
 
 void Channel::SetEnabled(bool enable)
 {
-  Enabled = enable;
+  Enabled.store(enable, std::memory_order_relaxed);
 }
 
 bool Channel::GetEnabled() const
 {
-  return Enabled;
+  return Enabled.load(std::memory_order_relaxed);
 }
 
 uint64_t Channel::GetAccessCount() const
 {
-  return AccessCount;
+  return AccessCount.load(std::memory_order_relaxed);
 }
 
 Logger* Channel::GetOwner() const
@@ -331,15 +338,23 @@ Logger* Channel::GetOwner() const
 
 void Channel::SetShortenerPair(const ShortenerPair* pair)
 {
+  std::lock_guard guard(ShortenerLock);
   ShortenerList = pair;
 }
 
 void Channel::ShortenerAdd(const char* what, const char* replace_on)
 {
+  std::lock_guard guard(ShortenerLock);
+
   auto it = ShortenerMap.find(what);
   if (it != ShortenerMap.end())
-    it->second = replace_on ? replace_on : "";
-  else
+  {
+    if (replace_on)
+      it->second = replace_on;
+    else
+      ShortenerMap.erase(it);
+  }
+  else if (replace_on)
   {
     ShortenerMap[what] = replace_on;
   }
@@ -354,7 +369,7 @@ const char* Channel::ShortenerPairRun(
   if (value == context.StaticBuffer)
     return value;
 
-  if (value == context.Buffer.c_str())
+  if (context.Buffer && value == context.Buffer->c_str())
     return value;
 
   auto n = strlen(value);
@@ -381,8 +396,12 @@ const char* Channel::ShortenerPairRun(
       return context.StaticBuffer;
     }
 
-    context.Buffer = std::string(pair->ReplaceOn) + (value + ls);
-    return context.Buffer.c_str();
+    if (context.Buffer)
+      context.Buffer->assign(std::string(pair->ReplaceOn) + (value + ls));
+    else
+      context.Buffer = std::make_shared<std::string>(std::string(pair->ReplaceOn) + (value + ls));
+
+    return context.Buffer->c_str();
   }
 
   return value;
@@ -405,15 +424,17 @@ const char* Channel::ShortenerRun(
   , ShortenerContext& context
 )
 {
+  std::lock_guard guard(ShortenerLock);
+
   if (ShortenerList)
     value = ShortenerPairRun(value, context, ShortenerList);
 
   if (value == context.StaticBuffer)
     return value;
 
-  if (value == context.Buffer.c_str())
+  if (context.Buffer && value == context.Buffer->c_str())
     return value;
-
+  
   auto n = strlen(value);
   for (auto& v : ShortenerMap)
   {
@@ -434,8 +455,12 @@ const char* Channel::ShortenerRun(
       return context.StaticBuffer;
     }
 
-    context.Buffer = v.second + (value + v.first.length());
-    return context.Buffer.c_str();
+    if (context.Buffer)
+      context.Buffer->assign(v.second + (value + v.first.length()));
+    else
+      context.Buffer = std::make_shared<std::string>(v.second + (value + v.first.length()));
+    
+    return context.Buffer->c_str();
   }
 
   return value;

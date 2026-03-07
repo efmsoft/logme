@@ -48,7 +48,6 @@ FileBackend::FileBackend(ChannelPtr owner)
   , CurrentSize(0)
   , QueueSizeLimit(QueueSizeLimitDefault)
   , Registered(false)
-  , CallScheduled(false)
   , DataReady(false)
   , ShutdownFlag(false)
   , ShutdownCalled(owner == nullptr)
@@ -63,9 +62,9 @@ FileBackend::FileBackend(ChannelPtr owner)
 
 FileBackend::~FileBackend()
 {
-  assert(ShutdownFlag || Registered == false);
+  assert(ShutdownFlag.load(std::memory_order_relaxed) || Registered.load(std::memory_order_relaxed) == false);
 
-  if (ShutdownCalled == false)
+  if (ShutdownCalled.load(std::memory_order_relaxed) == false)
     WaitForShutdown();
 
   CloseLog();
@@ -113,12 +112,12 @@ void FileBackend::Flush()
   RequestFlush();
 
   std::unique_lock locker(BufferLock);
-  Done.wait(locker, [this]() {return QueuedBytes.load() == 0;});
+  Done.wait(locker, [this]() {return QueuedBytes.load(std::memory_order_relaxed) == 0;});
 }
 
 void FileBackend::Freeze()
 {
-  ShutdownFlag = true;
+  ShutdownFlag.store(true, std::memory_order_relaxed);
   Backend::Freeze();
 
   RequestFlush();
@@ -126,12 +125,12 @@ void FileBackend::Freeze()
 
 bool FileBackend::IsIdle() const
 {
-  return QueuedBytes.load() == 0 && (ShutdownFlag || Registered == false);
+  return QueuedBytes.load(std::memory_order_relaxed) == 0 && (ShutdownFlag.load(std::memory_order_relaxed) || Registered.load(std::memory_order_relaxed) == false);
 }
 
 uint64_t FileBackend::GetFlushTime() const
 {
-  return FlushTime;
+  return FlushTime.load(std::memory_order_relaxed);
 }
 
 bool FileBackend::ApplyConfig(BackendConfigPtr c)
@@ -155,14 +154,14 @@ bool FileBackend::ApplyConfig(BackendConfigPtr c)
 
 void FileBackend::WaitForShutdown()
 {
-  while (ShutdownCalled == false && Registered)
+  while (ShutdownCalled.load(std::memory_order_relaxed) == false && Registered.load(std::memory_order_relaxed))
   {
     std::unique_lock locker(BufferLock);
 
     Shutdown.wait_for(
       locker
       , std::chrono::milliseconds(50)
-      , [this]() {return ShutdownCalled; }
+      , [this]() {return ShutdownCalled.load(std::memory_order_relaxed); }
     );
   }
 }
@@ -208,7 +207,6 @@ bool FileBackend::CreateLog(const char* v)
     if (ec)
       return false;
   }
-
 
   if (!Open(Append))
     return false;
@@ -267,18 +265,17 @@ bool FileBackend::ChangePart()
 
 void FileBackend::Display(Context& context, const char* line)
 {
-  if (File == -1 || ShutdownFlag)
+  if (File == -1 || ShutdownFlag.load(std::memory_order_relaxed))
     return;
 
-  if (Registered == false)
+  if (Registered.load(std::memory_order_relaxed) == false)
   {
     std::unique_lock locker(BufferLock);
-
-    if (Owner && Registered == false)
+    if (Owner && Registered.load(std::memory_order_relaxed) == false)
     {
       FileBackendPtr self = std::static_pointer_cast<FileBackend>(shared_from_this());
       GetFactory().Add(self);
-      Registered = true;
+      Registered.store(true, std::memory_order_relaxed);
     }
   }
 
@@ -359,20 +356,20 @@ void FileBackend::AppendObfuscated(const char* text, size_t add)
 
 void FileBackend::AppendOutputData(const char* text, size_t add)
 {
-  if (ShutdownFlag)
+  if (ShutdownFlag.load(std::memory_order_relaxed))
     return;
 
   if (add == 0)
     return;
 
   bool needSignal = false;
-  size_t before = QueuedBytes.load();
+  size_t before = QueuedBytes.load(std::memory_order_relaxed);
 
   if (Queue.Append(text, add, needSignal) == false)
     return;
 
-  QueuedBytes.fetch_add(add);
-  DataReady = true;
+  QueuedBytes.fetch_add(add, std::memory_order_relaxed);
+  DataReady.store(true, std::memory_order_relaxed);
 
   size_t queued = before + add;
   if (queued >= QueueSizeLimit)
@@ -385,19 +382,31 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
 
 void FileBackend::RequestFlush(uint64_t when)
 {
-  if (CallScheduled && (FlushTime == RIGHT_NOW || FlushTime <= when))
-    return;
+  uint64_t old = FlushTime.load(std::memory_order_relaxed);
 
-  FlushTime = when;
-  CallScheduled = true;
+  for (;;)
+  {
+    if (old != 0 && (old == RIGHT_NOW || old <= when))
+      return;
 
-  if (Owner)
-    GetFactory().Notify(this, FlushTime);
+    if (FlushTime.compare_exchange_weak(
+      old
+      , when
+      , std::memory_order_relaxed
+      , std::memory_order_relaxed
+    ))
+    {
+      if (Owner)
+        GetFactory().Notify(this, when);
+
+      return;
+    }
+  }
 }
 
 bool FileBackend::HasEvents() const
 {
-  return CallScheduled;
+  return FlushTime.load(std::memory_order_relaxed) != 0;
 }
 
 FileManagerFactory& FileBackend::GetFactory() const
@@ -421,9 +430,9 @@ void FileBackend::WriteData()
   std::vector<DataBufferPtr> data;
   if (!GetOutputData(data))
   {
-    if (QueuedBytes.load() == 0)
+    if (QueuedBytes.load(std::memory_order_relaxed) == 0)
     {
-      DataReady = false;
+      DataReady.store(false, std::memory_order_relaxed);
       std::lock_guard guard(BufferLock);
       Done.notify_all();
     }
@@ -460,13 +469,13 @@ void FileBackend::WriteData()
   Queue.ReportWrite(data.size(), bytes, ok);
 
   if (bytes != 0)
-    QueuedBytes.fetch_sub(bytes);
+    QueuedBytes.fetch_sub(bytes, std::memory_order_relaxed);
 
   Queue.Recycle(data);
 
-  if (QueuedBytes.load() == 0)
+  if (QueuedBytes.load(std::memory_order_relaxed) == 0)
   {
-    DataReady = false;
+    DataReady.store(false, std::memory_order_relaxed);
     std::lock_guard guard(BufferLock);
     Done.notify_all();
   }
@@ -478,21 +487,33 @@ bool FileBackend::WorkerFunc()
   // one or more threads call Log() very frequently
   const int maxWriteLoops = 5;
 
-  if (QueuedBytes.load() != 0)
+  if (QueuedBytes.load(std::memory_order_relaxed) != 0)
   {
-    for (int i = 0; QueuedBytes.load() != 0 && i < maxWriteLoops; i++)
+    for (int i = 0; QueuedBytes.load(std::memory_order_relaxed) != 0 && i < maxWriteLoops; i++)
       WriteData();
   }
 
-  CallScheduled = (QueuedBytes.load() != 0);
-  return !ShutdownFlag;
+  if (Queue.HasReady())
+  {
+    FlushTime.store(RIGHT_NOW, std::memory_order_relaxed);
+  }
+  else if (Queue.HasCurrentData())
+  {
+    FlushTime.store(uint64_t(GetTimeInMillisec()) + FLUSH_AFTER, std::memory_order_relaxed);
+  }
+  else
+  {
+    FlushTime.store(0, std::memory_order_relaxed);
+  }
+
+  return !ShutdownFlag.load(std::memory_order_relaxed);
 }
 
 void FileBackend::OnShutdown()
 {
-  while (QueuedBytes.load() != 0)
+  while (QueuedBytes.load(std::memory_order_relaxed) != 0)
     WriteData();
 
-  ShutdownCalled = true;
+  ShutdownCalled.store(true, std::memory_order_relaxed);
   Shutdown.notify_all();
 }

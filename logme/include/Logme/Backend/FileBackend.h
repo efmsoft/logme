@@ -45,12 +45,11 @@ namespace Logme
     std::string Name;
     std::string NameTemplate;
 
-    bool Registered;
-    bool CallScheduled;
-    volatile bool DataReady;
-    volatile bool ShutdownFlag;
-    volatile bool ShutdownCalled;
-    uint64_t FlushTime;
+    std::atomic<bool> Registered;
+    std::atomic<bool> DataReady;
+    std::atomic<bool> ShutdownFlag;
+    std::atomic<bool> ShutdownCalled;
+    std::atomic<uint64_t> FlushTime;
 
     std::mutex BufferLock;
 

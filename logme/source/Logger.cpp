@@ -253,7 +253,7 @@ void Logger::ApplyThreadChannel(Context& context)
   }
 }
 
-ID Logger::GetDefaultChannel()
+SafeID Logger::GetDefaultChannel()
 {
   uint64_t tid = GetCurrentThreadId();
 
@@ -441,6 +441,7 @@ void Logger::SetBlockReportedSubsystems(bool block)
   if (ShutdownCalled)
     return;
 
+  std::lock_guard guard(DataLock);
   BlockReportedSubsystems = block;
 }
 
@@ -817,6 +818,8 @@ void Logger::DoLog(Context& context, const char* format, va_list args)
 
   if (context.Subsystem.Name)
   {
+    std::lock_guard guard(DataLock);
+
     auto& arr = Subsystems;
     if (std::binary_search(arr.begin(), arr.end(), context.Subsystem.Name))
     {
@@ -858,7 +861,7 @@ void Logger::DoLog(Context& context, const char* format, va_list args)
       buffer[0] = '\0';
       buffer[size - 1] = '\0';
 
-      int rc = vsnprintf(buffer + strlen(buffer), size - 1, format, args);
+      int rc = vsnprintf(buffer, size - 1, format, args);
       if (rc == -1)
         strcpy_s(buffer, size - 1, "[format error]");
     }

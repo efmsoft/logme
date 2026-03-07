@@ -221,14 +221,20 @@ void Context::InitThreadProcessID(ChannelPtr ch, OutputFlags flags)
 #endif
 
     char* p = ThreadProcessID;
+    size_t remaining = sizeof(ThreadProcessID) - 4; // '[', ']', ' ' and \0
     *p++ = '[';
 
     if (flags.ProcessID)
-      p += sprintf(p, LOGME_FMT_U64_HEX_UPPER, (uint64_t)process);
+    {
+      int c = sprintf(p, LOGME_FMT_U64_HEX_UPPER, (uint64_t)process);
+      p += c;
+      remaining -= c;
+    }
 
     if (flags.ThreadID)
     {
       *p++ = ':';
+      --remaining;
 
       do
       {
@@ -248,21 +254,56 @@ void Context::InitThreadProcessID(ChannelPtr ch, OutputFlags flags)
 
           if (trans.has_value())
           {
-            strcpy(p, trans.value().c_str());
-            p += trans.value().size();
+            const std::string& t = trans.value();
+            if (t.size() >= remaining)
+            {
+              memcpy(p, t.c_str(), remaining);
+              p += remaining;
+              *p = '\0';
+              remaining = 0;
+            }
+            else
+            {
+              strcpy(p, t.c_str());
+              p += t.size();
+              remaining -= t.size();
+            }
 
-            strcpy(p, " -> ");
-            p += 4;
+            if (remaining >= 4)
+            {
+              strcpy(p, " -> ");
+              p += 4;
+              remaining -= 4;
+            }
           }
         }
 
         if (name)
         {
-          strcpy(p, name);
-          p += strlen(name);
+          size_t n = strlen(name);
+          if (n > remaining)
+          {
+            memcpy(p, name, remaining);
+            p += remaining;
+            *p = '\0';
+          }
+          else
+          {
+            strcpy(p, name);
+            p += n;
+          }
         }
-        else
-          p += sprintf(p, LOGME_FMT_U64_HEX_UPPER, (uint64_t)thread);
+        else if (remaining > 0)
+        {
+          int c = snprintf(p, remaining, LOGME_FMT_U64_HEX_UPPER, (uint64_t)thread); 
+          if (c < 0)
+              c = 0;
+
+          if ((size_t)c >= remaining)
+            p += remaining - 1;
+          else
+            p += c;
+        }
       
       } while (false);
     }
@@ -271,7 +312,7 @@ void Context::InitThreadProcessID(ChannelPtr ch, OutputFlags flags)
     *p++ = ' ';
     *p = '\0';
   }
-  else
+  else if (!(flags.ProcessID || flags.ThreadID))
     *ThreadProcessID = '\0';
 }
 
@@ -404,10 +445,12 @@ const char* Context::Apply(ChannelPtr ch, OutputFlags flags, const char* text, i
   int n = nTimestamp + nSignature + nID + nChannel + nSubsystem + nFile + nError + nMethod + nLine + nAppend + nEol + 1;
   if (n > (int)sizeof(Buffer))
   {
-    if (ExtBuffer.size() < size_t(n))
-      ExtBuffer.resize(n);
+    if (ExtBuffer && ExtBuffer->size() < size_t(n))
+      ExtBuffer->resize(n);
+    else
+      ExtBuffer = std::make_shared<std::vector<char>>(size_t(n));
 
-    buffer = &ExtBuffer[0];
+    buffer = ExtBuffer->data();
   }
 
   char* p = buffer;

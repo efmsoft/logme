@@ -1,12 +1,6 @@
 #pragma once
 
-#include <Logme/Backend/Backend.h>
-#include <Logme/Context.h>
-#include <Logme/OutputFlags.h>
-#include <Logme/Override.h>
-#include <Logme/SafeID.h>
-#include <Logme/Types.h>
-
+#include <atomic>
 #include <functional>
 #include <memory>
 #include <mutex>
@@ -14,6 +8,13 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+
+#include <Logme/Backend/Backend.h>
+#include <Logme/Context.h>
+#include <Logme/OutputFlags.h>
+#include <Logme/Override.h>
+#include <Logme/SafeID.h>
+#include <Logme/Types.h>
 
 namespace Logme
 {
@@ -42,21 +43,22 @@ namespace Logme
 
   class Channel : public std::enable_shared_from_this<Channel>
   {
-    std::recursive_mutex DataLock;
+    mutable std::recursive_mutex DataLock;
 
     class Logger* Owner;
     std::string Name;
     SafeID ChannelID;
     OutputFlags Flags;
-    Level LevelFilter;
-    bool Enabled;
+    std::atomic<Level> LevelFilter;
+    std::atomic<bool> Enabled;
 
     BackendArray Backends;
-    uint64_t AccessCount;
+    std::atomic<uint64_t> AccessCount;
 
     IDPtr Link;
     ChannelPtr LinkTo;
 
+    std::mutex ShortenerLock;
     const ShortenerPair* ShortenerList;
     std::map<std::string, std::string> ShortenerMap;
 

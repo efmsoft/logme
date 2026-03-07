@@ -47,6 +47,9 @@ namespace Logme
     bool FlushCurrent(bool& needSignal);
     void ReportWrite(std::size_t buffers, std::size_t bytes, bool ok);
 
+    bool HasReady() const;
+    bool HasCurrentData() const;
+
     BufferCounters GetCounters() const;
 
     std::size_t GetTotalBuffers() const;

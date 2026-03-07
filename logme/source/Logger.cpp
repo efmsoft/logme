@@ -22,6 +22,15 @@ using namespace Logme;
 LoggerPtr Logme::Instance = std::make_shared<Logger>();
 bool Logme::ShutdownCalled = false;
 
+namespace
+{
+  thread_local bool HasThreadChannel = false;
+  thread_local SafeID CurrentThreadChannel;
+
+  thread_local bool HasThreadOverride = false;
+  thread_local Override CurrentThreadOverride;
+}
+
 Logger::Logger()
   : HomeDirectoryWatchDog(HomeDirectory, std::bind(&Logger::TestFileInUse, this, std::placeholders::_1))
   , BlockReportedSubsystems(true)
@@ -186,82 +195,58 @@ void Logger::SetErrorChannel(const ID& ch)
 
 void Logger::SetThreadOverride(const Override* ovr)
 {
-  uint64_t tid = GetCurrentThreadId();
-
-  std::lock_guard guard(DataLock);
-
   if (ovr == nullptr)
   {
-    auto it = ThreadOverride.find(tid);
-    if (it != ThreadOverride.end())
-      ThreadOverride.erase(it);
+    HasThreadOverride = false;
+    CurrentThreadOverride = Override();
   }
   else
-    ThreadOverride[tid] = *ovr;
+  {
+    CurrentThreadOverride = *ovr;
+    HasThreadOverride = true;
+  }
 }
 
 Override Logger::GetThreadOverride()
 {
-  uint64_t tid = GetCurrentThreadId();
-
-  std::lock_guard guard(DataLock);
-
-  auto it = ThreadOverride.find(tid);
-  if (it != ThreadOverride.end())
-    return it->second;
+  if (HasThreadOverride)
+    return CurrentThreadOverride;
 
   return Override();
 }
 
 void Logger::SetThreadChannel(const ID* id)
 {
-  uint64_t tid = GetCurrentThreadId();
-  
-  std::lock_guard guard(DataLock);
-
   if (id == nullptr)
   {
-    auto it = ThreadChannel.find(tid);
-    if (it != ThreadChannel.end())
-      ThreadChannel.erase(it);
+    HasThreadChannel = false;
+    CurrentThreadChannel = SafeID();
   }
   else
-    ThreadChannel[tid] = *id;
+  {
+    CurrentThreadChannel = *id;
+    HasThreadChannel = true;
+  }
 }
 
 bool Logger::IsChannelDefinedForCurrentThread()
 {
-  uint64_t tid = GetCurrentThreadId();
-
-  std::lock_guard guard(DataLock);
-
-  auto it = ThreadChannel.find(tid);
-  return it != ThreadChannel.end();
+  return HasThreadChannel;
 }
 
 void Logger::ApplyThreadChannel(Context& context)
 {
-  uint64_t tid = GetCurrentThreadId();
-  
-  std::lock_guard guard(DataLock);
-
-  auto it = ThreadChannel.find(tid);
-  if (it != ThreadChannel.end())
+  if (HasThreadChannel)
   {
-    context.ChannelStg = it->second;
+    context.ChannelStg = CurrentThreadChannel;
     context.Channel = &context.ChannelStg;
   }
 }
 
 SafeID Logger::GetDefaultChannel()
 {
-  uint64_t tid = GetCurrentThreadId();
-
-  std::lock_guard guard(DataLock);
-
-  auto it = ThreadChannel.find(tid);
-  if (it != ThreadChannel.end())
-    return it->second;
+  if (HasThreadChannel)
+    return CurrentThreadChannel;
 
   return ::CH;
 }

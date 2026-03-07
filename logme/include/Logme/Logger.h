@@ -44,8 +44,6 @@ namespace Logme
 
     int IDGenerator;
 
-    std::map<uint64_t, SafeID> ThreadChannel;
-    std::map<uint64_t, Override> ThreadOverride;
     FileManagerFactory Factory;
 
     std::mutex ErrorLock;

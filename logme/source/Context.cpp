@@ -394,7 +394,7 @@ const char* Context::Apply(ChannelPtr ch, OutputFlags flags, const char* text, i
   char line[32] = {0};
   if (flags.Location)
   {
-    sprintf_s(line, "(%i): ", Line);
+    sprintf_s(line, sizeof(line), "(%i): ", Line);
 
     if (flags.Location == DETALITY_SHORT)
       nFile = int(strlen(File.ShortName) + strlen(line));

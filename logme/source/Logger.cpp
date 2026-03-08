@@ -1,17 +1,18 @@
-#include <Logme/Logger.h>
-#include <Logme/Backend/ConsoleBackend.h>
-#include <Logme/Backend/DebugBackend.h>
-#include <Logme/File/exe_path.h>
-#include <Logme/Time/datetime.h>
-#include <Logme/Utils.h>
-
-#include "StringHelpers.h"
-
 #include <algorithm>
 #include <cassert>
 #include <filesystem>
 #include <functional>
 #include <stdarg.h>
+
+#include <Logme/Backend/ConsoleBackend.h>
+#include <Logme/Backend/DebugBackend.h>
+#include <Logme/FastFormat.h>
+#include <Logme/File/exe_path.h>
+#include <Logme/Logger.h>
+#include <Logme/Time/datetime.h>
+#include <Logme/Utils.h>
+
+#include "StringHelpers.h"
 
 #if defined(_MSC_VER)
 #pragma warning(disable : 6255)
@@ -838,9 +839,12 @@ void Logger::DoLog(Context& context, const char* format, va_list args)
       buffer[0] = '\0';
       buffer[size - 1] = '\0';
 
-      int rc = vsnprintf(buffer, size - 1, format, args);
-      if (rc == -1)
-        strcpy_s(buffer, size - 1, "[format error]");
+      if (TryFastFormat(buffer, size - 1, format, args) == false)
+      {
+        int rc = vsnprintf(buffer, size - 1, format, args);
+        if (rc == -1)
+          strcpy_s(buffer, size - 1, "[format error]");
+      }
     }
 
     ch->Display(context, buffer);

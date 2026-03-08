@@ -24,16 +24,22 @@ namespace
     LITERAL,
     FORMAT_S,
     FORMAT_D,
-    FORMAT_I
+    FORMAT_I,
+    FORMAT_U,
+    FORMAT_P
   };
 
   struct FastFormatEntry
   {
     const char* Format;
-    FastFormatKind Kind;
-    uint16_t PrefixLen;
-    uint16_t SuffixPos;
-    uint16_t SuffixLen;
+    FastFormatKind Kind1;
+    FastFormatKind Kind2;
+    uint16_t Part0Len;
+    uint16_t Part1Pos;
+    uint16_t Part1Len;
+    uint16_t Part2Pos;
+    uint16_t Part2Len;
+    uint8_t SpecCount;
   };
 
 #if LOGME_FAST_FORMAT_STATS
@@ -43,19 +49,27 @@ namespace
     std::atomic<uint64_t> CacheHits{0};
     std::atomic<uint64_t> CacheMisses{0};
     std::atomic<uint64_t> CacheStores{0};
-    std::atomic<uint64_t> DetectedNone{0};
+    std::atomic<uint64_t> DetectedRejected{0};
     std::atomic<uint64_t> DetectedLiteral{0};
+    std::atomic<uint64_t> DetectedOneSpec{0};
+    std::atomic<uint64_t> DetectedTwoSpecs{0};
     std::atomic<uint64_t> DetectedS{0};
     std::atomic<uint64_t> DetectedD{0};
     std::atomic<uint64_t> DetectedI{0};
-    std::atomic<uint64_t> ExecuteNone{0};
+    std::atomic<uint64_t> DetectedU{0};
+    std::atomic<uint64_t> DetectedP{0};
+    std::atomic<uint64_t> ExecuteRejected{0};
     std::atomic<uint64_t> ExecuteLiteral{0};
+    std::atomic<uint64_t> ExecuteOneSpec{0};
+    std::atomic<uint64_t> ExecuteTwoSpecs{0};
     std::atomic<uint64_t> ExecuteS{0};
     std::atomic<uint64_t> ExecuteD{0};
     std::atomic<uint64_t> ExecuteI{0};
+    std::atomic<uint64_t> ExecuteU{0};
+    std::atomic<uint64_t> ExecuteP{0};
     std::atomic<uint64_t> AnalyzeNullFormat{0};
     std::atomic<uint64_t> AnalyzeNoPercent{0};
-    std::atomic<uint64_t> AnalyzeSecondPercent{0};
+    std::atomic<uint64_t> AnalyzeMoreThanTwoSpecs{0};
     std::atomic<uint64_t> AnalyzeUnsupportedSpec{0};
     std::atomic<uint64_t> AnalyzeSpecAtEnd{0};
     std::atomic<uint64_t> AnalyzeTooLong{0};
@@ -79,19 +93,27 @@ namespace
         " hits=%llu"
         " misses=%llu"
         " stores=%llu"
-        " detected_none=%llu"
+        " detected_rejected=%llu"
         " detected_literal=%llu"
+        " detected_one_spec=%llu"
+        " detected_two_specs=%llu"
         " detected_s=%llu"
         " detected_d=%llu"
         " detected_i=%llu"
-        " execute_none=%llu"
+        " detected_u=%llu"
+        " detected_p=%llu"
+        " execute_rejected=%llu"
         " execute_literal=%llu"
+        " execute_one_spec=%llu"
+        " execute_two_specs=%llu"
         " execute_s=%llu"
         " execute_d=%llu"
         " execute_i=%llu"
+        " execute_u=%llu"
+        " execute_p=%llu"
         " analyze_null_format=%llu"
         " analyze_no_percent=%llu"
-        " analyze_second_percent=%llu"
+        " analyze_more_than_two_specs=%llu"
         " analyze_unsupported_spec=%llu"
         " analyze_spec_at_end=%llu"
         " analyze_too_long=%llu"
@@ -100,19 +122,27 @@ namespace
         (unsigned long long)Stats.CacheHits.load(std::memory_order_relaxed),
         (unsigned long long)Stats.CacheMisses.load(std::memory_order_relaxed),
         (unsigned long long)Stats.CacheStores.load(std::memory_order_relaxed),
-        (unsigned long long)Stats.DetectedNone.load(std::memory_order_relaxed),
+        (unsigned long long)Stats.DetectedRejected.load(std::memory_order_relaxed),
         (unsigned long long)Stats.DetectedLiteral.load(std::memory_order_relaxed),
+        (unsigned long long)Stats.DetectedOneSpec.load(std::memory_order_relaxed),
+        (unsigned long long)Stats.DetectedTwoSpecs.load(std::memory_order_relaxed),
         (unsigned long long)Stats.DetectedS.load(std::memory_order_relaxed),
         (unsigned long long)Stats.DetectedD.load(std::memory_order_relaxed),
         (unsigned long long)Stats.DetectedI.load(std::memory_order_relaxed),
-        (unsigned long long)Stats.ExecuteNone.load(std::memory_order_relaxed),
+        (unsigned long long)Stats.DetectedU.load(std::memory_order_relaxed),
+        (unsigned long long)Stats.DetectedP.load(std::memory_order_relaxed),
+        (unsigned long long)Stats.ExecuteRejected.load(std::memory_order_relaxed),
         (unsigned long long)Stats.ExecuteLiteral.load(std::memory_order_relaxed),
+        (unsigned long long)Stats.ExecuteOneSpec.load(std::memory_order_relaxed),
+        (unsigned long long)Stats.ExecuteTwoSpecs.load(std::memory_order_relaxed),
         (unsigned long long)Stats.ExecuteS.load(std::memory_order_relaxed),
         (unsigned long long)Stats.ExecuteD.load(std::memory_order_relaxed),
         (unsigned long long)Stats.ExecuteI.load(std::memory_order_relaxed),
+        (unsigned long long)Stats.ExecuteU.load(std::memory_order_relaxed),
+        (unsigned long long)Stats.ExecuteP.load(std::memory_order_relaxed),
         (unsigned long long)Stats.AnalyzeNullFormat.load(std::memory_order_relaxed),
         (unsigned long long)Stats.AnalyzeNoPercent.load(std::memory_order_relaxed),
-        (unsigned long long)Stats.AnalyzeSecondPercent.load(std::memory_order_relaxed),
+        (unsigned long long)Stats.AnalyzeMoreThanTwoSpecs.load(std::memory_order_relaxed),
         (unsigned long long)Stats.AnalyzeUnsupportedSpec.load(std::memory_order_relaxed),
         (unsigned long long)Stats.AnalyzeSpecAtEnd.load(std::memory_order_relaxed),
         (unsigned long long)Stats.AnalyzeTooLong.load(std::memory_order_relaxed)
@@ -194,18 +224,10 @@ namespace
     CopyBounded(dst, left, temp, (size_t)(rc.ptr - temp));
   }
 
-  inline void AddDetectStat(FastFormatKind kind)
+  inline void AddDetectSpecStat(FastFormatKind kind)
   {
     switch (kind)
     {
-    case FastFormatKind::NONE:
-      FAST_FORMAT_STAT(DetectedNone);
-      break;
-
-    case FastFormatKind::LITERAL:
-      FAST_FORMAT_STAT(DetectedLiteral);
-      break;
-
     case FastFormatKind::FORMAT_S:
       FAST_FORMAT_STAT(DetectedS);
       break;
@@ -217,6 +239,111 @@ namespace
     case FastFormatKind::FORMAT_I:
       FAST_FORMAT_STAT(DetectedI);
       break;
+
+    case FastFormatKind::FORMAT_U:
+      FAST_FORMAT_STAT(DetectedU);
+      break;
+
+    case FastFormatKind::FORMAT_P:
+      FAST_FORMAT_STAT(DetectedP);
+      break;
+
+    default:
+      break;
+    }
+  }
+
+  inline void AddExecuteSpecStat(FastFormatKind kind)
+  {
+    switch (kind)
+    {
+    case FastFormatKind::FORMAT_S:
+      FAST_FORMAT_STAT(ExecuteS);
+      break;
+
+    case FastFormatKind::FORMAT_D:
+      FAST_FORMAT_STAT(ExecuteD);
+      break;
+
+    case FastFormatKind::FORMAT_I:
+      FAST_FORMAT_STAT(ExecuteI);
+      break;
+
+    case FastFormatKind::FORMAT_U:
+      FAST_FORMAT_STAT(ExecuteU);
+      break;
+
+    case FastFormatKind::FORMAT_P:
+      FAST_FORMAT_STAT(ExecuteP);
+      break;
+
+    default:
+      break;
+    }
+  }
+
+  inline bool AppendArg(
+    FastFormatKind kind
+    , char*& dst
+    , size_t& left
+    , va_list& args
+  )
+  {
+    switch (kind)
+    {
+    case FastFormatKind::FORMAT_S:
+    {
+      const char* text = va_arg(args, const char*);
+      if (text == nullptr)
+        text = "(null)";
+
+      CopyBounded(dst, left, text, BoundedStringLen(text, left > 0 ? left - 1 : 0));
+      return true;
+    }
+
+    case FastFormatKind::FORMAT_D:
+    case FastFormatKind::FORMAT_I:
+    {
+      int value = va_arg(args, int);
+      AppendInt(dst, left, value);
+      return true;
+    }
+
+    case FastFormatKind::FORMAT_U:
+    {
+      unsigned int value = va_arg(args, unsigned int);
+
+      char temp[32];
+      auto rc = std::to_chars(temp, temp + sizeof(temp), value);
+      if (rc.ec != std::errc())
+        return false;
+
+      CopyBounded(dst, left, temp, (size_t)(rc.ptr - temp));
+      return true;
+    }
+
+    case FastFormatKind::FORMAT_P:
+    {
+      void* value = va_arg(args, void*);
+
+      char temp[32];
+      temp[0] = '0';
+      temp[1] = 'x';
+      auto rc = std::to_chars(
+        temp + 2
+        , temp + sizeof(temp)
+        , (uintptr_t)value
+        , 16
+      );
+      if (rc.ec != std::errc())
+        return false;
+
+      CopyBounded(dst, left, temp, (size_t)(rc.ptr - temp));
+      return true;
+    }
+
+    default:
+      return false;
     }
   }
 
@@ -224,16 +351,16 @@ namespace
   {
     FastFormatEntry entry{};
     entry.Format = format;
-    entry.Kind = FastFormatKind::NONE;
+    entry.Kind1 = FastFormatKind::NONE;
+    entry.Kind2 = FastFormatKind::NONE;
+    entry.SpecCount = 0;
 
     if (format == nullptr)
     {
       FAST_FORMAT_STAT(AnalyzeNullFormat);
-      AddDetectStat(entry.Kind);
+      FAST_FORMAT_STAT(DetectedRejected);
       return entry;
     }
-
-    int percentPos = -1;
 
     for (int i = 0; i < FAST_FORMAT_SCAN_LIMIT; i++)
     {
@@ -241,69 +368,109 @@ namespace
 
       if (ch == '\0')
       {
-        if (percentPos == -1)
+        if (entry.SpecCount == 0)
         {
-          entry.Kind = FastFormatKind::LITERAL;
-          entry.PrefixLen = (uint16_t)i;
+          entry.Kind1 = FastFormatKind::LITERAL;
+          entry.Part0Len = (uint16_t)i;
           FAST_FORMAT_STAT(AnalyzeNoPercent);
-        }
-        else
-        {
-          entry.SuffixLen = (uint16_t)(i - entry.SuffixPos);
+          FAST_FORMAT_STAT(DetectedLiteral);
+          return entry;
         }
 
-        AddDetectStat(entry.Kind);
+        if (entry.SpecCount == 1)
+          entry.Part1Len = (uint16_t)(i - entry.Part1Pos);
+        else
+          entry.Part2Len = (uint16_t)(i - entry.Part2Pos);
+
+        if (entry.SpecCount == 1)
+          FAST_FORMAT_STAT(DetectedOneSpec);
+        else
+          FAST_FORMAT_STAT(DetectedTwoSpecs);
+
+        AddDetectSpecStat(entry.Kind1);
+        if (entry.SpecCount == 2)
+          AddDetectSpecStat(entry.Kind2);
+
         return entry;
       }
 
       if (ch != '%')
         continue;
 
-      if (percentPos != -1)
-      {
-        FAST_FORMAT_STAT(AnalyzeSecondPercent);
-        AddDetectStat(entry.Kind);
-        return entry;
-      }
-
-      percentPos = i;
-
       if (i + 1 >= FAST_FORMAT_SCAN_LIMIT)
       {
         FAST_FORMAT_STAT(AnalyzeTooLong);
-        AddDetectStat(entry.Kind);
+        FAST_FORMAT_STAT(DetectedRejected);
+        entry.SpecCount = 0;
+        entry.Kind1 = FastFormatKind::NONE;
+        entry.Kind2 = FastFormatKind::NONE;
         return entry;
       }
 
       char spec = format[i + 1];
-
       if (spec == '\0')
       {
         FAST_FORMAT_STAT(AnalyzeSpecAtEnd);
-        AddDetectStat(entry.Kind);
+        FAST_FORMAT_STAT(DetectedRejected);
+        entry.SpecCount = 0;
+        entry.Kind1 = FastFormatKind::NONE;
+        entry.Kind2 = FastFormatKind::NONE;
         return entry;
       }
 
+      FastFormatKind kind = FastFormatKind::NONE;
       if (spec == 's')
-        entry.Kind = FastFormatKind::FORMAT_S;
+        kind = FastFormatKind::FORMAT_S;
       else if (spec == 'd')
-        entry.Kind = FastFormatKind::FORMAT_D;
+        kind = FastFormatKind::FORMAT_D;
       else if (spec == 'i')
-        entry.Kind = FastFormatKind::FORMAT_I;
+        kind = FastFormatKind::FORMAT_I;
+      else if (spec == 'u')
+        kind = FastFormatKind::FORMAT_U;
+      else if (spec == 'p')
+        kind = FastFormatKind::FORMAT_P;
       else
       {
-        entry.Kind = FastFormatKind::NONE;
         FAST_FORMAT_STAT(AnalyzeUnsupportedSpec);
-        AddDetectStat(entry.Kind);
+        FAST_FORMAT_STAT(DetectedRejected);
+        entry.SpecCount = 0;
+        entry.Kind1 = FastFormatKind::NONE;
+        entry.Kind2 = FastFormatKind::NONE;
         return entry;
       }
 
-      entry.PrefixLen = (uint16_t)i;
-      entry.SuffixPos = (uint16_t)(i + 2);
+      if (entry.SpecCount == 0)
+      {
+        entry.Kind1 = kind;
+        entry.Part0Len = (uint16_t)i;
+        entry.Part1Pos = (uint16_t)(i + 2);
+        entry.SpecCount = 1;
+      }
+      else if (entry.SpecCount == 1)
+      {
+        entry.Kind2 = kind;
+        entry.Part1Len = (uint16_t)(i - entry.Part1Pos);
+        entry.Part2Pos = (uint16_t)(i + 2);
+        entry.SpecCount = 2;
+      }
+      else
+      {
+        FAST_FORMAT_STAT(AnalyzeMoreThanTwoSpecs);
+        FAST_FORMAT_STAT(DetectedRejected);
+        entry.SpecCount = 0;
+        entry.Kind1 = FastFormatKind::NONE;
+        entry.Kind2 = FastFormatKind::NONE;
+        return entry;
+      }
+
+      i++;
     }
 
     FAST_FORMAT_STAT(AnalyzeTooLong);
-    AddDetectStat(entry.Kind);
+    FAST_FORMAT_STAT(DetectedRejected);
+    entry.SpecCount = 0;
+    entry.Kind1 = FastFormatKind::NONE;
+    entry.Kind2 = FastFormatKind::NONE;
     return entry;
   }
 
@@ -322,48 +489,48 @@ namespace
 
     *dst = '\0';
 
-    switch (entry.Kind)
+    if (entry.Kind1 == FastFormatKind::NONE)
     {
-    case FastFormatKind::NONE:
-      FAST_FORMAT_STAT(ExecuteNone);
+      FAST_FORMAT_STAT(ExecuteRejected);
+      return false;
+    }
+
+    if (entry.Kind1 == FastFormatKind::LITERAL)
+    {
+      FAST_FORMAT_STAT(ExecuteLiteral);
+      CopyBounded(dst, left, entry.Format, entry.Part0Len);
+      return true;
+    }
+
+    if (entry.SpecCount == 1)
+      FAST_FORMAT_STAT(ExecuteOneSpec);
+    else if (entry.SpecCount == 2)
+      FAST_FORMAT_STAT(ExecuteTwoSpecs);
+
+    AddExecuteSpecStat(entry.Kind1);
+    CopyBounded(dst, left, entry.Format, entry.Part0Len);
+    if (AppendArg(entry.Kind1, dst, left, args) == false)
       return false;
 
-    case FastFormatKind::LITERAL:
-      FAST_FORMAT_STAT(ExecuteLiteral);
-      CopyBounded(dst, left, entry.Format, entry.PrefixLen);
-      return true;
-
-    case FastFormatKind::FORMAT_S:
+    if (entry.SpecCount == 1)
     {
-      FAST_FORMAT_STAT(ExecuteS);
-      const char* text = va_arg(args, const char*);
-      if (text == nullptr)
-        text = "(null)";
-
-      CopyBounded(dst, left, entry.Format, entry.PrefixLen);
-      CopyBounded(dst, left, text, BoundedStringLen(text, left > 0 ? left - 1 : 0));
-      CopyBounded(dst, left, entry.Format + entry.SuffixPos, entry.SuffixLen);
+      CopyBounded(dst, left, entry.Format + entry.Part1Pos, entry.Part1Len);
       return true;
     }
 
-    case FastFormatKind::FORMAT_D:
-    case FastFormatKind::FORMAT_I:
+    if (entry.SpecCount != 2)
     {
-      if (entry.Kind == FastFormatKind::FORMAT_D)
-        FAST_FORMAT_STAT(ExecuteD);
-      else
-        FAST_FORMAT_STAT(ExecuteI);
-
-      int value = va_arg(args, int);
-
-      CopyBounded(dst, left, entry.Format, entry.PrefixLen);
-      AppendInt(dst, left, value);
-      CopyBounded(dst, left, entry.Format + entry.SuffixPos, entry.SuffixLen);
-      return true;
-    }
+      FAST_FORMAT_STAT(ExecuteRejected);
+      return false;
     }
 
-    return false;
+    CopyBounded(dst, left, entry.Format + entry.Part1Pos, entry.Part1Len);
+    AddExecuteSpecStat(entry.Kind2);
+    if (AppendArg(entry.Kind2, dst, left, args) == false)
+      return false;
+
+    CopyBounded(dst, left, entry.Format + entry.Part2Pos, entry.Part2Len);
+    return true;
   }
 }
 

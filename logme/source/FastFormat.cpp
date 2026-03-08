@@ -5,7 +5,7 @@
 #include <cstring>
 
 #ifndef LOGME_FAST_FORMAT_STATS
-#define LOGME_FAST_FORMAT_STATS 0
+#define LOGME_FAST_FORMAT_STATS 1
 #endif
 
 #if LOGME_FAST_FORMAT_STATS
@@ -282,11 +282,12 @@ namespace
     }
   }
 
+  template<typename TArgs>
   inline bool AppendArg(
     FastFormatKind kind
     , char*& dst
     , size_t& left
-    , va_list& args
+    , TArgs& args
   )
   {
     switch (kind)

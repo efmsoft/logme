@@ -265,6 +265,7 @@
     <ClCompile Include="source\Buffer\BufferQueue.cpp" />
     <ClCompile Include="source\Buffer\DataBuffer.cpp" />
     <ClCompile Include="source\ReentryGuard.cpp" />
+    <ClCompile Include="source\FastFormat.cpp" />
 </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

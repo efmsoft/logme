@@ -227,6 +227,9 @@
     <ClInclude Include="include\Logme\Buffer\DataBuffer.h">
       <Filter>include\Logme\Buffer</Filter>
     </ClInclude>
+    <ClInclude Include="include\Logme\FastFormat.h">
+      <Filter>include\Logme</Filter>
+    </ClInclude>
 </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Time\datetime_common.cpp">
@@ -437,6 +440,9 @@
       <Filter>source\Buffer</Filter>
     </ClCompile>
     <ClCompile Include="source\ReentryGuard.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\FastFormat.cpp">
       <Filter>source</Filter>
     </ClCompile>
 </ItemGroup>

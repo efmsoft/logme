@@ -89,6 +89,7 @@
     <ClCompile Include="..\logme\source\Buffer\BufferQueue.cpp" />
     <ClCompile Include="..\logme\source\Buffer\DataBuffer.cpp" />
     <ClCompile Include="..\logme\source\ReentryGuard.cpp" />
+    <ClCompile Include="..\logme\source\FastFormat.cpp" />
 </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\logme\source\Config\Helper.h" />

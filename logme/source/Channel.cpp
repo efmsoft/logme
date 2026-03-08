@@ -21,6 +21,9 @@ Channel::Channel(
   , Flags(flags)
   , LevelFilter(level)
   , Enabled(true)
+  , Linked(false)
+  , BackendCount(0)
+  , Active(false)
   , AccessCount(0)
   , ShortenerList(nullptr)
 {
@@ -36,6 +39,15 @@ const ID& Channel::GetID() const
   return ChannelID;
 }
 
+void Channel::UpdateActive()
+{
+  bool linked = Linked.load(std::memory_order_relaxed);
+  bool enabled = Enabled.load(std::memory_order_relaxed);
+  size_t backendCount = BackendCount.load(std::memory_order_relaxed);
+
+  Active.store(linked || (enabled && backendCount > 0), std::memory_order_relaxed);
+}
+
 bool Channel::operator==(const char* name) const
 {
   assert(name);
@@ -48,6 +60,9 @@ void Channel::AddLink(const ID& to)
 
   IDPtr p = std::make_shared<SafeID>(to);
   Link.swap(p);
+
+  Linked.store(true, std::memory_order_relaxed);
+  UpdateActive();
 }
 
 void Channel::AddLink(ChannelPtr to)
@@ -58,6 +73,9 @@ void Channel::AddLink(ChannelPtr to)
   std::lock_guard guard(DataLock);
 
   LinkTo = to;
+
+  Linked.store(true, std::memory_order_relaxed);
+  UpdateActive();
 }
 
 void Channel::RemoveLink()
@@ -66,12 +84,22 @@ void Channel::RemoveLink()
 
   Link.reset();
   LinkTo.reset();
+
+  Linked.store(false, std::memory_order_relaxed);
+  UpdateActive();
 }
 
 bool Channel::IsLinked() const
 {
-  std::lock_guard guard(DataLock);
-  return Link != nullptr || LinkTo != nullptr;
+  return Linked.load(std::memory_order_relaxed);
+}
+
+bool Channel::IsOutputActive(const Context& context) const
+{
+  if (context.ErrorLevel < LevelFilter.load(std::memory_order_relaxed))
+    return false;
+
+  return Active.load(std::memory_order_relaxed);
 }
 
 ChannelPtr Channel::GetLinkPtr()
@@ -95,7 +123,7 @@ void Channel::Display(Context& context, const char* line)
 
   DataLock.lock();
 
-  if (Enabled == false)
+  if (Enabled.load(std::memory_order_relaxed) == false)
   {
     DataLock.unlock();
     return;
@@ -222,6 +250,9 @@ void Channel::RemoveBackends()
 
   std::lock_guard guard(DataLock);
   Backends.clear();
+
+  BackendCount.store(0, std::memory_order_relaxed);
+  UpdateActive();
 }
 
 bool Channel::RemoveBackend(BackendPtr backend)
@@ -235,6 +266,9 @@ bool Channel::RemoveBackend(BackendPtr backend)
       p->Freeze();
      
       Backends.erase(it);
+
+      BackendCount.store(Backends.size(), std::memory_order_relaxed);
+      UpdateActive();
       return true;
     }
   }
@@ -257,6 +291,9 @@ void Channel::AddBackend(BackendPtr backend)
   }
 
   Backends.push_back(backend);
+
+  BackendCount.store(Backends.size(), std::memory_order_relaxed);
+  UpdateActive();
 }
 
 BackendPtr Channel::GetBackend(size_t index)
@@ -269,10 +306,9 @@ BackendPtr Channel::GetBackend(size_t index)
   return BackendPtr();
 }
 
-size_t Channel::NumberOfBackends()
+size_t Channel::NumberOfBackends() const
 {
-  std::lock_guard guard(DataLock);
-  return Backends.size();
+  return BackendCount.load(std::memory_order_relaxed);
 }
 
 BackendPtr Channel::FindFirstBackend(const char* type, int& context)
@@ -319,6 +355,7 @@ void Channel::SetFilterLevel(Level level)
 void Channel::SetEnabled(bool enable)
 {
   Enabled.store(enable, std::memory_order_relaxed);
+  UpdateActive();
 }
 
 bool Channel::GetEnabled() const

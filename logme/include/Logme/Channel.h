@@ -51,6 +51,11 @@ namespace Logme
     OutputFlags Flags;
     std::atomic<Level> LevelFilter;
     std::atomic<bool> Enabled;
+    std::atomic<bool> Linked;
+    std::atomic<size_t> BackendCount;
+    std::atomic<bool> Active;
+
+    void UpdateActive();
 
     BackendArray Backends;
     std::atomic<uint64_t> AccessCount;
@@ -98,7 +103,7 @@ namespace Logme
     LOGMELNK void RemoveBackends();
     
     LOGMELNK BackendPtr GetBackend(size_t index);
-    LOGMELNK size_t NumberOfBackends();
+    LOGMELNK size_t NumberOfBackends() const;
 
     LOGMELNK BackendPtr FindFirstBackend(const char* type, int& context);
     LOGMELNK BackendPtr FindNextBackend(const char* type, int& context);
@@ -111,6 +116,7 @@ namespace Logme
     LOGMELNK void AddLink(ChannelPtr to);
     LOGMELNK void RemoveLink();
     LOGMELNK bool IsLinked() const;
+    LOGMELNK bool IsOutputActive(const Context& context) const;
     LOGMELNK ChannelPtr GetLinkPtr();
 
     LOGMELNK const ID& GetID() const;

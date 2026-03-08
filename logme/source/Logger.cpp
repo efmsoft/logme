@@ -238,7 +238,8 @@ void Logger::ApplyThreadChannel(Context& context)
 {
   if (HasThreadChannel)
   {
-    context.ChannelStg = CurrentThreadChannel;
+    const ID* id = &CurrentThreadChannel;
+    context.ChannelStg = *(const ID*)id;
     context.Channel = &context.ChannelStg;
   }
 }
@@ -614,11 +615,8 @@ void Logger::Log(
   if (ShutdownCalled)
     return;
 
-  if (ch && ch->IsLinked() == false && context.ErrorLevel < Level::LEVEL_ERROR)
-  {
-    if (context.ErrorLevel < ch->GetFilterLevel() || ch->NumberOfBackends() == 0)
-      return;
-  }
+  if (ch && context.ErrorLevel < Level::LEVEL_ERROR && ch->IsOutputActive(context) == false)
+    return;
 
   Context& context2 = *(Context*)&context;
   context2.Ch = ch;
@@ -659,11 +657,8 @@ void Logger::Log(const Context& context, ChannelPtr ch, const SID& sid, const ch
   if (ShutdownCalled)
     return;
 
-  if (ch && ch->IsLinked() == false && context.ErrorLevel < Level::LEVEL_ERROR)
-  {
-    if (context.ErrorLevel < ch->GetFilterLevel() || ch->NumberOfBackends() == 0)
-      return;
-  }
+  if (ch && context.ErrorLevel < Level::LEVEL_ERROR && ch->IsOutputActive(context) == false)
+    return;
 
   Context& context2 = *(Context*)&context;
   context2.Ch = ch;
@@ -714,11 +709,8 @@ void Logger::Log(
   if (ShutdownCalled)
     return;
 
-  if (ch && ch->IsLinked() == false && context.ErrorLevel < Level::LEVEL_ERROR)
-  {
-    if (context.ErrorLevel < ch->GetFilterLevel() || ch->NumberOfBackends() == 0)
-      return;
-  }
+  if (ch && context.ErrorLevel < Level::LEVEL_ERROR && ch->IsOutputActive(context) == false)
+    return;
 
   Context& context2 = *(Context*)&context;
   context2.Ch = ch;
@@ -819,7 +811,7 @@ void Logger::DoLog(Context& context, const char* format, va_list args)
   if (ch == nullptr)
     return;
 
-  if ((context.ErrorLevel < ch->GetFilterLevel() || !ch->NumberOfBackends()) && !ch->IsLinked())
+  if (ch->IsOutputActive(context) == false)
   {
     if (context.ErrorLevel < Level::LEVEL_ERROR)
       return;

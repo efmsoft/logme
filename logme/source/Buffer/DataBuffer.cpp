@@ -8,6 +8,7 @@ DataBuffer::DataBuffer(std::size_t capacity)
   : DataPtr(new char[capacity])
   , CapacityValue(capacity)
   , SizeValue(0)
+  , SeenOnSoftFlushValue(false)
 {
 }
 
@@ -34,6 +35,7 @@ char* DataBuffer::Data()
 void DataBuffer::Reset()
 {
   SizeValue = 0;
+  SeenOnSoftFlushValue = false;
 }
 
 bool DataBuffer::CanAppend(std::size_t cb) const
@@ -45,4 +47,14 @@ void DataBuffer::Append(const char* p, std::size_t cb)
 {
   std::memcpy(DataPtr.get() + SizeValue, p, cb);
   SizeValue += cb;
+}
+
+bool DataBuffer::SeenOnSoftFlush() const
+{
+  return SeenOnSoftFlushValue;
+}
+
+void DataBuffer::SetSeenOnSoftFlush(bool value)
+{
+  SeenOnSoftFlushValue = value;
 }

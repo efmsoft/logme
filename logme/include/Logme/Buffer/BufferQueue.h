@@ -3,7 +3,9 @@
 #include <Logme/Buffer/BufferCounters.h>
 #include <Logme/Buffer/DataBuffer.h>
 
+#include <atomic>
 #include <cstddef>
+#include <cstdint>
 #include <deque>
 #include <memory>
 #include <mutex>
@@ -14,6 +16,13 @@ namespace Logme
   class BufferQueue
   {
   public:
+    enum class SoftFlushState
+    {
+      EMPTY,
+      MARKED,
+      PUBLISH,
+    };
+
     struct Options
     {
       std::size_t BufferSize = 64 * 1024;
@@ -24,7 +33,10 @@ namespace Logme
 
     Options OptionsValue;
 
-    mutable std::mutex Lock;
+  private:
+    mutable std::mutex CurrentLock;
+    mutable std::mutex ReadyLock;
+    mutable std::mutex FreeLock;
 
     std::deque<DataBufferPtr> FreeList;
     std::deque<DataBufferPtr> ReadyList;
@@ -36,15 +48,35 @@ namespace Logme
 
     bool Signaled;
 
-    BufferCounters Counters;
+    std::atomic<std::size_t> FreeCount;
+
+    std::atomic<std::uint64_t> Appends;
+    std::atomic<std::uint64_t> AppendBytes;
+    std::atomic<std::uint64_t> EnqueuedBuffers;
+    std::atomic<std::uint64_t> WrittenBuffers;
+    std::atomic<std::uint64_t> WrittenBytes;
+    std::atomic<std::uint64_t> AllocatedBuffers;
+    std::atomic<std::uint64_t> DeletedBuffers;
+    std::atomic<std::uint64_t> DroppedAppends;
+    std::atomic<std::uint64_t> DroppedBytes;
+    std::atomic<std::uint64_t> WriteErrors;
+    std::atomic<std::uint64_t> SignalsSent;
 
   public:
     explicit BufferQueue(const Options& options);
 
-    bool Append(const char* p, std::size_t cb, bool& needSignal);
-    bool SwapReady(std::vector<DataBufferPtr>& out);
+    bool Append(
+      const char* p
+      , std::size_t cb
+      , bool& needSignal
+      , bool& firstData
+    );
+    bool TakeReady(std::vector<DataBufferPtr>& out);
     void Recycle(std::vector<DataBufferPtr>& buffers);
-    bool FlushCurrent(bool& needSignal);
+
+    SoftFlushState PrepareSoftFlushCurrent(DataBuffer* &expected);
+    bool PublishCurrent(bool& needSignal);
+    bool PublishCurrentIfMatches(DataBuffer* expected, bool& needSignal);
     void ReportWrite(std::size_t buffers, std::size_t bytes, bool ok);
 
     bool HasReady() const;
@@ -56,11 +88,21 @@ namespace Logme
     std::size_t GetAdaptiveFreeLimit() const;
 
   private:
-    DataBufferPtr AcquireBufferLocked();
-    void ReleaseBufferLocked(DataBufferPtr buffer);
-    void EnqueueReadyLocked(DataBufferPtr buffer, bool& needSignal);
+    DataBufferPtr TryTakeFreeBuffer();
+    DataBufferPtr TryCreateBuffer();
+    void EnsureSpareBuffer();
+    void ReleaseBuffer(DataBufferPtr buffer);
+    void EnqueueReady(DataBufferPtr buffer, bool& needSignal);
 
-    void MaybeGrowAdaptiveLocked(bool allocatedBecauseNoFree);
-    void DecayLocked();
+    void MaybeGrowAdaptive(bool allocatedBecauseNoFree);
+    void DecayFreeLocked();
+
+    void CountAppended(std::size_t cb);
+    void CountDropped(std::size_t cb);
+    void CountAllocated();
+    void CountDeleted();
+    void CountEnqueued();
+    void CountWritten(std::size_t buffers, std::size_t bytes, bool ok);
+    void CountSignal();
   };
 }

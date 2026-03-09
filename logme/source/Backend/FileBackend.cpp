@@ -48,7 +48,6 @@ FileBackend::FileBackend(ChannelPtr owner)
   , CurrentSize(0)
   , QueueSizeLimit(QueueSizeLimitDefault)
   , Registered(false)
-  , DataReady(false)
   , ShutdownFlag(false)
   , ShutdownCalled(owner == nullptr)
   , FlushTime(0)
@@ -363,21 +362,19 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
     return;
 
   bool needSignal = false;
-  size_t before = QueuedBytes.load(std::memory_order_relaxed);
+  bool firstData = false;
 
-  if (Queue.Append(text, add, needSignal) == false)
+  if (Queue.Append(text, add, needSignal, firstData) == false)
     return;
 
-  QueuedBytes.fetch_add(add, std::memory_order_relaxed);
-  DataReady.store(true, std::memory_order_relaxed);
+  size_t queued = QueuedBytes.fetch_add(add, std::memory_order_relaxed) + add;
 
-  size_t queued = before + add;
   if (queued >= QueueSizeLimit)
     RequestFlush();                         // Speed up data processing
-  else if (before == 0)
-    RequestFlush(uint64_t(GetTimeInMillisec()) + FLUSH_AFTER);
   else if (needSignal)
     RequestFlush();
+  else if (firstData)
+    RequestFlush(uint64_t(GetTimeInMillisec()) + FLUSH_AFTER);
 }
 
 void FileBackend::RequestFlush(uint64_t when)
@@ -415,28 +412,18 @@ FileManagerFactory& FileBackend::GetFactory() const
   return logger->GetFileManagerFactory();
 }
 
-bool FileBackend::GetOutputData(std::vector<DataBufferPtr>& data)
-{
-  data.clear();
-
-  bool needSignal = false;
-  Queue.FlushCurrent(needSignal);
-
-  return Queue.SwapReady(data);
-}
-
-void FileBackend::WriteData()
+bool FileBackend::WriteReadyData()
 {
   std::vector<DataBufferPtr> data;
-  if (!GetOutputData(data))
+  if (!Queue.TakeReady(data))
   {
     if (QueuedBytes.load(std::memory_order_relaxed) == 0)
     {
-      DataReady.store(false, std::memory_order_relaxed);
       std::lock_guard guard(BufferLock);
       Done.notify_all();
     }
-    return;
+
+    return false;
   }
 
   size_t bytes = 0;
@@ -475,24 +462,15 @@ void FileBackend::WriteData()
 
   if (QueuedBytes.load(std::memory_order_relaxed) == 0)
   {
-    DataReady.store(false, std::memory_order_relaxed);
     std::lock_guard guard(BufferLock);
     Done.notify_all();
   }
+
+  return true;
 }
 
-bool FileBackend::WorkerFunc()
+void FileBackend::UpdateFlushTimeAfterWork()
 {
-  // Used to limit number of WriteData calls before Done event set if
-  // one or more threads call Log() very frequently
-  const int maxWriteLoops = 5;
-
-  if (QueuedBytes.load(std::memory_order_relaxed) != 0)
-  {
-    for (int i = 0; QueuedBytes.load(std::memory_order_relaxed) != 0 && i < maxWriteLoops; i++)
-      WriteData();
-  }
-
   if (Queue.HasReady())
   {
     FlushTime.store(RIGHT_NOW, std::memory_order_relaxed);
@@ -505,14 +483,65 @@ bool FileBackend::WorkerFunc()
   {
     FlushTime.store(0, std::memory_order_relaxed);
   }
+}
 
+bool FileBackend::WorkerFunc()
+{
+  // Used to limit number of write loops before Done event set if
+  // one or more threads call Log() very frequently
+  const int maxWriteLoops = 5;
+
+  bool forceFlush = ShutdownFlag.load(std::memory_order_relaxed);
+  forceFlush = forceFlush || FlushTime.load(std::memory_order_relaxed) == RIGHT_NOW;
+
+  for (int i = 0; i < maxWriteLoops; i++)
+  {
+    if (WriteReadyData())
+    {
+      forceFlush = false;
+      continue;
+    }
+
+    if (forceFlush)
+    {
+      bool needSignal = false;
+      if (Queue.PublishCurrent(needSignal))
+      {
+        forceFlush = false;
+        continue;
+      }
+    }
+    else
+    {
+      DataBuffer* expected = nullptr;
+      BufferQueue::SoftFlushState state = Queue.PrepareSoftFlushCurrent(expected);
+
+      if (state == BufferQueue::SoftFlushState::PUBLISH)
+      {
+        bool needSignal = false;
+        if (Queue.PublishCurrentIfMatches(expected, needSignal))
+          continue;
+      }
+    }
+
+    break;
+  }
+
+  UpdateFlushTimeAfterWork();
   return !ShutdownFlag.load(std::memory_order_relaxed);
 }
 
 void FileBackend::OnShutdown()
 {
   while (QueuedBytes.load(std::memory_order_relaxed) != 0)
-    WriteData();
+  {
+    if (!WriteReadyData())
+    {
+      bool needSignal = false;
+      if (!Queue.PublishCurrent(needSignal))
+        break;
+    }
+  }
 
   ShutdownCalled.store(true, std::memory_order_relaxed);
   Shutdown.notify_all();

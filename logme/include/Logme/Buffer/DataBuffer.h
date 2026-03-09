@@ -10,6 +10,7 @@ namespace Logme
     std::unique_ptr<char[]> DataPtr;
     std::size_t CapacityValue;
     std::size_t SizeValue;
+    bool SeenOnSoftFlushValue;
 
   public:
     explicit DataBuffer(std::size_t capacity);
@@ -27,6 +28,9 @@ namespace Logme
 
     bool CanAppend(std::size_t cb) const;
     void Append(const char* p, std::size_t cb);
+
+    bool SeenOnSoftFlush() const;
+    void SetSeenOnSoftFlush(bool value);
   };
 
   typedef std::unique_ptr<DataBuffer> DataBufferPtr;

@@ -46,7 +46,6 @@ namespace Logme
     std::string NameTemplate;
 
     std::atomic<bool> Registered;
-    std::atomic<bool> DataReady;
     std::atomic<bool> ShutdownFlag;
     std::atomic<bool> ShutdownCalled;
     std::atomic<uint64_t> FlushTime;
@@ -124,8 +123,8 @@ namespace Logme
     void AppendObfuscated(const char* text, size_t add);
     void AppendOutputData(const char* text, size_t add);
     void RequestFlush(uint64_t when = RIGHT_NOW);
-    bool GetOutputData(std::vector<DataBufferPtr>& data);
-    void WriteData();
+    bool WriteReadyData();
+    void UpdateFlushTimeAfterWork();
 
     void WaitForShutdown();
 

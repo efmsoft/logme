@@ -230,6 +230,9 @@
     <ClInclude Include="include\Logme\FastFormat.h">
       <Filter>include\Logme</Filter>
     </ClInclude>
+    <ClInclude Include="include\Logme\CritSection.h">
+      <Filter>include\Logme</Filter>
+    </ClInclude>
 </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Time\datetime_common.cpp">
@@ -443,6 +446,9 @@
       <Filter>source</Filter>
     </ClCompile>
     <ClCompile Include="source\FastFormat.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\CritSection.cpp">
       <Filter>source</Filter>
     </ClCompile>
 </ItemGroup>

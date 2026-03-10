@@ -55,6 +55,9 @@
     <Filter Include="FastFormat.cpp">
       <UniqueIdentifier>{67b5b474-cfd5-5294-90a8-8afc80b132b6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="CritSection.cpp">
+      <UniqueIdentifier>{2b6816e8-2532-5f9c-b796-ab4d0989566d}</UniqueIdentifier>
+    </Filter>
 </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\logme\source\Backend\Backend.cpp">
@@ -226,6 +229,9 @@
     <ClCompile Include="..\logme\source\FastFormat.cpp">
       <Filter>FastFormat.cpp</Filter>
     </ClCompile>
+    <ClCompile Include="..\logme\source\CritSection.cpp">
+      <Filter>CritSection.cpp</Filter>
+    </ClCompile>
 </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\logme\source\Time\utils.h">
@@ -395,6 +401,9 @@
       <Filter>..\logme\include\Logme\Buffer</Filter>
     </ClInclude>
     <ClInclude Include="..\logme\include\Logme\FastFormat.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\CritSection.h">
       <Filter>..\logme\include\Logme</Filter>
     </ClInclude>
 </ItemGroup>

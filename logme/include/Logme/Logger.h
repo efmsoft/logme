@@ -11,6 +11,7 @@
 #include <thread>
 
 #include <Logme/Channel.h>
+#include <Logme/CritSection.h>
 #include <Logme/File/DirectorySizeWatchdog.h>
 #include <Logme/File/FileManagerFactory.h>
 #include <Logme/Obfuscate.h>
@@ -31,7 +32,7 @@ namespace Logme
 
   class Logger : public std::enable_shared_from_this<Logger>
   {
-    std::recursive_mutex DataLock;
+    CS DataLock;
 
     ChannelMap Channels;
     ChannelPtr Default;

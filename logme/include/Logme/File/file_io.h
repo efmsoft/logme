@@ -4,6 +4,8 @@
 #include <string>
 #include <stdio.h>
 
+#include <Logme/CritSection.h>
+
 namespace Logme
 {
   class FileIo
@@ -29,7 +31,7 @@ namespace Logme
     unsigned Read(int maxLines, std::string& content, int part);
 
   protected:
-    std::recursive_mutex IoLock;
+    CS IoLock;
 
     int File;
     int Error;

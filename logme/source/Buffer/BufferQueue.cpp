@@ -54,7 +54,7 @@ bool BufferQueue::Append(
   }
 
   {
-    std::lock_guard<std::mutex> guard(CurrentLock);
+    std::lock_guard guard(CurrentLock);
 
     if (Current->CanAppend(cb))
     {
@@ -82,7 +82,7 @@ bool BufferQueue::Append(
   DataBufferPtr readyBuffer;
 
   {
-    std::lock_guard<std::mutex> guard(CurrentLock);
+    std::lock_guard guard(CurrentLock);
 
     if (Current->CanAppend(cb))
     {
@@ -103,7 +103,7 @@ bool BufferQueue::Append(
   EnqueueReady(std::move(readyBuffer), needSignal);
 
   {
-    std::lock_guard<std::mutex> guard(CurrentLock);
+    std::lock_guard guard(CurrentLock);
     firstData = Current->Size() == 0;
     Current->Append(p, cb);
   }
@@ -115,7 +115,7 @@ bool BufferQueue::TakeReady(std::vector<DataBufferPtr>& out)
 {
   out.clear();
 
-  std::lock_guard<std::mutex> guard(ReadyLock);
+  std::lock_guard guard(ReadyLock);
 
   if (ReadyList.empty())
   {
@@ -137,7 +137,7 @@ bool BufferQueue::TakeReady(std::vector<DataBufferPtr>& out)
 
 void BufferQueue::Recycle(std::vector<DataBufferPtr>& buffers)
 {
-  std::lock_guard<std::mutex> guard(FreeLock);
+  std::lock_guard guard(FreeLock);
 
   for (auto& buffer : buffers)
   {
@@ -159,7 +159,7 @@ BufferQueue::SoftFlushState BufferQueue::PrepareSoftFlushCurrent(DataBuffer* &ex
 {
   expected = nullptr;
 
-  std::lock_guard<std::mutex> guard(CurrentLock);
+  std::lock_guard guard(CurrentLock);
 
   if (!Current || Current->Size() == 0)
   {
@@ -197,7 +197,7 @@ bool BufferQueue::PublishCurrent(bool& needSignal)
   DataBufferPtr readyBuffer;
 
   {
-    std::lock_guard<std::mutex> guard(CurrentLock);
+    std::lock_guard guard(CurrentLock);
 
     if (!Current || Current->Size() == 0)
     {
@@ -243,7 +243,7 @@ bool BufferQueue::PublishCurrentIfMatches(DataBuffer* expected, bool& needSignal
   DataBufferPtr readyBuffer;
 
   {
-    std::lock_guard<std::mutex> guard(CurrentLock);
+    std::lock_guard guard(CurrentLock);
 
     if (!Current || Current.get() != expected || Current->Size() == 0)
     {
@@ -271,13 +271,13 @@ void BufferQueue::ReportWrite(std::size_t buffers, std::size_t bytes, bool ok)
 
 bool BufferQueue::HasReady() const
 {
-  std::lock_guard<std::mutex> guard(ReadyLock);
+  std::lock_guard guard(ReadyLock);
   return !ReadyList.empty();
 }
 
 bool BufferQueue::HasCurrentData() const
 {
-  std::lock_guard<std::mutex> guard(CurrentLock);
+  std::lock_guard guard(CurrentLock);
 
   if (!Current)
   {
@@ -306,19 +306,19 @@ BufferCounters BufferQueue::GetCounters() const
 
 std::size_t BufferQueue::GetTotalBuffers() const
 {
-  std::lock_guard<std::mutex> guard(FreeLock);
+  std::lock_guard guard(FreeLock);
   return TotalBuffers;
 }
 
 std::size_t BufferQueue::GetAdaptiveFreeLimit() const
 {
-  std::lock_guard<std::mutex> guard(FreeLock);
+  std::lock_guard guard(FreeLock);
   return AdaptiveFreeLimit;
 }
 
 DataBufferPtr BufferQueue::TryTakeFreeBuffer()
 {
-  std::lock_guard<std::mutex> guard(FreeLock);
+  std::lock_guard guard(FreeLock);
 
   if (FreeList.empty())
   {
@@ -336,7 +336,7 @@ DataBufferPtr BufferQueue::TryCreateBuffer()
   DataBufferPtr buffer(new DataBuffer(OptionsValue.BufferSize));
 
   {
-    std::lock_guard<std::mutex> guard(FreeLock);
+    std::lock_guard guard(FreeLock);
 
     if (OptionsValue.MaxTotalBuffers != 0
         && TotalBuffers >= OptionsValue.MaxTotalBuffers)
@@ -376,7 +376,7 @@ void BufferQueue::ReleaseBuffer(DataBufferPtr buffer)
 
   buffer->Reset();
 
-  std::lock_guard<std::mutex> guard(FreeLock);
+  std::lock_guard guard(FreeLock);
   FreeList.push_back(std::move(buffer));
   FreeCount.fetch_add(1, std::memory_order_relaxed);
   DecayFreeLocked();
@@ -395,7 +395,7 @@ void BufferQueue::EnqueueReady(DataBufferPtr buffer, bool& needSignal)
     return;
   }
 
-  std::lock_guard<std::mutex> guard(ReadyLock);
+  std::lock_guard guard(ReadyLock);
 
   ReadyList.push_back(std::move(buffer));
   CountEnqueued();
@@ -415,7 +415,7 @@ void BufferQueue::MaybeGrowAdaptive(bool allocatedBecauseNoFree)
     return;
   }
 
-  std::lock_guard<std::mutex> guard(FreeLock);
+  std::lock_guard guard(FreeLock);
 
   std::size_t cap = 0;
 

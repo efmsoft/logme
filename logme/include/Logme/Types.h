@@ -158,3 +158,11 @@ namespace Logme
 #else
 #define LOGMELNK
 #endif
+
+#define LOGME_CS_USE_STD 0
+
+#if defined(_WIN32) && !LOGME_CS_USE_STD
+#define LOGME_CS_USE_CRITICAL_SECTION 1
+#else
+#define LOGME_CS_USE_CRITICAL_SECTION 0
+#endif

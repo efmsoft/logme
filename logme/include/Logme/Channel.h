@@ -10,6 +10,7 @@
 #include <unordered_map>
 
 #include <Logme/Backend/Backend.h>
+#include <Logme/CritSection.h>
 #include <Logme/Context.h>
 #include <Logme/OutputFlags.h>
 #include <Logme/Override.h>
@@ -43,7 +44,7 @@ namespace Logme
 
   class Channel : public std::enable_shared_from_this<Channel>
   {
-    mutable std::recursive_mutex DataLock;
+    mutable CS DataLock;
 
     class Logger* Owner;
     std::string Name;
@@ -63,7 +64,7 @@ namespace Logme
     IDPtr Link;
     ChannelPtr LinkTo;
 
-    std::mutex ShortenerLock;
+    CS ShortenerLock;
     const ShortenerPair* ShortenerList;
     std::map<std::string, std::string> ShortenerMap;
 

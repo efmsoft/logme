@@ -4,7 +4,7 @@
 #include <cstdint>
 
 #ifndef BFW_ENABLE_COUNTERS
-#define BFW_ENABLE_COUNTERS 1
+#define BFW_ENABLE_COUNTERS 0
 #endif
 
 #if BFW_ENABLE_COUNTERS

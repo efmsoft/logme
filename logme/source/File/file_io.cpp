@@ -57,7 +57,7 @@ FileIo::~FileIo()
 
 void FileIo::Close()
 {
-  std::lock_guard<std::recursive_mutex> guard(IoLock);
+  std::lock_guard guard(IoLock);
 
   if (File != -1)
   {
@@ -87,7 +87,7 @@ void FileIo::Close()
 
 bool FileIo::Open(bool append, unsigned timeout, const char* fileName)
 {
-  std::lock_guard<std::recursive_mutex> guard(IoLock);
+  std::lock_guard guard(IoLock);
   assert(File == -1);
 
   std::string pathName;
@@ -167,7 +167,7 @@ bool FileIo::Open(bool append, unsigned timeout, const char* fileName)
 
 time_t FileIo::GetLastWriteTime(int fd)
 {
-  std::lock_guard<std::recursive_mutex> guard(IoLock);
+  std::lock_guard guard(IoLock);
   assert(File != -1);
 
 #ifdef _WIN32
@@ -189,7 +189,7 @@ time_t FileIo::GetLastWriteTime(int fd)
 
 long long FileIo::Seek(size_t offs, int whence)
 {
-  std::lock_guard<std::recursive_mutex> guard(IoLock);
+  std::lock_guard guard(IoLock);
   assert(File != -1);
 
   long long rc = _lseek(File, (long)offs, whence);
@@ -201,7 +201,7 @@ long long FileIo::Seek(size_t offs, int whence)
 
 int FileIo::Truncate(size_t offs)
 {
-  std::lock_guard<std::recursive_mutex> guard(IoLock);
+  std::lock_guard guard(IoLock);
   assert(File != -1);
 
   int rc = ftruncate(File, (long)offs);
@@ -216,7 +216,7 @@ void FileIo::TruncateToMaxSize(size_t maxSize)
   if (maxSize == 0)
     return;
 
-  std::lock_guard<std::recursive_mutex> guard(IoLock);
+  std::lock_guard guard(IoLock);
 
   if (File == -1)
     return;
@@ -274,7 +274,7 @@ void FileIo::TruncateToMaxSize(size_t maxSize)
 
 int FileIo::Write(const void* p, size_t size)
 {
-  std::lock_guard<std::recursive_mutex> guard(IoLock);
+  std::lock_guard guard(IoLock);
   assert(File != -1);
 
   long long rc = Seek(0, SEEK_END);
@@ -288,7 +288,7 @@ int FileIo::Write(const void* p, size_t size)
 
 int FileIo::WriteRaw(const void* p, size_t size)
 {
-  std::lock_guard<std::recursive_mutex> guard(IoLock);
+  std::lock_guard guard(IoLock);
   assert(File != -1);
 
   int rc = _write(File, p, (unsigned int) size);
@@ -300,7 +300,7 @@ int FileIo::WriteRaw(const void* p, size_t size)
 
 int FileIo::Read(void* p, size_t size)
 {
-  std::lock_guard<std::recursive_mutex> guard(IoLock);
+  std::lock_guard guard(IoLock);
   assert(File != -1);
 
   int rc = _read(File, p, (unsigned)size);

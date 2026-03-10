@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Logme/Buffer/BufferCounters.h>
+#include <Logme/CritSection.h>
 #include <Logme/Buffer/DataBuffer.h>
 
 #include <atomic>
@@ -34,9 +35,9 @@ namespace Logme
     Options OptionsValue;
 
   private:
-    mutable std::mutex CurrentLock;
-    mutable std::mutex ReadyLock;
-    mutable std::mutex FreeLock;
+    mutable CS CurrentLock;
+    mutable CS ReadyLock;
+    mutable CS FreeLock;
 
     std::deque<DataBufferPtr> FreeList;
     std::deque<DataBufferPtr> ReadyList;

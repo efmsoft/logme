@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include <Logme/CritSection.h>
+
 namespace Logme
 {
   class FileBackend;
@@ -11,7 +13,7 @@ namespace Logme
 
   class FileManagerFactory
   {
-    std::recursive_mutex Lock;
+    CS Lock;
     std::shared_ptr<FileManager> Instance;
 
   public:

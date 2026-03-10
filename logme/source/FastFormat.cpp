@@ -5,7 +5,7 @@
 #include <cstring>
 
 #ifndef LOGME_FAST_FORMAT_STATS
-#define LOGME_FAST_FORMAT_STATS 1
+#define LOGME_FAST_FORMAT_STATS 0
 #endif
 
 #if LOGME_FAST_FORMAT_STATS

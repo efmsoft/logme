@@ -25,8 +25,8 @@ namespace Logme
     char StaticBuffer[256];
 
     ShortenerContext()
-      : StaticBuffer{0}
     {
+      StaticBuffer[0] = '\0';
     }
   };
 

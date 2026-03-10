@@ -4,6 +4,7 @@
 #include <string>
 
 #include <Logme/Backend/Backend.h>
+#include <Logme/CritSection.h>
 #include <Logme/File/file_io.h>
 #include <Logme/Types.h>
 
@@ -25,7 +26,7 @@ namespace Logme
     : public Backend
     , public FileIo
   {
-    std::recursive_mutex Lock;
+    CS Lock;
 
     size_t MaxSize;
     size_t Timeout;

@@ -16,8 +16,13 @@
 
 // String conversion
 
+#ifndef _S
 #define _S(str) Logme::ToStdString(str)
+#endif
+
+#ifndef _WS
 #define _WS(str) Logme::ToStdWString(str)
+#endif
 
 // C/C++ - style logging
 

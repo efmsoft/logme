@@ -825,14 +825,15 @@ void Logger::DoLog(Context& context, const char* format, va_list args)
   if (format)
   {
     char* buffer = nullptr;
-    
-    if (strcmp(format, "%s") == 0)
+    size_t len = strlen(format);
+
+    if (len == 2 && format[0] == '%' && format[1] == 's')
     { 
       buffer = va_arg(args, char*);
     }
     else
     {
-      size_t size = std::max(16384U, (unsigned int)(strlen(format) + 512));
+      size_t size = std::max(16384U, (unsigned int)(len + 512));
 
       buffer = (char*)alloca(size);
 

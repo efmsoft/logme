@@ -187,6 +187,6 @@ void ConsoleBackend::Display(Context& context, const char* line)
   }
   else
   {
-    fputs(buffer, stream);
+    fwrite(buffer, 1, nc, stream);
   }
 }

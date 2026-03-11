@@ -397,7 +397,7 @@ const char* Context::Apply(ChannelPtr ch, OutputFlags flags, const char* text, i
     sprintf_s(line, sizeof(line), "(%i): ", Line);
 
     if (flags.Location == DETALITY_SHORT)
-      nFile = int(strlen(File.ShortName) + strlen(line));
+      nFile = int(strlen(File.GetShortName()) + strlen(line));
     else
       nFile = int(strlen(File.FullName) + strlen(line));
   }
@@ -494,7 +494,7 @@ const char* Context::Apply(ChannelPtr ch, OutputFlags flags, const char* text, i
     sprintf_s(p
       , n - (p - buffer)
       , "%s%s"
-      , flags.Location == DETALITY_SHORT ? File.ShortName : File.FullName
+      , flags.Location == DETALITY_SHORT ? File.GetShortName() : File.FullName
       , line
     );
     p += nFile;

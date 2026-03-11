@@ -142,7 +142,7 @@ TEST(OutputFlags, Location)
   flags.Location = DETALITY_SHORT;
   Be->Owner->SetFlags(flags);
   auto line = __LINE__; LogmeE(CHT, "_");
-  EXPECT_EQ(Be->Line, std::string(mod.ShortName) + "(" + std::to_string(line) + "): _");
+  EXPECT_EQ(Be->Line, std::string(mod.GetShortName()) + "(" + std::to_string(line) + "): _");
 
   flags.Location = DETALITY_FULL;
   Be->Owner->SetFlags(flags);

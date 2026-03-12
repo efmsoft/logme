@@ -17,6 +17,7 @@ namespace Logme
 
     static bool EnableVTMode();
     static bool VTMode();
+    static bool IsTTY(FILE* stream);
 
 #ifdef _WIN32
   private:

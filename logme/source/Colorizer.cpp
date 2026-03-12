@@ -27,17 +27,6 @@ static WORD ColorFlags[] =
 bool VTModeEnabled = false;
 #endif
 
-#ifndef _WIN32
-static bool IsTTY(FILE* stream)
-{
-#ifdef _WIN32
-  return (_isatty(_fileno(stream)) != 0);
-#else
-  return (isatty(fileno(stream)) != 0);
-#endif
-}
-#endif
-
 Colorizer::Colorizer(bool isStdErr)
 #ifdef _WIN32
   : Sbi{}
@@ -66,6 +55,37 @@ Colorizer::Colorizer(bool isStdErr)
 Colorizer::~Colorizer()
 {
   Escape();                                 // Back to defaults colors
+}
+
+bool Colorizer::IsTTY(FILE* stream)
+{
+  struct IsTtyCache
+  {
+    FILE* Stream;
+    bool Result;
+  };
+
+  thread_local IsTtyCache cache = {nullptr, false};
+
+  if (stream == nullptr)
+  {
+    return false;
+  }
+
+  if (cache.Stream == stream)
+  {
+    return cache.Result;
+  }
+
+#ifdef _WIN32
+  bool result = (_isatty(_fileno(stream)) != 0);
+#else
+  bool result = (isatty(fileno(stream)) != 0);
+#endif
+
+  cache.Stream = stream;
+  cache.Result = result;
+  return result;
 }
 
 bool Colorizer::VTMode()

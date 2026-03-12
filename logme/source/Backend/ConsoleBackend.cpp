@@ -64,14 +64,6 @@ FILE* ConsoleBackend::GetOutputStream(Context& context)
   return stdout;
 }
 
-static bool IsTerminalStream(FILE* stream)
-{
-  if (stream == stderr)
-    return !!_isatty(_fileno(stderr));
-
-  return !!_isatty(_fileno(stdout));
-}
-
 static void PrintWithAnsiSegments(
   FILE* stream
   , const char* text
@@ -168,7 +160,7 @@ void ConsoleBackend::Display(Context& context, const char* line)
   const bool hasAnsi = (std::strchr(buffer, '\x1b') != nullptr);
 
   FILE* stream = GetOutputStream(context);
-  if (IsTerminalStream(stream) && (escape || hasAnsi))
+  if (Colorizer::IsTTY(stream) && (escape || hasAnsi))
   {
     static std::mutex ColorizerLock;
     std::lock_guard guard(ColorizerLock);
@@ -187,6 +179,6 @@ void ConsoleBackend::Display(Context& context, const char* line)
   }
   else
   {
-    fwrite(buffer, 1, nc, stream);
+    fputs(buffer, stream);
   }
 }

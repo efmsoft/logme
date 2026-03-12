@@ -1,20 +1,11 @@
 #include <cstdio>
 #include <cstring>
-#include <iostream>
 
 #include <Logme/AnsiColorEscape.h>
 #include <Logme/Backend/ConsoleBackend.h>
 #include <Logme/Channel.h>
 #include <Logme/Colorizer.h>
 #include <Logme/Logger.h>
-
-#ifdef _WIN32
-#include <io.h>
-#else
-#include <unistd.h>
-#define _isatty isatty
-#define _fileno fileno
-#endif
 
 using namespace Logme;
 
@@ -141,6 +132,40 @@ static void PrintWithAnsiSegments(
   // Colorizer dtor will restore original console attributes.
 }
 
+static void PrintWithoutAnsi(
+  FILE* stream
+  , const char* text
+)
+{
+  if (!text || !*text)
+    return;
+
+  const char* p = text;
+  const char* escPos = nullptr;
+
+  while ((escPos = std::strchr(p, '\x1b')) != nullptr)
+  {
+    if (escPos > p)
+      fwrite(p, 1, static_cast<size_t>(escPos - p), stream);
+
+    const char* seq = escPos;
+    int attr = 0;
+    int fg = -1;
+    int bg = -1;
+
+    if (Colorizer::ParseSequence(seq, attr, fg, bg))
+    {
+      p = seq;
+      continue;
+    }
+
+    p = escPos + 1;
+  }
+
+  if (*p)
+    fputs(p, stream);
+}
+
 void ConsoleBackend::Display(Context& context, const char* line)
 {
   OutputFlags flags = Owner->GetFlags();
@@ -160,7 +185,9 @@ void ConsoleBackend::Display(Context& context, const char* line)
   const bool hasAnsi = (std::strchr(buffer, '\x1b') != nullptr);
 
   FILE* stream = GetOutputStream(context);
-  if (Colorizer::IsTTY(stream) && (escape || hasAnsi))
+  const bool isTty = Colorizer::IsTTY(stream);
+
+  if (isTty && (escape || hasAnsi))
   {
     static std::mutex ColorizerLock;
     std::lock_guard guard(ColorizerLock);
@@ -177,8 +204,12 @@ void ConsoleBackend::Display(Context& context, const char* line)
       fputs(buffer, stream);
     }
   }
+  else if (hasAnsi)
+  {
+    PrintWithoutAnsi(stream, buffer);
+  }
   else
   {
-    fputs(buffer, stream);
+    fwrite(buffer, 1, size_t(nc), stream);
   }
 }

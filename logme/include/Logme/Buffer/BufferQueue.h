@@ -38,6 +38,7 @@ namespace Logme
     mutable CS CurrentLock;
     mutable CS ReadyLock;
     mutable CS FreeLock;
+    mutable CS CreateLock;
 
     std::deque<DataBufferPtr> FreeList;
     std::deque<DataBufferPtr> ReadyList;
@@ -48,8 +49,6 @@ namespace Logme
     std::size_t AdaptiveFreeLimit;
 
     bool Signaled;
-
-    std::atomic<std::size_t> FreeCount;
 
     std::atomic<std::uint64_t> Appends;
     std::atomic<std::uint64_t> AppendBytes;
@@ -85,13 +84,9 @@ namespace Logme
 
     BufferCounters GetCounters() const;
 
-    std::size_t GetTotalBuffers() const;
-    std::size_t GetAdaptiveFreeLimit() const;
-
   private:
     DataBufferPtr TryTakeFreeBuffer();
     DataBufferPtr TryCreateBuffer();
-    void EnsureSpareBuffer();
     void ReleaseBuffer(DataBufferPtr buffer);
     void EnqueueReady(DataBufferPtr buffer, bool& needSignal);
 

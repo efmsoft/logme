@@ -7,7 +7,6 @@ BufferQueue::BufferQueue(const Options& options)
   , TotalBuffers(0)
   , AdaptiveFreeLimit(options.BaseFreeLimit)
   , Signaled(false)
-  , FreeCount(0)
   , Appends(0)
   , AppendBytes(0)
   , EnqueuedBuffers(0)
@@ -36,21 +35,12 @@ bool BufferQueue::Append(
   firstData = false;
 
   if (cb == 0)
-  {
     return true;
-  }
-
-  CountAppended(cb);
 
   if (cb > OptionsValue.BufferSize)
   {
     CountDropped(cb);
     return false;
-  }
-
-  if (FreeCount.load(std::memory_order_relaxed) == 0)
-  {
-    EnsureSpareBuffer();
   }
 
   {
@@ -60,6 +50,7 @@ bool BufferQueue::Append(
     {
       firstData = Current->Size() == 0;
       Current->Append(p, cb);
+      CountAppended(cb);
       return true;
     }
   }
@@ -88,26 +79,24 @@ bool BufferQueue::Append(
     {
       firstData = Current->Size() == 0;
       Current->Append(p, cb);
-      replacement->Reset();
       ReleaseBuffer(std::move(replacement));
+      CountAppended(cb);
       return true;
     }
 
     replacement->Reset();
     replacement->SetSeenOnSoftFlush(false);
     readyBuffer = std::move(Current);
+
     Current = std::move(replacement);
+    Current->Append(p, cb);
+    firstData = true;
   }
 
   MaybeGrowAdaptive(allocatedBecauseNoFree);
   EnqueueReady(std::move(readyBuffer), needSignal);
 
-  {
-    std::lock_guard guard(CurrentLock);
-    firstData = Current->Size() == 0;
-    Current->Append(p, cb);
-  }
-
+  CountAppended(cb);
   return true;
 }
 
@@ -142,13 +131,10 @@ void BufferQueue::Recycle(std::vector<DataBufferPtr>& buffers)
   for (auto& buffer : buffers)
   {
     if (!buffer)
-    {
       continue;
-    }
 
     buffer->Reset();
     FreeList.push_back(std::move(buffer));
-    FreeCount.fetch_add(1, std::memory_order_relaxed);
   }
 
   buffers.clear();
@@ -162,9 +148,7 @@ BufferQueue::SoftFlushState BufferQueue::PrepareSoftFlushCurrent(DataBuffer* &ex
   std::lock_guard guard(CurrentLock);
 
   if (!Current || Current->Size() == 0)
-  {
     return SoftFlushState::EMPTY;
-  }
 
   if (!Current->SeenOnSoftFlush())
   {
@@ -190,18 +174,14 @@ bool BufferQueue::PublishCurrent(bool& needSignal)
   }
 
   if (!replacement)
-  {
     return false;
-  }
 
   DataBufferPtr readyBuffer;
 
   {
     std::lock_guard guard(CurrentLock);
-
     if (!Current || Current->Size() == 0)
     {
-      replacement->Reset();
       ReleaseBuffer(std::move(replacement));
       return false;
     }
@@ -222,9 +202,7 @@ bool BufferQueue::PublishCurrentIfMatches(DataBuffer* expected, bool& needSignal
   needSignal = false;
 
   if (!expected)
-  {
     return false;
-  }
 
   DataBufferPtr replacement = TryTakeFreeBuffer();
   bool allocatedBecauseNoFree = false;
@@ -247,7 +225,6 @@ bool BufferQueue::PublishCurrentIfMatches(DataBuffer* expected, bool& needSignal
 
     if (!Current || Current.get() != expected || Current->Size() == 0)
     {
-      replacement->Reset();
       ReleaseBuffer(std::move(replacement));
       return false;
     }
@@ -262,7 +239,6 @@ bool BufferQueue::PublishCurrentIfMatches(DataBuffer* expected, bool& needSignal
   EnqueueReady(std::move(readyBuffer), needSignal);
   return true;
 }
-
 
 void BufferQueue::ReportWrite(std::size_t buffers, std::size_t bytes, bool ok)
 {
@@ -280,9 +256,7 @@ bool BufferQueue::HasCurrentData() const
   std::lock_guard guard(CurrentLock);
 
   if (!Current)
-  {
     return false;
-  }
 
   return Current->Size() != 0;
 }
@@ -304,39 +278,36 @@ BufferCounters BufferQueue::GetCounters() const
   return out;
 }
 
-std::size_t BufferQueue::GetTotalBuffers() const
-{
-  std::lock_guard guard(FreeLock);
-  return TotalBuffers;
-}
-
-std::size_t BufferQueue::GetAdaptiveFreeLimit() const
-{
-  std::lock_guard guard(FreeLock);
-  return AdaptiveFreeLimit;
-}
-
 DataBufferPtr BufferQueue::TryTakeFreeBuffer()
 {
   std::lock_guard guard(FreeLock);
 
   if (FreeList.empty())
-  {
     return nullptr;
-  }
 
   DataBufferPtr buffer = std::move(FreeList.front());
   FreeList.pop_front();
-  FreeCount.fetch_sub(1, std::memory_order_relaxed);
   return buffer;
 }
 
 DataBufferPtr BufferQueue::TryCreateBuffer()
 {
+  std::lock_guard createGuard(CreateLock);
+
+  {
+    std::lock_guard freeGuard(FreeLock);
+
+    if (OptionsValue.MaxTotalBuffers != 0
+        && TotalBuffers >= OptionsValue.MaxTotalBuffers)
+    {
+      return nullptr;
+    }
+  }
+
   DataBufferPtr buffer(new DataBuffer(OptionsValue.BufferSize));
 
   {
-    std::lock_guard guard(FreeLock);
+    std::lock_guard freeGuard(FreeLock);
 
     if (OptionsValue.MaxTotalBuffers != 0
         && TotalBuffers >= OptionsValue.MaxTotalBuffers)
@@ -351,43 +322,22 @@ DataBufferPtr BufferQueue::TryCreateBuffer()
   return buffer;
 }
 
-void BufferQueue::EnsureSpareBuffer()
-{
-  if (FreeCount.load(std::memory_order_relaxed) != 0)
-  {
-    return;
-  }
-
-  DataBufferPtr buffer = TryCreateBuffer();
-  if (!buffer)
-  {
-    return;
-  }
-
-  ReleaseBuffer(std::move(buffer));
-}
-
 void BufferQueue::ReleaseBuffer(DataBufferPtr buffer)
 {
   if (!buffer)
-  {
     return;
-  }
 
   buffer->Reset();
 
   std::lock_guard guard(FreeLock);
   FreeList.push_back(std::move(buffer));
-  FreeCount.fetch_add(1, std::memory_order_relaxed);
   DecayFreeLocked();
 }
 
 void BufferQueue::EnqueueReady(DataBufferPtr buffer, bool& needSignal)
 {
   if (!buffer)
-  {
     return;
-  }
 
   if (buffer->Size() == 0)
   {
@@ -411,13 +361,10 @@ void BufferQueue::EnqueueReady(DataBufferPtr buffer, bool& needSignal)
 void BufferQueue::MaybeGrowAdaptive(bool allocatedBecauseNoFree)
 {
   if (!allocatedBecauseNoFree)
-  {
     return;
-  }
-
-  std::lock_guard guard(FreeLock);
 
   std::size_t cap = 0;
+  std::lock_guard guard(FreeLock);
 
   if (OptionsValue.MaxAdaptiveFreeLimit != 0)
   {
@@ -429,9 +376,7 @@ void BufferQueue::MaybeGrowAdaptive(bool allocatedBecauseNoFree)
   }
 
   if (cap != 0 && AdaptiveFreeLimit >= cap)
-  {
     return;
-  }
 
   AdaptiveFreeLimit += 1;
 }
@@ -449,7 +394,6 @@ void BufferQueue::DecayFreeLocked()
   while (FreeList.size() > AdaptiveFreeLimit)
   {
     FreeList.pop_front();
-    FreeCount.fetch_sub(1, std::memory_order_relaxed);
     TotalBuffers -= 1;
     CountDeleted();
   }

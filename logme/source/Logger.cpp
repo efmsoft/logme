@@ -512,7 +512,8 @@ Stream Logger::Log(const Context& context, const ID& id) // @4
 Stream Logger::Log(const Context& context, ChannelPtr ch) // @5
 {
   Context& context2 = *(Context*)&context;
-  context2.Ch = ch;
+  context2.ChRef = ch;
+  context2.Ch = context2.ChRef.get();
 
   OverridePtr ovr = std::make_shared<Override>(GetThreadOverride());
   context2.Ovr = ovr.get();
@@ -535,7 +536,8 @@ Stream Logger::Log(const Context& context, const ID& id, const SID& sid) // @6
 Stream Logger::Log(const Context& context, ChannelPtr ch, const SID& sid) // @7
 {
   Context& context2 = *(Context*)&context;
-  context2.Ch = ch;
+  context2.ChRef = ch;
+  context2.Ch = context2.ChRef.get();
   context2.Subsystem = sid;
 
   OverridePtr ovr = std::make_shared<Override>(GetThreadOverride());
@@ -556,7 +558,8 @@ Stream Logger::Log(const Context& context, const ID& id, Override& ovr) // @8
 Stream Logger::Log(const Context& context, ChannelPtr ch, Override& ovr) // @9
 {
   Context& context2 = *(Context*)&context;
-  context2.Ch = ch;
+  context2.ChRef = ch;
+  context2.Ch = context2.ChRef.get();
   context2.Ovr = &ovr;
 
   return Stream(shared_from_this(), context2);
@@ -575,7 +578,8 @@ Stream Logger::Log(const Context& context, const ID& id, const SID& sid, Overrid
 Stream Logger::Log(const Context& context, ChannelPtr ch, const SID& sid, Override& ovr) // @11
 {
   Context& context2 = *(Context*)&context;
-  context2.Ch = ch;
+  context2.ChRef = ch;
+  context2.Ch = context2.ChRef.get();
   context2.Subsystem = sid;
   context2.Ovr = &ovr;
 
@@ -620,7 +624,7 @@ void Logger::Log(
     return;
 
   Context& context2 = *(Context*)&context;
-  context2.Ch = ch;
+  context2.Ch = ch.get();
 
   auto ovr = GetThreadOverride();
   context2.Ovr = &ovr;
@@ -662,7 +666,7 @@ void Logger::Log(const Context& context, ChannelPtr ch, const SID& sid, const ch
     return;
 
   Context& context2 = *(Context*)&context;
-  context2.Ch = ch;
+  context2.Ch = ch.get();
   context2.Subsystem = sid;
 
   auto ovr = GetThreadOverride();
@@ -714,7 +718,7 @@ void Logger::Log(
     return;
 
   Context& context2 = *(Context*)&context;
-  context2.Ch = ch;
+  context2.Ch = ch.get();
   context2.Ovr = &ovr;
 
   va_list args;
@@ -808,7 +812,7 @@ void Logger::DoLog(Context& context, const char* format, va_list args)
       return;
   }
 
-  ChannelPtr ch = context.Ch ? context.Ch : GetChannel(*context.Channel);  
+  Channel* ch = context.Ch ? context.Ch : GetChannel(*context.Channel).get();
   if (ch == nullptr)
     return;
 
@@ -840,7 +844,7 @@ void Logger::DoLog(Context& context, const char* format, va_list args)
       buffer[0] = '\0';
       buffer[size - 1] = '\0';
 
-      if (TryFastFormat(buffer, size - 1, format, args) == false)
+      if (TryFastFormat(buffer, size - 1, format, len, args) == false)
       {
         int rc = vsnprintf(buffer, size - 1, format, args);
         if (rc == -1)

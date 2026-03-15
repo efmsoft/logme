@@ -37,10 +37,12 @@ Context::Context(Level level, const ID* ch, const SID* sid)
   , Method(nullptr)
   , File(nullptr)
   , Line(0)
+  , Ch(nullptr)
   , AppendProc(nullptr)
   , AppendContext(nullptr)
   , Ovr(nullptr)
   , Signature(0)
+  , ExtBufferSize(0)
 {
   InitContext();
 }
@@ -61,10 +63,12 @@ Context::Context(
   , Method(method)
   , File(file)
   , Line(line)
+  , Ch(nullptr)
   , AppendProc(nullptr)
   , AppendContext(nullptr)
   , Ovr(nullptr)
   , Signature(0)
+  , ExtBufferSize(0)
 {
   if (Channel->Name == nullptr)
     Channel = chdef;
@@ -445,12 +449,13 @@ const char* Context::Apply(ChannelPtr ch, OutputFlags flags, const char* text, i
   int n = nTimestamp + nSignature + nID + nChannel + nSubsystem + nFile + nError + nMethod + nLine + nAppend + nEol + 1;
   if (n > (int)sizeof(Buffer))
   {
-    if (ExtBuffer && ExtBuffer->size() < size_t(n))
-      ExtBuffer->resize(n);
-    else
-      ExtBuffer = std::make_shared<std::vector<char>>(size_t(n));
+    if (ExtBufferSize < size_t(n))
+    {
+      ExtBuffer = std::make_unique<char[]>(size_t(n));
+      ExtBufferSize = size_t(n);
+    }
 
-    buffer = ExtBuffer->data();
+    buffer = ExtBuffer.get();
   }
 
   char* p = buffer;

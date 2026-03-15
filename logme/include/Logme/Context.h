@@ -2,7 +2,6 @@
 
 #include <memory>
 #include <string>
-#include <vector>
 
 #include <Logme/ID.h>
 #include <Logme/Module.h>
@@ -21,13 +20,19 @@ namespace Logme
 
   struct ShortenerContext
   {
-    std::shared_ptr<std::string> Buffer;
+    std::unique_ptr<std::string> Buffer;
     char StaticBuffer[256];
 
     ShortenerContext()
     {
       StaticBuffer[0] = '\0';
     }
+
+    ShortenerContext(const ShortenerContext&) = delete;
+    ShortenerContext& operator=(const ShortenerContext&) = delete;
+
+    ShortenerContext(ShortenerContext&&) noexcept = default;
+    ShortenerContext& operator=(ShortenerContext&&) noexcept = default;
   };
 
   struct Context
@@ -50,7 +55,9 @@ namespace Logme
     const char* Method;
     Module File;
     int Line;
-    ChannelPtr Ch;
+    
+    ChannelPtr ChRef;
+    Logme::Channel* Ch;
 
     PfnAppend AppendProc;
     void* AppendContext;
@@ -67,7 +74,8 @@ namespace Logme
     int LastLen;
 
     char Buffer[OUTPUT_BUFFER_SIZE];
-    std::shared_ptr<std::vector<char>> ExtBuffer;
+    std::unique_ptr<char[]> ExtBuffer;
+    size_t ExtBufferSize;
 
     ShortenerContext MethodShortener;
 
@@ -113,6 +121,12 @@ namespace Logme
     };
 
   public:
+    Context(const Context&) = delete;
+    Context& operator=(const Context&) = delete;
+
+    Context(Context&&) noexcept = default;
+    Context& operator=(Context&&) noexcept = default;
+
     LOGMELNK Context(Level level, const ID* ch, const SID* sid);
     LOGMELNK Context(Level level, const ID* chdef, const SID* siddef, const char* method, const char* module, int line, const Params& params);
 

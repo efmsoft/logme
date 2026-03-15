@@ -17,18 +17,13 @@ DisplayReentryGuard::DisplayReentryGuard(const Channel *channel)
   if (!state.Overflow)
   {
     int depth = state.Depth;
-
     if (depth > 0 && state.SmallStack[depth - 1] == channel)
-    {
       return;
-    }
 
     for (int i = 0; i < depth; ++i)
     {
       if (state.SmallStack[i] == channel)
-      {
         return;
-      }
     }
 
     if (depth < SMALL_CAPACITY)
@@ -42,14 +37,12 @@ DisplayReentryGuard::DisplayReentryGuard(const Channel *channel)
     PromoteToOverflow(state);
   }
 
-  auto &stack = state.LargeStack;
+  auto& stack = state.LargeStack;
 
   for (const Channel *c : stack)
   {
     if (c == channel)
-    {
       return;
-    }
   }
 
   stack.push_back(channel);
@@ -59,13 +52,10 @@ DisplayReentryGuard::DisplayReentryGuard(const Channel *channel)
 DisplayReentryGuard::~DisplayReentryGuard()
 {
   if (!EnteredValue)
-  {
     return;
-  }
 
-  State &state = GetState();
-
-  if (!state.Overflow)
+  State& state = GetState();
+  if (state.Overflow == false)
   {
     --state.Depth;
     return;
@@ -79,13 +69,13 @@ bool DisplayReentryGuard::IsActive() const
   return EnteredValue;
 }
 
-DisplayReentryGuard::State &DisplayReentryGuard::GetState()
+DisplayReentryGuard::State& DisplayReentryGuard::GetState()
 {
   thread_local State state;
   return state;
 }
 
-void DisplayReentryGuard::PromoteToOverflow(State &state)
+void DisplayReentryGuard::PromoteToOverflow(State& state)
 {
   state.Overflow = true;
 

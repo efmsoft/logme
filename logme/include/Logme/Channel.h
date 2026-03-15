@@ -126,6 +126,8 @@ namespace Logme
     LOGMELNK bool IsIdle();
     LOGMELNK void Flush();
 
+    LOGMELNK CS& GetDataLock();
+
     LOGMELNK void ShortenerAdd(const char* what, const char* replace_on);
     LOGMELNK void SetShortenerPair(const ShortenerPair* pair);
     LOGMELNK const char* ShortenerRun(const char* value, ShortenerContext& context);

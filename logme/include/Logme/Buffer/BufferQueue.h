@@ -14,8 +14,12 @@
 
 namespace Logme
 {
+  class Channel;
+
   class BufferQueue
   {
+    Channel* Owner;
+
   public:
     enum class SoftFlushState
     {
@@ -35,7 +39,6 @@ namespace Logme
     Options OptionsValue;
 
   private:
-    mutable CS CurrentLock;
     mutable CS ReadyLock;
     mutable CS FreeLock;
     mutable CS CreateLock;
@@ -63,7 +66,7 @@ namespace Logme
     std::atomic<std::uint64_t> SignalsSent;
 
   public:
-    explicit BufferQueue(const Options& options);
+    explicit BufferQueue(Channel* Owner, const Options& options);
 
     bool Append(
       const char* p

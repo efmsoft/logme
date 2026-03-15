@@ -43,7 +43,6 @@ namespace Logme
     LOGMELNK Backend(ChannelPtr owner, const char* type);
     LOGMELNK virtual ~Backend();
 
-    LOGMELNK virtual void Display(Context& context, const char* line) = 0;
     LOGMELNK virtual BackendConfigPtr CreateConfig();
     LOGMELNK virtual bool ApplyConfig(BackendConfigPtr c);
     LOGMELNK virtual bool IsIdle() const;
@@ -54,5 +53,9 @@ namespace Logme
 
     LOGMELNK static BackendPtr Create(const char* type, ChannelPtr owner);
     LOGMELNK virtual std::string FormatDetails();
+  
+  protected:
+    friend class Channel;
+    LOGMELNK virtual void Display(Context& context, const char* line) = 0;
   };
 }

@@ -93,7 +93,6 @@ namespace Logme
     LOGMELNK bool CreateLog(const char* name);
     LOGMELNK void CloseLog();
 
-    LOGMELNK void Display(Context& context, const char* line) override;
     LOGMELNK std::string GetPathName(int index = 0) override;
 
     LOGMELNK BackendConfigPtr CreateConfig() override;
@@ -115,6 +114,10 @@ namespace Logme
     LOGMELNK uint64_t GetFlushTime() const;
     LOGMELNK bool HasEvents() const;
     LOGMELNK void AppendString(const char* text, size_t len);
+  
+  protected:
+    LOGMELNK void Display(Context& context, const char* line) override;
+    void AppendStringInternal(const char* text, size_t len);
 
   private:
     class FileManagerFactory& GetFactory() const;

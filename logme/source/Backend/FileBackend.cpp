@@ -51,7 +51,7 @@ FileBackend::FileBackend(ChannelPtr owner)
   , ShutdownFlag(false)
   , ShutdownCalled(owner == nullptr)
   , FlushTime(0)
-  , Queue([]{ BufferQueue::Options o; o.BufferSize = QUEUE_GROW_SIZE; return o; }())
+  , Queue(Owner.get(), []{ BufferQueue::Options o; o.BufferSize = QUEUE_GROW_SIZE; return o; }())
   , QueuedBytes(0)
   , DailyRotation(false)
   , MaxParts(2)
@@ -167,7 +167,7 @@ void FileBackend::WaitForShutdown()
 
 void FileBackend::SetMaxSize(size_t size)
 {
-  assert(size > 1024);
+  assert(size > 1024 || size == 0);
   MaxSize = size;
 }
 
@@ -286,12 +286,12 @@ void FileBackend::Display(Context& context, const char* line)
 
   int nc;
   const char* buffer = context.Apply(Owner, Owner->GetFlags(), line, nc);
-  AppendString(buffer, nc);
+  AppendStringInternal(buffer, nc);
 }
 
 void FileBackend::Truncate()
 {
-  if (CurrentSize < MaxSize)
+  if (MaxSize == 0 || CurrentSize < MaxSize)
     return;
 
   FileIo::TruncateToMaxSize(MaxSize);
@@ -317,6 +317,12 @@ std::string FileBackend::GetPathName(int index)
 }
 
 void FileBackend::AppendString(const char* text, size_t len)
+{
+  std::lock_guard guard(Owner->GetDataLock());
+  AppendStringInternal(text, len);
+}
+
+void FileBackend::AppendStringInternal(const char* text, size_t len)
 {
   if (text)
   {

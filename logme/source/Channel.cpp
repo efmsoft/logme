@@ -39,6 +39,11 @@ const ID& Channel::GetID() const
   return ChannelID;
 }
 
+CS& Channel::GetDataLock()
+{
+  return DataLock;
+}
+
 void Channel::UpdateActive()
 {
   bool linked = Linked.load(std::memory_order_relaxed);
@@ -436,7 +441,7 @@ const char* Channel::ShortenerPairRun(
     if (context.Buffer)
       context.Buffer->assign(std::string(pair->ReplaceOn) + (value + ls));
     else
-      context.Buffer = std::make_shared<std::string>(std::string(pair->ReplaceOn) + (value + ls));
+      context.Buffer = std::make_unique<std::string>(std::string(pair->ReplaceOn) + (value + ls));
 
     return context.Buffer->c_str();
   }
@@ -495,7 +500,7 @@ const char* Channel::ShortenerRun(
     if (context.Buffer)
       context.Buffer->assign(v.second + (value + v.first.length()));
     else
-      context.Buffer = std::make_shared<std::string>(v.second + (value + v.first.length()));
+      context.Buffer = std::make_unique<std::string>(v.second + (value + v.first.length()));
     
     return context.Buffer->c_str();
   }

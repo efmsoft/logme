@@ -1,9 +1,11 @@
 #include <Logme/Buffer/BufferQueue.h>
+#include <Logme/Channel.h>
 
 using namespace Logme;
 
-BufferQueue::BufferQueue(const Options& options)
-  : OptionsValue(options)
+BufferQueue::BufferQueue(Channel* owner, const Options& options)
+  : Owner(owner)
+  , OptionsValue(options)
   , TotalBuffers(0)
   , AdaptiveFreeLimit(options.BaseFreeLimit)
   , Signaled(false)
@@ -31,6 +33,8 @@ bool BufferQueue::Append(
   , bool& firstData
 )
 {
+  // Must be called with Owner->GetDataLock() already held!!!!!
+
   needSignal = false;
   firstData = false;
 
@@ -43,16 +47,12 @@ bool BufferQueue::Append(
     return false;
   }
 
+  if (Current->CanAppend(cb))
   {
-    std::lock_guard guard(CurrentLock);
-
-    if (Current->CanAppend(cb))
-    {
-      firstData = Current->Size() == 0;
-      Current->Append(p, cb);
-      CountAppended(cb);
-      return true;
-    }
+    firstData = Current->Size() == 0;
+    Current->Append(p, cb);
+    CountAppended(cb);
+    return true;
   }
 
   DataBufferPtr replacement = TryTakeFreeBuffer();
@@ -72,26 +72,22 @@ bool BufferQueue::Append(
 
   DataBufferPtr readyBuffer;
 
+  if (Current->CanAppend(cb))
   {
-    std::lock_guard guard(CurrentLock);
-
-    if (Current->CanAppend(cb))
-    {
-      firstData = Current->Size() == 0;
-      Current->Append(p, cb);
-      ReleaseBuffer(std::move(replacement));
-      CountAppended(cb);
-      return true;
-    }
-
-    replacement->Reset();
-    replacement->SetSeenOnSoftFlush(false);
-    readyBuffer = std::move(Current);
-
-    Current = std::move(replacement);
+    firstData = Current->Size() == 0;
     Current->Append(p, cb);
-    firstData = true;
+    ReleaseBuffer(std::move(replacement));
+    CountAppended(cb);
+    return true;
   }
+
+  replacement->Reset();
+  replacement->SetSeenOnSoftFlush(false);
+  readyBuffer = std::move(Current);
+
+  Current = std::move(replacement);
+  Current->Append(p, cb);
+  firstData = true;
 
   MaybeGrowAdaptive(allocatedBecauseNoFree);
   EnqueueReady(std::move(readyBuffer), needSignal);
@@ -145,7 +141,7 @@ BufferQueue::SoftFlushState BufferQueue::PrepareSoftFlushCurrent(DataBuffer* &ex
 {
   expected = nullptr;
 
-  std::lock_guard guard(CurrentLock);
+  std::lock_guard guard(Owner->GetDataLock());
 
   if (!Current || Current->Size() == 0)
     return SoftFlushState::EMPTY;
@@ -179,7 +175,8 @@ bool BufferQueue::PublishCurrent(bool& needSignal)
   DataBufferPtr readyBuffer;
 
   {
-    std::lock_guard guard(CurrentLock);
+    std::lock_guard guard(Owner->GetDataLock());
+
     if (!Current || Current->Size() == 0)
     {
       ReleaseBuffer(std::move(replacement));
@@ -221,7 +218,7 @@ bool BufferQueue::PublishCurrentIfMatches(DataBuffer* expected, bool& needSignal
   DataBufferPtr readyBuffer;
 
   {
-    std::lock_guard guard(CurrentLock);
+    std::lock_guard guard(Owner->GetDataLock());
 
     if (!Current || Current.get() != expected || Current->Size() == 0)
     {
@@ -253,7 +250,7 @@ bool BufferQueue::HasReady() const
 
 bool BufferQueue::HasCurrentData() const
 {
-  std::lock_guard guard(CurrentLock);
+  std::lock_guard guard(Owner->GetDataLock());
 
   if (!Current)
     return false;

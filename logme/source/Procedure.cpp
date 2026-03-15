@@ -87,13 +87,22 @@ void Procedure::Print(bool begin, const char* text)
 {
   const char* dir = begin ? ">>" : "<<";
 
-  Context context(BeginContext);
-  context.Channel = &Channel;
+  Context context(
+    BeginContext.ErrorLevel
+    , &Channel
+    , &BeginContext.Subsystem
+    , BeginContext.Method
+    , BeginContext.File.FullName
+    , BeginContext.Line
+    , Context::Params(Channel, BeginContext.Subsystem)
+  );
+
+  context.Ovr = BeginContext.Ovr;
   context.Applied.ProcPrint = true;
   context.Applied.ProcPrintIn = begin;
   context.AppendProc = &AppendDuration;
   context.AppendContext = this;
-  
+
   if (text == nullptr || *text == '\0')
     Instance->Log(context, "%s %s()", dir, context.Method);
   else

@@ -348,7 +348,10 @@ namespace
     }
   }
 
-  FastFormatEntry BuildFastFormat(const char* format)
+  FastFormatEntry BuildFastFormat(
+    const char* format
+    , size_t formatLen
+  )
   {
     FastFormatEntry entry{};
     entry.Format = format;
@@ -363,53 +366,21 @@ namespace
       return entry;
     }
 
-    for (int i = 0; i < FAST_FORMAT_SCAN_LIMIT; i++)
+    if (formatLen >= FAST_FORMAT_SCAN_LIMIT)
+    {
+      FAST_FORMAT_STAT(AnalyzeTooLong);
+      FAST_FORMAT_STAT(DetectedRejected);
+      return entry;
+    }
+
+    for (size_t i = 0; i < formatLen; i++)
     {
       char ch = format[i];
-
-      if (ch == '\0')
-      {
-        if (entry.SpecCount == 0)
-        {
-          entry.Kind1 = FastFormatKind::LITERAL;
-          entry.Part0Len = (uint16_t)i;
-          FAST_FORMAT_STAT(AnalyzeNoPercent);
-          FAST_FORMAT_STAT(DetectedLiteral);
-          return entry;
-        }
-
-        if (entry.SpecCount == 1)
-          entry.Part1Len = (uint16_t)(i - entry.Part1Pos);
-        else
-          entry.Part2Len = (uint16_t)(i - entry.Part2Pos);
-
-        if (entry.SpecCount == 1)
-          FAST_FORMAT_STAT(DetectedOneSpec);
-        else
-          FAST_FORMAT_STAT(DetectedTwoSpecs);
-
-        AddDetectSpecStat(entry.Kind1);
-        if (entry.SpecCount == 2)
-          AddDetectSpecStat(entry.Kind2);
-
-        return entry;
-      }
 
       if (ch != '%')
         continue;
 
-      if (i + 1 >= FAST_FORMAT_SCAN_LIMIT)
-      {
-        FAST_FORMAT_STAT(AnalyzeTooLong);
-        FAST_FORMAT_STAT(DetectedRejected);
-        entry.SpecCount = 0;
-        entry.Kind1 = FastFormatKind::NONE;
-        entry.Kind2 = FastFormatKind::NONE;
-        return entry;
-      }
-
-      char spec = format[i + 1];
-      if (spec == '\0')
+      if (i + 1 >= formatLen)
       {
         FAST_FORMAT_STAT(AnalyzeSpecAtEnd);
         FAST_FORMAT_STAT(DetectedRejected);
@@ -418,6 +389,8 @@ namespace
         entry.Kind2 = FastFormatKind::NONE;
         return entry;
       }
+
+      char spec = format[i + 1];
 
       FastFormatKind kind = FastFormatKind::NONE;
       if (spec == 's')
@@ -467,11 +440,29 @@ namespace
       i++;
     }
 
-    FAST_FORMAT_STAT(AnalyzeTooLong);
-    FAST_FORMAT_STAT(DetectedRejected);
-    entry.SpecCount = 0;
-    entry.Kind1 = FastFormatKind::NONE;
-    entry.Kind2 = FastFormatKind::NONE;
+    if (entry.SpecCount == 0)
+    {
+      entry.Kind1 = FastFormatKind::LITERAL;
+      entry.Part0Len = (uint16_t)formatLen;
+      FAST_FORMAT_STAT(AnalyzeNoPercent);
+      FAST_FORMAT_STAT(DetectedLiteral);
+      return entry;
+    }
+
+    if (entry.SpecCount == 1)
+      entry.Part1Len = (uint16_t)(formatLen - entry.Part1Pos);
+    else
+      entry.Part2Len = (uint16_t)(formatLen - entry.Part2Pos);
+
+    if (entry.SpecCount == 1)
+      FAST_FORMAT_STAT(DetectedOneSpec);
+    else
+      FAST_FORMAT_STAT(DetectedTwoSpecs);
+
+    AddDetectSpecStat(entry.Kind1);
+    if (entry.SpecCount == 2)
+      AddDetectSpecStat(entry.Kind2);
+
     return entry;
   }
 
@@ -539,6 +530,7 @@ bool Logme::TryFastFormat(
   char* buffer
   , size_t bufferSize
   , const char* format
+  , size_t formatLen
   , va_list args
 )
 {
@@ -556,7 +548,7 @@ bool Logme::TryFastFormat(
 
   FAST_FORMAT_STAT(CacheMisses);
 
-  FastFormatEntry entry = BuildFastFormat(format);
+  FastFormatEntry entry = BuildFastFormat(format, formatLen);
   StoreFastFormat(entry);
 
   return ExecuteFastFormat(entry, buffer, bufferSize, args);

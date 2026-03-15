@@ -1,3 +1,27 @@
+## 2.4.13
+
+### Added
+- Added **FastFormat** optimized formatting path for common logging scenarios.
+- Added protection against **recursive logging** in the same channel.
+
+### Improved
+- Improved **file output performance**, reducing overhead in heavy logging workloads.
+- Optimized **FileBackend** and buffering paths to reduce contention.
+- Improved **BufferQueue** behavior and allocation patterns under concurrency.
+- Optimized hot-path checks for channel activity using cached / thread-local mechanisms.
+- Reduced overhead of repeated `isatty` detection for console output.
+- Improved console handling when output is redirected (non-TTY targets).
+- Added automatic **ANSI escape stripping** for non-TTY outputs.
+
+### Fixed
+- Fixed several edge cases discovered during performance optimization work.
+- Fixed minor correctness issues in logging paths and backend handling.
+- Fixed small build and portability issues.
+
+### Notes
+- This release mainly focuses on **performance and hot-path optimizations**.
+- No major API changes.
+
 ## 2.4.11
 
 ### Improvements

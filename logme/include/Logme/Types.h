@@ -166,3 +166,25 @@ namespace Logme
 #else
 #define LOGME_CS_USE_CRITICAL_SECTION 0
 #endif
+
+#if defined(__clang__)
+  #define LOGME_PRAGMA_PUSH           _Pragma("clang diagnostic push")
+  #define LOGME_PRAGMA_POP            _Pragma("clang diagnostic pop")
+  #define LOGME_PRAGMA_IGNORE_VARARGS _Pragma("clang diagnostic ignored \"-Wnon-pod-varargs\"")
+
+#elif defined(__GNUC__)
+  #define LOGME_PRAGMA_PUSH           _Pragma("GCC diagnostic push")
+  #define LOGME_PRAGMA_POP            _Pragma("GCC diagnostic pop")
+  #define LOGME_PRAGMA_IGNORE_VARARGS _Pragma("GCC diagnostic ignored \"-Wnon-pod-varargs\"")
+
+#elif defined(_MSC_VER)
+  #define LOGME_PRAGMA_PUSH           __pragma(warning(push))
+  #define LOGME_PRAGMA_POP            __pragma(warning(pop))
+  // C4840: non-trivial type passed through variadic function
+  #define LOGME_PRAGMA_IGNORE_VARARGS __pragma(warning(disable: 4840))
+
+#else
+  #define LOGME_PRAGMA_PUSH
+  #define LOGME_PRAGMA_POP
+  #define LOGME_PRAGMA_IGNORE_VARARGS
+#endif

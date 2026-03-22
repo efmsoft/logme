@@ -175,7 +175,7 @@ namespace Logme
 #elif defined(__GNUC__)
   #define LOGME_PRAGMA_PUSH           _Pragma("GCC diagnostic push")
   #define LOGME_PRAGMA_POP            _Pragma("GCC diagnostic pop")
-  #define LOGME_PRAGMA_IGNORE_VARARGS _Pragma("GCC diagnostic ignored \"-Wnon-pod-varargs\"")
+  #define LOGME_PRAGMA_IGNORE_VARARGS
 
 #elif defined(_MSC_VER)
   #define LOGME_PRAGMA_PUSH           __pragma(warning(push))

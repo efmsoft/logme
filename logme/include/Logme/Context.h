@@ -145,3 +145,6 @@ namespace Logme
   LOGME_PRAGMA_IGNORE_VARARGS           \
   Logme::Context(level, ch, sid, __FUNCTION__, __FILE__, __LINE__, Logme::Context::Params(__VA_ARGS__)) \
   LOGME_PRAGMA_POP
+
+#define LOGME_CONTEXT_RAW(level, ch, sid, ...) \
+  Logme::Context(level, ch, sid, __FUNCTION__, __FILE__, __LINE__, Logme::Context::Params(__VA_ARGS__)) \

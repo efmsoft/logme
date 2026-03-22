@@ -115,67 +115,112 @@
 
 // std::format
 
+#if _LOGME_ACTIVE
+#ifdef _MSC_VER
+  #define fLogme_If(condition, logger, level, ...) \
+    do { \
+      if ((condition)) { \
+        LOGME_PRAGMA_PUSH \
+        LOGME_PRAGMA_IGNORE_VARARGS \
+        logger->Log(LOGME_CONTEXT(level, &CH, &SUBSID, __VA_ARGS__) , __VA_ARGS__); \
+        LOGME_PRAGMA_POP \
+      } \
+    } while (0)
+  #define fLogme_Ifg(condition, logger, level, ...) \
+    do { \
+      if ((condition)) { \
+        LOGME_PRAGMA_PUSH \
+        LOGME_PRAGMA_IGNORE_VARARGS \
+        logger->Log(LOGME_CONTEXT(level, &::CH, &::SUBSID, __VA_ARGS__) , __VA_ARGS__); \
+        LOGME_PRAGMA_POP \
+      } \
+    } while (0)
+#else
+  #define fLogme_If(condition, logger, level, ...) \
+    do { \
+      if ((condition)) { \
+        LOGME_PRAGMA_PUSH \
+        LOGME_PRAGMA_IGNORE_VARARGS \
+        logger->Log(LOGME_CONTEXT(level, &CH, &SUBSID) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__); \
+        LOGME_PRAGMA_POP \
+      } \
+    } while (0)
+  #define fLogme_Ifg(condition, logger, level, ...) \
+    do { \
+      if ((condition)) { \
+        LOGME_PRAGMA_PUSH \
+        LOGME_PRAGMA_IGNORE_VARARGS \
+        logger->Log(LOGME_CONTEXT(level, &::CH, &::SUBSID) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__); \
+        LOGME_PRAGMA_POP \
+      } \
+    } while (0)
+#endif
+#else
+  #define fLogme_If(condition, logger, level, ...) do { } while (0)
+  #define fLogme_Ifg(condition, logger, level, ...) do { } while (0)
+#endif
+
 #ifndef LOGME_DISABLE_STD_FORMAT
 
 #define fLogmeD(...) \
-  do { Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), ## __VA_ARGS__); } while (0)
+  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 #define fLogmeD_If(condition, ...) \
-  do { Logme_If(condition, Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), Logme::GetStdFormat(), ## __VA_ARGS__); } while (0)
+  fLogme_If(condition, Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 #define fLogmeI(...) \
-  do { Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), ## __VA_ARGS__); } while (0)
+  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 #define fLogmeI_If(condition, ...) \
-  do { Logme_If(condition, Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), ## __VA_ARGS__); } while (0)
+  fLogme_If(condition, Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 #define fLogmeW(...) \
-  do { Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), ## __VA_ARGS__); } while (0)
+  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 #define fLogmeW_If(condition, ...) \
-  do { Logme_If(condition, Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), ## __VA_ARGS__); } while (0)
+  fLogme_If(condition, Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 #define fLogmeE(...) \
-  do { Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), ## __VA_ARGS__); } while (0)
+  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 #define fLogmeE_If(condition, ...) \
-  do { Logme_If(condition, Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), ## __VA_ARGS__); } while (0)
+  fLogme_If(condition, Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 #define fLogmeC(...) \
-  do { Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), ## __VA_ARGS__); } while (0)
+  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 #define fLogmeC_If(condition, ...) \
-  do { Logme_If(condition, Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), ## __VA_ARGS__); } while (0)
+  fLogme_If(condition, Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 #define fLogmeDg(...) \
-  do { Logme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), ## __VA_ARGS__); } while (0)
+  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 #define fLogmeDg_If(condition, ...) \
-  do { Logme_Ifg(condition, Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), ## __VA_ARGS__); } while (0)
+  fLogme_Ifg(condition, Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 #define fLogmeIg(...) \
-  do { Logme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), ## __VA_ARGS__); } while (0)
+  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 #define fLogmeI_Ifg(condition, ...) \
-  do { Logme_Ifg(condition, Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), ## __VA_ARGS__); } while (0)
+  fLogme_Ifg(condition, Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 #define fLogmeWg(...) \
-  do { Logme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), ## __VA_ARGS__); } while (0)
+  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 #define fLogmeW_Ifg(condition, ...) \
-  do { Logme_Ifg(condition, Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), ## __VA_ARGS__); } while (0)
+  fLogme_Ifg(condition, Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 #define fLogmeEg(...) \
-  do { Logme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), ## __VA_ARGS__); } while (0)
+  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 #define fLogmeE_Ifg(condition, ...) \
-  do { Logme_Ifg(condition, Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), ## __VA_ARGS__); } while (0)
+  fLogme_Ifg(condition, Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 #define fLogmeCg(...) \
-  do { Logme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), ## __VA_ARGS__); } while (0)
+  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 #define fLogmeC_Ifg(condition, ...) \
-  do { Logme_Ifg(condition, Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), ## __VA_ARGS__); } while (0)
+  fLogme_Ifg(condition, Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 #else
 

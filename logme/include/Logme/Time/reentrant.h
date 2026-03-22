@@ -1,11 +1,3 @@
-/**
-@file
-@brief      Cross platform reenterable redefenitions for standard library time related functions
-@details    Copyright (c) 2002-2015 Acronis
-@author     Dmitry Komlev (dmitry.komlev@acronis.com)
-@since      $Id: reentrant.h 3 2017-06-22 07:47:22Z eddy $
-*/
-
 #pragma once
 
 #include <time.h>

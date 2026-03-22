@@ -1,3 +1,8 @@
+## 2.4.14
+
+### Fixed
+- Suppressed warnings when passing non-trivial objects to `fLogme*` macros.
+
 ## 2.4.13
 
 ### Added

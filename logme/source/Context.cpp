@@ -29,8 +29,9 @@ using namespace Logme;
 #define _stricmp strcasecmp
 #endif
 
-Context::Context(Level level, const ID* ch, const SID* sid)
-  : ChannelStg{}
+Context::Context(ContextCache& cache, Level level, const ID* ch, const SID* sid)
+  : Cache(cache)
+  , ChannelStg{}
   , Channel(ch)
   , Subsystem(sid ? *sid : SUBSID)
   , ErrorLevel(level)
@@ -48,7 +49,8 @@ Context::Context(Level level, const ID* ch, const SID* sid)
 }
 
 Context::Context(
-  Level level
+  ContextCache& cache
+  , Level level
   , const ID* chdef
   , const SID* siddef
   , const char* method
@@ -56,7 +58,8 @@ Context::Context(
   , int line
   , const Context::Params& params
 )
-  : ChannelStg{}
+  : Cache(cache)
+  , ChannelStg{}
   , Channel(&params.Channel)
   , Subsystem(params.Subsystem)
   , ErrorLevel(level)

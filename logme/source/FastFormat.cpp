@@ -1,3 +1,4 @@
+#include <Logme/Context.h>
 #include <Logme/FastFormat.h>
 
 #include <charconv>
@@ -13,34 +14,12 @@
 #include <cstdio>
 #endif
 
+using namespace Logme;
+
 namespace
 {
-  constexpr int FAST_FORMAT_CACHE_SIZE = 8;
+  constexpr int FAST_FORMAT_CACHE_SIZE = 2;
   constexpr int FAST_FORMAT_SCAN_LIMIT = 48;
-
-  enum class FastFormatKind : uint8_t
-  {
-    NONE,
-    LITERAL,
-    FORMAT_S,
-    FORMAT_D,
-    FORMAT_I,
-    FORMAT_U,
-    FORMAT_P
-  };
-
-  struct FastFormatEntry
-  {
-    const char* Format;
-    FastFormatKind Kind1;
-    FastFormatKind Kind2;
-    uint16_t Part0Len;
-    uint16_t Part1Pos;
-    uint16_t Part1Len;
-    uint16_t Part2Pos;
-    uint16_t Part2Len;
-    uint8_t SpecCount;
-  };
 
 #if LOGME_FAST_FORMAT_STATS
   struct FastFormatStats
@@ -159,6 +138,7 @@ namespace
 
   thread_local FastFormatEntry FastFormatCache[FAST_FORMAT_CACHE_SIZE]{};
   thread_local uint32_t FastFormatCachePos = 0;
+  std::mutex FastCacheLock;
 
   inline void StoreFastFormat(const FastFormatEntry& entry)
   {
@@ -167,12 +147,33 @@ namespace
     FAST_FORMAT_STAT(CacheStores);
   }
 
-  inline FastFormatEntry* FindFastFormat(const char* format)
+  inline FastFormatEntry* FindFastFormat(ContextCache& cache, const char* format)
   {
+    if (cache.State.load(std::memory_order_acquire) == ContextCacheState::READY)
+    {
+      if (cache.Ffe.Format == format)
+        return &cache.Ffe;
+
+      cache.State.store(ContextCacheState::DISABLED, std::memory_order_release);
+    }
+
     for (auto& entry : FastFormatCache)
     {
       if (entry.Format == format)
+      {
+        if (cache.State.load(std::memory_order_acquire) == ContextCacheState::EMPTY)
+        { 
+          std::lock_guard guard(FastCacheLock);
+
+          if (cache.State.load(std::memory_order_relaxed) == ContextCacheState::EMPTY)
+          { 
+            cache.Ffe = entry;
+            cache.State.store(ContextCacheState::READY, std::memory_order_release);
+          }
+        }
+
         return &entry;
+      }
     }
 
     return nullptr;
@@ -348,10 +349,7 @@ namespace
     }
   }
 
-  FastFormatEntry BuildFastFormat(
-    const char* format
-    , size_t formatLen
-  )
+  FastFormatEntry BuildFastFormat(const char* format)
   {
     FastFormatEntry entry{};
     entry.Format = format;
@@ -366,6 +364,7 @@ namespace
       return entry;
     }
 
+    auto formatLen = strlen(format);
     if (formatLen >= FAST_FORMAT_SCAN_LIMIT)
     {
       FAST_FORMAT_STAT(AnalyzeTooLong);
@@ -527,10 +526,10 @@ namespace
 }
 
 bool Logme::TryFastFormat(
-  char* buffer
+  Context& context
+  , char* buffer
   , size_t bufferSize
   , const char* format
-  , size_t formatLen
   , va_list args
 )
 {
@@ -539,7 +538,7 @@ bool Logme::TryFastFormat(
   if (format == nullptr || buffer == nullptr || bufferSize == 0)
     return false;
 
-  FastFormatEntry* cached = FindFastFormat(format);
+  FastFormatEntry* cached = FindFastFormat(context.Cache, format);
   if (cached)
   {
     FAST_FORMAT_STAT(CacheHits);
@@ -548,8 +547,18 @@ bool Logme::TryFastFormat(
 
   FAST_FORMAT_STAT(CacheMisses);
 
-  FastFormatEntry entry = BuildFastFormat(format, formatLen);
+  FastFormatEntry entry = BuildFastFormat(format);
   StoreFastFormat(entry);
+
+  if (context.Cache.State.load(std::memory_order_acquire) == ContextCacheState::EMPTY)
+  { 
+    std::lock_guard guard(FastCacheLock);
+    if (context.Cache.State.load(std::memory_order_relaxed) == ContextCacheState::EMPTY)
+    {
+      context.Cache.Ffe = entry;
+      context.Cache.State.store(ContextCacheState::READY, std::memory_order_release);
+    }
+  }
 
   return ExecuteFastFormat(entry, buffer, bufferSize, args);
 }

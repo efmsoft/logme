@@ -188,3 +188,6 @@ namespace Logme
   #define LOGME_PRAGMA_POP
   #define LOGME_PRAGMA_IGNORE_VARARGS
 #endif
+
+#define LOGME_JOIN2(a, b) a##b
+#define LOGME_JOIN(a, b) LOGME_JOIN2(a, b)

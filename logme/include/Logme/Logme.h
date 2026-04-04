@@ -29,18 +29,20 @@
 #if _LOGME_ACTIVE
 #ifdef _MSC_VER
   #define Logme_If(condition, logger, level, ...) \
-    if ((condition)) \
-      logger->Log(LOGME_CONTEXT(level, &CH, &SUBSID, __VA_ARGS__) , __VA_ARGS__)
+    if (static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); (condition)) \
+      logger->Log(LOGME_CONTEXT(LOGME_JOIN(_logme_ctx_, __LINE__), level, &CH, &SUBSID, __VA_ARGS__) , __VA_ARGS__)
   #define Logme_Ifg(condition, logger, level, ...) \
-    if ((condition)) \
-      logger->Log(LOGME_CONTEXT(level, &::CH, &::SUBSID, __VA_ARGS__) , __VA_ARGS__)
+    if (static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); (condition)) \
+      logger->Log(LOGME_CONTEXT(LOGME_JOIN(_logme_ctx_, __LINE__), level, &::CH, &::SUBSID, __VA_ARGS__) , __VA_ARGS__)
 #else
   #define Logme_If(condition, logger, level, ...) \
+    static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); \
     if ((condition)) \
-      logger->Log(LOGME_CONTEXT(level, &CH, &SUBSID) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+      logger->Log(LOGME_CONTEXT(LOGME_JOIN(_logme_ctx_, __LINE__), level, &CH, &SUBSID) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
   #define Logme_Ifg(condition, logger, level, ...) \
+    static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); \
     if ((condition)) \
-      logger->Log(LOGME_CONTEXT(level, &::CH, &::SUBSID) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+      logger->Log(LOGME_CONTEXT(LOGME_JOIN(_logme_ctx_, __LINE__), level, &::CH, &::SUBSID) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 #else
   #define Logme_If(condition, logger, level, ...) if (true) { } else std::stringstream()
@@ -122,7 +124,8 @@
       if ((condition)) { \
         LOGME_PRAGMA_PUSH \
         LOGME_PRAGMA_IGNORE_VARARGS \
-        logger->Log(LOGME_CONTEXT(level, &CH, &SUBSID, __VA_ARGS__) , __VA_ARGS__); \
+        static Logme::ContextCache _logme_ctx_; \
+        logger->Log(LOGME_CONTEXT(_logme_ctx_, level, &CH, &SUBSID, __VA_ARGS__) , __VA_ARGS__); \
         LOGME_PRAGMA_POP \
       } \
     } while (0)
@@ -131,7 +134,8 @@
       if ((condition)) { \
         LOGME_PRAGMA_PUSH \
         LOGME_PRAGMA_IGNORE_VARARGS \
-        logger->Log(LOGME_CONTEXT(level, &::CH, &::SUBSID, __VA_ARGS__) , __VA_ARGS__); \
+        static Logme::ContextCache _logme_ctx_; \
+        logger->Log(LOGME_CONTEXT(_logme_ctx_, level, &::CH, &::SUBSID, __VA_ARGS__) , __VA_ARGS__); \
         LOGME_PRAGMA_POP \
       } \
     } while (0)

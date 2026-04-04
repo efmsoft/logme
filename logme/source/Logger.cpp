@@ -168,6 +168,20 @@ FileManagerFactory& Logger::GetFileManagerFactory()
   return Factory;
 }
 
+void Logger::IterateChannels(const TChannelCallback& callback)
+{
+  if (ShutdownCalled)
+    return;
+
+  std::lock_guard guard(DataLock);
+
+  if (Default)
+    callback("", Default);
+
+  for (const auto& [name, channel] : Channels)
+    callback(name, channel);
+}
+
 StringPtr Logger::GetErrorChannel()
 {
   std::lock_guard guard(ErrorLock);
@@ -829,22 +843,19 @@ void Logger::DoLog(Context& context, const char* format, va_list args)
   if (format)
   {
     char* buffer = nullptr;
-    size_t len = strlen(format);
-
-    if (len == 2 && format[0] == '%' && format[1] == 's')
+    if (format[0] == '%' && format[1] == 's' && format[2] == '\0')
     { 
       buffer = va_arg(args, char*);
     }
     else
     {
-      size_t size = std::max(16384U, (unsigned int)(len + 512));
-
+      const size_t size = 16384U;
       buffer = (char*)alloca(size);
 
       buffer[0] = '\0';
       buffer[size - 1] = '\0';
 
-      if (TryFastFormat(buffer, size - 1, format, len, args) == false)
+      if (TryFastFormat(context, buffer, size - 1, format, args) == false)
       {
         int rc = vsnprintf(buffer, size - 1, format, args);
         if (rc == -1)
@@ -886,18 +897,4 @@ void Logger::DoLog(Context& context, const char* format, va_list args)
     if (context.Output)
       *context.Output = buffer;
   }
-}
-
-void Logger::IterateChannels(const TChannelCallback& callback)
-{
-  if (ShutdownCalled)
-    return;
-
-  std::lock_guard guard(DataLock);
-
-  if (Default)
-    callback("", Default);
-
-  for (const auto& [name, channel] : Channels)
-    callback(name, channel);
 }

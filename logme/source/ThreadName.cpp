@@ -37,7 +37,8 @@ ThreadName::~ThreadName()
       ovr.Remove.Method = true;
 
       Logme::ID ch = PCH->GetID();
-      Context c = LOGME_CONTEXT(Logme::Level::LEVEL_INFO, &ch, &SUBSID);
+      Logme::ContextCache cache;
+      Context c = LOGME_CONTEXT(cache, Logme::Level::LEVEL_INFO, &ch, &SUBSID);
       c.Ovr = &ovr;
 
       // After returning the initial name, a message should be printed. 

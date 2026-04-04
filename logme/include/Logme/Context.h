@@ -1,8 +1,10 @@
 #pragma once
 
+#include <atomic>
 #include <memory>
 #include <string>
 
+#include <Logme/FastFormat.h>
 #include <Logme/ID.h>
 #include <Logme/Module.h>
 #include <Logme/OutputFlags.h>
@@ -17,6 +19,25 @@ namespace Logme
 
   class Channel;
   typedef std::shared_ptr<Channel> ChannelPtr;
+
+  enum class ContextCacheState : uint8_t
+  {
+    EMPTY,
+    READY,
+    DISABLED
+  };
+
+  struct ContextCache
+  {
+    std::atomic<ContextCacheState> State;
+    FastFormatEntry Ffe;
+
+    ContextCache()
+      : State(ContextCacheState::EMPTY)
+    {
+      Ffe.Format = nullptr;
+    }
+  };
 
   struct ShortenerContext
   {
@@ -46,7 +67,9 @@ namespace Logme
       PID_BUFFER_SIZE = 32,
       TZD_T_POS = 10,                       // YYYY-MM-DDThh:mm:ssTZD
       TZD_E_POS = 19,
-    }; 
+    };
+
+    ContextCache& Cache;
 
     ID ChannelStg;
     const ID* Channel;
@@ -127,8 +150,8 @@ namespace Logme
     Context(Context&&) noexcept = default;
     Context& operator=(Context&&) noexcept = default;
 
-    LOGMELNK Context(Level level, const ID* ch, const SID* sid);
-    LOGMELNK Context(Level level, const ID* chdef, const SID* siddef, const char* method, const char* module, int line, const Params& params);
+    LOGMELNK Context(ContextCache& cache, Level level, const ID* ch, const SID* sid);
+    LOGMELNK Context(ContextCache& cache, Level level, const ID* chdef, const SID* siddef, const char* method, const char* module, int line, const Params& params);
 
     LOGMELNK void InitContext();
     LOGMELNK void InitTimestamp(TimeFormat tf);
@@ -140,5 +163,5 @@ namespace Logme
   };
 }
 
-#define LOGME_CONTEXT(level, ch, sid, ...) \
-  Logme::Context(level, ch, sid, __FUNCTION__, __FILE__, __LINE__, Logme::Context::Params(__VA_ARGS__))
+#define LOGME_CONTEXT(cache, level, ch, sid, ...) \
+  Logme::Context(cache, level, ch, sid, __FUNCTION__, __FILE__, __LINE__, Logme::Context::Params(__VA_ARGS__))

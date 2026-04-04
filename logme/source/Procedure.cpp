@@ -87,8 +87,10 @@ void Procedure::Print(bool begin, const char* text)
 {
   const char* dir = begin ? ">>" : "<<";
 
+  Logme::ContextCache ctx;
   Context context(
-    BeginContext.ErrorLevel
+    ctx
+    , BeginContext.ErrorLevel
     , &Channel
     , &BeginContext.Subsystem
     , BeginContext.Method

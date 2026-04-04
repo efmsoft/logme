@@ -68,11 +68,13 @@ namespace Logme
 #else
 #define _LogmeP(level, retval, ...) \
   unsigned char _procStorage[sizeof(Logme::PrinterT<int>)]; \
-  const Logme::Context& _procContext = LOGME_CONTEXT(level, &CH, &SUBSID, ## __VA_ARGS__); \
+  static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); \
+  const Logme::Context& _procContext = LOGME_CONTEXT(LOGME_JOIN(_logme_ctx_, __LINE__), level, &CH, &SUBSID, ## __VA_ARGS__); \
   Logme::Procedure logme_proc(_procContext, Logme::CreatePrinter(retval, _procStorage), ## __VA_ARGS__)
 
 #define _LogmePV(level, ...) \
-  const Logme::Context& _procContext = LOGME_CONTEXT(level, &CH, &SUBSID, ## __VA_ARGS__); \
+  static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); \
+  const Logme::Context& _procContext = LOGME_CONTEXT(LOGME_JOIN(_logme_ctx_, __LINE__), level, &CH, &SUBSID, ## __VA_ARGS__); \
   Logme::Procedure logme_proc(_procContext, nullptr _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif 
 #else

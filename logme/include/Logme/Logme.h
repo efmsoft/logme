@@ -145,7 +145,8 @@
       if ((condition)) { \
         LOGME_PRAGMA_PUSH \
         LOGME_PRAGMA_IGNORE_VARARGS \
-        logger->Log(LOGME_CONTEXT(level, &CH, &SUBSID) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__); \
+        static Logme::ContextCache _logme_ctx_; \
+        logger->Log(LOGME_CONTEXT(_logme_ctx_, level, &CH, &SUBSID) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__); \
         LOGME_PRAGMA_POP \
       } \
     } while (0)
@@ -154,7 +155,8 @@
       if ((condition)) { \
         LOGME_PRAGMA_PUSH \
         LOGME_PRAGMA_IGNORE_VARARGS \
-        logger->Log(LOGME_CONTEXT(level, &::CH, &::SUBSID) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__); \
+        static Logme::ContextCache _logme_ctx_; \
+        logger->Log(LOGME_CONTEXT(_logme_ctx_, level, &::CH, &::SUBSID) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__); \
         LOGME_PRAGMA_POP \
       } \
     } while (0)

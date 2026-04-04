@@ -148,7 +148,7 @@ namespace Logme
     Context& operator=(const Context&) = delete;
 
     Context(Context&&) noexcept = default;
-    Context& operator=(Context&&) noexcept = default;
+    Context& operator=(Context&&) noexcept = delete;
 
     LOGMELNK Context(ContextCache& cache, Level level, const ID* ch, const SID* sid);
     LOGMELNK Context(ContextCache& cache, Level level, const ID* chdef, const SID* siddef, const char* method, const char* module, int line, const Params& params);

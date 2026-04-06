@@ -20,6 +20,7 @@ int main()
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 
+#ifndef LOGME_DISABLE_STD_FORMAT
   for (int i = 0; i < 5; i++)
   {
     fLogmeI_Once("fLogmeI_Once: i={}", i);
@@ -35,6 +36,7 @@ int main()
     fLogmeI_Every(300, "fLogmeI_Every: i={}", i);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
+#endif
 
   return 0;
 }

@@ -113,13 +113,18 @@ namespace Logme
     LOGMELNK Stream Log(const Context& context); // @1
 
     LOGMELNK Stream Log(const Context& context, Override& ovr); // @2
+    LOGMELNK Stream Log(const Context& context, Override& ovr, const SID& sid);
     LOGMELNK Stream Log(const Context& context, const SID& sid, Override& ovr); // @3
     LOGMELNK Stream Log(const Context& context, const ID& id); // @4
     LOGMELNK Stream Log(const Context& context, ChannelPtr ch); // @5
     LOGMELNK Stream Log(const Context& context, const ID& id, const SID& sid); // @6
     LOGMELNK Stream Log(const Context& context, ChannelPtr ch, const SID& sid); // @7
+    LOGMELNK Stream Log(const Context& context, Override& ovr, const ID& id);
+    LOGMELNK Stream Log(const Context& context, Override& ovr, ChannelPtr ch);
     LOGMELNK Stream Log(const Context& context, const ID& id, Override& ovr); // @8
     LOGMELNK Stream Log(const Context& context, ChannelPtr ch, Override& ovr); // @9
+    LOGMELNK Stream Log(const Context& context, Override& ovr, const ID& id, const SID& sid);
+    LOGMELNK Stream Log(const Context& context, Override& ovr, ChannelPtr ch, const SID& sid);
     LOGMELNK Stream Log(const Context& context, const ID& id, const SID& sid, Override& ovr); // @10
     LOGMELNK Stream Log(const Context& context, ChannelPtr ch, const SID& sid, Override& ovr); // @11
 
@@ -156,6 +161,23 @@ namespace Logme
 
 #ifndef LOGME_DISABLE_STD_FORMAT
     template<typename... Args>
+    void Log(const Context& context, const StdFormat*, Override& ovr, const ID& id, const char* fmt, Args&&... args)
+    {
+      std::string out = std::vformat(fmt, std::make_format_args(args...));
+      Log(context, ovr, id, "%s", out.c_str());
+    }
+
+    template<typename... Args>
+    void Log(const Context& context, const StdFormat*, Override& ovr, ChannelPtr ch, const char* fmt, Args&&... args)
+    {
+      if (ch && context.ErrorLevel < ch->GetFilterLevel())
+        return;
+
+      std::string out = std::vformat(fmt, std::make_format_args(args...));
+      Log(context, ovr, ch, "%s", out.c_str());
+    }
+
+    template<typename... Args>
     void Log(const Context& context, const StdFormat*, const ID& id, Override& ovr, const char* fmt, Args&&... args)
     {
       std::string out = std::vformat(fmt, std::make_format_args(args...));
@@ -172,7 +194,11 @@ namespace Logme
       Log(context, ch, ovr, "%s", out.c_str());
     }
 #endif
+    LOGMELNK void Log(const Context& context, Override& ovr, const ID& id, const char* format, ...);
+    LOGMELNK void Log(const Context& context, Override& ovr, ChannelPtr ch, const char* format, ...);
     LOGMELNK void Log(const Context& context, const ID& id, Override& ovr, const char* format, ...);
+    LOGMELNK void Log(const Context& context, Override& ovr, const ID& id, const SID& sid, const char* format, ...);
+    LOGMELNK void Log(const Context& context, Override& ovr, ChannelPtr ch, const SID& sid, const char* format, ...);
     LOGMELNK void Log(const Context& context, ChannelPtr ch, Override& ovr, const char* format, ...);
 
 #ifndef LOGME_DISABLE_STD_FORMAT

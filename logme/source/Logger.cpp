@@ -501,6 +501,11 @@ Stream Logger::Log(const Context& context, Override& ovr) // @2
   return Stream(shared_from_this(), context2);
 }
 
+Stream Logger::Log(const Context& context, Override& ovr, const SID& sid)
+{
+  return Log(context, sid, ovr);
+}
+
 Stream Logger::Log(const Context& context, const SID& sid, Override& ovr) // @3
 {
   Context& context2 = *(Context*)&context;
@@ -560,6 +565,16 @@ Stream Logger::Log(const Context& context, ChannelPtr ch, const SID& sid) // @7
   return Stream(shared_from_this(), context2, ovr);
 }
 
+Stream Logger::Log(const Context& context, Override& ovr, const ID& id)
+{
+  return Log(context, id, ovr);
+}
+
+Stream Logger::Log(const Context& context, Override& ovr, ChannelPtr ch)
+{
+  return Log(context, ch, ovr);
+}
+
 Stream Logger::Log(const Context& context, const ID& id, Override& ovr) // @8
 {
   Context& context2 = *(Context*)&context;
@@ -577,6 +592,16 @@ Stream Logger::Log(const Context& context, ChannelPtr ch, Override& ovr) // @9
   context2.Ovr = &ovr;
 
   return Stream(shared_from_this(), context2);
+}
+
+Stream Logger::Log(const Context& context, Override& ovr, const ID& id, const SID& sid)
+{
+  return Log(context, id, sid, ovr);
+}
+
+Stream Logger::Log(const Context& context, Override& ovr, ChannelPtr ch, const SID& sid)
+{
+  return Log(context, ch, sid, ovr);
 }
 
 Stream Logger::Log(const Context& context, const ID& id, const SID& sid, Override& ovr) // @10
@@ -598,6 +623,108 @@ Stream Logger::Log(const Context& context, ChannelPtr ch, const SID& sid, Overri
   context2.Ovr = &ovr;
 
   return Stream(shared_from_this(), context2);
+}
+
+void Logger::Log(
+  const Context& context
+  , Override& ovr
+  , const ID& id
+  , const char* format
+  , ...
+)
+{
+  if (ShutdownCalled)
+    return;
+
+  Context& context2 = *(Context*)&context;
+  context2.Channel = &id;
+  context2.Ovr = &ovr;
+
+  va_list args;
+  va_start(args, format);
+
+  DoLog(context2, format, args);
+
+  va_end(args);
+}
+
+void Logger::Log(
+  const Context& context
+  , Override& ovr
+  , ChannelPtr ch
+  , const char* format
+  , ...
+)
+{
+  if (ShutdownCalled)
+    return;
+
+  if (ch && context.ErrorLevel < Level::LEVEL_ERROR && ch->IsOutputActive(context) == false)
+    return;
+
+  Context& context2 = *(Context*)&context;
+  context2.Ch = ch.get();
+  context2.Ovr = &ovr;
+
+  va_list args;
+  va_start(args, format);
+
+  DoLog(context2, format, args);
+
+  va_end(args);
+}
+
+void Logger::Log(
+  const Context& context
+  , Override& ovr
+  , const ID& id
+  , const SID& sid
+  , const char* format
+  , ...
+)
+{
+  if (ShutdownCalled)
+    return;
+
+  Context& context2 = *(Context*)&context;
+  context2.Channel = &id;
+  context2.Subsystem = sid;
+  context2.Ovr = &ovr;
+
+  va_list args;
+  va_start(args, format);
+
+  DoLog(context2, format, args);
+
+  va_end(args);
+}
+
+void Logger::Log(
+  const Context& context
+  , Override& ovr
+  , ChannelPtr ch
+  , const SID& sid
+  , const char* format
+  , ...
+)
+{
+  if (ShutdownCalled)
+    return;
+
+  if (ch && context.ErrorLevel < Level::LEVEL_ERROR && ch->IsOutputActive(context) == false)
+    return;
+
+  Context& context2 = *(Context*)&context;
+  context2.Ch = ch.get();
+  context2.Subsystem = sid;
+  context2.Ovr = &ovr;
+
+  va_list args;
+  va_start(args, format);
+
+  DoLog(context2, format, args);
+
+  va_end(args);
 }
 
 void Logger::Log(

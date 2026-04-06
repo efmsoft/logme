@@ -312,11 +312,65 @@
 #define fLogmeE_Ifg(condition, ...) \
   fLogme_Ifg(condition, Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), ## __VA_ARGS__)
 
-#define fLogmeCg(...) \
-  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), ## __VA_ARGS__)
+#define fLogmeD_Once(...) \
+  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), _LOGME_ONCE_OVR(), ## __VA_ARGS__)
 
-#define fLogmeC_Ifg(condition, ...) \
-  fLogme_Ifg(condition, Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), ## __VA_ARGS__)
+#define fLogmeI_Once(...) \
+  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), _LOGME_ONCE_OVR(), ## __VA_ARGS__)
+
+#define fLogmeW_Once(...) \
+  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), _LOGME_ONCE_OVR(), ## __VA_ARGS__)
+
+#define fLogmeE_Once(...) \
+  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), _LOGME_ONCE_OVR(), ## __VA_ARGS__)
+
+#define fLogmeC_Once(...) \
+  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), _LOGME_ONCE_OVR(), ## __VA_ARGS__)
+
+#define fLogmeDg_Once(...) \
+  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), _LOGME_ONCE_OVR(), ## __VA_ARGS__)
+
+#define fLogmeIg_Once(...) \
+  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), _LOGME_ONCE_OVR(), ## __VA_ARGS__)
+
+#define fLogmeWg_Once(...) \
+  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), _LOGME_ONCE_OVR(), ## __VA_ARGS__)
+
+#define fLogmeEg_Once(...) \
+  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), _LOGME_ONCE_OVR(), ## __VA_ARGS__)
+
+#define fLogmeCg_Once(...) \
+  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), _LOGME_ONCE_OVR(), ## __VA_ARGS__)
+
+#define fLogmeD_Every(ms, ...) \
+  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
+
+#define fLogmeI_Every(ms, ...) \
+  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
+
+#define fLogmeW_Every(ms, ...) \
+  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
+
+#define fLogmeE_Every(ms, ...) \
+  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
+
+#define fLogmeC_Every(ms, ...) \
+  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
+
+#define fLogmeDg_Every(ms, ...) \
+  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
+
+#define fLogmeIg_Every(ms, ...) \
+  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
+
+#define fLogmeWg_Every(ms, ...) \
+  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
+
+#define fLogmeEg_Every(ms, ...) \
+  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
+
+#define fLogmeCg_Every(ms, ...) \
+  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
 
 #else
 

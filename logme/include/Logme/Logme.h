@@ -36,12 +36,10 @@
       logger->Log(LOGME_CONTEXT(LOGME_JOIN(_logme_ctx_, __LINE__), level, &::CH, &::SUBSID, __VA_ARGS__) , __VA_ARGS__)
 #else
   #define Logme_If(condition, logger, level, ...) \
-    static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); \
-    if ((condition)) \
+    if (static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); (condition)) \
       logger->Log(LOGME_CONTEXT(LOGME_JOIN(_logme_ctx_, __LINE__), level, &CH, &SUBSID) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
   #define Logme_Ifg(condition, logger, level, ...) \
-    static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); \
-    if ((condition)) \
+    if (static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); (condition)) \
       logger->Log(LOGME_CONTEXT(LOGME_JOIN(_logme_ctx_, __LINE__), level, &::CH, &::SUBSID) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 #else
@@ -114,6 +112,98 @@
 
 #define LogmeC_Ifg(condition, ...) \
   Logme_Ifg(condition, Logme::Instance, Logme::Level::LEVEL_CRITICAL, ## __VA_ARGS__)
+
+#if _LOGME_ACTIVE
+  #define _LOGME_ONCE_OVR() ([]() -> Logme::Override& { static Logme::Override ovr(1); return ovr; }())
+  #define _LOGME_RATE_OVR(ms) ([]() -> Logme::Override& { static Logme::Override ovr(-1, ms); return ovr; }())
+#else
+  #define _LOGME_ONCE_OVR()
+  #define _LOGME_RATE_OVR(ms)
+#endif
+
+// Log once (per call site)
+
+#ifdef _MSC_VER
+#define LogmeD_Once(...) \
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, _LOGME_ONCE_OVR(), ## __VA_ARGS__)
+#else
+#define LogmeD_Once(...) \
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, _LOGME_ONCE_OVR() _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+#endif
+
+#ifdef _MSC_VER
+#define LogmeI_Once(...) \
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, _LOGME_ONCE_OVR(), ## __VA_ARGS__)
+#else
+#define LogmeI_Once(...) \
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, _LOGME_ONCE_OVR() _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+#endif
+
+#ifdef _MSC_VER
+#define LogmeW_Once(...) \
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, _LOGME_ONCE_OVR(), ## __VA_ARGS__)
+#else
+#define LogmeW_Once(...) \
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, _LOGME_ONCE_OVR() _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+#endif
+
+#ifdef _MSC_VER
+#define LogmeE_Once(...) \
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, _LOGME_ONCE_OVR(), ## __VA_ARGS__)
+#else
+#define LogmeE_Once(...) \
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, _LOGME_ONCE_OVR() _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+#endif
+
+#ifdef _MSC_VER
+#define LogmeC_Once(...) \
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, _LOGME_ONCE_OVR(), ## __VA_ARGS__)
+#else
+#define LogmeC_Once(...) \
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, _LOGME_ONCE_OVR() _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+#endif
+
+// Log with interval (rate-limited)
+
+#ifdef _MSC_VER
+#define LogmeD_Every(ms, ...) \
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
+#else
+#define LogmeD_Every(ms, ...) \
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, _LOGME_RATE_OVR(ms) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+#endif
+
+#ifdef _MSC_VER
+#define LogmeI_Every(ms, ...) \
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
+#else
+#define LogmeI_Every(ms, ...) \
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, _LOGME_RATE_OVR(ms) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+#endif
+
+#ifdef _MSC_VER
+#define LogmeW_Every(ms, ...) \
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
+#else
+#define LogmeW_Every(ms, ...) \
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, _LOGME_RATE_OVR(ms) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+#endif
+
+#ifdef _MSC_VER
+#define LogmeE_Every(ms, ...) \
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
+#else
+#define LogmeE_Every(ms, ...) \
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, _LOGME_RATE_OVR(ms) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+#endif
+
+#ifdef _MSC_VER
+#define LogmeC_Every(ms, ...) \
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
+#else
+#define LogmeC_Every(ms, ...) \
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, _LOGME_RATE_OVR(ms) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+#endif
 
 // std::format
 

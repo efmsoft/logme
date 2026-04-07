@@ -39,3 +39,8 @@ This allows libraries to log without explicitly receiving a channel argument, wh
 ### One-time messages
 
 `OneTimeOverrideGenerator` + `LOGME_ONCE4THIS` allows printing a message only once per object, even if the method is called many times.
+
+## Per-example README files
+
+Each example directory also contains its own `README.md`.
+These files are intended to be reused in the wiki and are synchronized by the wiki helper script.

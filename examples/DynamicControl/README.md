@@ -2,6 +2,10 @@
 
 This example shows how to enable **runtime control** of Logme and change settings from another terminal.
 
+## DynamicControl
+
+This example shows how to enable **runtime control** of Logme and change settings from another terminal.
+
 ## What it does
 
 - Starts the Logme **control server** (TCP, no SSL).

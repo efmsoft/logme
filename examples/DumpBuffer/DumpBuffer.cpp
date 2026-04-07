@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include <Logme/Logme.h>
 
 static void FillBuffer(unsigned char* buffer, size_t size)

@@ -2,41 +2,39 @@
 #include <chrono>
 #include <thread>
 
-int main()
+static void OnceGlobal(bool first)
 {
   for (int i = 0; i < 5; i++)
-  {
-    LogmeI_Once("LogmeI_Once: i=%d", i);
-  }
+    LogmeI_Once("LogmeI_Once() [%s call]: i=%d", first ? "first" : "second", i);
+}
+
+static void OnceScope(bool first)
+{
+  LOGME_CALL_SCOPE;
 
   for (int i = 0; i < 5; i++)
-  {
-    LogmeI_Once(::CH, ::SUBSID, "LogmeI_Once with CH/SUBSID: i=%d", i);
-  }
+    LogmeI(LOGME_ONCE4CALL, "LogmeI(LOGME_ONCE4CALL) [%s call]: i=%d", first ? "first" : "second", i);
+}
 
-  for (int i = 0; i < 10; i++)
+static void EveryGlobal(bool first, int i, int j)
+{
+  for (; i < j; i++)
   {
-    LogmeI_Every(300, "LogmeI_Every: i=%d", i);
+    LogmeI_Every(300, "LogmeI_Every(300ms) [%s]: i=%d", first ? "first" : "second", i);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
+}
 
-#ifndef LOGME_DISABLE_STD_FORMAT
-  for (int i = 0; i < 5; i++)
-  {
-    fLogmeI_Once("fLogmeI_Once: i={}", i);
-  }
+int main()
+{
+  OnceGlobal(true);
+  OnceGlobal(false);
 
-  for (int i = 0; i < 5; i++)
-  {
-    fLogmeI_Once(::CH, "fLogmeI_Once with CH: i={}", i);
-  }
+  OnceScope(true);
+  OnceScope(false);
 
-  for (int i = 0; i < 10; i++)
-  {
-    fLogmeI_Every(300, "fLogmeI_Every: i={}", i);
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  }
-#endif
+  EveryGlobal(true, 0, 10);
+  EveryGlobal(false, 10, 20);
 
   return 0;
 }

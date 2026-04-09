@@ -11,7 +11,7 @@ namespace Logme
   class Stream : public std::stringstream
   {
     LoggerPtr Destination;
-    const Context& OutputContext;
+    Context OutputContext;
     OverridePtr Ovr;
 
   public:

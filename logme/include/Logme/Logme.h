@@ -13,6 +13,7 @@
 #include <Logme/ThreadChannel.h>
 #include <Logme/ThreadName.h>
 #include <Logme/ThreadOverride.h>
+#include <utility>
 
 // String conversion
 
@@ -24,35 +25,135 @@
 #define _WS(str) Logme::ToStdWString(str)
 #endif
 
+namespace Logme
+{
+  namespace Detail
+  {
+    template<typename LoggerType, typename... Args>
+    inline decltype(auto) Dispatch(
+      LoggerType&& logger
+      , ContextCache& cache
+      , Level level
+      , const ID* ch
+      , const SID* sid
+      , const char* method
+      , const char* file
+      , int line
+      , Args&&... args
+    )
+    {
+      Context context(
+        cache
+        , level
+        , ch
+        , sid
+        , method
+        , file
+        , line
+        , Context::Params(args...)
+      );
+
+      return logger->Log(context, std::forward<Args>(args)...);
+    }
+
+    template<typename LoggerType, typename StdFormatType, typename... Args>
+    inline void DispatchStdFormat(
+      LoggerType&& logger
+      , ContextCache& cache
+      , Level level
+      , const ID* ch
+      , const SID* sid
+      , const char* method
+      , const char* file
+      , int line
+      , StdFormatType&& stdFormat
+      , Args&&... args
+    )
+    {
+      Context context(
+        cache
+        , level
+        , ch
+        , sid
+        , method
+        , file
+        , line
+        , Context::Params(args...)
+      );
+
+      logger->Log(context, std::forward<StdFormatType>(stdFormat), std::forward<Args>(args)...);
+    }
+  }
+}
+
 // C/C++ - style logging
 
 #if _LOGME_ACTIVE
 #ifdef _MSC_VER
   #define Logme_If(condition, logger, level, ...) \
     if (static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); (condition)) \
-      logger->Log(LOGME_CONTEXT(LOGME_JOIN(_logme_ctx_, __LINE__), level, &CH, &SUBSID, __VA_ARGS__) , __VA_ARGS__)
+      Logme::Detail::Dispatch( \
+        logger \
+        , LOGME_JOIN(_logme_ctx_, __LINE__) \
+        , level \
+        , &CH \
+        , &SUBSID \
+        , __FUNCTION__ \
+        , __FILE__ \
+        , __LINE__ \
+        , ## __VA_ARGS__ \
+      )
   #define Logme_Ifg(condition, logger, level, ...) \
     if (static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); (condition)) \
-      logger->Log(LOGME_CONTEXT(LOGME_JOIN(_logme_ctx_, __LINE__), level, &::CH, &::SUBSID, __VA_ARGS__) , __VA_ARGS__)
+      Logme::Detail::Dispatch( \
+        logger \
+        , LOGME_JOIN(_logme_ctx_, __LINE__) \
+        , level \
+        , &::CH \
+        , &::SUBSID \
+        , __FUNCTION__ \
+        , __FILE__ \
+        , __LINE__ \
+        , ## __VA_ARGS__ \
+      )
 #else
   #define Logme_If(condition, logger, level, ...) \
     if (static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); (condition)) \
-      logger->Log(LOGME_CONTEXT(LOGME_JOIN(_logme_ctx_, __LINE__), level, &CH, &SUBSID) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+      Logme::Detail::Dispatch( \
+        logger \
+        , LOGME_JOIN(_logme_ctx_, __LINE__) \
+        , level \
+        , &CH \
+        , &SUBSID \
+        , __FUNCTION__ \
+        , __FILE__ \
+        , __LINE__ \
+        __VA_OPT__(, __VA_ARGS__) \
+      )
   #define Logme_Ifg(condition, logger, level, ...) \
     if (static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); (condition)) \
-      logger->Log(LOGME_CONTEXT(LOGME_JOIN(_logme_ctx_, __LINE__), level, &::CH, &::SUBSID) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+      Logme::Detail::Dispatch( \
+        logger \
+        , LOGME_JOIN(_logme_ctx_, __LINE__) \
+        , level \
+        , &::CH \
+        , &::SUBSID \
+        , __FUNCTION__ \
+        , __FILE__ \
+        , __LINE__ \
+        __VA_OPT__(, __VA_ARGS__) \
+      )
 #endif
 #else
   #define Logme_If(condition, logger, level, ...) if (true) { } else std::stringstream()
   #define Logme_Ifg(condition, logger, level, ...) if (true) { } else std::stringstream()
 #endif
 
-
-
 #if defined(__clang__)
   #pragma clang diagnostic push
   #pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
 #endif
+
 #define LogmeD(...) \
   Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, ## __VA_ARGS__)
 
@@ -210,46 +311,52 @@
 #if _LOGME_ACTIVE
 #ifdef _MSC_VER
   #define fLogme_If(condition, logger, level, ...) \
-    do { \
-      if ((condition)) { \
+    do \
+    { \
+      if ((condition)) \
+      { \
         LOGME_PRAGMA_PUSH \
         LOGME_PRAGMA_IGNORE_VARARGS \
         static Logme::ContextCache _logme_ctx_; \
-        logger->Log(LOGME_CONTEXT(_logme_ctx_, level, &CH, &SUBSID, __VA_ARGS__) , __VA_ARGS__); \
+        Logme::Detail::DispatchStdFormat( \
+          logger \
+          , _logme_ctx_ \
+          , level \
+          , &CH \
+          , &SUBSID \
+          , __FUNCTION__ \
+          , __FILE__ \
+          , __LINE__ \
+          , ## __VA_ARGS__ \
+        ); \
         LOGME_PRAGMA_POP \
       } \
     } while (0)
   #define fLogme_Ifg(condition, logger, level, ...) \
-    do { \
-      if ((condition)) { \
+    do \
+    { \
+      if ((condition)) \
+      { \
         LOGME_PRAGMA_PUSH \
         LOGME_PRAGMA_IGNORE_VARARGS \
         static Logme::ContextCache _logme_ctx_; \
-        logger->Log(LOGME_CONTEXT(_logme_ctx_, level, &::CH, &::SUBSID, __VA_ARGS__) , __VA_ARGS__); \
+        Logme::Detail::DispatchStdFormat( \
+          logger \
+          , _logme_ctx_ \
+          , level \
+          , &::CH \
+          , &SUBSID \
+          , __FUNCTION__ \
+          , __FILE__ \
+          , __LINE__ \
+          , ## __VA_ARGS__ \
+        ); \
         LOGME_PRAGMA_POP \
       } \
     } while (0)
 #else
-  #define fLogme_If(condition, logger, level, ...) \
-    do { \
-      if ((condition)) { \
-        LOGME_PRAGMA_PUSH \
-        LOGME_PRAGMA_IGNORE_VARARGS \
-        static Logme::ContextCache _logme_ctx_; \
-        logger->Log(LOGME_CONTEXT(_logme_ctx_, level, &CH, &SUBSID) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__); \
-        LOGME_PRAGMA_POP \
-      } \
-    } while (0)
-  #define fLogme_Ifg(condition, logger, level, ...) \
-    do { \
-      if ((condition)) { \
-        LOGME_PRAGMA_PUSH \
-        LOGME_PRAGMA_IGNORE_VARARGS \
-        static Logme::ContextCache _logme_ctx_; \
-        logger->Log(LOGME_CONTEXT(_logme_ctx_, level, &::CH, &::SUBSID) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__); \
-        LOGME_PRAGMA_POP \
-      } \
-    } while (0)
+  #define fLogme_If(condition, logger, level, ...)     do {       if ((condition)) {         LOGME_PRAGMA_PUSH         LOGME_PRAGMA_IGNORE_VARARGS         static Logme::ContextCache _logme_ctx_;         Logme::Detail::DispatchStdFormat(           logger           , _logme_ctx_           , level           , &CH           , &SUBSID           , __FUNCTION__           , __FILE__           , __LINE__           __VA_OPT__(, __VA_ARGS__)         );         LOGME_PRAGMA_POP       }     } while (0)
+  #define fLogme_Ifg(condition, logger, level, ...)     do {       if ((condition)) {         LOGME_PRAGMA_PUSH         LOGME_PRAGMA_IGNORE_VARARGS         static Logme::ContextCache _logme_ctx_;         Logme::Detail::DispatchStdFormat(           logger           , _logme_ctx_           , level           , &::CH           , &::SUBSID           , __FUNCTION__           , __FILE__           , __LINE__           __VA_OPT__(, __VA_ARGS__)         );         LOGME_PRAGMA_POP       }     } while (0)
 #endif
 #else
   #define fLogme_If(condition, logger, level, ...) do { } while (0)

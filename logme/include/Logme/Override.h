@@ -73,12 +73,12 @@ namespace Logme
 #define LOGME_EVERY4THIS(ms) GetEveryOverride(__func__, __LINE__, ms)
 
 #define LOGME_CALL_SCOPE \
-  Logme::OverrideGenerator logme_must_define_macro_LOGME_CALL_SCOPE
+  Logme::OverrideGenerator please_define_macro_LOGME_CALL_SCOPE
 
 // This macro can be used to get a one-time message override unique for the current call (function invocation).
 // Requires LOGME_CALL_SCOPE to be declared in the current scope.
 #define LOGME_ONCE4CALL \
-  logme_must_define_macro_LOGME_CALL_SCOPE.GetOneTimeOverride(__func__, __LINE__)
+  please_define_macro_LOGME_CALL_SCOPE.GetOneTimeOverride(__func__, __LINE__)
 
 #define LOGME_EVERY4CALL(ms) \
-  logme_must_define_macro_LOGME_CALL_SCOPE.GetEveryOverride(__func__, __LINE__, ms)
+  please_define_macro_LOGME_CALL_SCOPE.GetEveryOverride(__func__, __LINE__, ms)

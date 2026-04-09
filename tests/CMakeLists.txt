@@ -30,6 +30,7 @@ if(GTEST)
     add_subdirectory(OutputFlags)
     add_subdirectory(ProcedurePrint)
     add_subdirectory(ReentryGuard)
+    add_subdirectory(SingleEvaluation)
   endif()
 endif()
 

@@ -25,66 +25,7 @@
 #define _WS(str) Logme::ToStdWString(str)
 #endif
 
-namespace Logme
-{
-  namespace Detail
-  {
-    template<typename LoggerType, typename... Args>
-    inline decltype(auto) Dispatch(
-      LoggerType&& logger
-      , ContextCache& cache
-      , Level level
-      , const ID* ch
-      , const SID* sid
-      , const char* method
-      , const char* file
-      , int line
-      , Args&&... args
-    )
-    {
-      Context context(
-        cache
-        , level
-        , ch
-        , sid
-        , method
-        , file
-        , line
-        , Context::Params(args...)
-      );
-
-      return logger->Log(context, std::forward<Args>(args)...);
-    }
-
-    template<typename LoggerType, typename StdFormatType, typename... Args>
-    inline void DispatchStdFormat(
-      LoggerType&& logger
-      , ContextCache& cache
-      , Level level
-      , const ID* ch
-      , const SID* sid
-      , const char* method
-      , const char* file
-      , int line
-      , StdFormatType&& stdFormat
-      , Args&&... args
-    )
-    {
-      Context context(
-        cache
-        , level
-        , ch
-        , sid
-        , method
-        , file
-        , line
-        , Context::Params(args...)
-      );
-
-      logger->Log(context, std::forward<StdFormatType>(stdFormat), std::forward<Args>(args)...);
-    }
-  }
-}
+#include <Logme/Detail/Dispatch.h>
 
 // C/C++ - style logging
 

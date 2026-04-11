@@ -56,7 +56,7 @@ namespace Logme
   #define LOGME_FIRST_OR_EMPTY(...) \
     LOGME_FIRST_OR_EMPTY_MSVC(_, ## __VA_ARGS__, Logme::Detail::PrecheckEmptyArg{})
 
-#elif defined(_MSC_VER)
+#elif defined(_MSC_VER) && !(defined(__CLION_IDE__) || defined(__JETBRAINS_IDE__))
 
   // current working MSVC build implementation
   #define LOGME_EXPAND(x) x

@@ -31,6 +31,7 @@ if(GTEST)
     add_subdirectory(ProcedurePrint)
     add_subdirectory(ReentryGuard)
     add_subdirectory(SingleEvaluation)
+    add_subdirectory(Precheck)
   endif()
 endif()
 

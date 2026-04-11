@@ -26,6 +26,7 @@
 #endif
 
 #include <Logme/Detail/Dispatch.h>
+#include <Logme/Detail/Precheck.h>
 
 // C/C++ - style logging
 
@@ -96,31 +97,31 @@
 #endif
 
 #define LogmeD(...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, ## __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition() && LOGME_WOULD_LOG_FIRST(Logme::Instance.get(), Logme::Level::LEVEL_DEBUG, ## __VA_ARGS__), Logme::Instance, Logme::Level::LEVEL_DEBUG, ## __VA_ARGS__)
 
 #define LogmeD_If(condition, ...) \
   Logme_If(condition, Logme::Instance, Logme::Level::LEVEL_DEBUG, ## __VA_ARGS__)
 
 #define LogmeI(...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, ## __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition() && LOGME_WOULD_LOG_FIRST(Logme::Instance.get(), Logme::Level::LEVEL_INFO, ## __VA_ARGS__), Logme::Instance, Logme::Level::LEVEL_INFO, ## __VA_ARGS__)
 
 #define LogmeI_If(condition, ...) \
   Logme_If(condition, Logme::Instance, Logme::Level::LEVEL_INFO, ## __VA_ARGS__)
 
 #define LogmeW(...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, ## __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition() && LOGME_WOULD_LOG_FIRST(Logme::Instance.get(), Logme::Level::LEVEL_WARN, ## __VA_ARGS__), Logme::Instance, Logme::Level::LEVEL_WARN, ## __VA_ARGS__)
 
 #define LogmeW_If(condition, ...) \
   Logme_If(condition, Logme::Instance, Logme::Level::LEVEL_WARN, ## __VA_ARGS__)
 
 #define LogmeE(...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, ## __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition() && LOGME_WOULD_LOG_FIRST(Logme::Instance.get(), Logme::Level::LEVEL_ERROR, ## __VA_ARGS__), Logme::Instance, Logme::Level::LEVEL_ERROR, ## __VA_ARGS__)
 
 #define LogmeE_If(condition, ...) \
   Logme_If(condition, Logme::Instance, Logme::Level::LEVEL_ERROR, ## __VA_ARGS__)
 
 #define LogmeC(...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, ## __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition() && LOGME_WOULD_LOG_FIRST(Logme::Instance.get(), Logme::Level::LEVEL_CRITICAL, ## __VA_ARGS__), Logme::Instance, Logme::Level::LEVEL_CRITICAL, ## __VA_ARGS__)
 
 #define LogmeC_If(condition, ...) \
   Logme_If(condition, Logme::Instance, Logme::Level::LEVEL_CRITICAL, ## __VA_ARGS__)
@@ -154,6 +155,88 @@
 
 #define LogmeC_Ifg(condition, ...) \
   Logme_Ifg(condition, Logme::Instance, Logme::Level::LEVEL_CRITICAL, ## __VA_ARGS__)
+
+
+#define LogmeD_Do0(ch, ...) \
+  do \
+  { \
+    auto&& _logme_ch_ = (ch); \
+    if (Logme::Instance->Condition()) \
+    { \
+      auto _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); \
+      if (Logme::Detail::WouldLog(Logme::Instance.get(), Logme::Level::LEVEL_DEBUG, _logme_resolved_ch_)) \
+      { \
+        static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); \
+        Logme::Detail::Dispatch(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_DEBUG, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, _logme_ch_, ## __VA_ARGS__); \
+      } \
+    } \
+  } while (0)
+#define LogmeI_Do0(ch, ...) \
+  do \
+  { \
+    auto&& _logme_ch_ = (ch); \
+    if (Logme::Instance->Condition()) \
+    { \
+      auto _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); \
+      if (Logme::Detail::WouldLog(Logme::Instance.get(), Logme::Level::LEVEL_INFO, _logme_resolved_ch_)) \
+      { \
+        static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); \
+        Logme::Detail::Dispatch(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_INFO, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, _logme_ch_, ## __VA_ARGS__); \
+      } \
+    } \
+  } while (0)
+#define LogmeW_Do0(ch, ...) \
+  do \
+  { \
+    auto&& _logme_ch_ = (ch); \
+    if (Logme::Instance->Condition()) \
+    { \
+      auto _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); \
+      if (Logme::Detail::WouldLog(Logme::Instance.get(), Logme::Level::LEVEL_WARN, _logme_resolved_ch_)) \
+      { \
+        static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); \
+        Logme::Detail::Dispatch(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_WARN, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, _logme_ch_, ## __VA_ARGS__); \
+      } \
+    } \
+  } while (0)
+#define LogmeE_Do0(ch, ...) \
+  do \
+  { \
+    auto&& _logme_ch_ = (ch); \
+    if (Logme::Instance->Condition()) \
+    { \
+      auto _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); \
+      if (Logme::Detail::WouldLog(Logme::Instance.get(), Logme::Level::LEVEL_ERROR, _logme_resolved_ch_)) \
+      { \
+        static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); \
+        Logme::Detail::Dispatch(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_ERROR, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, _logme_ch_, ## __VA_ARGS__); \
+      } \
+    } \
+  } while (0)
+#define LogmeC_Do0(ch, ...) \
+  do \
+  { \
+    auto&& _logme_ch_ = (ch); \
+    if (Logme::Instance->Condition()) \
+    { \
+      auto _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); \
+      if (Logme::Detail::WouldLog(Logme::Instance.get(), Logme::Level::LEVEL_CRITICAL, _logme_resolved_ch_)) \
+      { \
+        static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); \
+        Logme::Detail::Dispatch(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_CRITICAL, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, _logme_ch_, ## __VA_ARGS__); \
+      } \
+    } \
+  } while (0)
+#define LogmeD_Do(ch, code, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { auto _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (Logme::Detail::WouldLog(Logme::Instance.get(), Logme::Level::LEVEL_DEBUG, _logme_resolved_ch_)) { code; static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::Dispatch(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_DEBUG, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, _logme_ch_, ## __VA_ARGS__); } } } while (0)
+#define LogmeI_Do(ch, code, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { auto _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (Logme::Detail::WouldLog(Logme::Instance.get(), Logme::Level::LEVEL_INFO, _logme_resolved_ch_)) { code; static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::Dispatch(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_INFO, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, _logme_ch_, ## __VA_ARGS__); } } } while (0)
+#define LogmeW_Do(ch, code, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { auto _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (Logme::Detail::WouldLog(Logme::Instance.get(), Logme::Level::LEVEL_WARN, _logme_resolved_ch_)) { code; static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::Dispatch(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_WARN, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, _logme_ch_, ## __VA_ARGS__); } } } while (0)
+#define LogmeE_Do(ch, code, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { auto _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (Logme::Detail::WouldLog(Logme::Instance.get(), Logme::Level::LEVEL_ERROR, _logme_resolved_ch_)) { code; static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::Dispatch(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_ERROR, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, _logme_ch_, ## __VA_ARGS__); } } } while (0)
+#define LogmeC_Do(ch, code, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { auto _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (Logme::Detail::WouldLog(Logme::Instance.get(), Logme::Level::LEVEL_CRITICAL, _logme_resolved_ch_)) { code; static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::Dispatch(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_CRITICAL, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, _logme_ch_, ## __VA_ARGS__); } } } while (0)
+#define LogmeD_Do1(ch, code, ...) LogmeD_Do(ch, code, ## __VA_ARGS__)
+#define LogmeI_Do1(ch, code, ...) LogmeI_Do(ch, code, ## __VA_ARGS__)
+#define LogmeW_Do1(ch, code, ...) LogmeW_Do(ch, code, ## __VA_ARGS__)
+#define LogmeE_Do1(ch, code, ...) LogmeE_Do(ch, code, ## __VA_ARGS__)
+#define LogmeC_Do1(ch, code, ...) LogmeC_Do(ch, code, ## __VA_ARGS__)
 
 #if _LOGME_ACTIVE
   #define _LOGME_ONCE_OVR() ([]() -> Logme::Override& { static Logme::Override ovr(1); return ovr; }())
@@ -307,31 +390,31 @@
 #ifndef LOGME_DISABLE_STD_FORMAT
 
 #define fLogmeD(...) \
-  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), ## __VA_ARGS__)
+  fLogme_If(Logme::Instance->Condition() && LOGME_WOULD_LOG_FIRST(Logme::Instance.get(), Logme::Level::LEVEL_DEBUG, ## __VA_ARGS__), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 #define fLogmeD_If(condition, ...) \
   fLogme_If(condition, Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 #define fLogmeI(...) \
-  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), ## __VA_ARGS__)
+  fLogme_If(Logme::Instance->Condition() && LOGME_WOULD_LOG_FIRST(Logme::Instance.get(), Logme::Level::LEVEL_INFO, ## __VA_ARGS__), Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 #define fLogmeI_If(condition, ...) \
   fLogme_If(condition, Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 #define fLogmeW(...) \
-  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), ## __VA_ARGS__)
+  fLogme_If(Logme::Instance->Condition() && LOGME_WOULD_LOG_FIRST(Logme::Instance.get(), Logme::Level::LEVEL_WARN, ## __VA_ARGS__), Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 #define fLogmeW_If(condition, ...) \
   fLogme_If(condition, Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 #define fLogmeE(...) \
-  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), ## __VA_ARGS__)
+  fLogme_If(Logme::Instance->Condition() && LOGME_WOULD_LOG_FIRST(Logme::Instance.get(), Logme::Level::LEVEL_ERROR, ## __VA_ARGS__), Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 #define fLogmeE_If(condition, ...) \
   fLogme_If(condition, Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 #define fLogmeC(...) \
-  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), ## __VA_ARGS__)
+  fLogme_If(Logme::Instance->Condition() && LOGME_WOULD_LOG_FIRST(Logme::Instance.get(), Logme::Level::LEVEL_CRITICAL, ## __VA_ARGS__), Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 #define fLogmeC_If(condition, ...) \
   fLogme_If(condition, Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), ## __VA_ARGS__)
@@ -419,6 +502,23 @@
 
 #define fLogmeCg_Every(ms, ...) \
   fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
+
+
+#define fLogmeD_Do0(ch, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { auto _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (Logme::Detail::WouldLog(Logme::Instance.get(), Logme::Level::LEVEL_DEBUG, _logme_resolved_ch_)) { LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_DEBUG, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)
+#define fLogmeI_Do0(ch, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { auto _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (Logme::Detail::WouldLog(Logme::Instance.get(), Logme::Level::LEVEL_INFO, _logme_resolved_ch_)) { LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_INFO, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)
+#define fLogmeW_Do0(ch, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { auto _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (Logme::Detail::WouldLog(Logme::Instance.get(), Logme::Level::LEVEL_WARN, _logme_resolved_ch_)) { LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_WARN, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)
+#define fLogmeE_Do0(ch, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { auto _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (Logme::Detail::WouldLog(Logme::Instance.get(), Logme::Level::LEVEL_ERROR, _logme_resolved_ch_)) { LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_ERROR, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)
+#define fLogmeC_Do0(ch, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { auto _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (Logme::Detail::WouldLog(Logme::Instance.get(), Logme::Level::LEVEL_CRITICAL, _logme_resolved_ch_)) { LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_CRITICAL, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)
+#define fLogmeD_Do(ch, code, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { auto _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (Logme::Detail::WouldLog(Logme::Instance.get(), Logme::Level::LEVEL_DEBUG, _logme_resolved_ch_)) { code; LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_DEBUG, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)
+#define fLogmeI_Do(ch, code, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { auto _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (Logme::Detail::WouldLog(Logme::Instance.get(), Logme::Level::LEVEL_INFO, _logme_resolved_ch_)) { code; LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_INFO, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)
+#define fLogmeW_Do(ch, code, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { auto _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (Logme::Detail::WouldLog(Logme::Instance.get(), Logme::Level::LEVEL_WARN, _logme_resolved_ch_)) { code; LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_WARN, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)
+#define fLogmeE_Do(ch, code, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { auto _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (Logme::Detail::WouldLog(Logme::Instance.get(), Logme::Level::LEVEL_ERROR, _logme_resolved_ch_)) { code; LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_ERROR, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)
+#define fLogmeC_Do(ch, code, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { auto _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (Logme::Detail::WouldLog(Logme::Instance.get(), Logme::Level::LEVEL_CRITICAL, _logme_resolved_ch_)) { code; LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_CRITICAL, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)
+#define fLogmeD_Do1(ch, code, ...) fLogmeD_Do(ch, code, ## __VA_ARGS__)
+#define fLogmeI_Do1(ch, code, ...) fLogmeI_Do(ch, code, ## __VA_ARGS__)
+#define fLogmeW_Do1(ch, code, ...) fLogmeW_Do(ch, code, ## __VA_ARGS__)
+#define fLogmeE_Do1(ch, code, ...) fLogmeE_Do(ch, code, ## __VA_ARGS__)
+#define fLogmeC_Do1(ch, code, ...) fLogmeC_Do(ch, code, ## __VA_ARGS__)
 
 #else
 

@@ -368,6 +368,11 @@ bool Channel::GetEnabled() const
   return Enabled.load(std::memory_order_relaxed);
 }
 
+bool Channel::GetActive() const
+{
+  return Active.load(std::memory_order_relaxed);
+}
+
 uint64_t Channel::GetAccessCount() const
 {
   return AccessCount.load(std::memory_order_relaxed);

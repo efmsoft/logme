@@ -99,6 +99,8 @@ namespace Logme
     LOGMELNK Level GetFilterLevel() const;
     LOGMELNK void SetFilterLevel(Level level);
 
+    LOGMELNK bool GetActive() const;
+
     LOGMELNK void AddBackend(BackendPtr backend);
     LOGMELNK bool RemoveBackend(BackendPtr backend);
     LOGMELNK void RemoveBackends();

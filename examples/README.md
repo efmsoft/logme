@@ -31,6 +31,13 @@ ch->AddLink(::CH);
 You can pass either a `Logme::ID` or a `ChannelPtr` to the logging macros.
 Using `ChannelPtr` avoids name lookup and can reduce contention in multi-threaded code (especially when different threads write to different channels).
 
+
+### Precheck helpers
+
+Passing `ChannelPtr` as the first argument to `LogmeI/LogmeW/LogmeE/LogmeD` allows an early channel-state check before the remaining arguments are evaluated.
+
+The `LogmeX_Do(...)` and `fLogmeX_Do(...)` helpers go one step further: they can delay custom preparation code until Logme already knows that the record will be emitted.
+
 ### Thread context helpers
 
 `LogmeThreadChannel` (and the analogous helper for overrides) can set the default channel/override for the current thread.

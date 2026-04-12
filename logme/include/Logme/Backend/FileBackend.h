@@ -51,6 +51,9 @@ namespace Logme
     std::uint64_t WorkerTimedRuns = 0;
     std::uint64_t WorkerShutdownRuns = 0;
     std::uint64_t WriteReadyCalls = 0;
+    std::uint64_t WriteBatches = 0;
+    std::uint64_t WriteBatchBytes = 0;
+    std::uint64_t WriteBatchMaxBytes = 0;
     std::uint64_t WrittenBuffers = 0;
     std::uint64_t WrittenBytes = 0;
     std::uint64_t WriteErrors = 0;

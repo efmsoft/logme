@@ -109,6 +109,9 @@ FileManager::~FileManager()
       "WorkerTimedRuns=%llu "
       "WorkerShutdownRuns=%llu "
       "WriteReadyCalls=%llu "
+      "WriteBatches=%llu "
+      "WriteBatchBytes=%llu "
+      "WriteBatchMaxBytes=%llu "
       "WrittenBuffers=%llu "
       "WrittenBytes=%llu "
       "WriteErrors=%llu "
@@ -147,6 +150,9 @@ FileManager::~FileManager()
       , (unsigned long long)bc.WorkerTimedRuns
       , (unsigned long long)bc.WorkerShutdownRuns
       , (unsigned long long)bc.WriteReadyCalls
+      , (unsigned long long)bc.WriteBatches
+      , (unsigned long long)bc.WriteBatchBytes
+      , (unsigned long long)bc.WriteBatchMaxBytes
       , (unsigned long long)bc.WrittenBuffers
       , (unsigned long long)bc.WrittenBytes
       , (unsigned long long)bc.WriteErrors

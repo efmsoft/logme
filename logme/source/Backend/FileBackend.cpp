@@ -59,6 +59,9 @@ namespace
   std::atomic<std::uint64_t> GlobalWorkerTimedRuns(0);
   std::atomic<std::uint64_t> GlobalWorkerShutdownRuns(0);
   std::atomic<std::uint64_t> GlobalWriteReadyCalls(0);
+  std::atomic<std::uint64_t> GlobalWriteBatches(0);
+  std::atomic<std::uint64_t> GlobalWriteBatchBytes(0);
+  std::atomic<std::uint64_t> GlobalWriteBatchMaxBytes(0);
   std::atomic<std::uint64_t> GlobalWrittenBuffers(0);
   std::atomic<std::uint64_t> GlobalWrittenBytes(0);
   std::atomic<std::uint64_t> GlobalWriteErrors(0);
@@ -137,6 +140,9 @@ FileBackendCounters FileBackend::GetCounters()
   out.WorkerTimedRuns = GlobalWorkerTimedRuns.load(std::memory_order_relaxed);
   out.WorkerShutdownRuns = GlobalWorkerShutdownRuns.load(std::memory_order_relaxed);
   out.WriteReadyCalls = GlobalWriteReadyCalls.load(std::memory_order_relaxed);
+  out.WriteBatches = GlobalWriteBatches.load(std::memory_order_relaxed);
+  out.WriteBatchBytes = GlobalWriteBatchBytes.load(std::memory_order_relaxed);
+  out.WriteBatchMaxBytes = GlobalWriteBatchMaxBytes.load(std::memory_order_relaxed);
   out.WrittenBuffers = GlobalWrittenBuffers.load(std::memory_order_relaxed);
   out.WrittenBytes = GlobalWrittenBytes.load(std::memory_order_relaxed);
   out.WriteErrors = GlobalWriteErrors.load(std::memory_order_relaxed);
@@ -459,11 +465,19 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
   FILE_CNT(GlobalInputBytes.fetch_add(add, std::memory_order_relaxed));
 
   size_t queued = QueuedBytes.fetch_add(add, std::memory_order_relaxed) + add;
+  uint64_t flushTime = FlushTime.load(std::memory_order_relaxed);
 
   if (queued >= QueueSizeLimit)
-    RequestFlush();
+  {
+    if (flushTime != RIGHT_NOW)
+      RequestFlush();
+  }
   else if (firstData)
-    RequestFlush(now + FLUSH_AFTER);
+  {
+    uint64_t when = now + FLUSH_AFTER;
+    if (flushTime == 0 || (flushTime != RIGHT_NOW && flushTime > when))
+      RequestFlush(when);
+  }
 }
 
 void FileBackend::RequestFlush(uint64_t when)
@@ -539,6 +553,20 @@ bool FileBackend::WriteReadyData()
   size_t bytes = 0;
   for (auto& b : data)
     bytes += b ? b->Size() : 0;
+
+  FILE_CNT(GlobalWriteBatches.fetch_add(1, std::memory_order_relaxed));
+  FILE_CNT(GlobalWriteBatchBytes.fetch_add(bytes, std::memory_order_relaxed));
+  {
+    std::uint64_t oldMax = GlobalWriteBatchMaxBytes.load(std::memory_order_relaxed);
+    while (oldMax < bytes && !GlobalWriteBatchMaxBytes.compare_exchange_weak(
+      oldMax
+      , bytes
+      , std::memory_order_relaxed
+      , std::memory_order_relaxed
+    ))
+    {
+    }
+  }
 
   bool ok = true;
   {

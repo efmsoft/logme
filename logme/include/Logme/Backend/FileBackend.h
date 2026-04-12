@@ -30,6 +30,29 @@ namespace Logme
     LOGMELNK bool Parse(const Json::Value* po) override;
   };
 
+  struct FileBackendCounters
+  {
+    std::uint64_t DisplayCalls = 0;
+    std::uint64_t AppendCalls = 0;
+    std::uint64_t InputBytes = 0;
+    std::uint64_t OutputBytes = 0;
+    std::uint64_t FlushRequests = 0;
+    std::uint64_t ImmediateFlushRequests = 0;
+    std::uint64_t ScheduledFlushRequests = 0;
+    std::uint64_t FlushWaitCalls = 0;
+    std::uint64_t WorkerRuns = 0;
+    std::uint64_t WriteReadyCalls = 0;
+    std::uint64_t WrittenBuffers = 0;
+    std::uint64_t WrittenBytes = 0;
+    std::uint64_t WriteErrors = 0;
+    std::uint64_t CreateLogCalls = 0;
+    std::uint64_t CreateLogFailures = 0;
+    std::uint64_t ChangePartCalls = 0;
+    std::uint64_t ChangePartFailures = 0;
+    std::uint64_t ShutdownCalls = 0;
+    BufferCounters Queue;
+  };
+
   class FileBackend 
     : public Backend
     , public FileIo
@@ -78,7 +101,7 @@ namespace Logme
       STAT_OUTPUT_PERIOD = 10 * 60 * 1000,  // 10 min
 
       RIGHT_NOW = 1,                        // Force flush right now
-      FLUSH_AFTER = 100,
+      FLUSH_AFTER = 1200,
     };
 
     constexpr static const char* TYPE_ID = "FileBackend";
@@ -114,6 +137,7 @@ namespace Logme
     LOGMELNK uint64_t GetFlushTime() const;
     LOGMELNK bool HasEvents() const;
     LOGMELNK void AppendString(const char* text, size_t len);
+    LOGMELNK static FileBackendCounters GetCounters();
   
   protected:
     LOGMELNK void Display(Context& context, const char* line) override;

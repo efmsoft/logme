@@ -3,15 +3,17 @@
 #include <cstddef>
 #include <cstdint>
 
-#ifndef BFW_ENABLE_COUNTERS
-#define BFW_ENABLE_COUNTERS 0
+#ifndef FILE_ENABLE_COUNTERS
+#define FILE_ENABLE_COUNTERS 1
 #endif
 
-#if BFW_ENABLE_COUNTERS
-#define BFW_CNT(x) x
+#if FILE_ENABLE_COUNTERS
+#define FILE_CNT(x) x
 #else
-#define BFW_CNT(x) ((void)0)
+#define FILE_CNT(x) ((void)0)
 #endif
+
+#define BFW_CNT(x) FILE_CNT(x)
 
 namespace Logme
 {

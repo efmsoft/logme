@@ -3,6 +3,21 @@
 
 using namespace Logme;
 
+namespace
+{
+  std::atomic<std::uint64_t> GlobalAppends(0);
+  std::atomic<std::uint64_t> GlobalAppendBytes(0);
+  std::atomic<std::uint64_t> GlobalEnqueuedBuffers(0);
+  std::atomic<std::uint64_t> GlobalWrittenBuffers(0);
+  std::atomic<std::uint64_t> GlobalWrittenBytes(0);
+  std::atomic<std::uint64_t> GlobalAllocatedBuffers(0);
+  std::atomic<std::uint64_t> GlobalDeletedBuffers(0);
+  std::atomic<std::uint64_t> GlobalDroppedAppends(0);
+  std::atomic<std::uint64_t> GlobalDroppedBytes(0);
+  std::atomic<std::uint64_t> GlobalWriteErrors(0);
+  std::atomic<std::uint64_t> GlobalSignalsSent(0);
+}
+
 BufferQueue::BufferQueue(Channel* owner, const Options& options)
   : Owner(owner)
   , OptionsValue(options)
@@ -275,6 +290,23 @@ BufferCounters BufferQueue::GetCounters() const
   return out;
 }
 
+BufferCounters BufferQueue::GetGlobalCounters()
+{
+  BufferCounters out;
+  out.Appends = GlobalAppends.load(std::memory_order_relaxed);
+  out.AppendBytes = GlobalAppendBytes.load(std::memory_order_relaxed);
+  out.EnqueuedBuffers = GlobalEnqueuedBuffers.load(std::memory_order_relaxed);
+  out.WrittenBuffers = GlobalWrittenBuffers.load(std::memory_order_relaxed);
+  out.WrittenBytes = GlobalWrittenBytes.load(std::memory_order_relaxed);
+  out.AllocatedBuffers = GlobalAllocatedBuffers.load(std::memory_order_relaxed);
+  out.DeletedBuffers = GlobalDeletedBuffers.load(std::memory_order_relaxed);
+  out.DroppedAppends = GlobalDroppedAppends.load(std::memory_order_relaxed);
+  out.DroppedBytes = GlobalDroppedBytes.load(std::memory_order_relaxed);
+  out.WriteErrors = GlobalWriteErrors.load(std::memory_order_relaxed);
+  out.SignalsSent = GlobalSignalsSent.load(std::memory_order_relaxed);
+  return out;
+}
+
 DataBufferPtr BufferQueue::TryTakeFreeBuffer()
 {
   std::lock_guard guard(FreeLock);
@@ -400,27 +432,34 @@ void BufferQueue::CountAppended(std::size_t cb)
 {
   BFW_CNT(Appends.fetch_add(1, std::memory_order_relaxed));
   BFW_CNT(AppendBytes.fetch_add(cb, std::memory_order_relaxed));
+  FILE_CNT(GlobalAppends.fetch_add(1, std::memory_order_relaxed));
+  FILE_CNT(GlobalAppendBytes.fetch_add(cb, std::memory_order_relaxed));
 }
 
 void BufferQueue::CountDropped(std::size_t cb)
 {
   BFW_CNT(DroppedAppends.fetch_add(1, std::memory_order_relaxed));
   BFW_CNT(DroppedBytes.fetch_add(cb, std::memory_order_relaxed));
+  FILE_CNT(GlobalDroppedAppends.fetch_add(1, std::memory_order_relaxed));
+  FILE_CNT(GlobalDroppedBytes.fetch_add(cb, std::memory_order_relaxed));
 }
 
 void BufferQueue::CountAllocated()
 {
   BFW_CNT(AllocatedBuffers.fetch_add(1, std::memory_order_relaxed));
+  FILE_CNT(GlobalAllocatedBuffers.fetch_add(1, std::memory_order_relaxed));
 }
 
 void BufferQueue::CountDeleted()
 {
   BFW_CNT(DeletedBuffers.fetch_add(1, std::memory_order_relaxed));
+  FILE_CNT(GlobalDeletedBuffers.fetch_add(1, std::memory_order_relaxed));
 }
 
 void BufferQueue::CountEnqueued()
 {
   BFW_CNT(EnqueuedBuffers.fetch_add(1, std::memory_order_relaxed));
+  FILE_CNT(GlobalEnqueuedBuffers.fetch_add(1, std::memory_order_relaxed));
 }
 
 void BufferQueue::CountWritten(std::size_t buffers, std::size_t bytes, bool ok)
@@ -429,13 +468,17 @@ void BufferQueue::CountWritten(std::size_t buffers, std::size_t bytes, bool ok)
   {
     BFW_CNT(WrittenBuffers.fetch_add(buffers, std::memory_order_relaxed));
     BFW_CNT(WrittenBytes.fetch_add(bytes, std::memory_order_relaxed));
+    FILE_CNT(GlobalWrittenBuffers.fetch_add(buffers, std::memory_order_relaxed));
+    FILE_CNT(GlobalWrittenBytes.fetch_add(bytes, std::memory_order_relaxed));
     return;
   }
 
   BFW_CNT(WriteErrors.fetch_add(1, std::memory_order_relaxed));
+  FILE_CNT(GlobalWriteErrors.fetch_add(1, std::memory_order_relaxed));
 }
 
 void BufferQueue::CountSignal()
 {
   BFW_CNT(SignalsSent.fetch_add(1, std::memory_order_relaxed));
+  FILE_CNT(GlobalSignalsSent.fetch_add(1, std::memory_order_relaxed));
 }

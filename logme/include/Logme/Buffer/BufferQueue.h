@@ -86,6 +86,7 @@ namespace Logme
     bool HasCurrentData() const;
 
     BufferCounters GetCounters() const;
+    static BufferCounters GetGlobalCounters();
 
   private:
     DataBufferPtr TryTakeFreeBuffer();

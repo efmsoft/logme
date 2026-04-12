@@ -38,6 +38,28 @@ using namespace std::chrono_literals;
 
 using namespace Logme;
 
+namespace
+{
+  std::atomic<std::uint64_t> GlobalDisplayCalls(0);
+  std::atomic<std::uint64_t> GlobalAppendCalls(0);
+  std::atomic<std::uint64_t> GlobalInputBytes(0);
+  std::atomic<std::uint64_t> GlobalOutputBytes(0);
+  std::atomic<std::uint64_t> GlobalFlushRequests(0);
+  std::atomic<std::uint64_t> GlobalImmediateFlushRequests(0);
+  std::atomic<std::uint64_t> GlobalScheduledFlushRequests(0);
+  std::atomic<std::uint64_t> GlobalFlushWaitCalls(0);
+  std::atomic<std::uint64_t> GlobalWorkerRuns(0);
+  std::atomic<std::uint64_t> GlobalWriteReadyCalls(0);
+  std::atomic<std::uint64_t> GlobalWrittenBuffers(0);
+  std::atomic<std::uint64_t> GlobalWrittenBytes(0);
+  std::atomic<std::uint64_t> GlobalWriteErrors(0);
+  std::atomic<std::uint64_t> GlobalCreateLogCalls(0);
+  std::atomic<std::uint64_t> GlobalCreateLogFailures(0);
+  std::atomic<std::uint64_t> GlobalChangePartCalls(0);
+  std::atomic<std::uint64_t> GlobalChangePartFailures(0);
+  std::atomic<std::uint64_t> GlobalShutdownCalls(0);
+}
+
 size_t FileBackend::MaxSizeDefault = FileBackend::MAX_SIZE_DEFAULT;
 size_t FileBackend::QueueSizeLimitDefault = FileBackend::QUEUE_SIZE_LIMIT;
 
@@ -84,6 +106,31 @@ size_t FileBackend::GetQueueSizeLimitDefault()
   return QueueSizeLimitDefault;
 }
 
+FileBackendCounters FileBackend::GetCounters()
+{
+  FileBackendCounters out;
+  out.DisplayCalls = GlobalDisplayCalls.load(std::memory_order_relaxed);
+  out.AppendCalls = GlobalAppendCalls.load(std::memory_order_relaxed);
+  out.InputBytes = GlobalInputBytes.load(std::memory_order_relaxed);
+  out.OutputBytes = GlobalOutputBytes.load(std::memory_order_relaxed);
+  out.FlushRequests = GlobalFlushRequests.load(std::memory_order_relaxed);
+  out.ImmediateFlushRequests = GlobalImmediateFlushRequests.load(std::memory_order_relaxed);
+  out.ScheduledFlushRequests = GlobalScheduledFlushRequests.load(std::memory_order_relaxed);
+  out.FlushWaitCalls = GlobalFlushWaitCalls.load(std::memory_order_relaxed);
+  out.WorkerRuns = GlobalWorkerRuns.load(std::memory_order_relaxed);
+  out.WriteReadyCalls = GlobalWriteReadyCalls.load(std::memory_order_relaxed);
+  out.WrittenBuffers = GlobalWrittenBuffers.load(std::memory_order_relaxed);
+  out.WrittenBytes = GlobalWrittenBytes.load(std::memory_order_relaxed);
+  out.WriteErrors = GlobalWriteErrors.load(std::memory_order_relaxed);
+  out.CreateLogCalls = GlobalCreateLogCalls.load(std::memory_order_relaxed);
+  out.CreateLogFailures = GlobalCreateLogFailures.load(std::memory_order_relaxed);
+  out.ChangePartCalls = GlobalChangePartCalls.load(std::memory_order_relaxed);
+  out.ChangePartFailures = GlobalChangePartFailures.load(std::memory_order_relaxed);
+  out.ShutdownCalls = GlobalShutdownCalls.load(std::memory_order_relaxed);
+  out.Queue = BufferQueue::GetGlobalCounters();
+  return out;
+}
+
 void FileBackend::SetQueueSizeLimitDefault(size_t size)
 {
   if (size < 4ULL * 1024)
@@ -108,6 +155,7 @@ BackendConfigPtr FileBackend::CreateConfig()
 
 void FileBackend::Flush()
 {
+  FILE_CNT(GlobalFlushWaitCalls.fetch_add(1, std::memory_order_relaxed));
   RequestFlush();
 
   std::unique_lock locker(BufferLock);
@@ -184,6 +232,7 @@ void FileBackend::SetAppend(bool append)
 
 bool FileBackend::CreateLog(const char* v)
 {
+  FILE_CNT(GlobalCreateLogCalls.fetch_add(1, std::memory_order_relaxed));
   NameTemplate = v;
 
   ProcessTemplateParam param;
@@ -204,11 +253,17 @@ bool FileBackend::CreateLog(const char* v)
     std::filesystem::create_directories(dir, ec);
 
     if (ec)
+    {
+      FILE_CNT(GlobalCreateLogFailures.fetch_add(1, std::memory_order_relaxed));
       return false;
+    }
   }
 
   if (!Open(Append))
+  {
+    FILE_CNT(GlobalCreateLogFailures.fetch_add(1, std::memory_order_relaxed));
     return false;
+  }
 
   if (!Append)
   {
@@ -218,7 +273,10 @@ bool FileBackend::CreateLog(const char* v)
 
   auto rc = Seek(0, SEEK_END);
   if (rc < 0)
+  {
+    FILE_CNT(GlobalCreateLogFailures.fetch_add(1, std::memory_order_relaxed));
     return false;
+  }
 
   CurrentSize = (size_t)rc;
   return true;
@@ -247,9 +305,11 @@ size_t FileBackend::GetSize()
 
 bool FileBackend::ChangePart()
 {
+  FILE_CNT(GlobalChangePartCalls.fetch_add(1, std::memory_order_relaxed));
   if (!CreateLog(NameTemplate.c_str()))
   {
     LogmeE(CHINT, "failed to create a new log");
+    FILE_CNT(GlobalChangePartFailures.fetch_add(1, std::memory_order_relaxed));
     return false;
   }
 
@@ -264,6 +324,7 @@ bool FileBackend::ChangePart()
 
 void FileBackend::Display(Context& context, const char* line)
 {
+  FILE_CNT(GlobalDisplayCalls.fetch_add(1, std::memory_order_relaxed));
   if (File == -1 || ShutdownFlag.load(std::memory_order_relaxed))
     return;
 
@@ -373,6 +434,9 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
   if (Queue.Append(text, add, needSignal, firstData) == false)
     return;
 
+  FILE_CNT(GlobalAppendCalls.fetch_add(1, std::memory_order_relaxed));
+  FILE_CNT(GlobalInputBytes.fetch_add(add, std::memory_order_relaxed));
+
   size_t queued = QueuedBytes.fetch_add(add, std::memory_order_relaxed) + add;
 
   if (queued >= QueueSizeLimit)
@@ -385,6 +449,11 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
 
 void FileBackend::RequestFlush(uint64_t when)
 {
+  FILE_CNT(GlobalFlushRequests.fetch_add(1, std::memory_order_relaxed));
+  if (when == RIGHT_NOW)
+    FILE_CNT(GlobalImmediateFlushRequests.fetch_add(1, std::memory_order_relaxed));
+  else
+    FILE_CNT(GlobalScheduledFlushRequests.fetch_add(1, std::memory_order_relaxed));
   uint64_t old = FlushTime.load(std::memory_order_relaxed);
 
   for (;;)
@@ -420,6 +489,7 @@ FileManagerFactory& FileBackend::GetFactory() const
 
 bool FileBackend::WriteReadyData()
 {
+  FILE_CNT(GlobalWriteReadyCalls.fetch_add(1, std::memory_order_relaxed));
   std::vector<DataBufferPtr> data;
   if (!Queue.TakeReady(data))
   {
@@ -461,6 +531,17 @@ bool FileBackend::WriteReadyData()
 
   Queue.ReportWrite(data.size(), bytes, ok);
 
+  if (ok)
+  {
+    FILE_CNT(GlobalWrittenBuffers.fetch_add(data.size(), std::memory_order_relaxed));
+    FILE_CNT(GlobalWrittenBytes.fetch_add(bytes, std::memory_order_relaxed));
+    FILE_CNT(GlobalOutputBytes.fetch_add(bytes, std::memory_order_relaxed));
+  }
+  else
+  {
+    FILE_CNT(GlobalWriteErrors.fetch_add(1, std::memory_order_relaxed));
+  }
+
   if (bytes != 0)
     QueuedBytes.fetch_sub(bytes, std::memory_order_relaxed);
 
@@ -493,6 +574,7 @@ void FileBackend::UpdateFlushTimeAfterWork()
 
 bool FileBackend::WorkerFunc()
 {
+  FILE_CNT(GlobalWorkerRuns.fetch_add(1, std::memory_order_relaxed));
   // Used to limit number of write loops before Done event set if
   // one or more threads call Log() very frequently
   const int maxWriteLoops = 5;
@@ -539,6 +621,7 @@ bool FileBackend::WorkerFunc()
 
 void FileBackend::OnShutdown()
 {
+  FILE_CNT(GlobalShutdownCalls.fetch_add(1, std::memory_order_relaxed));
   while (QueuedBytes.load(std::memory_order_relaxed) != 0)
   {
     if (!WriteReadyData())

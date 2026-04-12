@@ -267,6 +267,11 @@ SafeID Logger::GetDefaultChannel()
   return ::CH;
 }
 
+ChannelPtr Logger::GetDefaultChannelPtr()
+{
+  return Default;
+}
+
 ChannelPtr Logger::GetExistingChannel(const ID& id)
 {
   if (id.Name == nullptr || *id.Name == '\0')
@@ -801,9 +806,6 @@ void Logger::Log(const Context& context, const ID& id, const SID& sid, const cha
 void Logger::Log(const Context& context, ChannelPtr ch, const SID& sid, const char* format, ...)
 {
   if (ShutdownCalled)
-    return;
-
-  if (ch && context.ErrorLevel < Level::LEVEL_ERROR && ch->IsOutputActive(context) == false)
     return;
 
   Context& context2 = *(Context*)&context;

@@ -96,6 +96,7 @@ namespace Logme
     LOGMELNK void SetThreadChannel(const ID* id);
     LOGMELNK bool IsChannelDefinedForCurrentThread();
     LOGMELNK SafeID GetDefaultChannel();
+    LOGMELNK ChannelPtr GetDefaultChannelPtr();
 
     LOGMELNK void SetThreadOverride(const Override* ovr);
     LOGMELNK Override GetThreadOverride();
@@ -290,6 +291,11 @@ namespace Logme
   typedef std::shared_ptr<Logger> LoggerPtr;
   LOGMELNK extern LoggerPtr Instance;
   LOGMELNK extern bool ShutdownCalled;
+
+  inline ChannelPtr PCH()
+  {
+    return Instance ? Instance->GetDefaultChannelPtr() : nullptr;
+  }
 
 #ifndef LOGME_DISABLE_STD_FORMAT
   inline StdFormat* GetStdFormat()

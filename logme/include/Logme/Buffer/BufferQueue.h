@@ -71,6 +71,7 @@ namespace Logme
     bool Append(
       const char* p
       , std::size_t cb
+      , std::uint64_t now
       , bool& needSignal
       , bool& firstData
     );
@@ -84,6 +85,7 @@ namespace Logme
 
     bool HasReady() const;
     bool HasCurrentData() const;
+    std::uint64_t GetOldestDataTime() const;
 
     BufferCounters GetCounters() const;
     static BufferCounters GetGlobalCounters();

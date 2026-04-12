@@ -430,9 +430,12 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
 
   bool needSignal = false;
   bool firstData = false;
+  uint64_t now = uint64_t(GetTimeInMillisec());
 
-  if (Queue.Append(text, add, needSignal, firstData) == false)
+  if (Queue.Append(text, add, now, needSignal, firstData) == false)
     return;
+
+  (void)needSignal;
 
   FILE_CNT(GlobalAppendCalls.fetch_add(1, std::memory_order_relaxed));
   FILE_CNT(GlobalInputBytes.fetch_add(add, std::memory_order_relaxed));
@@ -440,11 +443,9 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
   size_t queued = QueuedBytes.fetch_add(add, std::memory_order_relaxed) + add;
 
   if (queued >= QueueSizeLimit)
-    RequestFlush();                         // Speed up data processing
-  else if (needSignal)
     RequestFlush();
   else if (firstData)
-    RequestFlush(uint64_t(GetTimeInMillisec()) + FLUSH_AFTER);
+    RequestFlush(now + FLUSH_AFTER);
 }
 
 void FileBackend::RequestFlush(uint64_t when)
@@ -558,18 +559,21 @@ bool FileBackend::WriteReadyData()
 
 void FileBackend::UpdateFlushTimeAfterWork()
 {
-  if (Queue.HasReady())
-  {
-    FlushTime.store(RIGHT_NOW, std::memory_order_relaxed);
-  }
-  else if (Queue.HasCurrentData())
-  {
-    FlushTime.store(uint64_t(GetTimeInMillisec()) + FLUSH_AFTER, std::memory_order_relaxed);
-  }
-  else
+  uint64_t oldest = Queue.GetOldestDataTime();
+
+  if (oldest == 0)
   {
     FlushTime.store(0, std::memory_order_relaxed);
+    return;
   }
+
+  uint64_t deadline = oldest + FLUSH_AFTER;
+  uint64_t now = uint64_t(GetTimeInMillisec());
+
+  if (deadline <= now)
+    FlushTime.store(RIGHT_NOW, std::memory_order_relaxed);
+  else
+    FlushTime.store(deadline, std::memory_order_relaxed);
 }
 
 bool FileBackend::WorkerFunc()
@@ -595,20 +599,18 @@ bool FileBackend::WorkerFunc()
       bool needSignal = false;
       if (Queue.PublishCurrent(needSignal))
       {
+        (void)needSignal;
         forceFlush = false;
         continue;
       }
     }
     else
     {
-      DataBuffer* expected = nullptr;
-      BufferQueue::SoftFlushState state = Queue.PrepareSoftFlushCurrent(expected);
-
-      if (state == BufferQueue::SoftFlushState::PUBLISH)
+      bool needSignal = false;
+      if (Queue.PublishCurrent(needSignal))
       {
-        bool needSignal = false;
-        if (Queue.PublishCurrentIfMatches(expected, needSignal))
-          continue;
+        (void)needSignal;
+        continue;
       }
     }
 
@@ -629,6 +631,8 @@ void FileBackend::OnShutdown()
       bool needSignal = false;
       if (!Queue.PublishCurrent(needSignal))
         break;
+
+      (void)needSignal;
     }
   }
 

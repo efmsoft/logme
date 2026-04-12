@@ -8,6 +8,7 @@ DataBuffer::DataBuffer(std::size_t capacity)
   : DataPtr(new char[capacity])
   , CapacityValue(capacity)
   , SizeValue(0)
+  , FirstWriteTimeValue(0)
   , SeenOnSoftFlushValue(false)
 {
 }
@@ -35,6 +36,7 @@ char* DataBuffer::Data()
 void DataBuffer::Reset()
 {
   SizeValue = 0;
+  FirstWriteTimeValue = 0;
   SeenOnSoftFlushValue = false;
 }
 
@@ -47,6 +49,16 @@ void DataBuffer::Append(const char* p, std::size_t cb)
 {
   std::memcpy(DataPtr.get() + SizeValue, p, cb);
   SizeValue += cb;
+}
+
+std::uint64_t DataBuffer::FirstWriteTime() const
+{
+  return FirstWriteTimeValue;
+}
+
+void DataBuffer::SetFirstWriteTime(std::uint64_t value)
+{
+  FirstWriteTimeValue = value;
 }
 
 bool DataBuffer::SeenOnSoftFlush() const

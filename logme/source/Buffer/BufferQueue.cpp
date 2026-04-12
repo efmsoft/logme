@@ -44,6 +44,7 @@ BufferQueue::BufferQueue(Channel* owner, const Options& options)
 bool BufferQueue::Append(
   const char* p
   , std::size_t cb
+  , std::uint64_t now
   , bool& needSignal
   , bool& firstData
 )
@@ -65,6 +66,8 @@ bool BufferQueue::Append(
   if (Current->CanAppend(cb))
   {
     firstData = Current->Size() == 0;
+    if (firstData)
+      Current->SetFirstWriteTime(now);
     Current->Append(p, cb);
     CountAppended(cb);
     return true;
@@ -90,6 +93,8 @@ bool BufferQueue::Append(
   if (Current->CanAppend(cb))
   {
     firstData = Current->Size() == 0;
+    if (firstData)
+      Current->SetFirstWriteTime(now);
     Current->Append(p, cb);
     ReleaseBuffer(std::move(replacement));
     CountAppended(cb);
@@ -101,6 +106,7 @@ bool BufferQueue::Append(
   readyBuffer = std::move(Current);
 
   Current = std::move(replacement);
+  Current->SetFirstWriteTime(now);
   Current->Append(p, cb);
   firstData = true;
 
@@ -271,6 +277,34 @@ bool BufferQueue::HasCurrentData() const
     return false;
 
   return Current->Size() != 0;
+}
+
+std::uint64_t BufferQueue::GetOldestDataTime() const
+{
+  std::uint64_t readyTime = 0;
+  std::uint64_t currentTime = 0;
+
+  {
+    std::lock_guard guard(ReadyLock);
+
+    if (!ReadyList.empty() && ReadyList.front())
+      readyTime = ReadyList.front()->FirstWriteTime();
+  }
+
+  {
+    std::lock_guard guard(Owner->GetDataLock());
+
+    if (Current && Current->Size() != 0)
+      currentTime = Current->FirstWriteTime();
+  }
+
+  if (readyTime == 0)
+    return currentTime;
+
+  if (currentTime == 0)
+    return readyTime;
+
+  return readyTime < currentTime ? readyTime : currentTime;
 }
 
 BufferCounters BufferQueue::GetCounters() const

@@ -47,8 +47,17 @@ namespace
   std::atomic<std::uint64_t> GlobalFlushRequests(0);
   std::atomic<std::uint64_t> GlobalImmediateFlushRequests(0);
   std::atomic<std::uint64_t> GlobalScheduledFlushRequests(0);
+  std::atomic<std::uint64_t> GlobalFlushAccepted(0);
+  std::atomic<std::uint64_t> GlobalImmediateFlushAccepted(0);
+  std::atomic<std::uint64_t> GlobalScheduledFlushAccepted(0);
+  std::atomic<std::uint64_t> GlobalFlushRejected(0);
+  std::atomic<std::uint64_t> GlobalImmediateFlushRejected(0);
+  std::atomic<std::uint64_t> GlobalScheduledFlushRejected(0);
   std::atomic<std::uint64_t> GlobalFlushWaitCalls(0);
   std::atomic<std::uint64_t> GlobalWorkerRuns(0);
+  std::atomic<std::uint64_t> GlobalWorkerImmediateRuns(0);
+  std::atomic<std::uint64_t> GlobalWorkerTimedRuns(0);
+  std::atomic<std::uint64_t> GlobalWorkerShutdownRuns(0);
   std::atomic<std::uint64_t> GlobalWriteReadyCalls(0);
   std::atomic<std::uint64_t> GlobalWrittenBuffers(0);
   std::atomic<std::uint64_t> GlobalWrittenBytes(0);
@@ -116,8 +125,17 @@ FileBackendCounters FileBackend::GetCounters()
   out.FlushRequests = GlobalFlushRequests.load(std::memory_order_relaxed);
   out.ImmediateFlushRequests = GlobalImmediateFlushRequests.load(std::memory_order_relaxed);
   out.ScheduledFlushRequests = GlobalScheduledFlushRequests.load(std::memory_order_relaxed);
+  out.FlushAccepted = GlobalFlushAccepted.load(std::memory_order_relaxed);
+  out.ImmediateFlushAccepted = GlobalImmediateFlushAccepted.load(std::memory_order_relaxed);
+  out.ScheduledFlushAccepted = GlobalScheduledFlushAccepted.load(std::memory_order_relaxed);
+  out.FlushRejected = GlobalFlushRejected.load(std::memory_order_relaxed);
+  out.ImmediateFlushRejected = GlobalImmediateFlushRejected.load(std::memory_order_relaxed);
+  out.ScheduledFlushRejected = GlobalScheduledFlushRejected.load(std::memory_order_relaxed);
   out.FlushWaitCalls = GlobalFlushWaitCalls.load(std::memory_order_relaxed);
   out.WorkerRuns = GlobalWorkerRuns.load(std::memory_order_relaxed);
+  out.WorkerImmediateRuns = GlobalWorkerImmediateRuns.load(std::memory_order_relaxed);
+  out.WorkerTimedRuns = GlobalWorkerTimedRuns.load(std::memory_order_relaxed);
+  out.WorkerShutdownRuns = GlobalWorkerShutdownRuns.load(std::memory_order_relaxed);
   out.WriteReadyCalls = GlobalWriteReadyCalls.load(std::memory_order_relaxed);
   out.WrittenBuffers = GlobalWrittenBuffers.load(std::memory_order_relaxed);
   out.WrittenBytes = GlobalWrittenBytes.load(std::memory_order_relaxed);
@@ -450,17 +468,26 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
 
 void FileBackend::RequestFlush(uint64_t when)
 {
+  const bool immediate = when == RIGHT_NOW;
   FILE_CNT(GlobalFlushRequests.fetch_add(1, std::memory_order_relaxed));
-  if (when == RIGHT_NOW)
+  if (immediate)
     FILE_CNT(GlobalImmediateFlushRequests.fetch_add(1, std::memory_order_relaxed));
   else
     FILE_CNT(GlobalScheduledFlushRequests.fetch_add(1, std::memory_order_relaxed));
+
   uint64_t old = FlushTime.load(std::memory_order_relaxed);
 
   for (;;)
   {
     if (old != 0 && (old == RIGHT_NOW || old <= when))
+    {
+      FILE_CNT(GlobalFlushRejected.fetch_add(1, std::memory_order_relaxed));
+      if (immediate)
+        FILE_CNT(GlobalImmediateFlushRejected.fetch_add(1, std::memory_order_relaxed));
+      else
+        FILE_CNT(GlobalScheduledFlushRejected.fetch_add(1, std::memory_order_relaxed));
       return;
+    }
 
     if (FlushTime.compare_exchange_weak(
       old
@@ -469,6 +496,12 @@ void FileBackend::RequestFlush(uint64_t when)
       , std::memory_order_relaxed
     ))
     {
+      FILE_CNT(GlobalFlushAccepted.fetch_add(1, std::memory_order_relaxed));
+      if (immediate)
+        FILE_CNT(GlobalImmediateFlushAccepted.fetch_add(1, std::memory_order_relaxed));
+      else
+        FILE_CNT(GlobalScheduledFlushAccepted.fetch_add(1, std::memory_order_relaxed));
+
       if (Owner)
         GetFactory().Notify(this, when);
 
@@ -548,6 +581,9 @@ bool FileBackend::WriteReadyData()
 
   Queue.Recycle(data);
 
+  if (!Queue.HasCurrentDataFlagged() && !Queue.HasReady())
+    Queue.TrimFreeBuffersIfIdle();
+
   if (QueuedBytes.load(std::memory_order_relaxed) == 0)
   {
     std::lock_guard guard(BufferLock);
@@ -583,8 +619,16 @@ bool FileBackend::WorkerFunc()
   // one or more threads call Log() very frequently
   const int maxWriteLoops = 5;
 
-  bool forceFlush = ShutdownFlag.load(std::memory_order_relaxed);
-  forceFlush = forceFlush || FlushTime.load(std::memory_order_relaxed) == RIGHT_NOW;
+  const bool shutdownRun = ShutdownFlag.load(std::memory_order_relaxed);
+  const bool immediateRun = FlushTime.load(std::memory_order_relaxed) == RIGHT_NOW;
+  bool forceFlush = shutdownRun || immediateRun;
+
+  if (shutdownRun)
+    FILE_CNT(GlobalWorkerShutdownRuns.fetch_add(1, std::memory_order_relaxed));
+  else if (immediateRun)
+    FILE_CNT(GlobalWorkerImmediateRuns.fetch_add(1, std::memory_order_relaxed));
+  else
+    FILE_CNT(GlobalWorkerTimedRuns.fetch_add(1, std::memory_order_relaxed));
 
   for (int i = 0; i < maxWriteLoops; i++)
   {

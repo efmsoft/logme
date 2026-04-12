@@ -39,8 +39,17 @@ namespace Logme
     std::uint64_t FlushRequests = 0;
     std::uint64_t ImmediateFlushRequests = 0;
     std::uint64_t ScheduledFlushRequests = 0;
+    std::uint64_t FlushAccepted = 0;
+    std::uint64_t ImmediateFlushAccepted = 0;
+    std::uint64_t ScheduledFlushAccepted = 0;
+    std::uint64_t FlushRejected = 0;
+    std::uint64_t ImmediateFlushRejected = 0;
+    std::uint64_t ScheduledFlushRejected = 0;
     std::uint64_t FlushWaitCalls = 0;
     std::uint64_t WorkerRuns = 0;
+    std::uint64_t WorkerImmediateRuns = 0;
+    std::uint64_t WorkerTimedRuns = 0;
+    std::uint64_t WorkerShutdownRuns = 0;
     std::uint64_t WriteReadyCalls = 0;
     std::uint64_t WrittenBuffers = 0;
     std::uint64_t WrittenBytes = 0;

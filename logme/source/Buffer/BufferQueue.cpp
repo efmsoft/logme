@@ -21,6 +21,7 @@ namespace
 BufferQueue::BufferQueue(Channel* owner, const Options& options)
   : Owner(owner)
   , OptionsValue(options)
+  , HasCurrentDataFlag(false)
   , TotalBuffers(0)
   , AdaptiveFreeLimit(options.BaseFreeLimit)
   , Signaled(false)
@@ -67,7 +68,11 @@ bool BufferQueue::Append(
   {
     firstData = Current->Size() == 0;
     if (firstData)
+    {
       Current->SetFirstWriteTime(now);
+      HasCurrentDataFlag.store(true, std::memory_order_relaxed);
+    }
+
     Current->Append(p, cb);
     CountAppended(cb);
     return true;
@@ -94,7 +99,11 @@ bool BufferQueue::Append(
   {
     firstData = Current->Size() == 0;
     if (firstData)
+    {
       Current->SetFirstWriteTime(now);
+      HasCurrentDataFlag.store(true, std::memory_order_relaxed);
+    }
+
     Current->Append(p, cb);
     ReleaseBuffer(std::move(replacement));
     CountAppended(cb);
@@ -108,6 +117,7 @@ bool BufferQueue::Append(
   Current = std::move(replacement);
   Current->SetFirstWriteTime(now);
   Current->Append(p, cb);
+  HasCurrentDataFlag.store(true, std::memory_order_relaxed);
   firstData = true;
 
   MaybeGrowAdaptive(allocatedBecauseNoFree);
@@ -155,7 +165,6 @@ void BufferQueue::Recycle(std::vector<DataBufferPtr>& buffers)
   }
 
   buffers.clear();
-  DecayFreeLocked();
 }
 
 BufferQueue::SoftFlushState BufferQueue::PrepareSoftFlushCurrent(DataBuffer* &expected)
@@ -208,6 +217,7 @@ bool BufferQueue::PublishCurrent(bool& needSignal)
     replacement->SetSeenOnSoftFlush(false);
     readyBuffer = std::move(Current);
     Current = std::move(replacement);
+    HasCurrentDataFlag.store(false, std::memory_order_relaxed);
   }
 
   MaybeGrowAdaptive(allocatedBecauseNoFree);
@@ -251,6 +261,7 @@ bool BufferQueue::PublishCurrentIfMatches(DataBuffer* expected, bool& needSignal
     replacement->SetSeenOnSoftFlush(false);
     readyBuffer = std::move(Current);
     Current = std::move(replacement);
+    HasCurrentDataFlag.store(false, std::memory_order_relaxed);
   }
 
   MaybeGrowAdaptive(allocatedBecauseNoFree);
@@ -277,6 +288,17 @@ bool BufferQueue::HasCurrentData() const
     return false;
 
   return Current->Size() != 0;
+}
+
+bool BufferQueue::HasCurrentDataFlagged() const
+{
+  return HasCurrentDataFlag.load(std::memory_order_relaxed);
+}
+
+void BufferQueue::TrimFreeBuffersIfIdle()
+{
+  std::lock_guard guard(FreeLock);
+  DecayFreeLocked();
 }
 
 std::uint64_t BufferQueue::GetOldestDataTime() const

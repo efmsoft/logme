@@ -97,8 +97,17 @@ FileManager::~FileManager()
       "FlushRequests=%llu "
       "ImmediateFlushRequests=%llu "
       "ScheduledFlushRequests=%llu "
+      "FlushAccepted=%llu "
+      "ImmediateFlushAccepted=%llu "
+      "ScheduledFlushAccepted=%llu "
+      "FlushRejected=%llu "
+      "ImmediateFlushRejected=%llu "
+      "ScheduledFlushRejected=%llu "
       "FlushWaitCalls=%llu "
       "WorkerRuns=%llu "
+      "WorkerImmediateRuns=%llu "
+      "WorkerTimedRuns=%llu "
+      "WorkerShutdownRuns=%llu "
       "WriteReadyCalls=%llu "
       "WrittenBuffers=%llu "
       "WrittenBytes=%llu "
@@ -126,8 +135,17 @@ FileManager::~FileManager()
       , (unsigned long long)bc.FlushRequests
       , (unsigned long long)bc.ImmediateFlushRequests
       , (unsigned long long)bc.ScheduledFlushRequests
+      , (unsigned long long)bc.FlushAccepted
+      , (unsigned long long)bc.ImmediateFlushAccepted
+      , (unsigned long long)bc.ScheduledFlushAccepted
+      , (unsigned long long)bc.FlushRejected
+      , (unsigned long long)bc.ImmediateFlushRejected
+      , (unsigned long long)bc.ScheduledFlushRejected
       , (unsigned long long)bc.FlushWaitCalls
       , (unsigned long long)bc.WorkerRuns
+      , (unsigned long long)bc.WorkerImmediateRuns
+      , (unsigned long long)bc.WorkerTimedRuns
+      , (unsigned long long)bc.WorkerShutdownRuns
       , (unsigned long long)bc.WriteReadyCalls
       , (unsigned long long)bc.WrittenBuffers
       , (unsigned long long)bc.WrittenBytes

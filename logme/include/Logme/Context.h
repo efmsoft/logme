@@ -156,10 +156,10 @@ namespace Logme
     LOGMELNK void InitContext();
     LOGMELNK void InitTimestamp(TimeFormat tf);
     LOGMELNK void InitSignature();
-    LOGMELNK void InitThreadProcessID(ChannelPtr ch, OutputFlags flags);
+    LOGMELNK void InitThreadProcessID(const ChannelPtr& ch, OutputFlags flags);
     LOGMELNK void CreateTZD(char* tzd);
 
-    LOGMELNK const char* Apply(ChannelPtr ch, OutputFlags flags, const char* text, int& nc);
+    LOGMELNK const char* Apply(const ChannelPtr& ch, OutputFlags flags, const char* text, int& nc);
   };
 }
 

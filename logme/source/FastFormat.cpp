@@ -1,5 +1,6 @@
 #include <Logme/Context.h>
 #include <Logme/FastFormat.h>
+#include <Logme/Utils.h>
 
 #include <charconv>
 #include <cstdint>
@@ -13,6 +14,8 @@
 #include <atomic>
 #include <cstdio>
 #endif
+
+#define LOGME_INT2STR_JEAIII 0
 
 using namespace Logme;
 
@@ -218,11 +221,24 @@ namespace
       return;
 
     char temp[32];
+
+#if LOGME_INT2STR_JEAIII
+    int len = Logme::PrintIntJeaiii(
+      temp
+      , sizeof(temp)
+      , value
+    );
+    if (len < 0)
+      return;
+    
+    CopyBounded(dst, left, temp, (size_t)len);
+#else
     auto rc = std::to_chars(temp, temp + sizeof(temp), value);
     if (rc.ec != std::errc())
       return;
-
+    
     CopyBounded(dst, left, temp, (size_t)(rc.ptr - temp));
+#endif
   }
 
   inline void AddDetectSpecStat(FastFormatKind kind)

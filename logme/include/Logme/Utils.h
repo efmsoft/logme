@@ -53,4 +53,10 @@ namespace Logme
 
   LOGMELNK std::string GetLevelName(Level level);
   LOGMELNK bool LevelFromName(const std::string& n, int& v);
+
+  LOGMELNK int PrintIntJeaiii(
+    char* buffer
+    , size_t size
+    , int value
+  );
 }

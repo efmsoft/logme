@@ -38,7 +38,7 @@ namespace Logme
       return true;
     }
 
-    inline ChannelPtr ResolveDoChannel(Logger*, const ChannelPtr& ch)
+    inline const ChannelPtr& ResolveDoChannel(Logger*, const ChannelPtr& ch)
     {
       return ch;
     }

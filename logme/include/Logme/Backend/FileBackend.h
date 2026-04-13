@@ -107,13 +107,14 @@ namespace Logme
     { 
       MAX_SIZE_DEFAULT = 8 * 1024 * 1024,
       
-      FLUSH_PERIOD = 3000,                  // 3 sec
-      QUEUE_SIZE_LIMIT = 24 * 1024 * 1024,  // force processing if queue size >= limit
-      QUEUE_GROW_SIZE = 128 * 1024,         // grow size
+      QUEUE_BUFFER_SIZE = 256 * 1024,       // buffer size
+      MAX_TOTAL_BUFFERS = 128,              // hard limit for queue buffers
+      FLUSH_PRESSURE_BUFFERS = 96,          // force processing if used buffers >= limit
+      QUEUE_SIZE_LIMIT = QUEUE_BUFFER_SIZE * FLUSH_PRESSURE_BUFFERS,
       STAT_OUTPUT_PERIOD = 10 * 60 * 1000,  // 10 min
 
       RIGHT_NOW = 1,                        // Force flush right now
-      FLUSH_AFTER = 1200,
+      FLUSH_AFTER = 100,
     };
 
     constexpr static const char* TYPE_ID = "FileBackend";

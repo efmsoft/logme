@@ -116,7 +116,7 @@ namespace Logme
     LOGMELNK uint64_t GetAccessCount() const;
 
     LOGMELNK void AddLink(const ID& to);
-    LOGMELNK void AddLink(ChannelPtr to);
+    LOGMELNK void AddLink(const ChannelPtr& to);
     LOGMELNK void RemoveLink();
     LOGMELNK bool IsLinked() const;
     LOGMELNK bool IsOutputActive(const Context& context) const;

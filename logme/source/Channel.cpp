@@ -70,7 +70,7 @@ void Channel::AddLink(const ID& to)
   UpdateActive();
 }
 
-void Channel::AddLink(ChannelPtr to)
+void Channel::AddLink(const ChannelPtr& to)
 {
   if (ShutdownCalled)
     return;

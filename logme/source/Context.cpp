@@ -214,7 +214,7 @@ void Context::InitTimestamp(TimeFormat tf)
   }
 }
 
-void Context::InitThreadProcessID(ChannelPtr ch, OutputFlags flags)
+void Context::InitThreadProcessID(const ChannelPtr& ch, OutputFlags flags)
 {
   if ((flags.ProcessID || flags.ThreadID) && *ThreadProcessID == '\0')
   {
@@ -335,7 +335,7 @@ void Context::InitSignature()
   }
 }
 
-const char* Context::Apply(ChannelPtr ch, OutputFlags flags, const char* text, int& nc)
+const char* Context::Apply(const ChannelPtr& ch, OutputFlags flags, const char* text, int& nc)
 {
   if (Ovr)
   {

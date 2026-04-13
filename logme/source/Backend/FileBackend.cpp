@@ -85,7 +85,13 @@ FileBackend::FileBackend(ChannelPtr owner)
   , ShutdownFlag(false)
   , ShutdownCalled(owner == nullptr)
   , FlushTime(0)
-  , Queue(Owner.get(), []{ BufferQueue::Options o; o.BufferSize = QUEUE_GROW_SIZE; return o; }())
+  , Queue(Owner.get(), []
+    {
+      BufferQueue::Options o;
+      o.BufferSize = QUEUE_BUFFER_SIZE;
+      o.MaxTotalBuffers = MAX_TOTAL_BUFFERS;
+      return o;
+    }())
   , QueuedBytes(0)
   , DailyRotation(false)
   , MaxParts(2)
@@ -465,9 +471,10 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
   FILE_CNT(GlobalInputBytes.fetch_add(add, std::memory_order_relaxed));
 
   size_t queued = QueuedBytes.fetch_add(add, std::memory_order_relaxed) + add;
+  size_t usedBuffers = Queue.GetUsedBuffers();
   uint64_t flushTime = FlushTime.load(std::memory_order_relaxed);
 
-  if (queued >= QueueSizeLimit)
+  if (usedBuffers >= FLUSH_PRESSURE_BUFFERS || queued >= QueueSizeLimit)
   {
     if (flushTime != RIGHT_NOW)
       RequestFlush();

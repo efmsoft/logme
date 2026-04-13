@@ -22,6 +22,7 @@ BufferQueue::BufferQueue(Channel* owner, const Options& options)
   : Owner(owner)
   , OptionsValue(options)
   , HasCurrentDataFlag(false)
+  , UsedBuffersCount(1)
   , TotalBuffers(0)
   , AdaptiveFreeLimit(options.BaseFreeLimit)
   , Signaled(false)
@@ -162,6 +163,7 @@ void BufferQueue::Recycle(std::vector<DataBufferPtr>& buffers)
 
     buffer->Reset();
     FreeList.push_back(std::move(buffer));
+    UsedBuffersCount.fetch_sub(1, std::memory_order_relaxed);
   }
 
   buffers.clear();
@@ -295,6 +297,11 @@ bool BufferQueue::HasCurrentDataFlagged() const
   return HasCurrentDataFlag.load(std::memory_order_relaxed);
 }
 
+std::size_t BufferQueue::GetUsedBuffers() const
+{
+  return UsedBuffersCount.load(std::memory_order_relaxed);
+}
+
 void BufferQueue::TrimFreeBuffersIfIdle()
 {
   std::lock_guard guard(FreeLock);
@@ -372,6 +379,7 @@ DataBufferPtr BufferQueue::TryTakeFreeBuffer()
 
   DataBufferPtr buffer = std::move(FreeList.front());
   FreeList.pop_front();
+  UsedBuffersCount.fetch_add(1, std::memory_order_relaxed);
   return buffer;
 }
 
@@ -401,6 +409,7 @@ DataBufferPtr BufferQueue::TryCreateBuffer()
     }
 
     TotalBuffers += 1;
+    UsedBuffersCount.fetch_add(1, std::memory_order_relaxed);
   }
 
   CountAllocated();
@@ -416,6 +425,7 @@ void BufferQueue::ReleaseBuffer(DataBufferPtr buffer)
 
   std::lock_guard guard(FreeLock);
   FreeList.push_back(std::move(buffer));
+  UsedBuffersCount.fetch_sub(1, std::memory_order_relaxed);
   DecayFreeLocked();
 }
 

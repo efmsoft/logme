@@ -4,7 +4,7 @@
 #include <cstdint>
 
 #ifndef FILE_ENABLE_COUNTERS
-#define FILE_ENABLE_COUNTERS 1
+#define FILE_ENABLE_COUNTERS 0
 #endif
 
 #if FILE_ENABLE_COUNTERS

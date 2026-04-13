@@ -16,6 +16,7 @@
 
 #if defined(_MSC_VER)
 #pragma warning(disable : 6255)
+#pragma warning(disable : 6262)
 #endif
 
 using namespace Logme;
@@ -533,7 +534,7 @@ Stream Logger::Log(const Context& context, const ID& id) // @4
   return Stream(shared_from_this(), context2, ovr);
 }
 
-Stream Logger::Log(const Context& context, ChannelPtr ch) // @5
+Stream Logger::Log(const Context& context, const ChannelPtr& ch) // @5
 {
   Context& context2 = *(Context*)&context;
   context2.ChRef = ch;
@@ -557,7 +558,7 @@ Stream Logger::Log(const Context& context, const ID& id, const SID& sid) // @6
   return Stream(shared_from_this(), context2, ovr);
 }
 
-Stream Logger::Log(const Context& context, ChannelPtr ch, const SID& sid) // @7
+Stream Logger::Log(const Context& context, const ChannelPtr& ch, const SID& sid) // @7
 {
   Context& context2 = *(Context*)&context;
   context2.ChRef = ch;
@@ -575,7 +576,7 @@ Stream Logger::Log(const Context& context, Override& ovr, const ID& id)
   return Log(context, id, ovr);
 }
 
-Stream Logger::Log(const Context& context, Override& ovr, ChannelPtr ch)
+Stream Logger::Log(const Context& context, Override& ovr, const ChannelPtr& ch)
 {
   return Log(context, ch, ovr);
 }
@@ -589,7 +590,7 @@ Stream Logger::Log(const Context& context, const ID& id, Override& ovr) // @8
   return Stream(shared_from_this(), context2);
 }
 
-Stream Logger::Log(const Context& context, ChannelPtr ch, Override& ovr) // @9
+Stream Logger::Log(const Context& context, const ChannelPtr& ch, Override& ovr) // @9
 {
   Context& context2 = *(Context*)&context;
   context2.ChRef = ch;
@@ -604,7 +605,7 @@ Stream Logger::Log(const Context& context, Override& ovr, const ID& id, const SI
   return Log(context, id, sid, ovr);
 }
 
-Stream Logger::Log(const Context& context, Override& ovr, ChannelPtr ch, const SID& sid)
+Stream Logger::Log(const Context& context, Override& ovr, const ChannelPtr& ch, const SID& sid)
 {
   return Log(context, ch, sid, ovr);
 }
@@ -619,7 +620,7 @@ Stream Logger::Log(const Context& context, const ID& id, const SID& sid, Overrid
   return Stream(shared_from_this(), context2);
 }
 
-Stream Logger::Log(const Context& context, ChannelPtr ch, const SID& sid, Override& ovr) // @11
+Stream Logger::Log(const Context& context, const ChannelPtr& ch, const SID& sid, Override& ovr) // @11
 {
   Context& context2 = *(Context*)&context;
   context2.ChRef = ch;
@@ -656,7 +657,7 @@ void Logger::Log(
 void Logger::Log(
   const Context& context
   , Override& ovr
-  , ChannelPtr ch
+  , const ChannelPtr& ch
   , const char* format
   , ...
 )
@@ -707,7 +708,7 @@ void Logger::Log(
 void Logger::Log(
   const Context& context
   , Override& ovr
-  , ChannelPtr ch
+  , const ChannelPtr& ch
   , const SID& sid
   , const char* format
   , ...
@@ -758,7 +759,7 @@ void Logger::Log(
 
 void Logger::Log(
   const Context& context
-  , ChannelPtr ch
+  , const ChannelPtr& ch
   , const char* format
   , ...
 )
@@ -803,7 +804,7 @@ void Logger::Log(const Context& context, const ID& id, const SID& sid, const cha
   va_end(args);
 }
 
-void Logger::Log(const Context& context, ChannelPtr ch, const SID& sid, const char* format, ...)
+void Logger::Log(const Context& context, const ChannelPtr& ch, const SID& sid, const char* format, ...)
 {
   if (ShutdownCalled)
     return;
@@ -848,7 +849,7 @@ void Logger::Log(
 
 void Logger::Log(
   const Context& context
-  , ChannelPtr ch
+  , const ChannelPtr& ch
   , Override& ovr
   , const char* format
   , ...

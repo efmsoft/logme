@@ -37,7 +37,7 @@ Procedure::Procedure(
 Procedure::Procedure(
   const Context& context
   , Printer* printer
-  , ChannelPtr pch
+  , const ChannelPtr& pch
   , const char* format
   , ...
 )

@@ -49,6 +49,7 @@ namespace Logme
     DataBufferPtr Current;
 
     std::atomic<bool> HasCurrentDataFlag;
+    std::atomic<std::size_t> UsedBuffersCount;
     std::size_t TotalBuffers;
     std::size_t AdaptiveFreeLimit;
 
@@ -88,6 +89,7 @@ namespace Logme
     bool HasCurrentData() const;
     bool HasCurrentDataFlagged() const;
     std::uint64_t GetOldestDataTime() const;
+    std::size_t GetUsedBuffers() const;
     void TrimFreeBuffersIfIdle();
 
     BufferCounters GetCounters() const;

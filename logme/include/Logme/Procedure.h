@@ -32,7 +32,7 @@ namespace Logme
     LOGMELNK Procedure(
       const Context& context
       , Printer* printer
-      , ChannelPtr pch
+      , const ChannelPtr& pch
       , const char* format = nullptr
       , ...
     );

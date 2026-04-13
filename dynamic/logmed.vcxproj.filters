@@ -58,6 +58,12 @@
     <Filter Include="CritSection.cpp">
       <UniqueIdentifier>{2b6816e8-2532-5f9c-b796-ab4d0989566d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="IntJeaiii.cpp">
+      <UniqueIdentifier>{0c53ef3e-a418-5749-8924-9db001a15dcf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\logme\include\Logme\Detail">
+      <UniqueIdentifier>{a62ea1e5-6e05-5df3-9f68-16cafcfa0095}</UniqueIdentifier>
+    </Filter>
 </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\logme\source\Backend\Backend.cpp">
@@ -232,6 +238,9 @@
     <ClCompile Include="..\logme\source\CritSection.cpp">
       <Filter>CritSection.cpp</Filter>
     </ClCompile>
+    <ClCompile Include="..\logme\source\IntJeaiii.cpp">
+      <Filter>IntJeaiii.cpp</Filter>
+    </ClCompile>
 </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\logme\source\Time\utils.h">
@@ -405,6 +414,12 @@
     </ClInclude>
     <ClInclude Include="..\logme\include\Logme\CritSection.h">
       <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Detail\Dispatch.h">
+      <Filter>..\logme\include\Logme\Detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Detail\Precheck.h">
+      <Filter>..\logme\include\Logme\Detail</Filter>
     </ClInclude>
 </ItemGroup>
 </Project>

@@ -91,6 +91,7 @@
     <ClCompile Include="..\logme\source\ReentryGuard.cpp" />
     <ClCompile Include="..\logme\source\FastFormat.cpp" />
     <ClCompile Include="..\logme\source\CritSection.cpp" />
+    <ClCompile Include="..\logme\source\IntJeaiii.cpp" />
 </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\logme\source\Config\Helper.h" />

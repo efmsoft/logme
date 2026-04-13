@@ -1,3 +1,23 @@
+## 2.4.15
+
+### Added
+- Added `ContextCache` support in logging macros and dispatch paths to cache per-call-site context data.
+- Added `GetDefaultChannelPtr()` helper for accessing the default channel as a `ChannelPtr`.
+- Added `LogmeX_Once` / `LogmeX_Every` helpers and completed once / rate-limited override support.
+- Added `OnceEvery` and `DumpBuffer` examples.
+- Added optional diagnostic counters for `FileBackend`, `FileManager`, and `BufferQueue` to simplify performance analysis.
+
+### Improved
+- Reduced hot-path overhead by switching selected `ChannelPtr` passing paths to references where appropriate.
+- Optimized `BufferQueue` and related file-output paths.
+- Reduced spurious flush requests and unnecessary `FileManager` wakeups during file logging.
+- Improved support for precheck-based early logging decisions.
+
+### Fixed
+- Fixed double evaluation in logging macros.
+- Fixed stream `Context` lifetime issues.
+- Fixed build issues affecting general builds, including Clang and CLion configurations.
+
 ## 2.4.14
 
 ### Fixed

@@ -54,6 +54,9 @@
     <Filter Include="include\Logme\Buffer">
       <UniqueIdentifier>{18566b96-49d5-5bae-b5da-7de26c181b70}</UniqueIdentifier>
     </Filter>
+    <Filter Include="include\Logme\Detail">
+      <UniqueIdentifier>{e355b875-5207-5a95-bcc9-7a55bcc31c24}</UniqueIdentifier>
+    </Filter>
 </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Logme\Backend\Backend.h">
@@ -232,6 +235,12 @@
     </ClInclude>
     <ClInclude Include="include\Logme\CritSection.h">
       <Filter>include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\Detail\Dispatch.h">
+      <Filter>include\Logme\Detail</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\Detail\Precheck.h">
+      <Filter>include\Logme\Detail</Filter>
     </ClInclude>
 </ItemGroup>
   <ItemGroup>
@@ -449,6 +458,9 @@
       <Filter>source</Filter>
     </ClCompile>
     <ClCompile Include="source\CritSection.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\IntJeaiii.cpp">
       <Filter>source</Filter>
     </ClCompile>
 </ItemGroup>

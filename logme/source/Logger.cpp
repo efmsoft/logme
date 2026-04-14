@@ -976,21 +976,47 @@ void Logger::DoLog(Context& context, const char* format, va_list args)
     if (format[0] == '%' && format[1] == 's' && format[2] == '\0')
     { 
       buffer = va_arg(args, char*);
+      context.TempBuffer = nullptr;
+      context.TempBufferSize = 0;
+      context.TempBufferCapacity = 0;
     }
     else
     {
-      const size_t size = 16384U;
+      size_t size = 16384U;
+      size_t bufferLen = 0;
+      if (
+           context.Cache.State.load(std::memory_order_acquire) == ContextCacheState::READY
+        && context.Cache.Ffe.Format == format
+        && context.Cache.Ffe.BufferSizeHint
+      )
+      {
+        size = context.Cache.Ffe.BufferSizeHint;
+      }
+
       buffer = (char*)alloca(size);
 
       buffer[0] = '\0';
       buffer[size - 1] = '\0';
 
-      if (TryFastFormat(context, buffer, size - 1, format, args) == false)
+      if (TryFastFormat(context, buffer, size - 1, format, args, &bufferLen) == false)
       {
         int rc = vsnprintf(buffer, size - 1, format, args);
         if (rc == -1)
+        {
           strcpy_s(buffer, size - 1, "[format error]");
+          bufferLen = strlen(buffer);
+        }
+        else
+        {
+          bufferLen = (size_t)rc;
+          if (bufferLen > size - 1)
+            bufferLen = size - 1;
+        }
       }
+
+      context.TempBuffer = buffer;
+      context.TempBufferSize = bufferLen;
+      context.TempBufferCapacity = size;
     }
 
     ch->Display(context, buffer);

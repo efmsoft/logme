@@ -100,6 +100,10 @@ namespace Logme
     std::unique_ptr<char[]> ExtBuffer;
     size_t ExtBufferSize;
 
+    const char* TempBuffer;
+    size_t TempBufferSize;
+    size_t TempBufferCapacity;
+
     ShortenerContext MethodShortener;
 
     struct Params

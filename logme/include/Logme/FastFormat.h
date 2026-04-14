@@ -28,6 +28,7 @@ namespace Logme
     uint16_t Part1Len;
     uint16_t Part2Pos;
     uint16_t Part2Len;
+    uint16_t BufferSizeHint;
     uint8_t SpecCount;
   };
 
@@ -37,5 +38,6 @@ namespace Logme
     , size_t bufferSize
     , const char* format
     , va_list args
+    , size_t* outLen = nullptr
   );
 }

@@ -44,6 +44,9 @@ Context::Context(ContextCache& cache, Level level, const ID* ch, const SID* sid)
   , Ovr(nullptr)
   , Signature(0)
   , ExtBufferSize(0)
+  , TempBuffer(nullptr)
+  , TempBufferSize(0)
+  , TempBufferCapacity(0)
 {
   InitContext();
 }
@@ -72,6 +75,9 @@ Context::Context(
   , Ovr(nullptr)
   , Signature(0)
   , ExtBufferSize(0)
+  , TempBuffer(nullptr)
+  , TempBufferSize(0)
+  , TempBufferCapacity(0)
 {
   if (Channel->Name == nullptr)
     Channel = chdef;
@@ -90,6 +96,9 @@ void Context::InitContext()
   *Buffer = '\0';
   LastData = nullptr;
   LastLen = 0;
+  TempBuffer = nullptr;
+  TempBufferSize = 0;
+  TempBufferCapacity = 0;
   Applied.None = true;
 }
 
@@ -446,6 +455,48 @@ const char* Context::Apply(const ChannelPtr& ch, OutputFlags flags, const char* 
 
     if (appendText)
       nAppend = (int)strlen(appendText);
+  }
+
+  bool canReuseTempBuffer =
+    TempBuffer != nullptr
+    && text == TempBuffer
+    && TempBufferSize == (size_t)nLine
+    && nTimestamp == 0
+    && nSignature == 0
+    && nID == 0
+    && nChannel == 0
+    && nSubsystem == 0
+    && nFile == 0
+    && nError == 0
+    && nMethod == 0
+  ;
+
+  if (canReuseTempBuffer)
+  {
+    size_t required = (size_t)nLine + (size_t)nAppend + (size_t)nEol + 1;
+    if (required <= TempBufferCapacity)
+    {
+      char* p = const_cast<char*>(text) + nLine;
+
+      if (nAppend)
+      {
+        strcpy_s(p, TempBufferCapacity - (size_t)(p - TempBuffer), appendText);
+        p += nAppend;
+      }
+
+      if (nEol)
+      {
+        *p++ = '\n';
+        *p = '\0';
+      }
+
+      LastData = text;
+      LastLen = nLine + nAppend + nEol;
+      Applied.Value = flags.Value;
+      
+      nc = LastLen;
+      return LastData;
+    }
   }
 
   char* buffer = Buffer;

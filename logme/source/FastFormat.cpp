@@ -299,6 +299,36 @@ namespace
     }
   }
 
+  inline uint16_t AlignBufferSizeHint(size_t size)
+  {
+    constexpr size_t ALIGNMENT = 32;
+
+    size = (size + (ALIGNMENT - 1)) & ~(ALIGNMENT - 1);
+    if (size > 0xFFFFu)
+      size = 0xFFFFu;
+
+    return (uint16_t)size;
+  }
+
+  inline uint16_t GetMaxArgTextSize(FastFormatKind kind)
+  {
+    switch (kind)
+    {
+    case FastFormatKind::FORMAT_D:
+    case FastFormatKind::FORMAT_I:
+      return 11;
+
+    case FastFormatKind::FORMAT_U:
+      return 10;
+
+    case FastFormatKind::FORMAT_P:
+      return (uint16_t)(2 + sizeof(uintptr_t) * 2);
+
+    default:
+      return 0;
+    }
+  }
+
   template<typename TArgs>
   inline bool AppendArg(
     FastFormatKind kind
@@ -371,6 +401,7 @@ namespace
     entry.Format = format;
     entry.Kind1 = FastFormatKind::NONE;
     entry.Kind2 = FastFormatKind::NONE;
+    entry.BufferSizeHint = 0;
     entry.SpecCount = 0;
 
     if (format == nullptr)
@@ -459,6 +490,7 @@ namespace
     {
       entry.Kind1 = FastFormatKind::LITERAL;
       entry.Part0Len = (uint16_t)formatLen;
+      entry.BufferSizeHint = AlignBufferSizeHint(formatLen + 1);
       FAST_FORMAT_STAT(AnalyzeNoPercent);
       FAST_FORMAT_STAT(DetectedLiteral);
       return entry;
@@ -478,6 +510,17 @@ namespace
     if (entry.SpecCount == 2)
       AddDetectSpecStat(entry.Kind2);
 
+    uint16_t maxArg1 = GetMaxArgTextSize(entry.Kind1);
+    uint16_t maxArg2 = 0;
+    if (entry.SpecCount == 2)
+      maxArg2 = GetMaxArgTextSize(entry.Kind2);
+
+    if (maxArg1)
+    {
+      size_t maxSize = (size_t)entry.Part0Len + (size_t)entry.Part1Len + (size_t)entry.Part2Len + maxArg1 + maxArg2 + 1;
+      entry.BufferSizeHint = AlignBufferSizeHint(maxSize);
+    }
+
     return entry;
   }
 
@@ -486,10 +529,14 @@ namespace
     , char* buffer
     , size_t bufferSize
     , va_list args
+    , size_t* outLen
   )
   {
     if (buffer == nullptr || bufferSize == 0)
       return false;
+
+    if (outLen)
+      *outLen = 0;
 
     char* dst = buffer;
     size_t left = bufferSize;
@@ -506,6 +553,8 @@ namespace
     {
       FAST_FORMAT_STAT(ExecuteLiteral);
       CopyBounded(dst, left, entry.Format, entry.Part0Len);
+      if (outLen)
+        *outLen = (size_t)(dst - buffer);
       return true;
     }
 
@@ -522,6 +571,8 @@ namespace
     if (entry.SpecCount == 1)
     {
       CopyBounded(dst, left, entry.Format + entry.Part1Pos, entry.Part1Len);
+      if (outLen)
+        *outLen = (size_t)(dst - buffer);
       return true;
     }
 
@@ -537,6 +588,8 @@ namespace
       return false;
 
     CopyBounded(dst, left, entry.Format + entry.Part2Pos, entry.Part2Len);
+    if (outLen)
+      *outLen = (size_t)(dst - buffer);
     return true;
   }
 }
@@ -547,6 +600,7 @@ bool Logme::TryFastFormat(
   , size_t bufferSize
   , const char* format
   , va_list args
+  , size_t* outLen
 )
 {
   FAST_FORMAT_STAT(Calls);
@@ -558,7 +612,7 @@ bool Logme::TryFastFormat(
   if (cached)
   {
     FAST_FORMAT_STAT(CacheHits);
-    return ExecuteFastFormat(*cached, buffer, bufferSize, args);
+    return ExecuteFastFormat(*cached, buffer, bufferSize, args, outLen);
   }
 
   FAST_FORMAT_STAT(CacheMisses);
@@ -576,5 +630,5 @@ bool Logme::TryFastFormat(
     }
   }
 
-  return ExecuteFastFormat(entry, buffer, bufferSize, args);
+  return ExecuteFastFormat(entry, buffer, bufferSize, args, outLen);
 }

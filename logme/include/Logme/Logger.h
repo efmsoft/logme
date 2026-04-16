@@ -29,6 +29,7 @@ namespace Logme
   struct StdFormat{};
 #endif
   struct ControlSslContext;
+  LOGMELNK extern bool ShutdownCalled;
 
   class Logger : public std::enable_shared_from_this<Logger>
   {
@@ -133,6 +134,9 @@ namespace Logme
     template<typename... Args>
     void Log(const Context& context, const StdFormat*, const ID& id, const char* fmt, Args&&... args)
     {
+      if (ShutdownCalled)
+        return;
+
       std::string out = std::vformat(fmt, std::make_format_args(args...));
       Log(context, id, "%s", out.c_str());
     }
@@ -140,6 +144,12 @@ namespace Logme
     template<typename... Args>
     void Log(const Context& context, const StdFormat*, const ChannelPtr& ch, const char* fmt, Args&&... args)
     {
+      if (ShutdownCalled)
+        return;
+
+      if (ch && context.ErrorLevel < Level::LEVEL_ERROR && ch->IsOutputActive(context) == false)
+        return;
+
       std::string out = std::vformat(fmt, std::make_format_args(args...));
       Log(context, ch, "%s", out.c_str());
     }
@@ -164,6 +174,9 @@ namespace Logme
     template<typename... Args>
     void Log(const Context& context, const StdFormat*, Override& ovr, const ID& id, const char* fmt, Args&&... args)
     {
+      if (ShutdownCalled)
+        return;
+
       std::string out = std::vformat(fmt, std::make_format_args(args...));
       Log(context, ovr, id, "%s", out.c_str());
     }
@@ -171,7 +184,10 @@ namespace Logme
     template<typename... Args>
     void Log(const Context& context, const StdFormat*, Override& ovr, const ChannelPtr& ch, const char* fmt, Args&&... args)
     {
-      if (ch && context.ErrorLevel < ch->GetFilterLevel())
+      if (ShutdownCalled)
+        return;
+
+      if (ch && context.ErrorLevel < Level::LEVEL_ERROR && ch->IsOutputActive(context) == false)
         return;
 
       std::string out = std::vformat(fmt, std::make_format_args(args...));
@@ -181,6 +197,9 @@ namespace Logme
     template<typename... Args>
     void Log(const Context& context, const StdFormat*, const ID& id, Override& ovr, const char* fmt, Args&&... args)
     {
+      if (ShutdownCalled)
+        return;
+
       std::string out = std::vformat(fmt, std::make_format_args(args...));
       Log(context, id, ovr, "%s", out.c_str());
     }
@@ -188,7 +207,10 @@ namespace Logme
     template<typename... Args>
     void Log(const Context& context, const StdFormat*, const ChannelPtr& ch, Override& ovr, const char* fmt, Args&&... args)
     {
-      if (ch && context.ErrorLevel < ch->GetFilterLevel())
+      if (ShutdownCalled)
+        return;
+
+      if (ch && context.ErrorLevel < Level::LEVEL_ERROR && ch->IsOutputActive(context) == false)
         return;
 
       std::string out = std::vformat(fmt, std::make_format_args(args...));
@@ -206,6 +228,9 @@ namespace Logme
     template<typename... Args>
     void Log(const Context& context, const StdFormat*, const char* fmt, Args&&... args)
     {
+      if (ShutdownCalled)
+        return;
+
       std::string out = std::vformat(fmt, std::make_format_args(args...));
       Log(context, "%s", out.c_str());
     }
@@ -290,7 +315,6 @@ namespace Logme
 
   typedef std::shared_ptr<Logger> LoggerPtr;
   LOGMELNK extern LoggerPtr Instance;
-  LOGMELNK extern bool ShutdownCalled;
 
   inline ChannelPtr PCH()
   {

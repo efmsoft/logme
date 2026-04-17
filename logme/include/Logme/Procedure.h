@@ -56,7 +56,18 @@ namespace Logme
 
 #if _LOGME_ACTIVE
 
-#if defined(__cplusplus) && (__cplusplus >= 202002L) && defined(__clang__)
+#if defined(__CLION_IDE__) || defined(__JETBRAINS_IDE__)
+#define _LogmeP(level, retval, ...) \
+  unsigned char _procStorage[sizeof(Logme::PrinterT<int>)]; \
+  static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); \
+  const Logme::Context& _procContext = LOGME_CONTEXT(LOGME_JOIN(_logme_ctx_, __LINE__), level, &CH, &SUBSID __VA_OPT__(,) __VA_ARGS__); \
+  Logme::Procedure logme_proc(_procContext, Logme::CreatePrinter(retval, _procStorage) __VA_OPT__(,) __VA_ARGS__)
+
+#define _LogmePV(level, ...) \
+  static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); \
+  const Logme::Context& _procContext = LOGME_CONTEXT(LOGME_JOIN(_logme_ctx_, __LINE__), level, &CH, &SUBSID __VA_OPT__(,) __VA_ARGS__); \
+  Logme::Procedure logme_proc(_procContext, nullptr __VA_OPT__(,) __VA_ARGS__)
+#elif defined(__cplusplus) && (__cplusplus >= 202002L) && defined(__clang__)
 #define _LogmeP(level, retval, ...) \
   unsigned char _procStorage[sizeof(Logme::PrinterT<int>)]; \
   static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); \

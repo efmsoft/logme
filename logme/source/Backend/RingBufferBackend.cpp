@@ -69,12 +69,12 @@ void RingBufferBackend::Append(const char* str, int nc)
     Ring.pop_front();
 }
 
-void RingBufferBackend::Display(Logme::Context& context, const char* line)
+void RingBufferBackend::Display(Logme::Context& context)
 {
   OutputFlags flags = Owner->GetFlags();
 
   int nc;
-  const char* str = context.Apply(Owner, flags, line, nc);
+  const char* str = context.Apply(Owner, flags, nc);
 
   Append(str, nc);
 }

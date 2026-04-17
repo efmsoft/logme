@@ -102,6 +102,48 @@ void Context::InitContext()
   Applied.None = true;
 }
 
+void Context::SetText(const char* text)
+{
+  assert(TempBuffer == nullptr);
+  assert(TempBufferSize == 0);
+  assert(TempBufferCapacity == 0);
+
+  if (text == nullptr)
+    text = "";
+
+  size_t len = strlen(text);
+  size_t capacity = len + 16;
+
+  Storage.reserve(capacity);
+  capacity = Storage.capacity();
+  Storage.resize(capacity);
+
+  if (len)
+    memcpy(Storage.data(), text, len);
+
+  Storage.data()[len] = '\0';
+
+  TempBuffer = Storage.data();
+  TempBufferSize = len;
+  TempBufferCapacity = capacity;
+}
+
+void Context::SetBuffer(const char* buffer, size_t size, size_t capacity)
+{
+  assert(TempBuffer == nullptr);
+  assert(TempBufferSize == 0);
+  assert(TempBufferCapacity == 0);
+
+  TempBuffer = buffer;
+  TempBufferSize = size;
+  TempBufferCapacity = capacity;
+}
+
+const char* Context::GetText() const
+{
+  return TempBuffer;
+}
+
 void Context::CreateTZD(char* tzd)
 {
   time_t now = time(0);
@@ -344,8 +386,11 @@ void Context::InitSignature()
   }
 }
 
-const char* Context::Apply(const ChannelPtr& ch, OutputFlags flags, const char* text, int& nc)
+const char* Context::Apply(const ChannelPtr& ch, OutputFlags flags, int& nc)
 {
+  assert(TempBuffer != nullptr);
+
+  const char* text = TempBuffer;
   if (Ovr)
   {
     flags.Value |= Ovr->Add.Value;
@@ -445,7 +490,7 @@ const char* Context::Apply(const ChannelPtr& ch, OutputFlags flags, const char* 
   if (flags.Eol)
     nEol = 1;
 
-  int nLine = (int)strlen(text);
+  int nLine = (int)TempBufferSize;
 
   int nAppend = 0;
   const char* appendText = "";
@@ -459,7 +504,6 @@ const char* Context::Apply(const ChannelPtr& ch, OutputFlags flags, const char* 
 
   bool canReuseTempBuffer =
     TempBuffer != nullptr
-    && text == TempBuffer
     && TempBufferSize == (size_t)nLine
     && nTimestamp == 0
     && nSignature == 0

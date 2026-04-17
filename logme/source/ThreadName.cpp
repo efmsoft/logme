@@ -46,7 +46,8 @@ ThreadName::~ThreadName()
       // happen that the next message to the channel will be output much 
       // later, and the channel name change will appear as if it happened 
       // much later than it actually did
-      PCH->Display(c, ".");
+      c.SetText(".");
+      PCH->Display(c);
     }
   }
 }

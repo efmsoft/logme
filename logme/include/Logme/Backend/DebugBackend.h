@@ -11,6 +11,6 @@ namespace Logme
 
     LOGMELNK DebugBackend(ChannelPtr owner);
 
-    LOGMELNK void Display(Context& context, const char* line) override;
+    LOGMELNK void Display(Context& context) override;
   };
 }

@@ -27,7 +27,7 @@ namespace Logme
 
     LOGMELNK RingBufferBackend(ChannelPtr owner);
 
-    LOGMELNK void Display(Context& context, const char* line) override;
+    LOGMELNK void Display(Context& context) override;
 
     LOGMELNK void Clear();
     LOGMELNK void Append(const char* str, int nc);

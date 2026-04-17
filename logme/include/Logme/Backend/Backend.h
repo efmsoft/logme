@@ -56,6 +56,6 @@ namespace Logme
   
   protected:
     friend class Channel;
-    LOGMELNK virtual void Display(Context& context, const char* line) = 0;
+    LOGMELNK virtual void Display(Context& context) = 0;
   };
 }

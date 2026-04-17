@@ -42,7 +42,7 @@ namespace Logme
     LOGMELNK BufferBackend(Logme::ChannelPtr owner);
 
     LOGMELNK void Clear();
-    LOGMELNK void Display(Logme::Context& context, const char* line) override;
+    LOGMELNK void Display(Logme::Context& context) override;
     LOGMELNK void Append(BufferBackend& bb);
     LOGMELNK void Append(const char* str, int nc);
 

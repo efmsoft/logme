@@ -36,10 +36,9 @@ namespace
     {
     }
 
-    void Display(Context &context, const char *line) override
+    void Display(Context &context) override
     {
       (void)context;
-      (void)line;
 
       ++CallCount;
       LogmeI(Target, "%s", Text.c_str());
@@ -66,10 +65,9 @@ namespace
     {
     }
 
-    void Display(Context &context, const char *line) override
+    void Display(Context &context) override
     {
       (void)context;
-      (void)line;
 
       ++ReentryAttemptCount;
 

@@ -122,7 +122,7 @@ namespace Logme
   #define xuint64_t HexType<uint64_t>
 }
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && defined(_MSVC_TRADITIONAL) && _MSVC_TRADITIONAL
 #define _LOGME_NONEMPTY(...) ,
 #else
 #define _LOGME_EMPTYFIRST(x,...) _LOGME_A x (_LOGME_B)

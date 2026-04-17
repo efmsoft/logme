@@ -22,12 +22,12 @@ struct TestBackend : public Logme::Backend
     History.clear();
   }
 
-  void Display(Logme::Context& context, const char* line) override
+  void Display(Logme::Context& context) override
   {
     auto& flags = Owner->GetFlags();
 
     int nc{};
-    Line = context.Apply(Owner, flags, line, nc);
+    Line = context.Apply(Owner, flags, nc);
     History.push_back(Line);
   }
 };

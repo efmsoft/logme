@@ -352,7 +352,7 @@ bool FileBackend::ChangePart()
   return true;
 }
 
-void FileBackend::Display(Context& context, const char* line)
+void FileBackend::Display(Context& context)
 {
   FILE_CNT(GlobalDisplayCalls.fetch_add(1, std::memory_order_relaxed));
   if (File == -1 || ShutdownFlag.load(std::memory_order_relaxed))
@@ -376,7 +376,7 @@ void FileBackend::Display(Context& context, const char* line)
   }
 
   int nc;
-  const char* buffer = context.Apply(Owner, Owner->GetFlags(), line, nc);
+  const char* buffer = context.Apply(Owner, Owner->GetFlags(), nc);
   AppendStringInternal(buffer, nc);
 }
 

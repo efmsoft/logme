@@ -34,6 +34,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(MSVC)
   add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/EHsc>)
+  add_compile_options(/Zc:preprocessor)
 endif()
 
 option(LOGME_BUILD_EXAMPLES "Build logme examples" ON)

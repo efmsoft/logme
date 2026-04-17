@@ -112,12 +112,12 @@ void BufferBackend::Append(const char* str, int nc)
   Buffer[pos + nc] = '\0';
 }
 
-void BufferBackend::Display(Logme::Context& context, const char* line)
+void BufferBackend::Display(Logme::Context& context)
 {
   OutputFlags flags = Owner->GetFlags();
 
   int nc;
-  const char* str = context.Apply(Owner, flags, line, nc);
+  const char* str = context.Apply(Owner, flags, nc);
 
   Append(str, nc);
 }

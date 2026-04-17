@@ -153,7 +153,7 @@ namespace Logme
     LOGMELNK static FileBackendCounters GetCounters();
   
   protected:
-    LOGMELNK void Display(Context& context, const char* line) override;
+    LOGMELNK void Display(Context& context) override;
     void AppendStringInternal(const char* text, size_t len);
 
   private:

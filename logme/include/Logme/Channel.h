@@ -87,7 +87,7 @@ namespace Logme
     LOGMELNK ~Channel();
 
     LOGMELNK bool operator==(const char* name) const;
-    LOGMELNK void Display(Context& context, const char* line);
+    LOGMELNK void Display(Context& context);
     LOGMELNK void SetDisplayFilter(TDisplayFilter filter = TDisplayFilter());
 
     LOGMELNK const OutputFlags& GetFlags() const;

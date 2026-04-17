@@ -119,7 +119,7 @@ void Channel::SetDisplayFilter(TDisplayFilter filter)
   DisplayFilter = filter;
 }
 
-void Channel::Display(Context& context, const char* line)
+void Channel::Display(Context& context)
 {
   if (ShutdownCalled)
     return;
@@ -146,7 +146,7 @@ void Channel::Display(Context& context, const char* line)
     TDisplayFilter f = DisplayFilter;
     DataLock.unlock();
 
-    if (f(context, line) == false)
+    if (f(context, context.GetText()) == false)
       return;
 
     DataLock.lock();
@@ -179,9 +179,9 @@ void Channel::Display(Context& context, const char* line)
       // We have to apply context right now to use this channel settings
 
       int nc = 0;
-      context.Apply(shared_from_this(), flags, line, nc);
+      context.Apply(shared_from_this(), flags, nc);
 
-      ch->Display(context, line);
+      ch->Display(context);
     }
 
     DataLock.lock();
@@ -192,7 +192,7 @@ void Channel::Display(Context& context, const char* line)
     auto& p = *it;
 
     if (p->Freezed == false)
-      p->Display(context, line);
+      p->Display(context);
   }
 
   DataLock.unlock();

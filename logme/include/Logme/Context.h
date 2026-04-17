@@ -36,7 +36,7 @@ namespace Logme
       : State(ContextCacheState::EMPTY)
     {
       Ffe.Format = nullptr;
-    }
+    }  
   };
 
   struct ShortenerContext
@@ -103,6 +103,7 @@ namespace Logme
     const char* TempBuffer;
     size_t TempBufferSize;
     size_t TempBufferCapacity;
+    std::string Storage;
 
     ShortenerContext MethodShortener;
 
@@ -162,8 +163,12 @@ namespace Logme
     LOGMELNK void InitSignature();
     LOGMELNK void InitThreadProcessID(const ChannelPtr& ch, OutputFlags flags);
     LOGMELNK void CreateTZD(char* tzd);
+    LOGMELNK void SetText(const char* text);
+    LOGMELNK void SetBuffer(const char* buffer, size_t size, size_t capacity);
 
-    LOGMELNK const char* Apply(const ChannelPtr& ch, OutputFlags flags, const char* text, int& nc);
+    LOGMELNK const char* Apply(const ChannelPtr& ch, OutputFlags flags, int& nc);
+  
+    LOGMELNK const char* GetText() const;
   };
 }
 

@@ -976,9 +976,7 @@ void Logger::DoLog(Context& context, const char* format, va_list args)
     if (format[0] == '%' && format[1] == 's' && format[2] == '\0')
     { 
       buffer = va_arg(args, char*);
-      context.TempBuffer = nullptr;
-      context.TempBufferSize = 0;
-      context.TempBufferCapacity = 0;
+      context.SetText(buffer);
     }
     else
     {
@@ -1014,12 +1012,10 @@ void Logger::DoLog(Context& context, const char* format, va_list args)
         }
       }
 
-      context.TempBuffer = buffer;
-      context.TempBufferSize = bufferLen;
-      context.TempBufferCapacity = size;
+      context.SetBuffer(buffer, bufferLen, size);
     }
 
-    ch->Display(context, buffer);
+    ch->Display(context);
 
     if (context.ErrorLevel >= Level::LEVEL_ERROR)
     {
@@ -1042,7 +1038,7 @@ void Logger::DoLog(Context& context, const char* format, va_list args)
             Override* ovrbk = context.Ovr;
             context.Ovr = &ovr;
 
-            chError->Display(context, buffer);
+            chError->Display(context);
             
             context.Ovr = ovrbk;
           }

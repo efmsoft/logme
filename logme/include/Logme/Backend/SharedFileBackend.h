@@ -46,7 +46,7 @@ namespace Logme
 
     LOGMELNK void SetMaxSize(size_t size);
 
-    LOGMELNK void Display(Context& context, const char* line) override;
+    LOGMELNK void Display(Context& context) override;
     LOGMELNK std::string GetPathName(int index = 0) override;
 
     LOGMELNK BackendConfigPtr CreateConfig() override;

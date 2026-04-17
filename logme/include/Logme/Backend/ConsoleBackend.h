@@ -11,7 +11,7 @@ namespace Logme
 
     LOGMELNK ConsoleBackend(ChannelPtr owner);
 
-    LOGMELNK void Display(Context& context, const char* line) override;
+    LOGMELNK void Display(Context& context) override;
     LOGMELNK const char* GetEscapeSequence(Level level);
 
     LOGMELNK FILE* GetOutputStream(Context& context);

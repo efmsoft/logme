@@ -12,14 +12,13 @@ DebugBackend::DebugBackend(ChannelPtr owner)
 {
 }
 
-void DebugBackend::Display(Context& context, const char* line)
+void DebugBackend::Display(Context& context)
 {
   (void)context;
-  (void)line;
-
+  
 #ifdef _WIN32
   int nc;
-  const char* buffer = context.Apply(Owner, Owner->GetFlags(), line, nc);
+  const char* buffer = context.Apply(Owner, Owner->GetFlags(), nc);
 
   OutputDebugStringA(buffer);
 #endif

@@ -186,10 +186,17 @@ BackendConfigPtr FileBackend::CreateConfig()
 void FileBackend::Flush()
 {
   FILE_CNT(GlobalFlushWaitCalls.fetch_add(1, std::memory_order_relaxed));
+  for (;;)
+  {
+    bool needSignal = false;
+    if (!Queue.PublishCurrent(needSignal))
+      break;
+  }
+
   RequestFlush();
 
   std::unique_lock locker(BufferLock);
-  Done.wait(locker, [this]() {return QueuedBytes.load(std::memory_order_relaxed) == 0;});
+  Done.wait(locker, [this]() { return QueuedBytes.load(std::memory_order_relaxed) == 0; });
 }
 
 void FileBackend::Freeze()

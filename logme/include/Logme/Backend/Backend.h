@@ -21,8 +21,22 @@ namespace Logme
   {
     std::string Type;
 
+    /// <summary>
+    /// Creates backend configuration object for specified backend type.
+    /// </summary>
+    /// <param name="type">Backend type id.</param>
     LOGMELNK BackendConfig(const char* type);
+
+    /// <summary>
+    /// Destroys backend configuration object.
+    /// </summary>
     LOGMELNK virtual ~BackendConfig();
+
+    /// <summary>
+    /// Parses backend-specific configuration from JSON node.
+    /// </summary>
+    /// <param name="po">JSON object with backend configuration.</param>
+    /// <returns>true if configuration was parsed.</returns>
     LOGMELNK virtual bool Parse(const Json::Value* po);
   };
 
@@ -40,18 +54,65 @@ namespace Logme
     bool Freezed;
 
   public:
+    /// <summary>
+    /// Creates backend attached to owner channel.
+    /// </summary>
+    /// <param name="owner">Channel that owns backend.</param>
+    /// <param name="type">Backend type id.</param>
     LOGMELNK Backend(ChannelPtr owner, const char* type);
+
+    /// <summary>
+    /// Destroys backend.
+    /// </summary>
     LOGMELNK virtual ~Backend();
 
+    /// <summary>
+    /// Creates configuration object for this backend type.
+    /// </summary>
+    /// <returns>Backend configuration object.</returns>
     LOGMELNK virtual BackendConfigPtr CreateConfig();
+
+    /// <summary>
+    /// Applies backend-specific configuration.
+    /// </summary>
+    /// <param name="c">Configuration object matching this backend type.</param>
+    /// <returns>true if configuration was applied.</returns>
     LOGMELNK virtual bool ApplyConfig(BackendConfigPtr c);
+
+    /// <summary>
+    /// Checks whether backend has no pending work.
+    /// </summary>
+    /// <returns>true if backend can be safely deleted by autodelete logic.</returns>
     LOGMELNK virtual bool IsIdle() const;
+
+    /// <summary>
+    /// Prevents backend from receiving new records.
+    /// </summary>
     LOGMELNK virtual void Freeze();
+
+    /// <summary>
+    /// Flushes buffered backend output.
+    /// </summary>
     LOGMELNK virtual void Flush();
 
+    /// <summary>
+    /// Returns backend type id.
+    /// </summary>
+    /// <returns>Backend type id used in configuration and factory creation.</returns>
     LOGMELNK const char* GetType() const;
 
+    /// <summary>
+    /// Creates built-in backend by type id.
+    /// </summary>
+    /// <param name="type">Backend type id.</param>
+    /// <param name="owner">Channel that will own created backend.</param>
+    /// <returns>Backend object, or nullptr when type is unknown or logger is shutting down.</returns>
     LOGMELNK static BackendPtr Create(const char* type, ChannelPtr owner);
+
+    /// <summary>
+    /// Returns backend-specific status details for diagnostics.
+    /// </summary>
+    /// <returns>Human-readable details string, or empty string when backend has no details.</returns>
     LOGMELNK virtual std::string FormatDetails();
   
   protected:

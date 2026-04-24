@@ -91,8 +91,18 @@ namespace Logme
 
 #ifndef OBF
 #ifndef LOGME_DISABLE_OBFSTR
+  /// <summary>
+  /// Obfuscates string literal at compile time and decodes it on demand.
+  /// </summary>
+  /// <param name="x">String literal to obfuscate.</param>
+  /// <returns>Obfuscated string object convertible to const char*.</returns>
   #define OBF(x) ::Logme::MakeObfString(x)
 #else
+  /// <summary>
+  /// Returns string literal unchanged when obfuscation is disabled.
+  /// </summary>
+  /// <param name="x">String literal.</param>
+  /// <returns>Original string literal.</returns>
   #define OBF(x) (x)
 #endif
 #endif

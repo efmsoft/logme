@@ -96,77 +96,185 @@ namespace Logme
 #endif
 
 #if defined(__cplusplus) && (__cplusplus >= 202002L) && defined(__clang__)
+/// <summary>
+/// Logs procedure begin/end at INFO level and prints retval on exit.
+/// </summary>
+/// <param name="retval">Return value variable printed when the procedure scope ends.</param>
+/// <param name="...">Optional arguments: channel/id or ChannelPtr, format and format arguments.</param>
 #define LogmeP(retval, ...) \
   _LogmeP(Logme::Level::LEVEL_INFO, retval __VA_OPT__(,) __VA_ARGS__)
 
+/// <summary>
+/// Logs procedure begin/end at INFO level without return value.
+/// </summary>
+/// <param name="...">Optional arguments: channel/id or ChannelPtr, format and format arguments.</param>
 #define LogmePV(...) \
   _LogmePV(Logme::Level::LEVEL_INFO __VA_OPT__(,) __VA_ARGS__)
 
+/// <summary>
+/// Logs procedure begin/end at INFO level and prints retval on exit.
+/// </summary>
+/// <param name="retval">Return value variable printed when the procedure scope ends.</param>
+/// <param name="...">Optional arguments: channel/id or ChannelPtr, format and format arguments.</param>
 #define LogmePI(retval, ...) \
   _LogmeP(Logme::Level::LEVEL_INFO, retval __VA_OPT__(,) __VA_ARGS__)
 
+/// <summary>
+/// Logs procedure begin/end at INFO level without return value.
+/// </summary>
+/// <param name="...">Optional arguments: channel/id or ChannelPtr, format and format arguments.</param>
 #define LogmePVI(...) \
   _LogmePV(Logme::Level::LEVEL_INFO __VA_OPT__(,) __VA_ARGS__)
 
+/// <summary>
+/// Logs procedure begin/end at DEBUG level and prints retval on exit.
+/// </summary>
+/// <param name="retval">Return value variable printed when the procedure scope ends.</param>
+/// <param name="...">Optional arguments: channel/id or ChannelPtr, format and format arguments.</param>
 #define LogmePD(retval, ...) \
   _LogmeP(Logme::Level::LEVEL_DEBUG, retval __VA_OPT__(,) __VA_ARGS__)
 
+/// <summary>
+/// Logs procedure begin/end at DEBUG level without return value.
+/// </summary>
+/// <param name="...">Optional arguments: channel/id or ChannelPtr, format and format arguments.</param>
 #define LogmePVD(...) \
   _LogmePV(Logme::Level::LEVEL_DEBUG __VA_OPT__(,) __VA_ARGS__)
 
+/// <summary>
+/// Logs procedure begin/end at WARN level and prints retval on exit.
+/// </summary>
+/// <param name="retval">Return value variable printed when the procedure scope ends.</param>
+/// <param name="...">Optional arguments: channel/id or ChannelPtr, format and format arguments.</param>
 #define LogmePW(retval, ...) \
   _LogmeP(Logme::Level::LEVEL_WARN, retval __VA_OPT__(,) __VA_ARGS__)
 
+/// <summary>
+/// Logs procedure begin/end at WARN level without return value.
+/// </summary>
+/// <param name="...">Optional arguments: channel/id or ChannelPtr, format and format arguments.</param>
 #define LogmePVW(...) \
   _LogmePV(Logme::Level::LEVEL_WARN __VA_OPT__(,) __VA_ARGS__)
 
+/// <summary>
+/// Logs procedure begin/end at ERROR level and prints retval on exit.
+/// </summary>
+/// <param name="retval">Return value variable printed when the procedure scope ends.</param>
+/// <param name="...">Optional arguments: channel/id or ChannelPtr, format and format arguments.</param>
 #define LogmePE(retval, ...) \
   _LogmeP(Logme::Level::LEVEL_ERROR, retval __VA_OPT__(,) __VA_ARGS__)
 
+/// <summary>
+/// Logs procedure begin/end at ERROR level without return value.
+/// </summary>
+/// <param name="...">Optional arguments: channel/id or ChannelPtr, format and format arguments.</param>
 #define LogmePVE(...) \
   _LogmePV(Logme::Level::LEVEL_ERROR __VA_OPT__(,) __VA_ARGS__)
 
+/// <summary>
+/// Logs procedure begin/end at CRITICAL level and prints retval on exit.
+/// </summary>
+/// <param name="retval">Return value variable printed when the procedure scope ends.</param>
+/// <param name="...">Optional arguments: channel/id or ChannelPtr, format and format arguments.</param>
 #define LogmePC(retval, ...) \
   _LogmeP(Logme::Level::LEVEL_CRITICAL, retval __VA_OPT__(,) __VA_ARGS__)
 
+/// <summary>
+/// Logs procedure begin/end at CRITICAL level without return value.
+/// </summary>
+/// <param name="...">Optional arguments: channel/id or ChannelPtr, format and format arguments.</param>
 #define LogmePVC(...) \
   _LogmePV(Logme::Level::LEVEL_CRITICAL __VA_OPT__(,) __VA_ARGS__)
 
 #else
 
+/// <summary>
+/// Logs procedure begin/end at INFO level and prints retval on exit.
+/// </summary>
+/// <param name="retval">Return value variable printed when the procedure scope ends.</param>
+/// <param name="...">Optional arguments: channel/id or ChannelPtr, format and format arguments.</param>
 #define LogmeP(retval, ...) \
   _LogmeP(Logme::Level::LEVEL_INFO, retval, ## __VA_ARGS__)
 
+/// <summary>
+/// Logs procedure begin/end at INFO level without return value.
+/// </summary>
+/// <param name="...">Optional arguments: channel/id or ChannelPtr, format and format arguments.</param>
 #define LogmePV(...) \
   _LogmePV(Logme::Level::LEVEL_INFO, ## __VA_ARGS__)
 
+/// <summary>
+/// Logs procedure begin/end at INFO level and prints retval on exit.
+/// </summary>
+/// <param name="retval">Return value variable printed when the procedure scope ends.</param>
+/// <param name="...">Optional arguments: channel/id or ChannelPtr, format and format arguments.</param>
 #define LogmePI(retval, ...) \
   _LogmeP(Logme::Level::LEVEL_INFO, retval, ## __VA_ARGS__)
 
+/// <summary>
+/// Logs procedure begin/end at INFO level without return value.
+/// </summary>
+/// <param name="...">Optional arguments: channel/id or ChannelPtr, format and format arguments.</param>
 #define LogmePVI(...) \
   _LogmePV(Logme::Level::LEVEL_INFO, ## __VA_ARGS__)
 
+/// <summary>
+/// Logs procedure begin/end at DEBUG level and prints retval on exit.
+/// </summary>
+/// <param name="retval">Return value variable printed when the procedure scope ends.</param>
+/// <param name="...">Optional arguments: channel/id or ChannelPtr, format and format arguments.</param>
 #define LogmePD(retval, ...) \
   _LogmeP(Logme::Level::LEVEL_DEBUG, retval, ## __VA_ARGS__)
 
+/// <summary>
+/// Logs procedure begin/end at DEBUG level without return value.
+/// </summary>
+/// <param name="...">Optional arguments: channel/id or ChannelPtr, format and format arguments.</param>
 #define LogmePVD(...) \
   _LogmePV(Logme::Level::LEVEL_DEBUG, ## __VA_ARGS__)
 
+/// <summary>
+/// Logs procedure begin/end at WARN level and prints retval on exit.
+/// </summary>
+/// <param name="retval">Return value variable printed when the procedure scope ends.</param>
+/// <param name="...">Optional arguments: channel/id or ChannelPtr, format and format arguments.</param>
 #define LogmePW(retval, ...) \
   _LogmeP(Logme::Level::LEVEL_WARN, retval, ## __VA_ARGS__)
 
+/// <summary>
+/// Logs procedure begin/end at WARN level without return value.
+/// </summary>
+/// <param name="...">Optional arguments: channel/id or ChannelPtr, format and format arguments.</param>
 #define LogmePVW(...) \
   _LogmePV(Logme::Level::LEVEL_WARN, ## __VA_ARGS__)
 
+/// <summary>
+/// Logs procedure begin/end at ERROR level and prints retval on exit.
+/// </summary>
+/// <param name="retval">Return value variable printed when the procedure scope ends.</param>
+/// <param name="...">Optional arguments: channel/id or ChannelPtr, format and format arguments.</param>
 #define LogmePE(retval, ...) \
   _LogmeP(Logme::Level::LEVEL_ERROR, retval, ## __VA_ARGS__)
 
+/// <summary>
+/// Logs procedure begin/end at ERROR level without return value.
+/// </summary>
+/// <param name="...">Optional arguments: channel/id or ChannelPtr, format and format arguments.</param>
 #define LogmePVE(...) \
   _LogmePV(Logme::Level::LEVEL_ERROR, ## __VA_ARGS__)
 
+/// <summary>
+/// Logs procedure begin/end at CRITICAL level and prints retval on exit.
+/// </summary>
+/// <param name="retval">Return value variable printed when the procedure scope ends.</param>
+/// <param name="...">Optional arguments: channel/id or ChannelPtr, format and format arguments.</param>
 #define LogmePC(retval, ...) \
   _LogmeP(Logme::Level::LEVEL_CRITICAL, retval, ## __VA_ARGS__)
 
+/// <summary>
+/// Logs procedure begin/end at CRITICAL level without return value.
+/// </summary>
+/// <param name="...">Optional arguments: channel/id or ChannelPtr, format and format arguments.</param>
 #define LogmePVC(...) \
   _LogmePV(Logme::Level::LEVEL_CRITICAL, ## __VA_ARGS__)
 

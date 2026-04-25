@@ -27,8 +27,14 @@
 
 namespace Logme
 {
+  /// <summary>
+  /// Bit-field set controlling which parts of a log record are printed and how they are printed.
+  /// It is used in channel configuration and in per-message Override objects. Individual fields are
+  /// intentionally exposed for direct assignment, while Value allows copying or resetting the whole set.
+  /// </summary>
   union OutputFlags
   {
+    /// <summary>Raw 32-bit representation of all output flags.</summary>
     uint32_t Value;
 
     struct
@@ -37,7 +43,8 @@ namespace Logme
       uint32_t Signature : 1; // 'E' / 'W' / 'D' / 'C' signature
       uint32_t Location : 2; // 0 - none, 1 - short, 2 - full (Detality enum)
       uint32_t Method : 1; // "MethodName(): "
-      uint32_t Eol : 1; // Append \n
+      uint32_t Eol : 1; // Append 
+
       uint32_t ErrorPrefix : 1; // Append "Error: " / "Critical: "
       uint32_t Duration : 1; // Duration of procedures
       uint32_t ThreadID : 1; // Thread ID
@@ -54,11 +61,21 @@ namespace Logme
       uint32_t None : 1; // Invalid flags bit
     };
 
+    /// <summary>
+    /// Creates the default output flag set used by channels: timestamp, level signature, method name,
+    /// error prefix, console highlighting, line ending, and thread-transition logging are enabled.
+    /// </summary>
     LOGMELNK OutputFlags();
 
+    /// <summary>
+    /// Converts enabled flags to a readable string, optionally wrapping the result in brackets.
+    /// </summary>
     LOGMELNK std::string ToString(const char* separator = " ", bool brackets = false) const;
+    /// <summary>Returns the readable name of the selected timestamp mode.</summary>
     LOGMELNK std::string TimestampType() const;
+    /// <summary>Returns the readable name of the selected source-location mode.</summary>
     LOGMELNK std::string LocationType() const;
+    /// <summary>Returns the readable name of the selected console-output routing mode.</summary>
     LOGMELNK std::string ConsoleType() const;
   };
 

@@ -79,7 +79,7 @@ bool ParseHomeDirectoryConfig(
       return false;
     }
 
-    hdc.CheckPeriodicity = GetInterval(dog, "check-periodicity", 0);
+    hdc.CheckPeriodicity = static_cast<int>(GetInterval(dog, "check-periodicity", 0));
   }
 
   if (!dog.isMember("file-extension"))

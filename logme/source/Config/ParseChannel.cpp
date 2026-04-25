@@ -231,25 +231,25 @@ static bool GetBackends(const Json::Value& o, int i, BackendConfigArray& arr)
   bool ok = true;
   for (Json::Value::ArrayIndex j = 0; j < b.size(); ++j)
   {
-    auto& o = b[j];
+    auto& backendConfig = b[j];
 
-    if (!o.isObject())
+    if (!backendConfig.isObject())
     {
       LogmeE(CHINT, "\"channels[%i].backends[%i]\" is not an objects", i, j);
       return false;
     }
 
-    if (!PlatformOK(o, i, j, ok))
+    if (!PlatformOK(backendConfig, i, j, ok))
       return false;
     else if (!ok)
       continue;
 
-    if (!BuildOK(o, i, j, ok))
+    if (!BuildOK(backendConfig, i, j, ok))
       return false;
     else if (!ok)
       continue;
 
-    if (!ParseBackend(o, i, j, arr))
+    if (!ParseBackend(backendConfig, i, j, arr))
       return false;
   }
 
@@ -294,28 +294,28 @@ bool ParseChannels(
     else if (!ok)
       continue;
 
-    ChannelConfig c;
+    ChannelConfig channelConfig;
 
-    if (!GetChannelName(o, i, c.Name))
+    if (!GetChannelName(o, i, channelConfig.Name))
       return false;
 
-    if (!GetChannelFlags(o, i, m, c.Flags))
+    if (!GetChannelFlags(o, i, m, channelConfig.Flags))
       return false;
 
-    if (!GetFilterLevel(o, i, c.Filter))
+    if (!GetFilterLevel(o, i, channelConfig.Filter))
       return false;
 
-    if (!GetEnabled(o, i, c.Enabled))
+    if (!GetEnabled(o, i, channelConfig.Enabled))
       return false;
 
-    if (!GetBackends(o, i, c.Backend))
+    if (!GetBackends(o, i, channelConfig.Backend))
       return false;
 
     std::string link;
     if (GetLink(o, i, link))
-      c.Link = link;
+      channelConfig.Link = link;
 
-    arr.push_back(c);
+    arr.push_back(channelConfig);
   }
 
   return true;

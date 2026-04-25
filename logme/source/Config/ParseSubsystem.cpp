@@ -48,7 +48,6 @@ bool ParseSubsystems(
     return false;
   }
 
-  bool ok = true;
   for (Json::Value::ArrayIndex i = 0; i < l.size(); ++i)
   {
     auto& o = l[i];

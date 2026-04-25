@@ -21,15 +21,8 @@ namespace Logme
   {
     std::string Type;
 
-    /// <summary>
-    /// Creates backend configuration object for specified backend type.
-    /// </summary>
-    /// <param name="type">Backend type id.</param>
     LOGMELNK BackendConfig(const char* type);
 
-    /// <summary>
-    /// Destroys backend configuration object.
-    /// </summary>
     LOGMELNK virtual ~BackendConfig();
 
     /// <summary>
@@ -54,22 +47,10 @@ namespace Logme
     bool Freezed;
 
   public:
-    /// <summary>
-    /// Creates backend attached to owner channel.
-    /// </summary>
-    /// <param name="owner">Channel that owns backend.</param>
-    /// <param name="type">Backend type id.</param>
     LOGMELNK Backend(ChannelPtr owner, const char* type);
 
-    /// <summary>
-    /// Destroys backend.
-    /// </summary>
     LOGMELNK virtual ~Backend();
 
-    /// <summary>
-    /// Creates configuration object for this backend type.
-    /// </summary>
-    /// <returns>Backend configuration object.</returns>
     LOGMELNK virtual BackendConfigPtr CreateConfig();
 
     /// <summary>
@@ -95,10 +76,6 @@ namespace Logme
     /// </summary>
     LOGMELNK virtual void Flush();
 
-    /// <summary>
-    /// Returns backend type id.
-    /// </summary>
-    /// <returns>Backend type id used in configuration and factory creation.</returns>
     LOGMELNK const char* GetType() const;
 
     /// <summary>

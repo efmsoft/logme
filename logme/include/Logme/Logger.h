@@ -402,16 +402,8 @@ namespace Logme
     /// <param name="path">Directory path. Non-empty path is normalized to end with directory separator.</param>
     LOGMELNK void SetHomeDirectory(const std::string& path);
 
-    /// <summary>
-    /// Returns current home directory.
-    /// </summary>
-    /// <returns>Directory path used by file-based backends.</returns>
     LOGMELNK const std::string& GetHomeDirectory() const;
 
-    /// <summary>
-    /// Returns file manager factory used by file-based backends.
-    /// </summary>
-    /// <returns>Mutable file manager factory.</returns>
     LOGMELNK FileManagerFactory& GetFileManagerFactory();
 
     /// <summary>
@@ -438,9 +430,6 @@ namespace Logme
     /// <param name="ch">Channel id of existing channel that should also receive error records.</param>
     LOGMELNK void SetErrorChannel(const ID& ch);
 
-    /// <summary>
-    /// Removes all channels, their links and backends.
-    /// </summary>
     LOGMELNK void DeleteAllChannels();
 
     /// <summary>
@@ -450,9 +439,6 @@ namespace Logme
     /// <returns>true if server was started.</returns>
     LOGMELNK bool StartControlServer(const ControlConfig& c);
 
-    /// <summary>
-    /// Stops runtime control server and waits for active control threads to finish.
-    /// </summary>
     LOGMELNK void StopControlServer();
 
     /// <summary>
@@ -485,10 +471,6 @@ namespace Logme
     /// <param name="cond">Condition callback, or nullptr to restore default always-true condition.</param>
     LOGMELNK void SetCondition(TCondition cond);
 
-    /// <summary>
-    /// Default logging condition.
-    /// </summary>
-    /// <returns>Always true.</returns>
     LOGMELNK static bool DefaultCondition();
 
     /// <summary>
@@ -510,10 +492,6 @@ namespace Logme
     /// <param name="enable">true to enable VT mode support.</param>
     LOGMELNK void SetEnableVTMode(bool enable);
 
-    /// <summary>
-    /// Returns virtual terminal mode support flag.
-    /// </summary>
-    /// <returns>true if VT mode support is enabled.</returns>
     LOGMELNK bool GetEnableVTMode() const;
 
     /// <summary>
@@ -522,10 +500,6 @@ namespace Logme
     /// <param name="key">Obfuscation key copied by logger, or nullptr to disable deobfuscation.</param>
     LOGMELNK void SetObfuscationKey(const ObfKey* key);
 
-    /// <summary>
-    /// Returns currently configured obfuscation key.
-    /// </summary>
-    /// <returns>Pointer to internal key, or nullptr when deobfuscation is disabled.</returns>
     LOGMELNK const ObfKey* GetObfuscationKey() const;
 
     /// <summary>
@@ -555,52 +529,16 @@ namespace Logme
     void FreeControlSsl();
 
   public:
-    /// <summary>
-    /// Handles control command that lists available command groups.
-    /// </summary>
-    /// <param name="arr">Parsed command tokens.</param>
-    /// <param name="response">Output response text.</param>
-    /// <returns>true if command was handled.</returns>
     static bool CommandList(StringArray& arr, std::string& response);
 
-    /// <summary>
-    /// Handles control command for channel management.
-    /// </summary>
-    /// <param name="arr">Parsed command tokens.</param>
-    /// <param name="response">Output response text.</param>
-    /// <returns>true if command was handled.</returns>
     static bool CommandChannel(StringArray& arr, std::string& response);
 
-    /// <summary>
-    /// Handles control command for subsystem filter management.
-    /// </summary>
-    /// <param name="arr">Parsed command tokens.</param>
-    /// <param name="response">Output response text.</param>
-    /// <returns>true if command was handled.</returns>
     static bool CommandSubsystem(StringArray& arr, std::string& response);
 
-    /// <summary>
-    /// Handles control command for backend management.
-    /// </summary>
-    /// <param name="arr">Parsed command tokens.</param>
-    /// <param name="response">Output response text.</param>
-    /// <returns>true if command was handled.</returns>
     static bool CommandBackend(StringArray& arr, std::string& response);
 
-    /// <summary>
-    /// Handles control command for channel output flags.
-    /// </summary>
-    /// <param name="arr">Parsed command tokens.</param>
-    /// <param name="response">Output response text.</param>
-    /// <returns>true if command was handled.</returns>
     static bool CommandFlags(StringArray& arr, std::string& response);
 
-    /// <summary>
-    /// Handles control command for channel level filters.
-    /// </summary>
-    /// <param name="arr">Parsed command tokens.</param>
-    /// <param name="response">Output response text.</param>
-    /// <returns>true if command was handled.</returns>
     static bool CommandLevel(StringArray& arr, std::string& response);
   };
 

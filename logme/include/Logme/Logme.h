@@ -969,144 +969,44 @@
 
 #else
 
-/// <summary>
-/// Writes CRITICAL message using std::format-style formatting.
-/// </summary>
-/// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeC(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
 
-/// <summary>
-/// Writes CRITICAL message using std::format-style formatting when condition is true.
-/// </summary>
-/// <param name="condition">Expression checked before logging.</param>
-/// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeC_If(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
 
-/// <summary>
-/// Writes CRITICAL message using std::format-style formatting and global CH/SUBSID when condition is true.
-/// Designed for static methods of a class where CH/SUBSID are declared as class members.
-/// </summary>
-/// <param name="condition">Expression checked before logging.</param>
-/// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeC_Ifg(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
 
-/// <summary>
-/// Writes CRITICAL message using std::format-style formatting and global CH/SUBSID.
-/// Designed for static methods of a class where CH/SUBSID are declared as class members.
-/// </summary>
-/// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeCg(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
 
-/// <summary>
-/// Writes DEBUG message using std::format-style formatting.
-/// </summary>
-/// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeD(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
 
-/// <summary>
-/// Writes DEBUG message using std::format-style formatting when condition is true.
-/// </summary>
-/// <param name="condition">Expression checked before logging.</param>
-/// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeD_If(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
 
-/// <summary>
-/// Writes DEBUG message using std::format-style formatting and global CH/SUBSID.
-/// Designed for static methods of a class where CH/SUBSID are declared as class members.
-/// </summary>
-/// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeDg(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
 
-/// <summary>
-/// Writes DEBUG message using std::format-style formatting and global CH/SUBSID when condition is true.
-/// Designed for static methods of a class where CH/SUBSID are declared as class members.
-/// </summary>
-/// <param name="condition">Expression checked before logging.</param>
-/// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeDg_If(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
 
-/// <summary>
-/// Writes ERROR message using std::format-style formatting.
-/// </summary>
-/// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeE(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
 
-/// <summary>
-/// Writes ERROR message using std::format-style formatting when condition is true.
-/// </summary>
-/// <param name="condition">Expression checked before logging.</param>
-/// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeE_If(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
 
-/// <summary>
-/// Writes ERROR message using std::format-style formatting and global CH/SUBSID when condition is true.
-/// Designed for static methods of a class where CH/SUBSID are declared as class members.
-/// </summary>
-/// <param name="condition">Expression checked before logging.</param>
-/// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeE_Ifg(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
 
-/// <summary>
-/// Writes ERROR message using std::format-style formatting and global CH/SUBSID.
-/// Designed for static methods of a class where CH/SUBSID are declared as class members.
-/// </summary>
-/// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeEg(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
 
-/// <summary>
-/// Writes INFO message using std::format-style formatting.
-/// </summary>
-/// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeI(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
 
-/// <summary>
-/// Writes INFO message using std::format-style formatting when condition is true.
-/// </summary>
-/// <param name="condition">Expression checked before logging.</param>
-/// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeI_If(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
 
-/// <summary>
-/// Writes INFO message using std::format-style formatting and global CH/SUBSID when condition is true.
-/// Designed for static methods of a class where CH/SUBSID are declared as class members.
-/// </summary>
-/// <param name="condition">Expression checked before logging.</param>
-/// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeI_Ifg(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
 
-/// <summary>
-/// Writes INFO message using std::format-style formatting and global CH/SUBSID.
-/// Designed for static methods of a class where CH/SUBSID are declared as class members.
-/// </summary>
-/// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeIg(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
 
-/// <summary>
-/// Writes WARN message using std::format-style formatting.
-/// </summary>
-/// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeW(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
 
-/// <summary>
-/// Writes WARN message using std::format-style formatting when condition is true.
-/// </summary>
-/// <param name="condition">Expression checked before logging.</param>
-/// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeW_If(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
 
-/// <summary>
-/// Writes WARN message using std::format-style formatting and global CH/SUBSID when condition is true.
-/// Designed for static methods of a class where CH/SUBSID are declared as class members.
-/// </summary>
-/// <param name="condition">Expression checked before logging.</param>
-/// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeW_Ifg(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
 
-/// <summary>
-/// Writes WARN message using std::format-style formatting and global CH/SUBSID.
-/// Designed for static methods of a class where CH/SUBSID are declared as class members.
-/// </summary>
-/// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeWg(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
 
 #endif

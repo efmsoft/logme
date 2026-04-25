@@ -9,27 +9,18 @@
 
 namespace Logme
 {
-  /// <summary>
-  /// Formats a named argument pair as "name=value". Values are formatted through FormatValue().
-  /// </summary>
   template<typename T>
   std::string FormatOne(const std::pair<const char*, T>& item)
   {
     return std::string(item.first) + "=" + FormatValue(item.second);
   }
 
-  /// <summary>
-  /// Formats a single unnamed value through FormatValue().
-  /// </summary>
   template<typename T>
   std::string FormatOne(const T& value)
   {
     return FormatValue(value);
   }
 
-  /// <summary>
-  /// Formats tuple elements as a comma-separated list. Named elements appear as "name=value".
-  /// </summary>
   template<typename Tuple, std::size_t... Is>
   std::string FormatTupleWithCommas(const Tuple& tup, std::index_sequence<Is...>)
   {
@@ -39,10 +30,6 @@ namespace Logme
     return oss.str();
   }
 
-  /// <summary>
-  /// Formats all arguments into a comma-separated string for procedure-print macros.
-  /// Arguments wrapped with NAMED() are printed as "name=value".
-  /// </summary>
   template<typename... Args>
   std::string FormatAll(Args&&... args)
   {

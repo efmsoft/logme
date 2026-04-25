@@ -92,9 +92,6 @@ namespace Logme
       , Level level
     );
 
-    /// <summary>
-    /// Destroys channel and releases backend references.
-    /// </summary>
     LOGMELNK ~Channel();
 
     /// <summary>
@@ -116,16 +113,8 @@ namespace Logme
     /// <param name="filter">Filter callback; empty callback disables filtering.</param>
     LOGMELNK void SetDisplayFilter(TDisplayFilter filter = TDisplayFilter());
 
-    /// <summary>
-    /// Returns channel output flags.
-    /// </summary>
-    /// <returns>Current channel output flags.</returns>
     LOGMELNK const OutputFlags& GetFlags() const;
 
-    /// <summary>
-    /// Replaces channel output flags.
-    /// </summary>
-    /// <param name="flags">New output flags used for following records.</param>
     LOGMELNK void SetFlags(const OutputFlags& flags);
 
     /// <summary>
@@ -134,22 +123,10 @@ namespace Logme
     /// <param name="enable">false prevents writing to channel backends.</param>
     LOGMELNK void SetEnabled(bool enable);
 
-    /// <summary>
-    /// Returns channel enabled flag.
-    /// </summary>
-    /// <returns>true if channel output is enabled.</returns>
     LOGMELNK bool GetEnabled() const;
 
-    /// <summary>
-    /// Returns minimum level accepted by channel.
-    /// </summary>
-    /// <returns>Current channel level filter.</returns>
     LOGMELNK Level GetFilterLevel() const;
 
-    /// <summary>
-    /// Sets minimum level accepted by channel.
-    /// </summary>
-    /// <param name="level">Records below this level are ignored by channel.</param>
     LOGMELNK void SetFilterLevel(Level level);
 
     /// <summary>
@@ -235,15 +212,8 @@ namespace Logme
     /// <param name="to">Destination channel pointer.</param>
     LOGMELNK void AddLink(const ChannelPtr& to);
 
-    /// <summary>
-    /// Removes channel link.
-    /// </summary>
     LOGMELNK void RemoveLink();
 
-    /// <summary>
-    /// Checks whether channel has configured link.
-    /// </summary>
-    /// <returns>true if channel is linked to another channel.</returns>
     LOGMELNK bool IsLinked() const;
 
     /// <summary>
@@ -259,10 +229,6 @@ namespace Logme
     /// <returns>Linked channel pointer, or nullptr.</returns>
     LOGMELNK ChannelPtr GetLinkPtr();
 
-    /// <summary>
-    /// Returns channel id.
-    /// </summary>
-    /// <returns>Stable channel id created from channel name.</returns>
     LOGMELNK const ID& GetID() const;
 
     /// <summary>
@@ -276,9 +242,6 @@ namespace Logme
     /// <returns>true if every backend reports idle state.</returns>
     LOGMELNK bool IsIdle();
 
-    /// <summary>
-    /// Flushes all channel backends.
-    /// </summary>
     LOGMELNK void Flush();
 
     /// <summary>

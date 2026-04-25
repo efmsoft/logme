@@ -1,3 +1,13 @@
+## 2.4.16
+
+- Added optional fmt-based formatting backend via `LOGME_FMT_FORMAT=AUTO|ON|OFF`.
+- Added release and CI coverage for full dependency builds with fmt and JsonCpp.
+- Optimized printf-style fast formatting by using cached buffer size hints and avoiding unnecessary large temporary buffers for simple formats.
+- Reduced extra string scanning/copying in the log context application path.
+- Fixed `FileBackend::Flush()` to publish the current buffer before waiting for queued data to drain.
+- Added MSVC legacy preprocessor compatibility test built with `/Zc:preprocessor-`.
+- Improved IntelliSense/XML documentation for public logging macros, Logger, Channel, Backend, Procedure, Override, IDs and utility APIs.
+
 ## 2.4.15
 
 ### Added

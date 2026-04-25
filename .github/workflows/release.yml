@@ -67,48 +67,101 @@ jobs:
           if-no-files-found: error
 
   windows-msvc-x64:
-    name: windows-msvc-x64-${{ matrix.kind }}
+    name: windows-msvc-x64-${{ matrix.artifact }}
     runs-on: windows-latest
     needs: prepare-release-notes
     strategy:
       fail-fast: false
       matrix:
-        kind: [static, shared]
+        include:
+          - artifact: static-minimal
+            kind: static
+            build_static: ON
+            build_dynamic: OFF
+            use_jsoncpp: OFF
+            fmt_format: OFF
+            vcpkg_deps: OFF
+          - artifact: static-full
+            kind: static
+            build_static: ON
+            build_dynamic: OFF
+            use_jsoncpp: ON
+            fmt_format: ON
+            vcpkg_deps: ON
+          - artifact: shared-full
+            kind: shared
+            build_static: OFF
+            build_dynamic: ON
+            use_jsoncpp: ON
+            fmt_format: ON
+            vcpkg_deps: ON
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install deps (Windows / vcpkg static libs with dynamic CRT)
+        if: matrix.vcpkg_deps == 'ON'
+        shell: pwsh
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = "Stop"
+
+          if (-not $env:VCPKG_INSTALLATION_ROOT) { throw "VCPKG_INSTALLATION_ROOT is not set" }
+
+          $triplet = "x64-windows-static-md-release"
+          $overlay = Join-Path "${{ github.workspace }}" ".github\vcpkg-triplets"
+          & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install fmt:$triplet jsoncpp:$triplet --overlay-triplets "$overlay"
+          if ($LASTEXITCODE -ne 0) { throw "vcpkg install failed: $LASTEXITCODE" }
+
       - name: Configure
         shell: pwsh
         run: |
-          $kind = "${{ matrix.kind }}"
-          $bdir = "build/$kind"
-          $prefix = "stage/logme-${{ github.ref_name }}-windows-msvc-x64-$kind"
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = "Stop"
+
+          $artifact = "${{ matrix.artifact }}"
+          $bdir = "build/$artifact"
+          $prefix = "stage/logme-${{ github.ref_name }}-windows-msvc-x64-$artifact"
 
           New-Item -ItemType Directory -Force -Path $bdir | Out-Null
           New-Item -ItemType Directory -Force -Path $prefix | Out-Null
 
-          $static = "OFF"
-          $shared = "OFF"
-          if ($kind -eq "static") { $static = "ON" }
-          if ($kind -eq "shared") { $shared = "ON" }
+          $args = @(
+            "-S", ".",
+            "-B", $bdir,
+            "-G", "Visual Studio 17 2022",
+            "-A", "x64",
+            "-DLOGME_BUILD_STATIC=${{ matrix.build_static }}",
+            "-DLOGME_BUILD_DYNAMIC=${{ matrix.build_dynamic }}",
+            "-DLOGME_BUILD_EXAMPLES=OFF",
+            "-DLOGME_BUILD_TESTS=OFF",
+            "-DLOGME_BUILD_TOOLS=OFF",
+            "-DLOGME_ENABLE_INSTALL=ON",
+            "-DUSE_JSONCPP=${{ matrix.use_jsoncpp }}",
+            "-DLOGME_FMT_FORMAT=${{ matrix.fmt_format }}",
+            "-DLOGME_STD_FORMAT=OFF"
+          )
 
-          cmake -S . -B $bdir -G "Visual Studio 17 2022" -A x64 `
-            -DLOGME_BUILD_STATIC=$static `
-            -DLOGME_BUILD_DYNAMIC=$shared `
-            -DLOGME_BUILD_EXAMPLES=OFF `
-            -DLOGME_BUILD_TESTS=OFF `
-            -DLOGME_BUILD_TOOLS=OFF `
-            -DLOGME_ENABLE_INSTALL=ON `
-            -DUSE_JSONCPP=OFF `
-            -DLOGME_STD_FORMAT=AUTO
+          if ("${{ matrix.vcpkg_deps }}" -eq "ON")
+          {
+            if (-not $env:VCPKG_INSTALLATION_ROOT) { throw "VCPKG_INSTALLATION_ROOT is not set" }
+            $toolchain = Join-Path $env:VCPKG_INSTALLATION_ROOT "scripts\buildsystems\vcpkg.cmake"
+            $overlay = Join-Path "${{ github.workspace }}" ".github\vcpkg-triplets"
+            $args += @(
+              "-DCMAKE_TOOLCHAIN_FILE=$toolchain",
+              "-DVCPKG_TARGET_TRIPLET=x64-windows-static-md-release",
+              "-DVCPKG_OVERLAY_TRIPLETS=$overlay"
+            )
+          }
+
+          & cmake @args
           if ($LASTEXITCODE -ne 0) { throw "cmake configure failed: $LASTEXITCODE" }
 
       - name: Build (Release)
         shell: pwsh
         run: |
-          $bdir = "build/${{ matrix.kind }}"
+          $bdir = "build/${{ matrix.artifact }}"
           cmake --build $bdir --config Release
           if ($LASTEXITCODE -ne 0) { throw "cmake build failed: $LASTEXITCODE" }
 
@@ -118,9 +171,10 @@ jobs:
           Set-StrictMode -Version Latest
           $ErrorActionPreference = "Stop"
 
+          $artifact = "${{ matrix.artifact }}"
           $kind = "${{ matrix.kind }}"
-          $bdir = "build/$kind"
-          $prefix = "stage/logme-${{ github.ref_name }}-windows-msvc-x64-$kind"
+          $bdir = "build/$artifact"
+          $prefix = "stage/logme-${{ github.ref_name }}-windows-msvc-x64-$artifact"
 
           $incDst = Join-Path $prefix "include"
           $libDst = Join-Path $prefix "lib"
@@ -188,14 +242,53 @@ jobs:
             }
           }
 
+      - name: Verify no external fmt/jsoncpp DLLs are required
+        if: matrix.kind == 'shared'
+        shell: pwsh
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = "Stop"
+
+          $artifact = "${{ matrix.artifact }}"
+          $dll = "stage/logme-${{ github.ref_name }}-windows-msvc-x64-$artifact/bin/logmed.dll"
+          if (-not (Test-Path $dll)) { throw "Missing $dll" }
+
+          $dumpbinCmd = Get-Command dumpbin.exe -ErrorAction SilentlyContinue
+          if ($dumpbinCmd)
+          {
+            $dumpbin = $dumpbinCmd.Source
+          }
+          else
+          {
+            $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\\Installer\\vswhere.exe"
+            if (-not (Test-Path $vswhere)) { throw "vswhere.exe not found" }
+
+            $vsPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+            if (-not $vsPath) { throw "Visual Studio with VC tools was not found" }
+
+            $dumpbin = Get-ChildItem -Path (Join-Path $vsPath "VC\\Tools\\MSVC") -Recurse -Filter dumpbin.exe |
+              Where-Object { $_.FullName -match "\\\\bin\\\\Hostx64\\\\x64\\\\dumpbin\\.exe$" } |
+              Sort-Object FullName -Descending |
+              Select-Object -First 1 -ExpandProperty FullName
+
+            if (-not $dumpbin) { throw "dumpbin.exe not found" }
+          }
+
+          $deps = & $dumpbin /DEPENDENTS $dll
+          $deps | Out-String | Write-Host
+
+          if ($deps -match "(?i)fmt.*\.dll") { throw "logmed.dll depends on fmt DLL" }
+          if ($deps -match "(?i)jsoncpp.*\.dll") { throw "logmed.dll depends on jsoncpp DLL" }
+
       - name: Verify staged files
         shell: pwsh
         run: |
           Set-StrictMode -Version Latest
           $ErrorActionPreference = "Stop"
 
+          $artifact = "${{ matrix.artifact }}"
           $kind = "${{ matrix.kind }}"
-          $prefix = "stage/logme-${{ github.ref_name }}-windows-msvc-x64-$kind"
+          $prefix = "stage/logme-${{ github.ref_name }}-windows-msvc-x64-$artifact"
 
           if (-not (Test-Path (Join-Path $prefix "include"))) { throw "Missing include/" }
           if (-not (Test-Path (Join-Path $prefix "lib"))) { throw "Missing lib/" }
@@ -213,7 +306,7 @@ jobs:
       - name: Add docs to archive root
         shell: pwsh
         run: |
-          $prefix = "stage/logme-${{ github.ref_name }}-windows-msvc-x64-${{ matrix.kind }}"
+          $prefix = "stage/logme-${{ github.ref_name }}-windows-msvc-x64-${{ matrix.artifact }}"
 
           if (Test-Path "LICENSE")      { Copy-Item "LICENSE"      (Join-Path $prefix "LICENSE")      -Force }
           if (Test-Path "README.md")    { Copy-Item "README.md"    (Join-Path $prefix "README.md")    -Force }
@@ -223,7 +316,7 @@ jobs:
         shell: pwsh
         run: |
           $root = "stage"
-          $name = "logme-${{ github.ref_name }}-windows-msvc-x64-${{ matrix.kind }}"
+          $name = "logme-${{ github.ref_name }}-windows-msvc-x64-${{ matrix.artifact }}"
           $dir = Join-Path $root $name
           $zip = "$name.zip"
           $sha = "$zip.sha256.txt"
@@ -245,24 +338,94 @@ jobs:
         with:
           body_path: release-notes-${{ github.ref_name }}.md
           files: |
-            logme-${{ github.ref_name }}-windows-msvc-x64-${{ matrix.kind }}.zip
-            logme-${{ github.ref_name }}-windows-msvc-x64-${{ matrix.kind }}.zip.sha256.txt
+            logme-${{ github.ref_name }}-windows-msvc-x64-${{ matrix.artifact }}.zip
+            logme-${{ github.ref_name }}-windows-msvc-x64-${{ matrix.artifact }}.zip.sha256.txt
 
   linux-ubuntu-22:
-    name: linux-ubuntu-22.04-release
+    name: linux-ubuntu-22.04-${{ matrix.artifact }}
     runs-on: ubuntu-22.04
     needs: prepare-release-notes
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - artifact: static-minimal
+            build_static: ON
+            build_dynamic: OFF
+            use_jsoncpp: OFF
+            fmt_format: OFF
+            vcpkg_deps: OFF
+          - artifact: static-full
+            build_static: ON
+            build_dynamic: OFF
+            use_jsoncpp: ON
+            fmt_format: ON
+            vcpkg_deps: ON
+          - artifact: shared-full
+            build_static: OFF
+            build_dynamic: ON
+            use_jsoncpp: ON
+            fmt_format: ON
+            vcpkg_deps: ON
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Bootstrap vcpkg
+        if: matrix.vcpkg_deps == 'ON'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${VCPKG_INSTALLATION_ROOT:-}" ]; then
+            echo "VCPKG_INSTALLATION_ROOT=$HOME/vcpkg" >> "$GITHUB_ENV"
+            git clone --depth 1 https://github.com/microsoft/vcpkg.git "$HOME/vcpkg"
+            "$HOME/vcpkg/bootstrap-vcpkg.sh"
+          else
+            echo "Using VCPKG_INSTALLATION_ROOT=$VCPKG_INSTALLATION_ROOT"
+          fi
+
+      - name: Install deps (Linux / vcpkg static libs)
+        if: matrix.vcpkg_deps == 'ON'
+        shell: bash
+        run: |
+          set -euo pipefail
+          triplet="x64-linux-static-release"
+          overlay="${GITHUB_WORKSPACE}/.github/vcpkg-triplets"
+          "${VCPKG_INSTALLATION_ROOT}/vcpkg" install "fmt:${triplet}" "jsoncpp:${triplet}" --overlay-triplets "$overlay"
 
       - name: Configure
         shell: bash
         run: |
           set -euo pipefail
-          bdir="build/linux"
-          prefix="stage/logme-${GITHUB_REF_NAME}-linux-ubuntu-22.04-x64"
-          cmake -S . -B "$bdir"             -DCMAKE_BUILD_TYPE=Release             -DLOGME_BUILD_STATIC=ON             -DLOGME_BUILD_DYNAMIC=OFF             -DLOGME_BUILD_EXAMPLES=OFF             -DLOGME_BUILD_TESTS=OFF             -DLOGME_BUILD_TOOLS=OFF             -DLOGME_ENABLE_INSTALL=ON             -DUSE_JSONCPP=OFF             -DLOGME_STD_FORMAT=AUTO
+          artifact="${{ matrix.artifact }}"
+          bdir="build/${artifact}"
+          prefix="stage/logme-${GITHUB_REF_NAME}-linux-ubuntu-22.04-x64-${artifact}"
+
+          args=(
+            -S .
+            -B "$bdir"
+            -DCMAKE_BUILD_TYPE=Release
+            -DLOGME_BUILD_STATIC=${{ matrix.build_static }}
+            -DLOGME_BUILD_DYNAMIC=${{ matrix.build_dynamic }}
+            -DLOGME_BUILD_EXAMPLES=OFF
+            -DLOGME_BUILD_TESTS=OFF
+            -DLOGME_BUILD_TOOLS=OFF
+            -DLOGME_ENABLE_INSTALL=ON
+            -DUSE_JSONCPP=${{ matrix.use_jsoncpp }}
+            -DLOGME_FMT_FORMAT=${{ matrix.fmt_format }}
+            -DLOGME_STD_FORMAT=OFF
+          )
+
+          if [ "${{ matrix.vcpkg_deps }}" = "ON" ]; then
+            args+=(
+              -DCMAKE_TOOLCHAIN_FILE="${VCPKG_INSTALLATION_ROOT}/scripts/buildsystems/vcpkg.cmake"
+              -DVCPKG_TARGET_TRIPLET=x64-linux-static-release
+              -DVCPKG_OVERLAY_TRIPLETS="${GITHUB_WORKSPACE}/.github/vcpkg-triplets"
+            )
+          fi
+
+          cmake "${args[@]}"
           cmake --build "$bdir" --config Release
           cmake --install "$bdir" --prefix "$prefix"
 
@@ -272,11 +435,30 @@ jobs:
             fi
           done
 
+      - name: Verify no external fmt/jsoncpp shared libs are required
+        if: matrix.artifact == 'shared-full'
+        shell: bash
+        run: |
+          set -euo pipefail
+          artifact="${{ matrix.artifact }}"
+          prefix="stage/logme-${GITHUB_REF_NAME}-linux-ubuntu-22.04-x64-${artifact}"
+          so="$(find "$prefix" -type f -name 'liblogmed.so*' | head -n 1)"
+          if [ -z "$so" ]; then
+            echo "liblogmed.so was not found in $prefix"
+            exit 1
+          fi
+
+          ldd "$so"
+          if ldd "$so" | grep -E 'lib(fmt|jsoncpp)\.so'; then
+            echo "liblogmed.so depends on external fmt/jsoncpp shared library"
+            exit 1
+          fi
+
       - name: Pack + SHA256
         shell: bash
         run: |
           set -euo pipefail
-          name="logme-${GITHUB_REF_NAME}-linux-ubuntu-22.04-x64"
+          name="logme-${GITHUB_REF_NAME}-linux-ubuntu-22.04-x64-${{ matrix.artifact }}"
           (cd stage && tar -czf "../${name}.tar.gz" "${name}")
           sha256sum "${name}.tar.gz" > "${name}.tar.gz.sha256.txt"
 
@@ -291,5 +473,5 @@ jobs:
         with:
           body_path: release-notes-${{ github.ref_name }}.md
           files: |
-            logme-${{ github.ref_name }}-linux-ubuntu-22.04-x64.tar.gz
-            logme-${{ github.ref_name }}-linux-ubuntu-22.04-x64.tar.gz.sha256.txt
+            logme-${{ github.ref_name }}-linux-ubuntu-22.04-x64-${{ matrix.artifact }}.tar.gz
+            logme-${{ github.ref_name }}-linux-ubuntu-22.04-x64-${{ matrix.artifact }}.tar.gz.sha256.txt

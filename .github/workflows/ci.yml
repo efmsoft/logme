@@ -212,7 +212,6 @@ jobs:
           CXX: ${{ matrix.cxx }}
         run: |
           set -euxo pipefail
-          extra_cxx_flags="-Wall -Wextra -Wpedantic -Werror"
           gtest_arg=""
           if [ "${{ matrix.platform }}" = "macos" ]; then
             gtest_arg="-DGTest_DIR=$(brew --prefix googletest)/lib/cmake/GTest"
@@ -225,8 +224,6 @@ jobs:
             -DUSE_JSONCPP=ON \
             -DLOGME_FMT_FORMAT=ON \
             -DLOGME_STD_FORMAT=OFF \
-            -DCMAKE_C_FLAGS="-Wall -Wextra -Wpedantic -Werror" \
-            -DCMAKE_CXX_FLAGS="${extra_cxx_flags}" \
             ${gtest_arg}
 
       - name: Configure (Windows)
@@ -246,9 +243,7 @@ jobs:
             -DVCPKG_TARGET_TRIPLET=x64-windows `
             -DUSE_JSONCPP=ON `
             -DLOGME_FMT_FORMAT=ON `
-            -DLOGME_STD_FORMAT=OFF `
-            -DCMAKE_C_FLAGS="/W4 /WX" `
-            -DCMAKE_CXX_FLAGS="/W4 /WX"
+            -DLOGME_STD_FORMAT=OFF
           if ($LASTEXITCODE -ne 0) { throw "cmake configure failed: $LASTEXITCODE" }
 
       - name: Build

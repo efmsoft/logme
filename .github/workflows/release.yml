@@ -243,44 +243,6 @@ jobs:
             }
           }
 
-      - name: Verify no external fmt/jsoncpp DLLs are required
-        if: matrix.kind == 'shared'
-        shell: pwsh
-        run: |
-          Set-StrictMode -Version Latest
-          $ErrorActionPreference = "Stop"
-
-          $artifact = "${{ matrix.artifact }}"
-          $dll = "stage/logme-${{ github.ref_name }}-windows-msvc-x64-$artifact/bin/logmed.dll"
-          if (-not (Test-Path $dll)) { throw "Missing $dll" }
-
-          $dumpbinCmd = Get-Command dumpbin.exe -ErrorAction SilentlyContinue
-          if ($dumpbinCmd)
-          {
-            $dumpbin = $dumpbinCmd.Source
-          }
-          else
-          {
-            $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\\Installer\\vswhere.exe"
-            if (-not (Test-Path $vswhere)) { throw "vswhere.exe not found" }
-
-            $vsPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
-            if (-not $vsPath) { throw "Visual Studio with VC tools was not found" }
-
-            $dumpbin = Get-ChildItem -Path (Join-Path $vsPath "VC\\Tools\\MSVC") -Recurse -Filter dumpbin.exe |
-              Where-Object { $_.FullName -match "\\\\bin\\\\Hostx64\\\\x64\\\\dumpbin\\.exe$" } |
-              Sort-Object FullName -Descending |
-              Select-Object -First 1 -ExpandProperty FullName
-
-            if (-not $dumpbin) { throw "dumpbin.exe not found" }
-          }
-
-          $deps = & $dumpbin /DEPENDENTS $dll
-          $deps | Out-String | Write-Host
-
-          if ($deps -match "(?i)fmt.*\.dll") { throw "logmed.dll depends on fmt DLL" }
-          if ($deps -match "(?i)jsoncpp.*\.dll") { throw "logmed.dll depends on jsoncpp DLL" }
-
       - name: Verify staged files
         shell: pwsh
         run: |

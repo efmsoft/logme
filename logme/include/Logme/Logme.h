@@ -177,6 +177,7 @@
 
 /// <summary>
 /// Writes DEBUG log message using global CH/SUBSID (printf-style when called with a format string) or returns a stream (C++ style of output).
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeDg(...) \
@@ -184,6 +185,7 @@
 
 /// <summary>
 /// Writes DEBUG log message using global CH/SUBSID when condition is true (printf-style when called with a format string) or returns a stream (C++ style of output).
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="condition">Expression checked before logging.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
@@ -192,6 +194,7 @@
 
 /// <summary>
 /// Writes INFO log message using global CH/SUBSID (printf-style when called with a format string) or returns a stream (C++ style of output).
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeIg(...) \
@@ -199,6 +202,7 @@
 
 /// <summary>
 /// Writes INFO log message using global CH/SUBSID when condition is true (printf-style when called with a format string) or returns a stream (C++ style of output).
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="condition">Expression checked before logging.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
@@ -207,6 +211,7 @@
 
 /// <summary>
 /// Writes WARN log message using global CH/SUBSID (printf-style when called with a format string) or returns a stream (C++ style of output).
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeWg(...) \
@@ -214,6 +219,7 @@
 
 /// <summary>
 /// Writes WARN log message using global CH/SUBSID when condition is true (printf-style when called with a format string) or returns a stream (C++ style of output).
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="condition">Expression checked before logging.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
@@ -222,6 +228,7 @@
 
 /// <summary>
 /// Writes ERROR log message using global CH/SUBSID (printf-style when called with a format string) or returns a stream (C++ style of output).
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeEg(...) \
@@ -229,6 +236,7 @@
 
 /// <summary>
 /// Writes ERROR log message using global CH/SUBSID when condition is true (printf-style when called with a format string) or returns a stream (C++ style of output).
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="condition">Expression checked before logging.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
@@ -237,6 +245,7 @@
 
 /// <summary>
 /// Writes CRITICAL log message using global CH/SUBSID (printf-style when called with a format string) or returns a stream (C++ style of output).
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeCg(...) \
@@ -244,6 +253,7 @@
 
 /// <summary>
 /// Writes CRITICAL log message using global CH/SUBSID when condition is true (printf-style when called with a format string) or returns a stream (C++ style of output).
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="condition">Expression checked before logging.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
@@ -684,6 +694,7 @@
 
 /// <summary>
 /// Writes DEBUG message using std::format-style formatting and global CH/SUBSID.
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeDg(...) \
@@ -691,6 +702,7 @@
 
 /// <summary>
 /// Writes DEBUG message using std::format-style formatting and global CH/SUBSID when condition is true.
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="condition">Expression checked before logging.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
@@ -699,6 +711,7 @@
 
 /// <summary>
 /// Writes INFO message using std::format-style formatting and global CH/SUBSID.
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeIg(...) \
@@ -706,6 +719,7 @@
 
 /// <summary>
 /// Writes INFO message using std::format-style formatting and global CH/SUBSID when condition is true.
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="condition">Expression checked before logging.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
@@ -714,6 +728,7 @@
 
 /// <summary>
 /// Writes WARN message using std::format-style formatting and global CH/SUBSID.
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeWg(...) \
@@ -721,6 +736,7 @@
 
 /// <summary>
 /// Writes WARN message using std::format-style formatting and global CH/SUBSID when condition is true.
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="condition">Expression checked before logging.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
@@ -729,6 +745,7 @@
 
 /// <summary>
 /// Writes ERROR message using std::format-style formatting and global CH/SUBSID.
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeEg(...) \
@@ -736,6 +753,7 @@
 
 /// <summary>
 /// Writes ERROR message using std::format-style formatting and global CH/SUBSID when condition is true.
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="condition">Expression checked before logging.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
@@ -779,6 +797,7 @@
 
 /// <summary>
 /// Writes DEBUG message using std::format-style formatting and global CH/SUBSID once per call site.
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeDg_Once(...) \
@@ -786,6 +805,7 @@
 
 /// <summary>
 /// Writes INFO message using std::format-style formatting and global CH/SUBSID once per call site.
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeIg_Once(...) \
@@ -793,6 +813,7 @@
 
 /// <summary>
 /// Writes WARN message using std::format-style formatting and global CH/SUBSID once per call site.
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeWg_Once(...) \
@@ -800,6 +821,7 @@
 
 /// <summary>
 /// Writes ERROR message using std::format-style formatting and global CH/SUBSID once per call site.
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeEg_Once(...) \
@@ -807,6 +829,7 @@
 
 /// <summary>
 /// Writes CRITICAL message using std::format-style formatting and global CH/SUBSID once per call site.
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeCg_Once(...) \
@@ -854,6 +877,7 @@
 
 /// <summary>
 /// Writes DEBUG message using std::format-style formatting and global CH/SUBSID at most once per interval per call site.
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
@@ -862,6 +886,7 @@
 
 /// <summary>
 /// Writes INFO message using std::format-style formatting and global CH/SUBSID at most once per interval per call site.
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
@@ -870,6 +895,7 @@
 
 /// <summary>
 /// Writes WARN message using std::format-style formatting and global CH/SUBSID at most once per interval per call site.
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
@@ -878,6 +904,7 @@
 
 /// <summary>
 /// Writes ERROR message using std::format-style formatting and global CH/SUBSID at most once per interval per call site.
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
@@ -886,6 +913,7 @@
 
 /// <summary>
 /// Writes CRITICAL message using std::format-style formatting and global CH/SUBSID at most once per interval per call site.
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
@@ -956,6 +984,7 @@
 
 /// <summary>
 /// Writes CRITICAL message using std::format-style formatting and global CH/SUBSID when condition is true.
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="condition">Expression checked before logging.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
@@ -963,6 +992,7 @@
 
 /// <summary>
 /// Writes CRITICAL message using std::format-style formatting and global CH/SUBSID.
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeCg(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
@@ -982,12 +1012,14 @@
 
 /// <summary>
 /// Writes DEBUG message using std::format-style formatting and global CH/SUBSID.
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeDg(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
 
 /// <summary>
 /// Writes DEBUG message using std::format-style formatting and global CH/SUBSID when condition is true.
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="condition">Expression checked before logging.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
@@ -1008,6 +1040,7 @@
 
 /// <summary>
 /// Writes ERROR message using std::format-style formatting and global CH/SUBSID when condition is true.
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="condition">Expression checked before logging.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
@@ -1015,6 +1048,7 @@
 
 /// <summary>
 /// Writes ERROR message using std::format-style formatting and global CH/SUBSID.
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeEg(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
@@ -1034,6 +1068,7 @@
 
 /// <summary>
 /// Writes INFO message using std::format-style formatting and global CH/SUBSID when condition is true.
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="condition">Expression checked before logging.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
@@ -1041,6 +1076,7 @@
 
 /// <summary>
 /// Writes INFO message using std::format-style formatting and global CH/SUBSID.
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeIg(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
@@ -1060,6 +1096,7 @@
 
 /// <summary>
 /// Writes WARN message using std::format-style formatting and global CH/SUBSID when condition is true.
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="condition">Expression checked before logging.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
@@ -1067,6 +1104,7 @@
 
 /// <summary>
 /// Writes WARN message using std::format-style formatting and global CH/SUBSID.
+/// Designed for static methods of a class where CH/SUBSID are declared as class members.
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeWg(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)

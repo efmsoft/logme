@@ -153,6 +153,133 @@ jobs:
         run: |
           ctest --test-dir "build/windows/msvc/${{ matrix.config }}/stdformat-${{ matrix.stdformat }}" --output-on-failure
 
+  full_deps:
+    name: Full deps / ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux / gcc
+            os: ubuntu-latest
+            platform: linux
+            cxx: g++
+          - name: macOS / clang
+            os: macos-latest
+            platform: macos
+            cxx: clang++
+          - name: Windows / msvc
+            os: windows-latest
+            platform: windows
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: seanmiddleditch/gha-setup-ninja@v5
+
+      - name: Install deps (Linux)
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libfmt-dev libjsoncpp-dev
+
+      - name: Install deps (macOS)
+        if: matrix.platform == 'macos'
+        shell: bash
+        run: |
+          set -euxo pipefail
+          brew update
+          brew install fmt jsoncpp googletest pkg-config
+
+      - name: Install deps (Windows / vcpkg)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          if (-not $env:VCPKG_INSTALLATION_ROOT) { throw "VCPKG_INSTALLATION_ROOT is not set" }
+          & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install fmt:x64-windows jsoncpp:x64-windows gtest:x64-windows
+          if ($LASTEXITCODE -ne 0) { throw "vcpkg install failed: $LASTEXITCODE" }
+
+      - name: Setup MSVC dev cmd
+        if: matrix.platform == 'windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure (Unix)
+        if: matrix.platform != 'windows'
+        shell: bash
+        env:
+          CXX: ${{ matrix.cxx }}
+        run: |
+          set -euxo pipefail
+          extra_cxx_flags="-Wall -Wextra -Wpedantic -Werror"
+          gtest_arg=""
+          if [ "${{ matrix.platform }}" = "macos" ]; then
+            gtest_arg="-DGTest_DIR=$(brew --prefix googletest)/lib/cmake/GTest"
+          fi
+
+          cmake -S . -B "build/full-deps/${{ matrix.platform }}" \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_STANDARD=20 \
+            -DUSE_JSONCPP=ON \
+            -DLOGME_FMT_FORMAT=ON \
+            -DLOGME_STD_FORMAT=OFF \
+            -DCMAKE_C_FLAGS="-Wall -Wextra -Wpedantic -Werror" \
+            -DCMAKE_CXX_FLAGS="${extra_cxx_flags}" \
+            ${gtest_arg}
+
+      - name: Configure (Windows)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $toolchain = Join-Path $env:VCPKG_INSTALLATION_ROOT "scripts\buildsystems\vcpkg.cmake"
+
+          cmake -S . -B "build/full-deps/windows" `
+            -G Ninja `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_CXX_STANDARD=20 `
+            -DCMAKE_CXX_COMPILER=cl `
+            -DCMAKE_C_COMPILER=cl `
+            -DCMAKE_TOOLCHAIN_FILE="$toolchain" `
+            -DVCPKG_TARGET_TRIPLET=x64-windows `
+            -DUSE_JSONCPP=ON `
+            -DLOGME_FMT_FORMAT=ON `
+            -DLOGME_STD_FORMAT=OFF `
+            -DCMAKE_C_FLAGS="/W4 /WX" `
+            -DCMAKE_CXX_FLAGS="/W4 /WX"
+          if ($LASTEXITCODE -ne 0) { throw "cmake configure failed: $LASTEXITCODE" }
+
+      - name: Build
+        shell: bash
+        if: matrix.platform != 'windows'
+        run: |
+          set -euxo pipefail
+          cmake --build "build/full-deps/${{ matrix.platform }}" --config Release
+
+      - name: Build
+        shell: pwsh
+        if: matrix.platform == 'windows'
+        run: |
+          cmake --build "build/full-deps/windows" --config Release
+          if ($LASTEXITCODE -ne 0) { throw "cmake build failed: $LASTEXITCODE" }
+
+      - name: Test
+        shell: bash
+        if: matrix.platform != 'windows'
+        run: |
+          set -euxo pipefail
+          ctest --test-dir "build/full-deps/${{ matrix.platform }}" --output-on-failure
+
+      - name: Test
+        shell: pwsh
+        if: matrix.platform == 'windows'
+        run: |
+          ctest --test-dir "build/full-deps/windows" --output-on-failure
+          if ($LASTEXITCODE -ne 0) { throw "ctest failed: $LASTEXITCODE" }
+
+
   windows_msbuild_sln:
     name: Windows / MSBuild (repo .sln) / ${{ matrix.config }}
     runs-on: windows-latest

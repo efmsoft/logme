@@ -1,8 +1,17 @@
 #pragma once
 
 #ifndef LOGME_DISABLE_STD_FORMAT
-#include <format>
+  #ifdef LOGME_USE_FMT_FORMAT
+    #include <fmt/format.h>
+    #define LOGME_VFORMAT fmt::vformat
+    #define LOGME_MAKE_FORMAT_ARGS fmt::make_format_args
+  #else
+    #include <format>
+    #define LOGME_VFORMAT std::vformat
+    #define LOGME_MAKE_FORMAT_ARGS std::make_format_args
+  #endif
 #endif
+
 #include <functional>
 #include <map>
 #include <memory>
@@ -196,7 +205,7 @@ namespace Logme
     /// </summary>
     /// <remarks>
     /// Stream overloads return a stream sink. Variadic overloads use printf-style formatting.
-    /// std::format overloads are selected by passing Logme::GetStdFormat().
+    /// format overloads are selected by passing Logme::GetStdFormat().
     /// </remarks>
     /// <param name="context">Prepared log context.</param>
     /// <param name="id">Channel id.</param>
@@ -204,7 +213,7 @@ namespace Logme
     /// <param name="sid">Subsystem id.</param>
     /// <param name="ovr">Per-call output override.</param>
     /// <param name="format">printf-style format string.</param>
-    /// <param name="fmt">std::format-style format string.</param>
+    /// <param name="fmt">format-style format string.</param>
 
     LOGMELNK Stream Log(const Context& context); // @1
 
@@ -231,7 +240,7 @@ namespace Logme
       if (ShutdownCalled)
         return;
 
-      std::string out = std::vformat(fmt, std::make_format_args(args...));
+      std::string out = LOGME_VFORMAT(fmt, LOGME_MAKE_FORMAT_ARGS(args...));
       Log(context, id, "%s", out.c_str());
     }
 
@@ -244,7 +253,7 @@ namespace Logme
       if (ch && context.ErrorLevel < Level::LEVEL_ERROR && ch->IsOutputActive(context) == false)
         return;
 
-      std::string out = std::vformat(fmt, std::make_format_args(args...));
+      std::string out = LOGME_VFORMAT(fmt, LOGME_MAKE_FORMAT_ARGS(args...));
       Log(context, ch, "%s", out.c_str());
     }
 #endif
@@ -258,7 +267,7 @@ namespace Logme
     template<typename... Args>
     void Log(const Context& context, const StdFormat*, Override& ovr, const char* fmt, Args&&... args)
     {
-      std::string out = std::vformat(fmt, std::make_format_args(args...));
+      std::string out = LOGME_VFORMAT(fmt, LOGME_MAKE_FORMAT_ARGS(args...));
       Log(context, ovr, "%s", out.c_str());
     }
 #endif
@@ -271,7 +280,7 @@ namespace Logme
       if (ShutdownCalled)
         return;
 
-      std::string out = std::vformat(fmt, std::make_format_args(args...));
+      std::string out = LOGME_VFORMAT(fmt, LOGME_MAKE_FORMAT_ARGS(args...));
       Log(context, ovr, id, "%s", out.c_str());
     }
 
@@ -284,7 +293,7 @@ namespace Logme
       if (ch && context.ErrorLevel < Level::LEVEL_ERROR && ch->IsOutputActive(context) == false)
         return;
 
-      std::string out = std::vformat(fmt, std::make_format_args(args...));
+      std::string out = LOGME_VFORMAT(fmt, LOGME_MAKE_FORMAT_ARGS(args...));
       Log(context, ovr, ch, "%s", out.c_str());
     }
 
@@ -294,7 +303,7 @@ namespace Logme
       if (ShutdownCalled)
         return;
 
-      std::string out = std::vformat(fmt, std::make_format_args(args...));
+      std::string out = LOGME_VFORMAT(fmt, LOGME_MAKE_FORMAT_ARGS(args...));
       Log(context, id, ovr, "%s", out.c_str());
     }
 
@@ -307,7 +316,7 @@ namespace Logme
       if (ch && context.ErrorLevel < Level::LEVEL_ERROR && ch->IsOutputActive(context) == false)
         return;
 
-      std::string out = std::vformat(fmt, std::make_format_args(args...));
+      std::string out = LOGME_VFORMAT(fmt, LOGME_MAKE_FORMAT_ARGS(args...));
       Log(context, ch, ovr, "%s", out.c_str());
     }
 #endif
@@ -325,7 +334,7 @@ namespace Logme
       if (ShutdownCalled)
         return;
 
-      std::string out = std::vformat(fmt, std::make_format_args(args...));
+      std::string out = LOGME_VFORMAT(fmt, LOGME_MAKE_FORMAT_ARGS(args...));
       Log(context, "%s", out.c_str());
     }
 #endif

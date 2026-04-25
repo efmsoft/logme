@@ -30,7 +30,7 @@ It is designed for both high-load servers and simple applications, providing sel
 - **Channel links**: redirect or fan-out log messages between channels without duplicating backend configuration.
 - **Retention rules**: limit the size of individual log files and the total disk usage across all logs.
 - **Log file obfuscation**: optional obfuscation of log data written to files.
-- **Multiple APIs**: C-style macros, C++ stream-style logging, and optional `std::format`-based formatting.
+- **Multiple APIs**: C-style macros, C++ stream-style logging, and optional `format`-based formatting.
 - **Cross-platform**: Windows, Linux and macOS support.
 
 ---
@@ -48,7 +48,7 @@ int main()
 {
   LogmeI("Hello from logme (%s style)", "C");
   LogmeW() << "Hello from logme (C++ stream style)";
-  fLogmeE("Hello from logme ({} style)", "std::format");
+  fLogmeE("Hello from logme ({} style)", "format");
 
   return 0;
 }
@@ -250,6 +250,7 @@ ctest --test-dir build
 - `LOGME_BUILD_TESTS` (ON/OFF)
 - `LOGME_BUILD_STATIC` (ON/OFF)
 - `LOGME_BUILD_DYNAMIC` (ON/OFF)
+- `LOGME_FMT_FORMAT` (`AUTO`, `ON`, `OFF`)
 - `LOGME_STD_FORMAT` (`AUTO`, `ON`, `OFF`)
 
 ---
@@ -260,11 +261,11 @@ ctest --test-dir build
 
 - C++20 is used.
 
-### `std::format` support
+### `format` support
 
-`std::format` is optional. If your standard library does not provide `<format>`, disable it via:
+`format` is optional. If your standard library does not provide `<format>`, disable it via:
 
-- `-DLOGME_STD_FORMAT=OFF` (or define `LOGME_DISABLE_STD_FORMAT`)
+- `-DLOGME_FMT_FORMAT=OFF -DLOGME_STD_FORMAT=OFF` (or define `LOGME_DISABLE_STD_FORMAT`)
 
 ---
 

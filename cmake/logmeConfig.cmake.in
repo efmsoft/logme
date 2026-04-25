@@ -6,4 +6,8 @@ if(@USE_JSONCPP@)
   find_dependency(JsonCpp CONFIG REQUIRED)
 endif()
 
+if(@LOGME_USE_FMT_FORMAT@)
+  find_dependency(fmt CONFIG REQUIRED)
+endif()
+
 include("${CMAKE_CURRENT_LIST_DIR}/logmeTargets.cmake")

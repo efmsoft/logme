@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdio.h>
 #include <string>
 
 #include <Logme/Types.h>
@@ -8,6 +9,8 @@ namespace Logme
 {
   LOGMELNK std::string GetExecutablePath();
   LOGMELNK std::string AppendSlash(const std::string& folder);
+  LOGMELNK std::string GetFilePathFromFd(int fd);
+  LOGMELNK std::string GetFilePathFromFile(FILE* file);
 
   inline bool IsAbsolutePath(const std::string& path)
   {

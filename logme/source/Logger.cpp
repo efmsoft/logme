@@ -53,6 +53,7 @@ Logger::Logger()
 
 Logger::~Logger()
 {
+  ConsoleFactory.SetStopping();
   Factory.SetStopping();
   StopControlServer();
   FreeControlSsl();
@@ -167,6 +168,11 @@ bool Logger::TestFileInUse(const std::string& file)
 FileManagerFactory& Logger::GetFileManagerFactory()
 {
   return Factory;
+}
+
+ConsoleManagerFactory& Logger::GetConsoleManagerFactory()
+{
+  return ConsoleFactory;
 }
 
 void Logger::IterateChannels(const TChannelCallback& callback)

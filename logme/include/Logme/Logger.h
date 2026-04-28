@@ -23,6 +23,7 @@
 #include <Logme/CritSection.h>
 #include <Logme/File/DirectorySizeWatchdog.h>
 #include <Logme/File/FileManagerFactory.h>
+#include <Logme/Backend/ConsoleManagerFactory.h>
 #include <Logme/Obfuscate.h>
 #include <Logme/Stream.h>
 #include <Logme/Utils.h>
@@ -56,6 +57,7 @@ namespace Logme
     int IDGenerator;
 
     FileManagerFactory Factory;
+    ConsoleManagerFactory ConsoleFactory;
 
     std::mutex ErrorLock;
     StringPtr ErrorChannel;
@@ -405,6 +407,7 @@ namespace Logme
     LOGMELNK const std::string& GetHomeDirectory() const;
 
     LOGMELNK FileManagerFactory& GetFileManagerFactory();
+    LOGMELNK ConsoleManagerFactory& GetConsoleManagerFactory();
 
     /// <summary>
     /// Returns channel name used to duplicate error-level records.

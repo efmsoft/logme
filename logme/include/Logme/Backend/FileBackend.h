@@ -150,6 +150,7 @@ namespace Logme
     LOGMELNK uint64_t GetFlushTime() const;
     LOGMELNK bool HasEvents() const;
     LOGMELNK void AppendString(const char* text, size_t len);
+    LOGMELNK void RegisterAsync();
     LOGMELNK static FileBackendCounters GetCounters();
   
   protected:

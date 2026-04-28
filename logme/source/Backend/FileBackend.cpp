@@ -359,12 +359,8 @@ bool FileBackend::ChangePart()
   return true;
 }
 
-void FileBackend::Display(Context& context)
+void FileBackend::RegisterAsync()
 {
-  FILE_CNT(GlobalDisplayCalls.fetch_add(1, std::memory_order_relaxed));
-  if (File == -1 || ShutdownFlag.load(std::memory_order_relaxed))
-    return;
-
   if (Registered.load(std::memory_order_relaxed) == false)
   {
     std::unique_lock locker(BufferLock);
@@ -375,6 +371,15 @@ void FileBackend::Display(Context& context)
       Registered.store(true, std::memory_order_relaxed);
     }
   }
+}
+
+void FileBackend::Display(Context& context)
+{
+  FILE_CNT(GlobalDisplayCalls.fetch_add(1, std::memory_order_relaxed));
+  if (File == -1 || ShutdownFlag.load(std::memory_order_relaxed))
+    return;
+
+  RegisterAsync();
 
   if (DailyRotation && Day.IsSameDayCached() == false)
   {
@@ -417,6 +422,11 @@ std::string FileBackend::GetPathName(int index)
 void FileBackend::AppendString(const char* text, size_t len)
 {
   std::lock_guard guard(Owner->GetDataLock());
+
+  if (File == -1 || ShutdownFlag.load(std::memory_order_relaxed))
+    return;
+
+  RegisterAsync();
   AppendStringInternal(text, len);
 }
 

@@ -26,6 +26,7 @@ if(GTEST)
     target_link_libraries(gtest_main INTERFACE GTest::gtest_main)
 
     add_subdirectory(ChannelRedirect)
+    add_subdirectory(ConsoleBackend)
     add_subdirectory(LevelFilter)
     add_subdirectory(OutputFlags)
     add_subdirectory(ProcedurePrint)

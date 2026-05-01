@@ -8,6 +8,7 @@
 #else
 #include <limits.h>
 #include <stdio.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #ifdef __APPLE__
 #include <fcntl.h>
@@ -28,6 +29,10 @@ std::string Logme::GetFilePathFromFd(int fd)
   if (handle == INVALID_HANDLE_VALUE || handle == nullptr)
     return std::string();
 
+  DWORD type = GetFileType(handle);
+  if (type != FILE_TYPE_DISK)
+    return std::string();
+
   DWORD size = GetFinalPathNameByHandleA(handle, nullptr, 0, FILE_NAME_NORMALIZED);
   if (size == 0)
     return std::string();
@@ -44,12 +49,20 @@ std::string Logme::GetFilePathFromFd(int fd)
 
   return path;
 #elif defined(__APPLE__)
+  struct stat st;
+  if (fstat(fd, &st) != 0 || !S_ISREG(st.st_mode))
+    return std::string();
+
   char buffer[PATH_MAX];
   if (fcntl(fd, F_GETPATH, buffer) == -1)
     return std::string();
 
   return std::string(buffer);
 #else
+  struct stat st;
+  if (fstat(fd, &st) != 0 || !S_ISREG(st.st_mode))
+    return std::string();
+
   char linkName[64];
   snprintf(linkName, sizeof(linkName), "/proc/self/fd/%d", fd);
 

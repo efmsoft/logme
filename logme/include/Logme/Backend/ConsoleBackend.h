@@ -5,7 +5,6 @@
 
 #include <atomic>
 #include <condition_variable>
-#include <cstdint>
 #include <cstdio>
 #include <iostream>
 #include <mutex>
@@ -28,54 +27,9 @@ namespace Logme
     STDERR,
   };
 
-  struct ConsoleRecord
+  enum ConsoleRecordFlags
   {
-    ConsoleTarget Target;
-    Level ErrorLevel;
-    bool Highlight;
-    bool HasAnsi;
-    std::string Text;
-  };
-
-  struct ConsoleQueueCounters
-  {
-    uint64_t QueuedRecords = 0;
-    uint64_t QueuedBytes = 0;
-    uint64_t MaxQueuedRecords = 0;
-    uint64_t MaxQueuedBytes = 0;
-    uint64_t DroppedRecords = 0;
-    uint64_t DroppedBytes = 0;
-    uint64_t BlockedCalls = 0;
-    uint64_t SyncFallbackCalls = 0;
-  };
-
-  class ConsoleRecordQueue
-  {
-    std::mutex Lock;
-    std::condition_variable NotFull;
-    std::vector<ConsoleRecord> Records;
-    size_t QueuedBytes;
-    size_t MaxRecords;
-    size_t MaxBytes;
-    ConsoleOverflowPolicy OverflowPolicy;
-    uint64_t DroppedRecords;
-    uint64_t DroppedBytes;
-    uint64_t BlockedCalls;
-    uint64_t SyncFallbackCalls;
-    uint64_t MaxQueuedRecords;
-    uint64_t MaxQueuedBytes;
-
-  public:
-    ConsoleRecordQueue();
-
-    void SetLimits(size_t maxRecords, size_t maxBytes);
-    void SetOverflowPolicy(ConsoleOverflowPolicy policy);
-
-    bool Push(ConsoleRecord&& record);
-    bool TakeAll(std::vector<ConsoleRecord>& records);
-    bool Empty() const;
-    ConsoleQueueCounters GetCounters() const;
-    void NotifySpace();
+    CONSOLE_RECORD_HIGHLIGHT = 0x01,
   };
 
   struct ConsoleBackend : public Backend
@@ -94,14 +48,9 @@ namespace Logme
     std::atomic<bool> ShutdownFlag;
     std::atomic<bool> ShutdownCalled;
 
-    ConsoleRecordQueue Queue;
-    std::condition_variable Done;
-    std::mutex DoneLock;
-
-    FileBackendPtr RedirectStdout;
-    FileBackendPtr RedirectStderr;
-    bool RedirectStdoutChecked;
-    bool RedirectStderrChecked;
+    size_t QueueRecordLimit;
+    size_t QueueByteLimit;
+    ConsoleOverflowPolicy OverflowPolicy;
 
   public:
     LOGMELNK ConsoleBackend(ChannelPtr owner);
@@ -111,7 +60,6 @@ namespace Logme
     LOGMELNK bool GetAsync() const;
     LOGMELNK void SetQueueLimits(size_t maxRecords, size_t maxBytes);
     LOGMELNK void SetOverflowPolicy(ConsoleOverflowPolicy policy);
-    LOGMELNK ConsoleQueueCounters GetQueueCounters() const;
 
     LOGMELNK void Display(Context& context) override;
     LOGMELNK void Flush() override;
@@ -126,10 +74,7 @@ namespace Logme
 
   private:
     class ConsoleManagerFactory& GetFactory() const;
-    FileBackendPtr GetRedirectBackend(ConsoleTarget target);
-    bool AppendRedirected(ConsoleTarget target, const char* text, size_t len, bool hasAnsi);
     void RegisterIfNeeded();
-    bool WorkerFunc();
     void OnShutdown();
 
     friend class ConsoleManager;

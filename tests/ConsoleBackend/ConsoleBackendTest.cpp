@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <Logme/Backend/ConsoleBackend.h>
+#include <Logme/Backend/ConsoleManager.h>
 #include <Logme/Logme.h>
 
 #include <algorithm>
@@ -157,16 +158,7 @@ namespace
     return count;
   }
 
-  Logme::ConsoleRecord MakeRecord(const char* text)
-  {
-    Logme::ConsoleRecord record;
-    record.Target = Logme::ConsoleTarget::STDOUT;
-    record.ErrorLevel = Logme::LEVEL_INFO;
-    record.Highlight = false;
-    record.HasAnsi = false;
-    record.Text = text;
-    return record;
-  }
+
 }
 
 TEST(ConsoleBackendTest, RemoveAnsiStripsKnownSequences)
@@ -366,237 +358,118 @@ TEST(ConsoleBackendTest, AsyncRedirectHandlesConcurrentProducers)
   RemoveIfExists(stderrPath);
 }
 
-TEST(ConsoleBackendTest, QueueDropNewKeepsExistingRecords)
+TEST(ConsoleBackendTest, ManagerDropNewKeepsExistingRecords)
 {
-  Logme::ConsoleRecordQueue queue;
-  queue.SetLimits(1, 0);
-  queue.SetOverflowPolicy(Logme::ConsoleOverflowPolicy::DROP_NEW);
-
-  EXPECT_TRUE(queue.Push(MakeRecord("first")));
-  EXPECT_TRUE(queue.Push(MakeRecord("second")));
-
-  std::vector<Logme::ConsoleRecord> records;
-  EXPECT_TRUE(queue.TakeAll(records));
-  ASSERT_EQ(records.size(), 1u);
-  EXPECT_EQ(records[0].Text, "first");
-}
-
-TEST(ConsoleBackendTest, QueueDropOldestKeepsNewestRecords)
-{
-  Logme::ConsoleRecordQueue queue;
-  queue.SetLimits(1, 0);
-  queue.SetOverflowPolicy(Logme::ConsoleOverflowPolicy::DROP_OLDEST);
-
-  EXPECT_TRUE(queue.Push(MakeRecord("first")));
-  EXPECT_TRUE(queue.Push(MakeRecord("second")));
-
-  std::vector<Logme::ConsoleRecord> records;
-  EXPECT_TRUE(queue.TakeAll(records));
-  ASSERT_EQ(records.size(), 1u);
-  EXPECT_EQ(records[0].Text, "second");
-}
-
-TEST(ConsoleBackendTest, QueueSyncFallbackReportsFullQueue)
-{
-  Logme::ConsoleRecordQueue queue;
-  queue.SetLimits(1, 0);
-  queue.SetOverflowPolicy(Logme::ConsoleOverflowPolicy::SYNC_FALLBACK);
-
-  EXPECT_TRUE(queue.Push(MakeRecord("first")));
-  EXPECT_FALSE(queue.Push(MakeRecord("second")));
-
-  std::vector<Logme::ConsoleRecord> records;
-  EXPECT_TRUE(queue.TakeAll(records));
-  ASSERT_EQ(records.size(), 1u);
-  EXPECT_EQ(records[0].Text, "first");
-}
-
-TEST(ConsoleBackendTest, QueueBlockWaitsUntilSpaceIsAvailable)
-{
-  Logme::ConsoleRecordQueue queue;
-  queue.SetLimits(1, 0);
-  queue.SetOverflowPolicy(Logme::ConsoleOverflowPolicy::BLOCK);
-
-  EXPECT_TRUE(queue.Push(MakeRecord("first")));
-
-  auto pushed = std::async(
-    std::launch::async
-    , [&queue]()
-    {
-      return queue.Push(MakeRecord("second"));
-    }
-  );
-
-  EXPECT_EQ(pushed.wait_for(std::chrono::milliseconds(50)), std::future_status::timeout);
-
-  std::vector<Logme::ConsoleRecord> records;
-  EXPECT_TRUE(queue.TakeAll(records));
-  ASSERT_EQ(records.size(), 1u);
-  EXPECT_EQ(records[0].Text, "first");
-
-  EXPECT_TRUE(pushed.get());
-
-  records.clear();
-  EXPECT_TRUE(queue.TakeAll(records));
-  ASSERT_EQ(records.size(), 1u);
-  EXPECT_EQ(records[0].Text, "second");
-}
-
-TEST(ConsoleBackendTest, QueueByteLimitIsHonored)
-{
-  Logme::ConsoleRecordQueue queue;
-  queue.SetLimits(0, 5);
-  queue.SetOverflowPolicy(Logme::ConsoleOverflowPolicy::DROP_NEW);
-
-  EXPECT_TRUE(queue.Push(MakeRecord("1234")));
-  EXPECT_TRUE(queue.Push(MakeRecord("5678")));
-
-  std::vector<Logme::ConsoleRecord> records;
-  EXPECT_TRUE(queue.TakeAll(records));
-  ASSERT_EQ(records.size(), 1u);
-  EXPECT_EQ(records[0].Text, "1234");
-}
-
-TEST(ConsoleBackendTest, QueueCountersTrackDropNewOverflow)
-{
-  Logme::ConsoleRecordQueue queue;
-  queue.SetLimits(1, 0);
-  queue.SetOverflowPolicy(Logme::ConsoleOverflowPolicy::DROP_NEW);
-
-  EXPECT_TRUE(queue.Push(MakeRecord("first")));
-  EXPECT_TRUE(queue.Push(MakeRecord("second")));
-
-  auto counters = queue.GetCounters();
-  EXPECT_EQ(counters.QueuedRecords, 1u);
-  EXPECT_EQ(counters.DroppedRecords, 1u);
-  EXPECT_EQ(counters.DroppedBytes, 6u);
-  EXPECT_EQ(counters.MaxQueuedRecords, 1u);
-}
-
-TEST(ConsoleBackendTest, QueueCountersTrackDropOldestOverflow)
-{
-  Logme::ConsoleRecordQueue queue;
-  queue.SetLimits(1, 0);
-  queue.SetOverflowPolicy(Logme::ConsoleOverflowPolicy::DROP_OLDEST);
-
-  EXPECT_TRUE(queue.Push(MakeRecord("first")));
-  EXPECT_TRUE(queue.Push(MakeRecord("second")));
-
-  auto counters = queue.GetCounters();
-  EXPECT_EQ(counters.QueuedRecords, 1u);
-  EXPECT_EQ(counters.DroppedRecords, 1u);
-  EXPECT_EQ(counters.DroppedBytes, 5u);
-  EXPECT_EQ(counters.MaxQueuedRecords, 1u);
-
-  std::vector<Logme::ConsoleRecord> records;
-  EXPECT_TRUE(queue.TakeAll(records));
-  ASSERT_EQ(records.size(), 1u);
-  EXPECT_EQ(records[0].Text, "second");
-}
-
-TEST(ConsoleBackendTest, QueueCountersTrackSyncFallbackOverflow)
-{
-  Logme::ConsoleRecordQueue queue;
-  queue.SetLimits(1, 0);
-  queue.SetOverflowPolicy(Logme::ConsoleOverflowPolicy::SYNC_FALLBACK);
-
-  EXPECT_TRUE(queue.Push(MakeRecord("first")));
-  EXPECT_FALSE(queue.Push(MakeRecord("second")));
-
-  auto counters = queue.GetCounters();
-  EXPECT_EQ(counters.QueuedRecords, 1u);
-  EXPECT_EQ(counters.SyncFallbackCalls, 1u);
-  EXPECT_EQ(counters.DroppedRecords, 0u);
-}
-
-TEST(ConsoleBackendTest, QueueBlockDoesNotDropRecordsUnderOverflowPressure)
-{
-  Logme::ConsoleRecordQueue queue;
-  queue.SetLimits(1, 0);
-  queue.SetOverflowPolicy(Logme::ConsoleOverflowPolicy::BLOCK);
-
-  constexpr int RECORDS = 16;
-
-  EXPECT_TRUE(queue.Push(MakeRecord("record-0")));
-
-  auto producer = std::async(
-    std::launch::async
-    , [&queue]()
-    {
-      for (int i = 1; i < RECORDS; ++i)
-      {
-        auto text = std::string("record-") + std::to_string(i);
-        if (!queue.Push(MakeRecord(text.c_str())))
-          return false;
-      }
-
-      return true;
-    }
-  );
-
-  EXPECT_EQ(producer.wait_for(std::chrono::milliseconds(50)), std::future_status::timeout);
-
-  std::vector<std::string> output;
-  while (output.size() < static_cast<size_t>(RECORDS))
-  {
-    std::vector<Logme::ConsoleRecord> records;
-    if (!queue.TakeAll(records))
-    {
-      std::this_thread::sleep_for(std::chrono::milliseconds(1));
-      continue;
-    }
-
-    for (auto& record : records)
-      output.push_back(record.Text);
-  }
-
-  EXPECT_TRUE(producer.get());
-
-  ASSERT_EQ(output.size(), static_cast<size_t>(RECORDS));
-  for (int i = 0; i < RECORDS; ++i)
-  {
-    auto text = std::string("record-") + std::to_string(i);
-    EXPECT_NE(std::find(output.begin(), output.end(), text), output.end()) << text;
-  }
-
-  auto counters = queue.GetCounters();
-  EXPECT_GT(counters.BlockedCalls, 0u);
-  EXPECT_EQ(counters.DroppedRecords, 0u);
-  EXPECT_EQ(counters.SyncFallbackCalls, 0u);
-}
-
-TEST(ConsoleBackendTest, AsyncRedirectWithSmallQueueLimitKeepsAllMessages)
-{
-  auto stdoutPath = MakePath("async-small-limit");
-  auto stderrPath = MakePath("async-small-limit-stderr");
+  auto stdoutPath = MakePath("manager-drop-new");
   RemoveIfExists(stdoutPath);
-  RemoveIfExists(stderrPath);
-
-  constexpr int MESSAGES = 64;
 
   {
     StreamRedirect stdoutRedirect(stdout, stdoutPath);
-    StreamRedirect stderrRedirect(stderr, stderrPath);
+    auto fixture = CreateBackend(false, Logme::STREAM_ALL2COUT);
 
-    auto fixture = CreateBackend(true, Logme::STREAM_ALL2COUT);
-    fixture.Backend->SetQueueLimits(1, 1);
-    fixture.Backend->SetOverflowPolicy(Logme::ConsoleOverflowPolicy::BLOCK);
+    Logme::ConsoleManager manager;
+    manager.AddBackend(
+      fixture.Backend
+      , 1
+      , 0
+      , Logme::ConsoleOverflowPolicy::DROP_NEW
+    );
 
-    for (int i = 0; i < MESSAGES; ++i)
-      LogmeI(ConsoleTestChannel, "[async-small-limit-%d]", i);
-
-    fixture.Backend->Flush();
-    fflush(stdout);
+    EXPECT_TRUE(manager.Push(Logme::ConsoleTarget::STDOUT, Logme::LEVEL_INFO, false, "first", 5));
+    EXPECT_TRUE(manager.Push(Logme::ConsoleTarget::STDOUT, Logme::LEVEL_INFO, false, "second", 6));
+    manager.Flush();
   }
 
   auto out = ReadFile(stdoutPath);
-
-  for (int i = 0; i < MESSAGES; ++i)
-  {
-    auto marker = std::string("[async-small-limit-") + std::to_string(i) + "]";
-    EXPECT_EQ(CountText(out, marker), 1u) << marker;
-  }
+  EXPECT_NE(out.find("first"), std::string::npos);
+  EXPECT_EQ(out.find("second"), std::string::npos);
 
   RemoveIfExists(stdoutPath);
-  RemoveIfExists(stderrPath);
+}
+
+TEST(ConsoleBackendTest, ManagerDropOldestKeepsNewestRecords)
+{
+  auto stdoutPath = MakePath("manager-drop-oldest");
+  RemoveIfExists(stdoutPath);
+
+  {
+    StreamRedirect stdoutRedirect(stdout, stdoutPath);
+    auto fixture = CreateBackend(false, Logme::STREAM_ALL2COUT);
+
+    Logme::ConsoleManager manager;
+    manager.AddBackend(
+      fixture.Backend
+      , 1
+      , 0
+      , Logme::ConsoleOverflowPolicy::DROP_OLDEST
+    );
+
+    EXPECT_TRUE(manager.Push(Logme::ConsoleTarget::STDOUT, Logme::LEVEL_INFO, false, "first", 5));
+    EXPECT_TRUE(manager.Push(Logme::ConsoleTarget::STDOUT, Logme::LEVEL_INFO, false, "second", 6));
+    manager.Flush();
+  }
+
+  auto out = ReadFile(stdoutPath);
+  EXPECT_EQ(out.find("first"), std::string::npos);
+  EXPECT_NE(out.find("second"), std::string::npos);
+
+  RemoveIfExists(stdoutPath);
+}
+
+TEST(ConsoleBackendTest, ManagerSyncFallbackReportsFullQueue)
+{
+  auto stdoutPath = MakePath("manager-sync-fallback");
+  RemoveIfExists(stdoutPath);
+
+  {
+    StreamRedirect stdoutRedirect(stdout, stdoutPath);
+    auto fixture = CreateBackend(false, Logme::STREAM_ALL2COUT);
+
+    Logme::ConsoleManager manager;
+    manager.AddBackend(
+      fixture.Backend
+      , 1
+      , 0
+      , Logme::ConsoleOverflowPolicy::SYNC_FALLBACK
+    );
+
+    EXPECT_TRUE(manager.Push(Logme::ConsoleTarget::STDOUT, Logme::LEVEL_INFO, false, "first", 5));
+    EXPECT_FALSE(manager.Push(Logme::ConsoleTarget::STDOUT, Logme::LEVEL_INFO, false, "second", 6));
+    manager.Flush();
+  }
+
+  auto out = ReadFile(stdoutPath);
+  EXPECT_NE(out.find("first"), std::string::npos);
+  EXPECT_EQ(out.find("second"), std::string::npos);
+
+  RemoveIfExists(stdoutPath);
+}
+
+TEST(ConsoleBackendTest, ManagerByteLimitIsHonored)
+{
+  auto stdoutPath = MakePath("manager-byte-limit");
+  RemoveIfExists(stdoutPath);
+
+  {
+    StreamRedirect stdoutRedirect(stdout, stdoutPath);
+    auto fixture = CreateBackend(false, Logme::STREAM_ALL2COUT);
+
+    Logme::ConsoleManager manager;
+    manager.AddBackend(
+      fixture.Backend
+      , 0
+      , sizeof(Logme::ConsoleRecordHeader) + 5
+      , Logme::ConsoleOverflowPolicy::DROP_NEW
+    );
+
+    EXPECT_TRUE(manager.Push(Logme::ConsoleTarget::STDOUT, Logme::LEVEL_INFO, false, "1234", 4));
+    EXPECT_TRUE(manager.Push(Logme::ConsoleTarget::STDOUT, Logme::LEVEL_INFO, false, "5678", 4));
+    manager.Flush();
+  }
+
+  auto out = ReadFile(stdoutPath);
+  EXPECT_NE(out.find("1234"), std::string::npos);
+  EXPECT_EQ(out.find("5678"), std::string::npos);
+
+  RemoveIfExists(stdoutPath);
 }

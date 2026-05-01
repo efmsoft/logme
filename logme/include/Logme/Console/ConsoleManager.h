@@ -126,5 +126,6 @@ namespace Logme
     );
     void ManagementThread();
     void ProcessBuffer(std::vector<unsigned char>& buffer);
+    void ShutdownRedirectBackends();
   };
 }

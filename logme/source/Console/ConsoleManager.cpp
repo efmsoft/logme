@@ -41,6 +41,8 @@ ConsoleManager::~ConsoleManager()
   for (const auto& backend : Backends)
     backend->OnShutdown();
 
+  ShutdownRedirectBackends();
+
 #if CONSOLE_ENABLE_COUNTERS
   {
     const ConsoleQueueCounters counters = GetCounters();
@@ -70,6 +72,31 @@ ConsoleManager::~ConsoleManager()
     );
   }
 #endif
+}
+
+void ConsoleManager::ShutdownRedirectBackends()
+{
+  FileBackendPtr stdoutBackend;
+  FileBackendPtr stderrBackend;
+
+  {
+    std::lock_guard lock(Lock);
+    stdoutBackend = RedirectStdout;
+    stderrBackend = RedirectStderr;
+
+    RedirectStdout.reset();
+    RedirectStderr.reset();
+    RedirectStdoutChecked = false;
+    RedirectStderrChecked = false;
+    RedirectStdoutName.clear();
+    RedirectStderrName.clear();
+  }
+
+  if (stdoutBackend)
+    stdoutBackend->Freeze();
+
+  if (stderrBackend && stderrBackend != stdoutBackend)
+    stderrBackend->Freeze();
 }
 
 void ConsoleManager::AddBackend(

@@ -20,10 +20,10 @@
 #include <thread>
 
 #include <Logme/Channel.h>
+#include <Logme/Console/ConsoleManagerFactory.h>
 #include <Logme/CritSection.h>
 #include <Logme/File/DirectorySizeWatchdog.h>
 #include <Logme/File/FileManagerFactory.h>
-#include <Logme/Backend/ConsoleManagerFactory.h>
 #include <Logme/Obfuscate.h>
 #include <Logme/Stream.h>
 #include <Logme/Utils.h>

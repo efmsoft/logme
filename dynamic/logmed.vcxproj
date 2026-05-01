@@ -92,6 +92,9 @@
     <ClCompile Include="..\logme\source\FastFormat.cpp" />
     <ClCompile Include="..\logme\source\CritSection.cpp" />
     <ClCompile Include="..\logme\source\IntJeaiii.cpp" />
+    <ClCompile Include="..\logme\source\Console\ConsoleManager.cpp" />
+    <ClCompile Include="..\logme\source\Console\ConsoleManagerFactory.cpp" />
+    <ClCompile Include="..\logme\source\File\handle_path.cpp" />
 </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\logme\source\Config\Helper.h" />

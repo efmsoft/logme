@@ -2,7 +2,7 @@
 #include <cstring>
 
 #include <Logme/AnsiColorEscape.h>
-#include <Logme/Backend/ConsoleManager.h>
+#include <Logme/Console/ConsoleManager.h>
 #include <Logme/File/exe_path.h>
 #include <Logme/Utils.h>
 
@@ -17,7 +17,9 @@ ConsoleManager::ConsoleManager()
   , MaxRecords(ConsoleBackend::QUEUE_RECORD_LIMIT)
   , MaxBytes(ConsoleBackend::QUEUE_BYTE_LIMIT)
   , OverflowPolicy(ConsoleOverflowPolicy::BLOCK)
+#if CONSOLE_ENABLE_COUNTERS
   , Counters{}
+#endif
   , RedirectStdoutChecked(false)
   , RedirectStderrChecked(false)
 #ifdef _WIN32

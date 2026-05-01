@@ -64,6 +64,12 @@
     <Filter Include="..\logme\include\Logme\Detail">
       <UniqueIdentifier>{a62ea1e5-6e05-5df3-9f68-16cafcfa0095}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Console">
+      <UniqueIdentifier>{a68d6a4e-8f82-5783-8d12-a01d62144e08}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\logme\include\Logme\Console">
+      <UniqueIdentifier>{ea556654-0235-5c0a-9806-edbf888e2aae}</UniqueIdentifier>
+    </Filter>
 </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\logme\source\Backend\Backend.cpp">
@@ -240,6 +246,15 @@
     </ClCompile>
     <ClCompile Include="..\logme\source\IntJeaiii.cpp">
       <Filter>IntJeaiii.cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Console\ConsoleManager.cpp">
+      <Filter>Console</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Console\ConsoleManagerFactory.cpp">
+      <Filter>Console</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\File\handle_path.cpp">
+      <Filter>File</Filter>
     </ClCompile>
 </ItemGroup>
   <ItemGroup>
@@ -420,6 +435,12 @@
     </ClInclude>
     <ClInclude Include="..\logme\include\Logme\Detail\Precheck.h">
       <Filter>..\logme\include\Logme\Detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Console\ConsoleManager.h">
+      <Filter>..\logme\include\Logme\Console</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Console\ConsoleManagerFactory.h">
+      <Filter>..\logme\include\Logme\Console</Filter>
     </ClInclude>
 </ItemGroup>
 </Project>

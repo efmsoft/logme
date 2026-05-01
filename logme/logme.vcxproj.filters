@@ -57,6 +57,12 @@
     <Filter Include="include\Logme\Detail">
       <UniqueIdentifier>{e355b875-5207-5a95-bcc9-7a55bcc31c24}</UniqueIdentifier>
     </Filter>
+    <Filter Include="source\Console">
+      <UniqueIdentifier>{1c686c2d-2257-5e13-942a-5b04d038f5e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\Logme\Console">
+      <UniqueIdentifier>{cb1e1df2-ba24-506c-909a-1776121cf1f7}</UniqueIdentifier>
+    </Filter>
 </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Logme\Backend\Backend.h">
@@ -241,6 +247,12 @@
     </ClInclude>
     <ClInclude Include="include\Logme\Detail\Precheck.h">
       <Filter>include\Logme\Detail</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\Console\ConsoleManager.h">
+      <Filter>include\Logme\Console</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\Console\ConsoleManagerFactory.h">
+      <Filter>include\Logme\Console</Filter>
     </ClInclude>
 </ItemGroup>
   <ItemGroup>
@@ -462,6 +474,15 @@
     </ClCompile>
     <ClCompile Include="source\IntJeaiii.cpp">
       <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Console\ConsoleManager.cpp">
+      <Filter>source\Console</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Console\ConsoleManagerFactory.cpp">
+      <Filter>source\Console</Filter>
+    </ClCompile>
+    <ClCompile Include="source\File\handle_path.cpp">
+      <Filter>source\File</Filter>
     </ClCompile>
 </ItemGroup>
 </Project>

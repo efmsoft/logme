@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <Logme/Backend/ConsoleBackend.h>
-#include <Logme/Backend/ConsoleManager.h>
+#include <Logme/Console/ConsoleManager.h>
 #include <Logme/Logme.h>
 
 #include <algorithm>

@@ -1,4 +1,4 @@
-#include <Logme/Backend/ConsoleManagerFactory.h>
+#include <Logme/Console/ConsoleManagerFactory.h>
 
 using namespace Logme;
 

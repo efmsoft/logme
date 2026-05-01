@@ -268,6 +268,9 @@
     <ClCompile Include="source\FastFormat.cpp" />
     <ClCompile Include="source\CritSection.cpp" />
     <ClCompile Include="source\IntJeaiii.cpp" />
+    <ClCompile Include="source\Console\ConsoleManager.cpp" />
+    <ClCompile Include="source\Console\ConsoleManagerFactory.cpp" />
+    <ClCompile Include="source\File\handle_path.cpp" />
 </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

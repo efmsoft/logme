@@ -66,7 +66,9 @@ namespace Logme
     size_t MaxRecords;
     size_t MaxBytes;
     ConsoleOverflowPolicy OverflowPolicy;
+#if CONSOLE_ENABLE_COUNTERS
     ConsoleQueueCounters Counters;
+#endif
 
     FileBackendPtr RedirectStdout;
     FileBackendPtr RedirectStderr;

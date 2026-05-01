@@ -3,7 +3,7 @@
 #include <memory>
 #include <mutex>
 
-#include <Logme/Backend/ConsoleManager.h>
+#include <Logme/Console/ConsoleManager.h>
 
 namespace Logme
 {

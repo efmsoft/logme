@@ -4,9 +4,9 @@
 
 #include <Logme/AnsiColorEscape.h>
 #include <Logme/Backend/ConsoleBackend.h>
-#include <Logme/Backend/ConsoleManagerFactory.h>
 #include <Logme/Channel.h>
 #include <Logme/Colorizer.h>
+#include <Logme/Console/ConsoleManagerFactory.h>
 #include <Logme/File/exe_path.h>
 #include <Logme/Logger.h>
 

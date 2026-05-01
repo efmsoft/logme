@@ -48,18 +48,14 @@ namespace Logme
     std::atomic<bool> ShutdownFlag;
     std::atomic<bool> ShutdownCalled;
 
-    size_t QueueRecordLimit;
-    size_t QueueByteLimit;
-    ConsoleOverflowPolicy OverflowPolicy;
-
   public:
     LOGMELNK ConsoleBackend(ChannelPtr owner);
     LOGMELNK ~ConsoleBackend();
 
     LOGMELNK void SetAsync(bool async);
     LOGMELNK bool GetAsync() const;
-    LOGMELNK void SetQueueLimits(size_t maxRecords, size_t maxBytes);
-    LOGMELNK void SetOverflowPolicy(ConsoleOverflowPolicy policy);
+    LOGMELNK static void SetQueueLimits(size_t maxRecords, size_t maxBytes);
+    LOGMELNK static void SetOverflowPolicy(ConsoleOverflowPolicy policy);
 
     LOGMELNK void Display(Context& context) override;
     LOGMELNK void Flush() override;

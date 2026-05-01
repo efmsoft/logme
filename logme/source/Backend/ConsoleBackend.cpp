@@ -6,6 +6,7 @@
 #include <Logme/Backend/ConsoleBackend.h>
 #include <Logme/Channel.h>
 #include <Logme/Colorizer.h>
+#include <Logme/Console/ConsoleManager.h>
 #include <Logme/Console/ConsoleManagerFactory.h>
 #include <Logme/File/exe_path.h>
 #include <Logme/Logger.h>
@@ -18,9 +19,6 @@ ConsoleBackend::ConsoleBackend(ChannelPtr owner)
   , Registered(false)
   , ShutdownFlag(false)
   , ShutdownCalled(owner == nullptr)
-  , QueueRecordLimit(QUEUE_RECORD_LIMIT)
-  , QueueByteLimit(QUEUE_BYTE_LIMIT)
-  , OverflowPolicy(ConsoleOverflowPolicy::BLOCK)
 {
   if (owner)
   {
@@ -47,19 +45,18 @@ bool ConsoleBackend::GetAsync() const
 
 void ConsoleBackend::SetQueueLimits(size_t maxRecords, size_t maxBytes)
 {
-  QueueRecordLimit = maxRecords;
-  QueueByteLimit = maxBytes;
+  ConsoleManager::SetQueueLimits(maxRecords, maxBytes);
 
-  if (Registered.load(std::memory_order_relaxed))
-    GetFactory().SetLimits(maxRecords, maxBytes);
+  if (Instance)
+    Instance->GetConsoleManagerFactory().NotifySettingsChanged();
 }
 
 void ConsoleBackend::SetOverflowPolicy(ConsoleOverflowPolicy policy)
 {
-  OverflowPolicy = policy;
+  ConsoleManager::SetOverflowPolicy(policy);
 
-  if (Registered.load(std::memory_order_relaxed))
-    GetFactory().SetOverflowPolicy(policy);
+  if (Instance)
+    Instance->GetConsoleManagerFactory().NotifySettingsChanged();
 }
 
 void ConsoleBackend::Freeze()
@@ -294,7 +291,7 @@ void ConsoleBackend::RegisterIfNeeded()
     return;
 
   ConsoleBackendPtr self = std::static_pointer_cast<ConsoleBackend>(shared_from_this());
-  GetFactory().Add(self, QueueRecordLimit, QueueByteLimit, OverflowPolicy);
+  GetFactory().Add(self);
   Registered.store(true, std::memory_order_relaxed);
 }
 

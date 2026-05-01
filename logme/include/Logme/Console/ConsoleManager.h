@@ -51,6 +51,7 @@ namespace Logme
 
   class ConsoleManager
   {
+    friend struct ConsoleBackend;
     std::atomic<bool> StopRequested;
     bool Reschedule;
     std::thread ManagerThread;
@@ -63,9 +64,9 @@ namespace Logme
     bool Processing;
     size_t QueuedRecords;
     size_t QueuedBytes;
-    size_t MaxRecords;
-    size_t MaxBytes;
-    ConsoleOverflowPolicy OverflowPolicy;
+    static std::atomic<size_t> MaxRecords;
+    static std::atomic<size_t> MaxBytes;
+    static std::atomic<ConsoleOverflowPolicy> OverflowPolicy;
 #if CONSOLE_ENABLE_COUNTERS
     ConsoleQueueCounters Counters;
 #endif
@@ -85,12 +86,7 @@ namespace Logme
     ConsoleManager();
     ~ConsoleManager();
 
-    void AddBackend(
-      const ConsoleBackendPtr& backend
-      , size_t maxRecords
-      , size_t maxBytes
-      , ConsoleOverflowPolicy policy
-    );
+    void AddBackend(const ConsoleBackendPtr& backend);
 
     bool RemoveBackend(ConsoleBackend* backend);
     bool Push(
@@ -109,8 +105,7 @@ namespace Logme
 
     void Flush();
     void Notify(ConsoleBackend* backend);
-    void SetLimits(size_t maxRecords, size_t maxBytes);
-    void SetOverflowPolicy(ConsoleOverflowPolicy policy);
+    void NotifySettingsChanged();
     ConsoleQueueCounters GetCounters() const;
 
     bool Empty() const;
@@ -118,6 +113,9 @@ namespace Logme
     void SetStopping();
 
   private:
+    static void SetQueueLimits(size_t maxRecords, size_t maxBytes);
+    static void SetOverflowPolicy(ConsoleOverflowPolicy policy);
+
     bool HasSpace(size_t recordSize) const;
     bool DropOldest(size_t recordSize);
     FileBackendPtr GetRedirectBackend(

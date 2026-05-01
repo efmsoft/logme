@@ -367,13 +367,11 @@ TEST(ConsoleBackendTest, ManagerDropNewKeepsExistingRecords)
     StreamRedirect stdoutRedirect(stdout, stdoutPath);
     auto fixture = CreateBackend(false, Logme::STREAM_ALL2COUT);
 
+    Logme::ConsoleBackend::SetQueueLimits(1, 0);
+    Logme::ConsoleBackend::SetOverflowPolicy(Logme::ConsoleOverflowPolicy::DROP_NEW);
+
     Logme::ConsoleManager manager;
-    manager.AddBackend(
-      fixture.Backend
-      , 1
-      , 0
-      , Logme::ConsoleOverflowPolicy::DROP_NEW
-    );
+    manager.AddBackend(fixture.Backend);
 
     EXPECT_TRUE(manager.Push(Logme::ConsoleTarget::STDOUT, Logme::LEVEL_INFO, false, "first", 5));
     EXPECT_TRUE(manager.Push(Logme::ConsoleTarget::STDOUT, Logme::LEVEL_INFO, false, "second", 6));
@@ -383,6 +381,12 @@ TEST(ConsoleBackendTest, ManagerDropNewKeepsExistingRecords)
   auto out = ReadFile(stdoutPath);
   EXPECT_NE(out.find("first"), std::string::npos);
   EXPECT_EQ(out.find("second"), std::string::npos);
+
+  Logme::ConsoleBackend::SetQueueLimits(
+    Logme::ConsoleBackend::QUEUE_RECORD_LIMIT
+    , Logme::ConsoleBackend::QUEUE_BYTE_LIMIT
+  );
+  Logme::ConsoleBackend::SetOverflowPolicy(Logme::ConsoleOverflowPolicy::BLOCK);
 
   RemoveIfExists(stdoutPath);
 }
@@ -396,13 +400,11 @@ TEST(ConsoleBackendTest, ManagerDropOldestKeepsNewestRecords)
     StreamRedirect stdoutRedirect(stdout, stdoutPath);
     auto fixture = CreateBackend(false, Logme::STREAM_ALL2COUT);
 
+    Logme::ConsoleBackend::SetQueueLimits(1, 0);
+    Logme::ConsoleBackend::SetOverflowPolicy(Logme::ConsoleOverflowPolicy::DROP_OLDEST);
+
     Logme::ConsoleManager manager;
-    manager.AddBackend(
-      fixture.Backend
-      , 1
-      , 0
-      , Logme::ConsoleOverflowPolicy::DROP_OLDEST
-    );
+    manager.AddBackend(fixture.Backend);
 
     EXPECT_TRUE(manager.Push(Logme::ConsoleTarget::STDOUT, Logme::LEVEL_INFO, false, "first", 5));
     EXPECT_TRUE(manager.Push(Logme::ConsoleTarget::STDOUT, Logme::LEVEL_INFO, false, "second", 6));
@@ -412,6 +414,12 @@ TEST(ConsoleBackendTest, ManagerDropOldestKeepsNewestRecords)
   auto out = ReadFile(stdoutPath);
   EXPECT_EQ(out.find("first"), std::string::npos);
   EXPECT_NE(out.find("second"), std::string::npos);
+
+  Logme::ConsoleBackend::SetQueueLimits(
+    Logme::ConsoleBackend::QUEUE_RECORD_LIMIT
+    , Logme::ConsoleBackend::QUEUE_BYTE_LIMIT
+  );
+  Logme::ConsoleBackend::SetOverflowPolicy(Logme::ConsoleOverflowPolicy::BLOCK);
 
   RemoveIfExists(stdoutPath);
 }
@@ -425,13 +433,11 @@ TEST(ConsoleBackendTest, ManagerSyncFallbackReportsFullQueue)
     StreamRedirect stdoutRedirect(stdout, stdoutPath);
     auto fixture = CreateBackend(false, Logme::STREAM_ALL2COUT);
 
+    Logme::ConsoleBackend::SetQueueLimits(1, 0);
+    Logme::ConsoleBackend::SetOverflowPolicy(Logme::ConsoleOverflowPolicy::SYNC_FALLBACK);
+
     Logme::ConsoleManager manager;
-    manager.AddBackend(
-      fixture.Backend
-      , 1
-      , 0
-      , Logme::ConsoleOverflowPolicy::SYNC_FALLBACK
-    );
+    manager.AddBackend(fixture.Backend);
 
     EXPECT_TRUE(manager.Push(Logme::ConsoleTarget::STDOUT, Logme::LEVEL_INFO, false, "first", 5));
     EXPECT_FALSE(manager.Push(Logme::ConsoleTarget::STDOUT, Logme::LEVEL_INFO, false, "second", 6));
@@ -441,6 +447,12 @@ TEST(ConsoleBackendTest, ManagerSyncFallbackReportsFullQueue)
   auto out = ReadFile(stdoutPath);
   EXPECT_NE(out.find("first"), std::string::npos);
   EXPECT_EQ(out.find("second"), std::string::npos);
+
+  Logme::ConsoleBackend::SetQueueLimits(
+    Logme::ConsoleBackend::QUEUE_RECORD_LIMIT
+    , Logme::ConsoleBackend::QUEUE_BYTE_LIMIT
+  );
+  Logme::ConsoleBackend::SetOverflowPolicy(Logme::ConsoleOverflowPolicy::BLOCK);
 
   RemoveIfExists(stdoutPath);
 }
@@ -454,13 +466,14 @@ TEST(ConsoleBackendTest, ManagerByteLimitIsHonored)
     StreamRedirect stdoutRedirect(stdout, stdoutPath);
     auto fixture = CreateBackend(false, Logme::STREAM_ALL2COUT);
 
-    Logme::ConsoleManager manager;
-    manager.AddBackend(
-      fixture.Backend
-      , 0
+    Logme::ConsoleBackend::SetQueueLimits(
+      0
       , sizeof(Logme::ConsoleRecordHeader) + 5
-      , Logme::ConsoleOverflowPolicy::DROP_NEW
     );
+    Logme::ConsoleBackend::SetOverflowPolicy(Logme::ConsoleOverflowPolicy::DROP_NEW);
+
+    Logme::ConsoleManager manager;
+    manager.AddBackend(fixture.Backend);
 
     EXPECT_TRUE(manager.Push(Logme::ConsoleTarget::STDOUT, Logme::LEVEL_INFO, false, "1234", 4));
     EXPECT_TRUE(manager.Push(Logme::ConsoleTarget::STDOUT, Logme::LEVEL_INFO, false, "5678", 4));
@@ -470,6 +483,12 @@ TEST(ConsoleBackendTest, ManagerByteLimitIsHonored)
   auto out = ReadFile(stdoutPath);
   EXPECT_NE(out.find("1234"), std::string::npos);
   EXPECT_EQ(out.find("5678"), std::string::npos);
+
+  Logme::ConsoleBackend::SetQueueLimits(
+    Logme::ConsoleBackend::QUEUE_RECORD_LIMIT
+    , Logme::ConsoleBackend::QUEUE_BYTE_LIMIT
+  );
+  Logme::ConsoleBackend::SetOverflowPolicy(Logme::ConsoleOverflowPolicy::BLOCK);
 
   RemoveIfExists(stdoutPath);
 }

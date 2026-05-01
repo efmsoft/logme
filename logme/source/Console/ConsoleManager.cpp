@@ -8,15 +8,16 @@
 
 using namespace Logme;
 
+std::atomic<size_t> ConsoleManager::MaxRecords { ConsoleBackend::QUEUE_RECORD_LIMIT };
+std::atomic<size_t> ConsoleManager::MaxBytes { ConsoleBackend::QUEUE_BYTE_LIMIT };
+std::atomic<ConsoleOverflowPolicy> ConsoleManager::OverflowPolicy { ConsoleOverflowPolicy::BLOCK };
+
 ConsoleManager::ConsoleManager()
   : StopRequested(false)
   , Reschedule(false)
   , Processing(false)
   , QueuedRecords(0)
   , QueuedBytes(0)
-  , MaxRecords(ConsoleBackend::QUEUE_RECORD_LIMIT)
-  , MaxBytes(ConsoleBackend::QUEUE_BYTE_LIMIT)
-  , OverflowPolicy(ConsoleOverflowPolicy::BLOCK)
 #if CONSOLE_ENABLE_COUNTERS
   , Counters{}
 #endif
@@ -99,18 +100,10 @@ void ConsoleManager::ShutdownRedirectBackends()
     stderrBackend->Freeze();
 }
 
-void ConsoleManager::AddBackend(
-  const ConsoleBackendPtr& backend
-  , size_t maxRecords
-  , size_t maxBytes
-  , ConsoleOverflowPolicy policy
-)
+void ConsoleManager::AddBackend(const ConsoleBackendPtr& backend)
 {
   std::lock_guard lock(Lock);
   Backends.insert(backend.get());
-  MaxRecords = maxRecords;
-  MaxBytes = maxBytes;
-  OverflowPolicy = policy;
 
   if (!ManagerThread.joinable())
     ManagerThread = std::thread(&ConsoleManager::ManagementThread, this);
@@ -149,8 +142,11 @@ bool ConsoleManager::RemoveBackend(ConsoleBackend* backend)
 
 bool ConsoleManager::HasSpace(size_t recordSize) const
 {
-  bool recordsOk = MaxRecords == 0 || QueuedRecords < MaxRecords;
-  bool bytesOk = MaxBytes == 0 || QueuedBytes == 0 || QueuedBytes + recordSize <= MaxBytes;
+  size_t maxRecords = MaxRecords.load(std::memory_order_relaxed);
+  size_t maxBytes = MaxBytes.load(std::memory_order_relaxed);
+
+  bool recordsOk = maxRecords == 0 || QueuedRecords < maxRecords;
+  bool bytesOk = maxBytes == 0 || QueuedBytes == 0 || QueuedBytes + recordSize <= maxBytes;
   return recordsOk && bytesOk;
 }
 
@@ -205,7 +201,7 @@ bool ConsoleManager::Push(
 
   if (!hasSpace())
   {
-    switch (OverflowPolicy)
+    switch (OverflowPolicy.load(std::memory_order_relaxed))
     {
       case ConsoleOverflowPolicy::BLOCK:
         CONSOLE_CNT(Counters.BlockedCalls++);
@@ -369,19 +365,20 @@ bool ConsoleManager::Empty() const
   return Buffer.empty() && !Processing;
 }
 
-void ConsoleManager::SetLimits(size_t maxRecords, size_t maxBytes)
+void ConsoleManager::NotifySettingsChanged()
 {
-  std::lock_guard lock(Lock);
-  MaxRecords = maxRecords;
-  MaxBytes = maxBytes;
   NotFull.notify_all();
+}
+
+void ConsoleManager::SetQueueLimits(size_t maxRecords, size_t maxBytes)
+{
+  MaxRecords.store(maxRecords, std::memory_order_relaxed);
+  MaxBytes.store(maxBytes, std::memory_order_relaxed);
 }
 
 void ConsoleManager::SetOverflowPolicy(ConsoleOverflowPolicy policy)
 {
-  std::lock_guard lock(Lock);
-  OverflowPolicy = policy;
-  NotFull.notify_all();
+  OverflowPolicy.store(policy, std::memory_order_relaxed);
 }
 
 ConsoleQueueCounters ConsoleManager::GetCounters() const

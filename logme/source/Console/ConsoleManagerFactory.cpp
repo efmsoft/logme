@@ -11,12 +11,7 @@ ConsoleManagerFactory::~ConsoleManagerFactory()
   Instance.reset();
 }
 
-void ConsoleManagerFactory::Add(
-  const ConsoleBackendPtr& backend
-  , size_t maxRecords
-  , size_t maxBytes
-  , ConsoleOverflowPolicy policy
-)
+void ConsoleManagerFactory::Add(const ConsoleBackendPtr& backend)
 {
   std::unique_lock guard(Lock);
 
@@ -29,7 +24,7 @@ void ConsoleManagerFactory::Add(
   if (Instance == nullptr)
     Instance = std::make_shared<ConsoleManager>();
 
-  Instance->AddBackend(backend, maxRecords, maxBytes, policy);
+  Instance->AddBackend(backend);
 }
 
 void ConsoleManagerFactory::Remove(ConsoleBackend* backend)
@@ -116,24 +111,14 @@ void ConsoleManagerFactory::Notify(ConsoleBackend* backend)
     instance->Notify(backend);
 }
 
-void ConsoleManagerFactory::SetLimits(size_t maxRecords, size_t maxBytes)
+void ConsoleManagerFactory::NotifySettingsChanged()
 {
   std::unique_lock guard(Lock);
   std::shared_ptr<ConsoleManager> instance = Instance;
   guard.unlock();
 
   if (instance)
-    instance->SetLimits(maxRecords, maxBytes);
-}
-
-void ConsoleManagerFactory::SetOverflowPolicy(ConsoleOverflowPolicy policy)
-{
-  std::unique_lock guard(Lock);
-  std::shared_ptr<ConsoleManager> instance = Instance;
-  guard.unlock();
-
-  if (instance)
-    instance->SetOverflowPolicy(policy);
+    instance->NotifySettingsChanged();
 }
 
 ConsoleQueueCounters ConsoleManagerFactory::GetCounters()

@@ -16,12 +16,7 @@ namespace Logme
     ConsoleManagerFactory();
     ~ConsoleManagerFactory();
 
-    void Add(
-      const ConsoleBackendPtr& backend
-      , size_t maxRecords
-      , size_t maxBytes
-      , ConsoleOverflowPolicy policy
-    );
+    void Add(const ConsoleBackendPtr& backend);
     void Remove(ConsoleBackend* backend);
     bool Push(
       ConsoleTarget target
@@ -38,8 +33,7 @@ namespace Logme
     );
     void Flush();
     void Notify(ConsoleBackend* backend);
-    void SetLimits(size_t maxRecords, size_t maxBytes);
-    void SetOverflowPolicy(ConsoleOverflowPolicy policy);
+    void NotifySettingsChanged();
     ConsoleQueueCounters GetCounters();
     void SetStopping();
   };

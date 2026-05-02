@@ -20,6 +20,8 @@ ConsoleBackendConfig::ConsoleBackendConfig()
 {
 }
 
+#ifdef USE_JSONCPP
+
 static bool ParseConsoleOverflowPolicy(
   const std::string& text
   , ConsoleOverflowPolicy& policy
@@ -54,6 +56,8 @@ static bool ParseConsoleOverflowPolicy(
 
   return false;
 }
+
+#endif
 
 bool ConsoleBackendConfig::Parse(const Json::Value* po)
 {

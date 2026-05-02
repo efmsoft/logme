@@ -32,6 +32,19 @@ namespace Logme
     CONSOLE_RECORD_HIGHLIGHT = 0x01,
   };
 
+  struct ConsoleBackendConfig : public BackendConfig
+  {
+    bool Async;
+    bool HasQueueLimits;
+    size_t QueueRecordLimit;
+    size_t QueueByteLimit;
+    bool HasOverflowPolicy;
+    ConsoleOverflowPolicy OverflowPolicy;
+
+    LOGMELNK ConsoleBackendConfig();
+    LOGMELNK bool Parse(const Json::Value* po) override;
+  };
+
   struct ConsoleBackend : public Backend
   {
     constexpr static const char* TYPE_ID = "ConsoleBackend";
@@ -56,6 +69,9 @@ namespace Logme
     LOGMELNK bool GetAsync() const;
     LOGMELNK static void SetQueueLimits(size_t maxRecords, size_t maxBytes);
     LOGMELNK static void SetOverflowPolicy(ConsoleOverflowPolicy policy);
+
+    LOGMELNK BackendConfigPtr CreateConfig() override;
+    LOGMELNK bool ApplyConfig(BackendConfigPtr c) override;
 
     LOGMELNK void Display(Context& context) override;
     LOGMELNK void Flush() override;

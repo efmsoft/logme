@@ -35,7 +35,11 @@
       "backends": [
         {
           "type": "ConsoleBackend",
-          "build": "any" // "none" | "any" | "debug" | "release"
+          "build": "any", // "none" | "any" | "debug" | "release"
+          "async": false, // true | false. default: false
+          "queue-record-limit": 8192, // default: 8192
+          "queue-byte-limit": "4Mb", // integer bytes or string size. default: "4Mb"
+          "overflow-policy": "block" // "block" | "drop-new" | "drop-oldest" | "sync-fallback"
         },
         {
           "type": "DebugBackend",

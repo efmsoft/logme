@@ -10,6 +10,8 @@
 #include <Logme/Console/ConsoleManagerFactory.h>
 #include <Logme/File/exe_path.h>
 #include <Logme/Logger.h>
+#include <Logme/Utils.h>
+
 
 using namespace Logme;
 
@@ -59,8 +61,34 @@ void ConsoleBackend::SetOverflowPolicy(ConsoleOverflowPolicy policy)
     Instance->GetConsoleManagerFactory().NotifySettingsChanged();
 }
 
+BackendConfigPtr ConsoleBackend::CreateConfig()
+{
+  return std::make_shared<ConsoleBackendConfig>();
+}
+
+bool ConsoleBackend::ApplyConfig(BackendConfigPtr c)
+{
+  if (c == nullptr || c->Type != TYPE_ID)
+    return false;
+
+  ConsoleBackendConfig* p = (ConsoleBackendConfig*)c.get();
+
+  SetAsync(p->Async);
+
+  if (p->HasQueueLimits)
+    SetQueueLimits(p->QueueRecordLimit, p->QueueByteLimit);
+
+  if (p->HasOverflowPolicy)
+    SetOverflowPolicy(p->OverflowPolicy);
+
+  return true;
+}
+
 void ConsoleBackend::Freeze()
 {
+  if (Owner == nullptr)
+    return;
+
   ShutdownFlag.store(true, std::memory_order_relaxed);
   Backend::Freeze();
 

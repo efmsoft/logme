@@ -18,9 +18,15 @@ namespace Logme
 
     /// <summary>Builds a subsystem identifier from an already packed 64-bit value.</summary>
     LOGMELNK static SID Build(uint64_t name);
-    /// <summary>Builds a subsystem identifier from a short string. Up to eight characters are packed.</summary>
+    /// <summary>
+    /// Builds a subsystem identifier from a short string. Up to eight characters are packed.
+    /// Longer names are truncated to the first eight bytes and produce a CHINT warning.
+    /// </summary>
     LOGMELNK static SID Build(const char* name_upto8chars);
-    /// <summary>Builds a subsystem identifier from a short string. Up to eight characters are packed.</summary>
+    /// <summary>
+    /// Builds a subsystem identifier from a short string. Up to eight characters are packed.
+    /// Longer names are truncated to the first eight bytes and produce a CHINT warning.
+    /// </summary>
     LOGMELNK static SID Build(const std::string& name_upto8chars);
   };
 
@@ -35,7 +41,7 @@ static constexpr const Logme::SID SUBSID{0};
 /// <summary>
 /// Declares a subsystem identifier variable for use by Logme macros. Use it as SUBSID in a scope or
 /// class where log messages should carry a subsystem tag when OutputFlags::Subsystem is enabled.
-/// String names are packed by Logme::SID::Build(), using up to eight characters.
+/// String names are packed by Logme::SID::Build(), using up to eight characters. Longer names are truncated.
 /// </summary>
 #define LOGME_SUBSYSTEM(var, name) \
   Logme::SID var = Logme::SID::Build(name)

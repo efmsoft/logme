@@ -112,11 +112,15 @@ static bool CommandHelp(Logme::StringArray& arr, std::string& response)
     "help                                           Print this help text\n"
     "level [--channel name] [level]                 Get or set channel level\n"
     "list                                           List channels\n"
-    "subsystem --block-reported                     Block reported subsystems\n"
-    "subsystem --report name                        Add reported subsystem\n"
-    "subsystem --unblock-reported                   Unblock reported subsystems\n"
-    "subsystem --unreport name                      Remove reported subsystem\n"
-    "subsystem [name]                               Query reported subsystem\n"
+    "subsystem                                      Display subsystem filters\n"
+    "subsystem --block name                         Add blocked subsystem\n"
+    "subsystem --unblock name                       Remove blocked subsystem\n"
+    "subsystem --allow name                         Add allowed subsystem\n"
+    "subsystem --disallow name                      Remove allowed subsystem\n"
+    "subsystem --clear                              Clear all subsystem filters\n"
+    "subsystem --clear-blocked                      Clear blocked subsystem list\n"
+    "subsystem --clear-allowed                      Clear allowed subsystem list\n"
+    "subsystem --check name                         Query subsystem filters"
   ;
 
   SortLines(response);

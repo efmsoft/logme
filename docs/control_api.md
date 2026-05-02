@@ -78,8 +78,8 @@ Only fields documented below are guaranteed. New fields may be added in the futu
 Text example:
 
 ```text
-BlockReportedSubsystems: true
-Reported subsystems: none
+Blocked subsystems: none
+Allowed subsystems: none
 ```
 
 JSON:
@@ -89,18 +89,36 @@ JSON:
   "ok": true,
   "error": null,
   "data": {
-    "blockReportedSubsystems": true,
-    "reportedSubsystems": ["core", "net"]
+    "blockedSubsystems": ["noise"],
+    "allowedSubsystems": ["core", "net"]
   }
 }
 ```
 
 Fields:
 
-- `blockReportedSubsystems` (bool)
-- `reportedSubsystems` (array of strings)
+- `blockedSubsystems` (array of strings)
+- `allowedSubsystems` (array of strings)
 
-When no subsystems are reported, `reportedSubsystems` is `[]`.
+When no subsystems are blocked or allowed, the corresponding array is `[]`.
+
+The blocked list has priority. When the allowed list is not empty, only listed
+subsystems are logged, unless they are also blocked. Messages without a
+subsystem are not affected by subsystem filtering.
+
+Supported text commands:
+
+```text
+subsystem
+subsystem --block name
+subsystem --unblock name
+subsystem --allow name
+subsystem --disallow name
+subsystem --clear-blocked
+subsystem --clear-allowed
+subsystem --clear
+subsystem --check name
+```
 
 ### `list`
 

@@ -51,6 +51,9 @@ namespace Logme
     std::string HomeDirectory;
     DirectorySizeWatchdog HomeDirectoryWatchDog;
 
+    std::vector<uint64_t> BlockedSubsystems;
+    std::vector<uint64_t> AllowedSubsystems;
+
     bool BlockReportedSubsystems;
     std::vector<uint64_t> Subsystems;
 
@@ -152,21 +155,58 @@ namespace Logme
     LOGMELNK Override GetThreadOverride();
 
     /// <summary>
-    /// Adds subsystem id to reported subsystem list.
+    /// Adds subsystem id to the blocked subsystem list. Empty SID is ignored.
+    /// Blocked subsystems are never logged.
+    /// </summary>
+    LOGMELNK void AddBlockedSubsystem(const SID& sid);
+
+    /// <summary>
+    /// Removes subsystem id from the blocked subsystem list. Empty SID is ignored.
+    /// </summary>
+    LOGMELNK void RemoveBlockedSubsystem(const SID& sid);
+
+    /// <summary>
+    /// Adds subsystem id to the allowed subsystem list. Empty SID is ignored.
+    /// When this list is not empty, only listed subsystems are logged.
+    /// </summary>
+    LOGMELNK void AddAllowedSubsystem(const SID& sid);
+
+    /// <summary>
+    /// Removes subsystem id from the allowed subsystem list. Empty SID is ignored.
+    /// </summary>
+    LOGMELNK void RemoveAllowedSubsystem(const SID& sid);
+
+    /// <summary>Clears the blocked subsystem list.</summary>
+    LOGMELNK void ClearBlockedSubsystems();
+
+    /// <summary>Clears the allowed subsystem list.</summary>
+    LOGMELNK void ClearAllowedSubsystems();
+
+    /// <summary>Clears both blocked and allowed subsystem lists.</summary>
+    LOGMELNK void ClearSubsystemFilters();
+
+    /// <summary>
+    /// Deprecated. Adds subsystem id to the legacy reported subsystem list.
+    /// Use AddBlockedSubsystem() or AddAllowedSubsystem() instead.
     /// </summary>
     /// <param name="sid">Subsystem id to report. Empty SID is ignored.</param>
+    [[deprecated("Use AddBlockedSubsystem() or AddAllowedSubsystem() instead")]]
     LOGMELNK void ReportSubsystem(const SID& sid);
 
     /// <summary>
-    /// Removes subsystem id from reported subsystem list.
+    /// Deprecated. Removes subsystem id from the legacy reported subsystem list.
+    /// Use RemoveBlockedSubsystem() or RemoveAllowedSubsystem() instead.
     /// </summary>
     /// <param name="sid">Subsystem id to remove. Empty SID is ignored.</param>
+    [[deprecated("Use RemoveBlockedSubsystem() or RemoveAllowedSubsystem() instead")]]
     LOGMELNK void UnreportSubsystem(const SID& sid);
 
     /// <summary>
-    /// Selects whether reported subsystems are blocked or exclusively allowed.
+    /// Deprecated. Selects whether the legacy reported subsystem list is interpreted as
+    /// blocked subsystems or allowed subsystems. Use explicit blocked/allowed lists instead.
     /// </summary>
     /// <param name="block">true to suppress reported subsystems; false to log only reported subsystems.</param>
+    [[deprecated("Use explicit blocked and allowed subsystem lists instead")]]
     LOGMELNK void SetBlockReportedSubsystems(bool block);
 
     /// <summary>

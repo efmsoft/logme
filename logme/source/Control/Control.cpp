@@ -1102,52 +1102,68 @@ std::string Logger::Control(const std::string& command)
           std::vector<std::string> lines;
           SplitLines(text, lines);
 
-          bool hasBlock = false;
-          bool block = false;
-          bool hasReported = false;
-          std::vector<std::string> subs;
+          bool hasBlocked = false;
+          bool hasAllowed = false;
+          std::vector<std::string> blocked;
+          std::vector<std::string> allowed;
 
           for (size_t i = 0; i < lines.size(); ++i)
           {
             std::string line = lines[i];
             Trim(line);
 
-            if (line.rfind("BlockReportedSubsystems:", 0) == 0)
+            if (line == "Blocked subsystems: none")
             {
-              std::string v = line.substr(std::strlen("BlockReportedSubsystems:"));
-              Trim(v);
-              hasBlock = true;
-              block = (v == "true");
+              hasBlocked = true;
+              blocked.clear();
               continue;
             }
 
-            if (line == "Reported subsystems: none")
+            if (line == "Allowed subsystems: none")
             {
-              hasReported = true;
-              subs.clear();
+              hasAllowed = true;
+              allowed.clear();
               continue;
             }
 
-            if (line == "Reported subsystems:")
+            if (line == "Blocked subsystems:" || line == "Allowed subsystems:")
             {
-              hasReported = true;
-              subs.clear();
+              bool isBlocked = (line == "Blocked subsystems:");
+              if (isBlocked)
+              {
+                hasBlocked = true;
+                blocked.clear();
+              }
+              else
+              {
+                hasAllowed = true;
+                allowed.clear();
+              }
+
               for (size_t j = i + 1; j < lines.size(); ++j)
               {
                 std::string s = lines[j];
                 Trim(s);
                 if (s.empty())
                   continue;
-                subs.push_back(s);
+                if (s == "Blocked subsystems:" || s == "Allowed subsystems:" || s == "Blocked subsystems: none" || s == "Allowed subsystems: none")
+                {
+                  i = j - 1;
+                  break;
+                }
+                if (isBlocked)
+                  blocked.push_back(s);
+                else
+                  allowed.push_back(s);
+                i = j;
               }
-              break;
             }
           }
 
-          if (hasBlock)
-            JsonBoolField(data, "blockReportedSubsystems", block, dataFirst);
-          if (hasReported)
-            JsonStringArrayField(data, "reportedSubsystems", subs, dataFirst);
+          if (hasBlocked)
+            JsonStringArrayField(data, "blockedSubsystems", blocked, dataFirst);
+          if (hasAllowed)
+            JsonStringArrayField(data, "allowedSubsystems", allowed, dataFirst);
         }
         else if (cmdName == "list")
         {

@@ -71,7 +71,15 @@ bool Logger::LoadConfiguration(
 
   bool blockReported = true;
   std::list<std::string> subsystems;
-  if (!ParseSubsystems(config, blockReported, subsystems))
+  std::list<std::string> blockedSubsystems;
+  std::list<std::string> allowedSubsystems;
+  if (!ParseSubsystems(
+        config
+        , blockReported
+        , subsystems
+        , blockedSubsystems
+        , allowedSubsystems
+      ))
     return false;
 
   HomeDirectoryConfig hdc;
@@ -81,11 +89,22 @@ bool Logger::LoadConfiguration(
   bool rc = CreateChannels(arr);
   ReplaceChannels(arr);
 
-  Subsystems.clear();
-  for (auto& s : subsystems)
-    ReportSubsystem(SID::Build(s));
-
+  ClearSubsystemFilters();
   BlockReportedSubsystems = blockReported;
+
+  for (auto& s : blockedSubsystems)
+    AddBlockedSubsystem(SID::Build(s));
+
+  for (auto& s : allowedSubsystems)
+    AddAllowedSubsystem(SID::Build(s));
+
+  for (auto& s : subsystems)
+  {
+    if (blockReported)
+      AddBlockedSubsystem(SID::Build(s));
+    else
+      AddAllowedSubsystem(SID::Build(s));
+  }
 
   SetHomeDirectory(hdc.HomeDirectory);
   HomeDirectoryWatchDog.SetMaximalSize(hdc.MaximalSize);

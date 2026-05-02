@@ -449,6 +449,88 @@ ChannelPtr Logger::CreateChannelInternal(
   return channel;
 }
 
+static void AddSubsystemToList(
+  std::vector<uint64_t>& arr
+  , uint64_t id
+)
+{
+  auto it = std::lower_bound(arr.begin(), arr.end(), id);
+  if (it == arr.end() || *it != id)
+    arr.insert(it, id);
+}
+
+static void RemoveSubsystemFromList(
+  std::vector<uint64_t>& arr
+  , uint64_t id
+)
+{
+  auto it = std::lower_bound(arr.begin(), arr.end(), id);
+  if (it != arr.end() && *it == id)
+    arr.erase(it);
+}
+
+void Logger::AddBlockedSubsystem(const SID& sid)
+{
+  if (ShutdownCalled)
+    return;
+
+  if (sid.Name == 0)
+    return;
+
+  std::lock_guard guard(DataLock);
+  AddSubsystemToList(BlockedSubsystems, sid.Name);
+}
+
+void Logger::RemoveBlockedSubsystem(const SID& sid)
+{
+  if (sid.Name == 0)
+    return;
+
+  std::lock_guard guard(DataLock);
+  RemoveSubsystemFromList(BlockedSubsystems, sid.Name);
+}
+
+void Logger::AddAllowedSubsystem(const SID& sid)
+{
+  if (ShutdownCalled)
+    return;
+
+  if (sid.Name == 0)
+    return;
+
+  std::lock_guard guard(DataLock);
+  AddSubsystemToList(AllowedSubsystems, sid.Name);
+}
+
+void Logger::RemoveAllowedSubsystem(const SID& sid)
+{
+  if (sid.Name == 0)
+    return;
+
+  std::lock_guard guard(DataLock);
+  RemoveSubsystemFromList(AllowedSubsystems, sid.Name);
+}
+
+void Logger::ClearBlockedSubsystems()
+{
+  std::lock_guard guard(DataLock);
+  BlockedSubsystems.clear();
+}
+
+void Logger::ClearAllowedSubsystems()
+{
+  std::lock_guard guard(DataLock);
+  AllowedSubsystems.clear();
+}
+
+void Logger::ClearSubsystemFilters()
+{
+  std::lock_guard guard(DataLock);
+  BlockedSubsystems.clear();
+  AllowedSubsystems.clear();
+  Subsystems.clear();
+}
+
 void Logger::SetBlockReportedSubsystems(bool block)
 {
   if (ShutdownCalled)
@@ -456,6 +538,16 @@ void Logger::SetBlockReportedSubsystems(bool block)
 
   std::lock_guard guard(DataLock);
   BlockReportedSubsystems = block;
+  BlockedSubsystems.clear();
+  AllowedSubsystems.clear();
+
+  for (auto id : Subsystems)
+  {
+    if (BlockReportedSubsystems)
+      AddSubsystemToList(BlockedSubsystems, id);
+    else
+      AddSubsystemToList(AllowedSubsystems, id);
+  }
 }
 
 void Logger::ReportSubsystem(const SID& sid)
@@ -466,14 +558,13 @@ void Logger::ReportSubsystem(const SID& sid)
   if (sid.Name == 0)
     return;
 
-  auto& arr = Subsystems;
-  auto& id = sid.Name;
-
   std::lock_guard guard(DataLock);
+  AddSubsystemToList(Subsystems, sid.Name);
 
-  auto it = std::lower_bound(arr.begin(), arr.end(), id);
-  if (it == arr.end() || *it != id)
-    arr.insert(it, id);
+  if (BlockReportedSubsystems)
+    AddSubsystemToList(BlockedSubsystems, sid.Name);
+  else
+    AddSubsystemToList(AllowedSubsystems, sid.Name);
 }
 
 void Logger::UnreportSubsystem(const SID& sid)
@@ -481,14 +572,13 @@ void Logger::UnreportSubsystem(const SID& sid)
   if (sid.Name == 0)
     return;
 
-  auto& arr = Subsystems;
-  auto& id = sid.Name;
-
   std::lock_guard guard(DataLock);
+  RemoveSubsystemFromList(Subsystems, sid.Name);
 
-  auto it = std::lower_bound(arr.begin(), arr.end(), id);
-  if (it != arr.end() && *it == id)
-    arr.erase(it);
+  if (BlockReportedSubsystems)
+    RemoveSubsystemFromList(BlockedSubsystems, sid.Name);
+  else
+    RemoveSubsystemFromList(AllowedSubsystems, sid.Name);
 }
 
 Stream Logger::Log(const Context& context) // @1
@@ -952,13 +1042,11 @@ void Logger::DoLog(Context& context, const char* format, va_list args)
   {
     std::lock_guard guard(DataLock);
 
-    auto& arr = Subsystems;
-    if (std::binary_search(arr.begin(), arr.end(), context.Subsystem.Name))
-    {
-      if (BlockReportedSubsystems)
-        return;
-    }
-    else if (BlockReportedSubsystems == false)
+    if (std::binary_search(BlockedSubsystems.begin(), BlockedSubsystems.end(), context.Subsystem.Name))
+      return;
+
+    if (AllowedSubsystems.empty() == false
+        && std::binary_search(AllowedSubsystems.begin(), AllowedSubsystems.end(), context.Subsystem.Name) == false)
       return;
   }
 

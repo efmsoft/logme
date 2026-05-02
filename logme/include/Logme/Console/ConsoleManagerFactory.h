@@ -25,6 +25,13 @@ namespace Logme
       , const char* text
       , size_t len
     );
+    bool PushAndFlush(
+      ConsoleTarget target
+      , Level level
+      , bool highlight
+      , const char* text
+      , size_t len
+    );
     bool AppendRedirected(
       const ChannelPtr& owner
       , ConsoleTarget target

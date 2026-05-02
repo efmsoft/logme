@@ -424,9 +424,9 @@ TEST(ConsoleBackendTest, ManagerDropOldestKeepsNewestRecords)
   RemoveIfExists(stdoutPath);
 }
 
-TEST(ConsoleBackendTest, ManagerSyncFallbackReportsFullQueue)
+TEST(ConsoleBackendTest, ManagerPushAndFlushUsesBlockingQueue)
 {
-  auto stdoutPath = MakePath("manager-sync-fallback");
+  auto stdoutPath = MakePath("manager-push-and-flush");
   RemoveIfExists(stdoutPath);
 
   {
@@ -434,19 +434,19 @@ TEST(ConsoleBackendTest, ManagerSyncFallbackReportsFullQueue)
     auto fixture = CreateBackend(false, Logme::STREAM_ALL2COUT);
 
     Logme::ConsoleBackend::SetQueueLimits(1, 0);
-    Logme::ConsoleBackend::SetOverflowPolicy(Logme::ConsoleOverflowPolicy::SYNC_FALLBACK);
+    Logme::ConsoleBackend::SetOverflowPolicy(Logme::ConsoleOverflowPolicy::DROP_NEW);
 
     Logme::ConsoleManager manager;
     manager.AddBackend(fixture.Backend);
 
-    EXPECT_TRUE(manager.Push(Logme::ConsoleTarget::STDOUT, Logme::LEVEL_INFO, false, "first", 5));
-    EXPECT_FALSE(manager.Push(Logme::ConsoleTarget::STDOUT, Logme::LEVEL_INFO, false, "second", 6));
-    manager.Flush();
+    EXPECT_TRUE(manager.PushAndFlush(Logme::ConsoleTarget::STDOUT, Logme::LEVEL_INFO, false, "first", 5));
+    EXPECT_TRUE(manager.PushAndFlush(Logme::ConsoleTarget::STDOUT, Logme::LEVEL_INFO, false, "second", 6));
   }
 
   auto out = ReadFile(stdoutPath);
   EXPECT_NE(out.find("first"), std::string::npos);
-  EXPECT_EQ(out.find("second"), std::string::npos);
+  EXPECT_NE(out.find("second"), std::string::npos);
+  EXPECT_LT(out.find("first"), out.find("second"));
 
   Logme::ConsoleBackend::SetQueueLimits(
     Logme::ConsoleBackend::QUEUE_RECORD_LIMIT

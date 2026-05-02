@@ -18,7 +18,6 @@ namespace Logme
     BLOCK,
     DROP_NEW,
     DROP_OLDEST,
-    SYNC_FALLBACK,
   };
 
   enum class ConsoleTarget

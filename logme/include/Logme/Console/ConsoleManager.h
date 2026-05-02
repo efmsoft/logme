@@ -44,7 +44,6 @@ namespace Logme
     uint64_t DroppedRecords;
     uint64_t DroppedBytes;
     uint64_t BlockedCalls;
-    uint64_t SyncFallbackCalls;
     uint64_t RedirectedRecords;
     uint64_t RedirectedBytes;
   };
@@ -96,6 +95,13 @@ namespace Logme
       , const char* text
       , size_t len
     );
+    bool PushAndFlush(
+      ConsoleTarget target
+      , Level level
+      , bool highlight
+      , const char* text
+      , size_t len
+    );
     bool AppendRedirected(
       const ChannelPtr& owner
       , ConsoleTarget target
@@ -117,6 +123,14 @@ namespace Logme
     static void SetOverflowPolicy(ConsoleOverflowPolicy policy);
 
     bool HasSpace(size_t recordSize) const;
+    bool PushRecord(
+      ConsoleTarget target
+      , Level level
+      , bool highlight
+      , const char* text
+      , size_t len
+      , bool forceBlock
+    );
     bool DropOldest(size_t recordSize);
     FileBackendPtr GetRedirectBackend(
       const ChannelPtr& owner

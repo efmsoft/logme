@@ -3,19 +3,33 @@
 
 using namespace Logme;
 
+static void SetConfigurationError(
+  std::string* error
+  , const std::string& text
+)
+{
+  if (error == nullptr)
+    return;
+
+  *error = text;
+}
+
 bool Logger::LoadConfigurationFile(
   const std::wstring& config_file
   , const std::string& section
+  , std::string* error
 )
 {
+  SetConfigurationError(error, std::string());
+
   try
   {
     std::string data = ReadFile(config_file);
-    return LoadConfiguration(data, section);
+    return LoadConfiguration(data, section, error);
   }
-  catch (std::filesystem::filesystem_error const& e)
+  catch (std::exception const& e)
   {
-    (void)e;
+    SetConfigurationError(error, e.what());
   }
 
   return false;
@@ -24,16 +38,19 @@ bool Logger::LoadConfigurationFile(
 bool Logger::LoadConfigurationFile(
   const std::string& config_file
   , const std::string& section
+  , std::string* error
 )
 {
+  SetConfigurationError(error, std::string());
+
   try
   {
     std::string data = ReadFile(config_file);
-    return LoadConfiguration(data, section);
+    return LoadConfiguration(data, section, error);
   }
-  catch (std::filesystem::filesystem_error const& e)
+  catch (std::exception const& e)
   {
-    (void)e;
+    SetConfigurationError(error, e.what());
   }
 
   return false;
@@ -42,8 +59,11 @@ bool Logger::LoadConfigurationFile(
 bool Logger::LoadConfiguration(
   const std::string& config_data
   , const std::string& section
+  , std::string* error
 )
 {
+  SetConfigurationError(error, std::string());
+
   (void)config_data;
   (void)section;
 
@@ -51,23 +71,38 @@ bool Logger::LoadConfiguration(
   Json::Value root;
   Json::Reader reader;
   if (!reader.parse(config_data, root))
+  {
+    SetConfigurationError(error, reader.getFormattedErrorMessages());
     return false;
+  }
 
   Json::Value config;
   if (!GetConfigSection(root, section, config))
+  {
+    SetConfigurationError(error, "configuration section was not found");
     return false;
+  }
 
   ControlConfig cc{};
   if (!ParseControlConfig(config, cc))
+  {
+    SetConfigurationError(error, "control configuration parsing failed");
     return false;
+  }
 
   OutputFlagsMap flags;
   if (!ParseFlags(config, flags))
+  {
+    SetConfigurationError(error, "output flags parsing failed");
     return false;
+  }
 
   ChannelConfigArray arr;
   if (!ParseChannels(config, flags, arr))
+  {
+    SetConfigurationError(error, "channel configuration parsing failed");
     return false;
+  }
 
   bool blockReported = true;
   std::list<std::string> subsystems;
@@ -80,11 +115,17 @@ bool Logger::LoadConfiguration(
         , blockedSubsystems
         , allowedSubsystems
       ))
+  {
+    SetConfigurationError(error, "subsystem configuration parsing failed");
     return false;
+  }
 
   HomeDirectoryConfig hdc;
   if (!ParseHomeDirectoryConfig(config, hdc))
+  {
+    SetConfigurationError(error, "home directory configuration parsing failed");
     return false;
+  }
 
   bool rc = CreateChannels(arr);
   ReplaceChannels(arr);
@@ -117,10 +158,12 @@ bool Logger::LoadConfiguration(
   bool exitcode = StartControlServer(cc) && rc;
   if (exitcode == false)
   {
-    LogmeE(CHINT, "LoadConfiguration() failed");
+    SetConfigurationError(error, "configuration was parsed but could not be applied");
+    LogmeE(CHINT, "configuration was parsed but could not be applied");
   }
   return exitcode;
 #else
+  SetConfigurationError(error, "JSON configuration support is not enabled");
   return false;
 #endif
 }

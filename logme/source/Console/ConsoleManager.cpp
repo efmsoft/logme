@@ -57,7 +57,6 @@ ConsoleManager::~ConsoleManager()
       "DroppedRecords=%llu "
       "DroppedBytes=%llu "
       "BlockedCalls=%llu "
-      "SyncFallbackCalls=%llu "
       "RedirectedRecords=%llu "
       "RedirectedBytes=%llu\n"
       , (unsigned long long)counters.QueuedRecords
@@ -67,7 +66,6 @@ ConsoleManager::~ConsoleManager()
       , (unsigned long long)counters.DroppedRecords
       , (unsigned long long)counters.DroppedBytes
       , (unsigned long long)counters.BlockedCalls
-      , (unsigned long long)counters.SyncFallbackCalls
       , (unsigned long long)counters.RedirectedRecords
       , (unsigned long long)counters.RedirectedBytes
     );
@@ -177,6 +175,33 @@ bool ConsoleManager::Push(
   , size_t len
 )
 {
+  return PushRecord(target, level, highlight, text, len, false);
+}
+
+bool ConsoleManager::PushAndFlush(
+  ConsoleTarget target
+  , Level level
+  , bool highlight
+  , const char* text
+  , size_t len
+)
+{
+  if (!PushRecord(target, level, highlight, text, len, true))
+    return false;
+
+  Flush();
+  return true;
+}
+
+bool ConsoleManager::PushRecord(
+  ConsoleTarget target
+  , Level level
+  , bool highlight
+  , const char* text
+  , size_t len
+  , bool forceBlock
+)
+{
   if (!text || len == 0)
     return true;
 
@@ -201,30 +226,34 @@ bool ConsoleManager::Push(
 
   if (!hasSpace())
   {
-    switch (OverflowPolicy.load(std::memory_order_relaxed))
+    if (forceBlock)
     {
-      case ConsoleOverflowPolicy::BLOCK:
-        CONSOLE_CNT(Counters.BlockedCalls++);
-        NotFull.wait(lock, hasSpace);
-        break;
+      CONSOLE_CNT(Counters.BlockedCalls++);
+      NotFull.wait(lock, hasSpace);
+    }
+    else
+    {
+      switch (OverflowPolicy.load(std::memory_order_relaxed))
+      {
+        case ConsoleOverflowPolicy::BLOCK:
+          CONSOLE_CNT(Counters.BlockedCalls++);
+          NotFull.wait(lock, hasSpace);
+          break;
 
-      case ConsoleOverflowPolicy::DROP_NEW:
-        CONSOLE_CNT(Counters.DroppedRecords++);
-        CONSOLE_CNT(Counters.DroppedBytes += recordSize);
-        return true;
-
-      case ConsoleOverflowPolicy::DROP_OLDEST:
-        if (!DropOldest(recordSize))
-        {
+        case ConsoleOverflowPolicy::DROP_NEW:
           CONSOLE_CNT(Counters.DroppedRecords++);
           CONSOLE_CNT(Counters.DroppedBytes += recordSize);
           return true;
-        }
-        break;
 
-      case ConsoleOverflowPolicy::SYNC_FALLBACK:
-        CONSOLE_CNT(Counters.SyncFallbackCalls++);
-        return false;
+        case ConsoleOverflowPolicy::DROP_OLDEST:
+          if (!DropOldest(recordSize))
+          {
+            CONSOLE_CNT(Counters.DroppedRecords++);
+            CONSOLE_CNT(Counters.DroppedBytes += recordSize);
+            return true;
+          }
+          break;
+      }
     }
   }
 

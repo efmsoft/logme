@@ -214,24 +214,39 @@ namespace Logme
     /// </summary>
     /// <param name="config_file">Path to configuration file.</param>
     /// <param name="section">Configuration section name; empty string selects default section.</param>
+    /// <param name="error">Optional output string for error description.</param>
     /// <returns>true if configuration was loaded and applied.</returns>
-    LOGMELNK bool LoadConfigurationFile(const std::wstring& config_file, const std::string& section = std::string());
+    LOGMELNK bool LoadConfigurationFile(
+      const std::wstring& config_file
+      , const std::string& section = std::string()
+      , std::string* error = nullptr
+    );
 
     /// <summary>
     /// Loads logger configuration from file.
     /// </summary>
     /// <param name="config_file">Path to configuration file.</param>
     /// <param name="section">Configuration section name; empty string selects default section.</param>
+    /// <param name="error">Optional output string for error description.</param>
     /// <returns>true if configuration was loaded and applied.</returns>
-    LOGMELNK bool LoadConfigurationFile(const std::string& config_file, const std::string& section = std::string());
+    LOGMELNK bool LoadConfigurationFile(
+      const std::string& config_file
+      , const std::string& section = std::string()
+      , std::string* error = nullptr
+    );
 
     /// <summary>
     /// Loads logger configuration from text buffer.
     /// </summary>
     /// <param name="config_data">Configuration text.</param>
     /// <param name="section">Configuration section name; empty string selects default section.</param>
+    /// <param name="error">Optional output string for error description.</param>
     /// <returns>true if configuration was parsed and applied.</returns>
-    LOGMELNK bool LoadConfiguration(const std::string& config_data, const std::string& section = std::string());
+    LOGMELNK bool LoadConfiguration(
+      const std::string& config_data
+      , const std::string& section = std::string()
+      , std::string* error = nullptr
+    );
 
     /// <summary>
     /// Formats message and sends prepared context to target channel.

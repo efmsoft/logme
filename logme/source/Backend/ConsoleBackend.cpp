@@ -10,8 +10,6 @@
 #include <Logme/Console/ConsoleManagerFactory.h>
 #include <Logme/File/exe_path.h>
 #include <Logme/Logger.h>
-#include <Logme/Utils.h>
-
 
 using namespace Logme;
 
@@ -351,22 +349,29 @@ void ConsoleBackend::Display(Context& context)
 
   if (!Async || ShutdownFlag.load(std::memory_order_relaxed))
   {
-    WriteText(stream, buffer, static_cast<size_t>(nc), escape);
+    bool flushed = GetFactory().PushAndFlush(
+      target
+      , context.ErrorLevel
+      , flags.Highlight
+      , buffer
+      , static_cast<size_t>(nc)
+    );
+
+    if (!flushed)
+      WriteText(stream, buffer, static_cast<size_t>(nc), escape);
+
     return;
   }
 
   RegisterIfNeeded();
 
-  bool queued = GetFactory().Push(
+  GetFactory().Push(
     target
     , context.ErrorLevel
     , flags.Highlight
     , buffer
     , static_cast<size_t>(nc)
   );
-
-  if (!queued)
-    WriteText(stream, buffer, static_cast<size_t>(nc), escape);
 }
 
 void ConsoleBackend::OnShutdown()

@@ -61,10 +61,28 @@ bool ConsoleManagerFactory::Push(
   std::shared_ptr<ConsoleManager> instance = Instance;
   guard.unlock();
 
-  if (!instance)
+  if (!instance || instance->Stopping())
     return false;
 
   return instance->Push(target, level, highlight, text, len);
+}
+
+bool ConsoleManagerFactory::PushAndFlush(
+  ConsoleTarget target
+  , Level level
+  , bool highlight
+  , const char* text
+  , size_t len
+)
+{
+  std::unique_lock guard(Lock);
+  std::shared_ptr<ConsoleManager> instance = Instance;
+  guard.unlock();
+
+  if (!instance || instance->Stopping())
+    return false;
+
+  return instance->PushAndFlush(target, level, highlight, text, len);
 }
 
 bool ConsoleManagerFactory::AppendRedirected(

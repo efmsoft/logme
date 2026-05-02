@@ -48,12 +48,6 @@ static bool ParseConsoleOverflowPolicy(
     return true;
   }
 
-  if (v == "sync-fallback" || v == "sync_fallback")
-  {
-    policy = ConsoleOverflowPolicy::SYNC_FALLBACK;
-    return true;
-  }
-
   return false;
 }
 

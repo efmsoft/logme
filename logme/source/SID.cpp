@@ -20,11 +20,11 @@ SID SID::Build(const char* name_upto8chars)
   size_t len = std::strlen(name_upto8chars);
   if (len > sizeof(sid.Name) && Instance)
   { 
-    LOGME_SUBSYSTEM(SIDINT, "sidint");
+    LOGME_SUBSYSTEM(subs, "sidint");
 
     LogmeW(
       CHINT
-      , SIDINT
+      , subs
       , "subsystem name '%s' is longer than 8 characters and will be truncated"
       , name_upto8chars
     );

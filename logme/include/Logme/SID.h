@@ -44,4 +44,4 @@ static constexpr const Logme::SID SUBSID{0};
 /// String names are packed by Logme::SID::Build(), using up to eight characters. Longer names are truncated.
 /// </summary>
 #define LOGME_SUBSYSTEM(var, name) \
-  Logme::SID var = Logme::SID::Build(name)
+  Logme::SID var = Logme::SID::Build(name); (void)var

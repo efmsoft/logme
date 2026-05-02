@@ -1035,17 +1035,6 @@ std::string Logger::Control(const std::string& command)
         }
       };
 
-      auto JsonBoolField = [&](std::string& out, const char* name, bool value, bool& first)
-      {
-        if (!first)
-          out += ',';
-        first = false;
-        out += '"';
-        out += name;
-        out += "\":";
-        out += value ? "true" : "false";
-      };
-
       auto JsonStringField = [&](std::string& out, const char* name, const std::string& value, bool& first)
       {
         if (!first)

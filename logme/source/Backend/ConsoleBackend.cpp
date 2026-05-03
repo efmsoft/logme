@@ -349,13 +349,20 @@ void ConsoleBackend::Display(Context& context)
 
   if (!Async || ShutdownFlag.load(std::memory_order_relaxed))
   {
-    bool flushed = GetFactory().PushAndFlush(
-      target
-      , context.ErrorLevel
-      , flags.Highlight
-      , buffer
-      , static_cast<size_t>(nc)
-    );
+    bool flushed = false;
+
+    if (!ShutdownFlag.load(std::memory_order_relaxed))
+    {
+      RegisterIfNeeded();
+
+      flushed = GetFactory().PushAndFlush(
+        target
+        , context.ErrorLevel
+        , flags.Highlight
+        , buffer
+        , static_cast<size_t>(nc)
+      );
+    }
 
     if (!flushed)
       WriteText(stream, buffer, static_cast<size_t>(nc), escape);

@@ -199,6 +199,34 @@ TEST(LogmeFmtTool, ConvertsTextToJsonLines)
   );
 }
 
+TEST(LogmeFmtTool, ParsesTextLogmeFieldsToJsonLines)
+{
+  fs::path dir = MakeTempDir("fmt_text_fields_to_json");
+  fs::path input = dir / "input.log";
+  fs::path output = dir / "output.jsonl";
+
+  WriteText(
+    input
+    , "2026-05-03 01:02:03:004 D [04D2:162E] {main} #NETWORK source.cpp(42): Worker(): hello\n"
+      "2026-05-03 01:02:04:005 E Error: failed\n"
+  );
+
+  std::string command =
+    ToolCommand(LOGMEFMT_EXE)
+    + " --input text --output json --in "
+    + Quote(input)
+    + " --out "
+    + Quote(output);
+
+  ASSERT_EQ(0, RunTool(command));
+
+  EXPECT_EQ(
+    "{\"timestamp\":\"2026-05-03 01:02:03:004\",\"level\":\"DEBUG\",\"process_id\":\"04D2\",\"thread_id\":\"162E\",\"channel\":\"main\",\"subsystem\":\"NETWORK\",\"file\":\"source.cpp\",\"line\":\"42\",\"method\":\"Worker\",\"message\":\"hello\"}\n"
+    "{\"timestamp\":\"2026-05-03 01:02:04:005\",\"level\":\"ERROR\",\"message\":\"failed\"}\n"
+    , ReadText(output)
+  );
+}
+
 TEST(LogmeObfTool, GeneratesKeyInAllFormats)
 {
   fs::path dir = MakeTempDir("obf_generate_key");

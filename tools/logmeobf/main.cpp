@@ -298,6 +298,9 @@ namespace
   static void PrintUsage()
   {
     std::cout
+      << "logmeobf - generate keys and obfuscate or deobfuscate log records\n"
+      << "Copyright (c) EfmSoft\n"
+      << "\n"
       << "Usage:\n"
       << "  logmeobf --generate-key [--key-out FILE] [--base64] [--header FILE] [--name IDENTIFIER]\n"
       << "  logmeobf --obfuscate --key-file FILE|--key-base64 TEXT [--format auto|text|json|xml] [--in FILE] [--out FILE]\n"

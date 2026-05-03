@@ -405,9 +405,20 @@ static bool ExtractJsonOk(const std::string& s, bool& ok)
 static void PrintUsage()
 {
   std::cout
-    << "Logme control\n\n"
+    << "logmectl - control a running logme instance\n"
+    << "Copyright (c) EfmSoft\n"
+    << "\n"
     << "Usage:\n"
-    << "  logmectl -p <port> [-i <ip>] [--ssl] [--pass <password>] [--format text|json] <command...>\n\n"
+    << "  logmectl -p <port> [-i <ip>] [--ssl] [--pass <password>] [--format text|json] <command...>\n"
+    << "\n"
+    << "Options:\n"
+    << "  -p, --port PORT        Connect to PORT\n"
+    << "  -i, --ip IP            Connect to IP address (default: 127.0.0.1)\n"
+    << "  -s, --ssl              Use TLS connection\n"
+    << "  --pass PASSWORD        Send control password\n"
+    << "  --format text|json     Response format\n"
+    << "  -h, --help             Show this help\n"
+    << "\n"
     << "Run with \"help\" to see available commands.\n";
 }
 

@@ -1,6 +1,7 @@
 # logmefmt
 
 `logmefmt` converts logme records between text, JSON and XML formats.
+For text input, it recognizes the standard logme text prefix by regular expressions and extracts fields such as timestamp, level, process_id, thread_id, channel, subsystem, file, line and method before writing the remaining text as message.
 By default the tool keeps the log stream shape: one input record produces one output record.
 Use `--finalize` when the output must be a complete JSON or XML document.
 
@@ -22,6 +23,8 @@ logmefmt --input json --output xml --finalize --field message=msg < log.jsonl > 
 --field OLD=NEW             Rename a field on both input and output sides.
 --input-field OLD=NEW       Rename an input field before conversion.
 --output-field OLD=NEW      Rename an output field after conversion.
+--in FILE                   Read input from FILE instead of stdin.
+--out FILE                  Write output to FILE instead of stdout.
 --help                      Show help.
 ```
 

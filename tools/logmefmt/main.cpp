@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <regex>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -38,7 +39,11 @@ namespace
   static void PrintUsage()
   {
     std::cout
-      << "Usage: logmefmt --input text|json|xml --output text|json|xml [options]\n"
+      << "logmefmt - convert logme records between text, JSON and XML formats\n"
+      << "Copyright (c) EfmSoft\n"
+      << "\n"
+      << "Usage:\n"
+      << "  logmefmt --input text|json|xml --output text|json|xml [options]\n"
       << "\n"
       << "Options:\n"
       << "  --input FORMAT          Input format: text, json, xml\n"
@@ -448,10 +453,122 @@ namespace
     return true;
   }
 
+  static void AddField(Record& record, const char* name, const std::string& value)
+  {
+    if (!value.empty())
+      record.Fields.push_back({name, value});
+  }
+
+  static void SetField(Record& record, const char* name, const std::string& value)
+  {
+    if (value.empty())
+      return;
+
+    for (auto& field : record.Fields)
+    {
+      if (field.first == name)
+      {
+        field.second = value;
+        return;
+      }
+    }
+
+    record.Fields.push_back({name, value});
+  }
+
+  static bool ConsumeRegex(
+    std::string& text
+    , const std::regex& re
+    , std::vector<std::string>& groups
+  )
+  {
+    std::smatch match;
+    if (!std::regex_search(text, match, re, std::regex_constants::match_continuous))
+      return false;
+
+    groups.clear();
+    for (size_t i = 0; i < match.size(); ++i)
+      groups.push_back(match[i].str());
+
+    text.erase(0, match.length(0));
+    return true;
+  }
+
+  static std::string StructuredLevelName(char signature)
+  {
+    switch (signature)
+    {
+    case 'D': return "DEBUG";
+    case 'W': return "WARN";
+    case 'E': return "ERROR";
+    case 'C': return "CRITICAL";
+    default: return "INFO";
+    }
+  }
+
   static bool ParseTextRecord(const std::string& line, Record& record)
   {
+    static const std::regex timestampRe(
+      R"LOGME(^([0-9]{4}-[0-9]{2}-[0-9]{2}[ T][0-9]{2}:[0-9]{2}:[0-9]{2}:[0-9]{3})( ?[+-][0-9]{2}:[0-9]{2})? ?)LOGME"
+    );
+    static const std::regex levelRe(R"(^([DWEC])\s+)" );
+    static const std::regex infoLevelRe(R"(^\s{2})" );
+    static const std::regex threadProcessRe(R"(^\[([0-9A-Fa-f]+)?(?::([^\]]+))?\]\s+)" );
+    static const std::regex channelRe(R"(^\{([^}]*)\}\s+)" );
+    static const std::regex subsystemRe(R"(^#([^\s]+)\s+)" );
+    static const std::regex locationRe(R"(^(.+\S)\((\d+)\):\s+)" );
+    static const std::regex methodRe(R"(^([A-Za-z_~][A-Za-z0-9_:~<>]*)\(\):\s+)" );
+
     record.Fields.clear();
-    record.Fields.push_back({"message", line});
+
+    std::string text = line;
+    std::vector<std::string> groups;
+
+    if (ConsumeRegex(text, timestampRe, groups))
+      AddField(record, "timestamp", groups[1] + groups[2]);
+
+    if (ConsumeRegex(text, levelRe, groups))
+    {
+      SetField(record, "level", StructuredLevelName(groups[1][0]));
+    }
+    else if (!record.Fields.empty() && ConsumeRegex(text, infoLevelRe, groups))
+    {
+      SetField(record, "level", "INFO");
+    }
+
+    if (ConsumeRegex(text, threadProcessRe, groups))
+    {
+      AddField(record, "process_id", groups[1]);
+      AddField(record, "thread_id", groups[2]);
+    }
+
+    if (ConsumeRegex(text, channelRe, groups))
+      AddField(record, "channel", groups[1]);
+
+    if (ConsumeRegex(text, subsystemRe, groups))
+      AddField(record, "subsystem", groups[1]);
+
+    if (ConsumeRegex(text, locationRe, groups))
+    {
+      AddField(record, "file", groups[1]);
+      AddField(record, "line", groups[2]);
+    }
+
+    if (text.rfind("Error: ", 0) == 0)
+    {
+      SetField(record, "level", "ERROR");
+      text.erase(0, 7);
+    }
+    else if (text.rfind("Critical: ", 0) == 0)
+    {
+      SetField(record, "level", "CRITICAL");
+      text.erase(0, 10);
+    }
+
+    if (ConsumeRegex(text, methodRe, groups))
+      AddField(record, "method", groups[1]);
+
+    record.Fields.push_back({"message", text});
     return true;
   }
 
@@ -627,6 +744,12 @@ namespace
 int main(int argc, char** argv)
 {
   Options options;
+  if (argc <= 1)
+  {
+    PrintUsage();
+    return 0;
+  }
+
   if (!ParseOptions(argc, argv, options))
     return 1;
 

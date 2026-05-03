@@ -167,6 +167,8 @@ namespace Logme
     LOGMELNK void SetBuffer(const char* buffer, size_t size, size_t capacity);
 
     LOGMELNK const char* Apply(const ChannelPtr& ch, OutputFlags flags, int& nc);
+    LOGMELNK const char* ApplyJson(const ChannelPtr& ch, OutputFlags flags, int& nc);
+    LOGMELNK const char* ApplyXml(const ChannelPtr& ch, OutputFlags flags, int& nc);
   
     LOGMELNK const char* GetText() const;
   };

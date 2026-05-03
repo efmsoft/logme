@@ -232,11 +232,11 @@ if(LOGME_BUILD_EXAMPLES)
   add_subdirectory(examples out/Examples)
 endif()
 
+if(LOGME_BUILD_TOOLS)
+  add_subdirectory(tools out/Tools)
+endif()
+
 if(LOGME_BUILD_TESTS)
   enable_testing()
   add_subdirectory(tests out/Tests)
-endif()
-
-if(LOGME_BUILD_TOOLS)
-  add_subdirectory(tools out/Tools)
 endif()

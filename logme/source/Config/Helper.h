@@ -14,6 +14,7 @@
 
 bool ParseControlConfig(const Json::Value& root, Logme::ControlConfig& cc);
 bool ParseFlags(const Json::Value& root, Logme::OutputFlagsMap& m);
+bool ParseStructuredFieldNames(const Json::Value& root);
 bool ParseChannels(const Json::Value& root, Logme::OutputFlagsMap& m, Logme::ChannelConfigArray& arr);
 bool GetConfigSection(const Json::Value& root, const std::string& section, Json::Value& config);
 bool ParseSubsystems(

@@ -72,6 +72,13 @@ namespace Logme
     STREAM_ALL2CERR,
   };
 
+  enum OutputFormat
+  {
+    OUTPUT_TEXT,
+    OUTPUT_JSON,
+    OUTPUT_XML
+  };
+
   struct ControlConfig
   {
     bool Enable;

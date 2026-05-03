@@ -5,6 +5,7 @@
 #include "StringHelpers.h"
 
 #include <cassert>
+#include <string>
 #include <string.h>
 
 #ifdef _WIN32
@@ -23,6 +24,151 @@
 #endif
 
 using namespace Logme;
+
+
+namespace
+{
+  const char* GetStructuredLevelName(Level level)
+  {
+    switch (level)
+    {
+    case Level::LEVEL_DEBUG: return "debug";
+    case Level::LEVEL_INFO: return "info";
+    case Level::LEVEL_WARN: return "warn";
+    case Level::LEVEL_ERROR: return "error";
+    case Level::LEVEL_CRITICAL: return "critical";
+    default: return "unknown";
+    }
+  }
+
+  size_t TrimRight(const char* text, size_t len)
+  {
+    while (len && (text[len - 1] == ' ' || text[len - 1] == '\t' || text[len - 1] == '\r' || text[len - 1] == '\n'))
+      --len;
+
+    return len;
+  }
+
+  void AppendJsonEscaped(std::string& output, const char* text, size_t len)
+  {
+    output.push_back('"');
+
+    for (size_t i = 0; i < len; ++i)
+    {
+      unsigned char c = (unsigned char)text[i];
+      switch (c)
+      {
+      case '"': output += "\\\""; break;
+      case '\\': output += "\\\\"; break;
+      case '\b': output += "\\b"; break;
+      case '\f': output += "\\f"; break;
+      case '\n': output += "\\n"; break;
+      case '\r': output += "\\r"; break;
+      case '\t': output += "\\t"; break;
+      default:
+        if (c < 0x20)
+        {
+          char tmp[7];
+          snprintf(tmp, sizeof(tmp), "\\u%04X", (unsigned)c);
+          output += tmp;
+        }
+        else
+        {
+          output.push_back((char)c);
+        }
+      }
+    }
+
+    output.push_back('"');
+  }
+
+  void AppendJsonEscaped(std::string& output, const char* text)
+  {
+    AppendJsonEscaped(output, text ? text : "", text ? strlen(text) : 0);
+  }
+
+  void AppendXmlEscaped(std::string& output, const char* text, size_t len)
+  {
+    for (size_t i = 0; i < len; ++i)
+    {
+      switch (text[i])
+      {
+      case '&': output += "&amp;"; break;
+      case '<': output += "&lt;"; break;
+      case '>': output += "&gt;"; break;
+      case '\"': output += "&quot;"; break;
+      case '\'': output += "&apos;"; break;
+      default: output.push_back(text[i]);
+      }
+    }
+  }
+
+  void AppendXmlEscaped(std::string& output, const char* text)
+  {
+    AppendXmlEscaped(output, text ? text : "", text ? strlen(text) : 0);
+  }
+
+  void AppendJsonFieldName(std::string& output, bool& first, OutputField field)
+  {
+    if (!first)
+      output.push_back(',');
+
+    first = false;
+    AppendJsonEscaped(output, GetOutputFieldName(field));
+    output.push_back(':');
+  }
+
+  void AppendJsonStringField(std::string& output, bool& first, OutputField field, const char* value)
+  {
+    AppendJsonFieldName(output, first, field);
+    AppendJsonEscaped(output, value);
+  }
+
+  void AppendJsonStringField(std::string& output, bool& first, OutputField field, const char* value, size_t len)
+  {
+    AppendJsonFieldName(output, first, field);
+    AppendJsonEscaped(output, value, len);
+  }
+
+  void AppendJsonUInt64Field(std::string& output, bool& first, OutputField field, uint64_t value)
+  {
+    char tmp[32];
+    snprintf(tmp, sizeof(tmp), "%llu", (unsigned long long)value);
+    AppendJsonFieldName(output, first, field);
+    output += tmp;
+  }
+
+  void AppendXmlElement(std::string& output, OutputField field, const char* value)
+  {
+    const char* name = GetOutputFieldName(field);
+    output.push_back('<');
+    output += name;
+    output.push_back('>');
+    AppendXmlEscaped(output, value);
+    output += "</";
+    output += name;
+    output.push_back('>');
+  }
+
+  void AppendXmlElement(std::string& output, OutputField field, const char* value, size_t len)
+  {
+    const char* name = GetOutputFieldName(field);
+    output.push_back('<');
+    output += name;
+    output.push_back('>');
+    AppendXmlEscaped(output, value, len);
+    output += "</";
+    output += name;
+    output.push_back('>');
+  }
+
+  void AppendXmlUInt64Element(std::string& output, OutputField field, uint64_t value)
+  {
+    char tmp[32];
+    snprintf(tmp, sizeof(tmp), "%llu", (unsigned long long)value);
+    AppendXmlElement(output, field, tmp);
+  }
+}
 
 #ifndef _WIN32
 #define strtok_s strtok_r
@@ -386,6 +532,207 @@ void Context::InitSignature()
   }
 }
 
+
+const char* Context::ApplyJson(const ChannelPtr& ch, OutputFlags flags, int& nc)
+{
+  if (Applied.Value == flags.Value)
+  {
+    nc = LastLen;
+    return LastData;
+  }
+
+  if (flags.Timestamp != TIME_FORMAT_NONE && *Timestamp == '\0')
+    InitTimestamp((TimeFormat)flags.Timestamp);
+
+  if (flags.Method && Method && !flags.ProcPrint)
+  {
+    Method = ch->ShortenerRun(Method, MethodShortener);
+
+    if (Ovr != nullptr)
+      Method = ch->ShortenerRun(Method, MethodShortener, *Ovr);
+  }
+
+  const char* appendText = nullptr;
+  if (flags.Duration && !flags.ProcPrintIn && AppendProc)
+    appendText = AppendProc(*this);
+
+  std::string output;
+  output.reserve(TempBufferSize + 256);
+  output.push_back('{');
+
+  bool first = true;
+  if (flags.Timestamp != TIME_FORMAT_NONE)
+  {
+    size_t len = TrimRight(Timestamp, strlen(Timestamp));
+    AppendJsonStringField(output, first, OUTPUT_FIELD_TIMESTAMP, Timestamp, len);
+  }
+
+  if (flags.Signature)
+    AppendJsonStringField(output, first, OUTPUT_FIELD_LEVEL, GetStructuredLevelName(ErrorLevel));
+
+  if (flags.ProcessID)
+    AppendJsonUInt64Field(output, first, OUTPUT_FIELD_PROCESS_ID, (uint64_t)GetCurrentProcessId());
+
+  if (flags.ThreadID)
+    AppendJsonUInt64Field(output, first, OUTPUT_FIELD_THREAD_ID, (uint64_t)GetCurrentThreadId());
+
+  if (flags.Channel)
+    AppendJsonStringField(output, first, OUTPUT_FIELD_CHANNEL, Channel->Name ? Channel->Name : "");
+
+  if (flags.Subsystem && Subsystem.Name)
+  {
+    char subsystem[9];
+    memcpy(subsystem, (const char*)&Subsystem.Name, 8);
+    subsystem[8] = '\0';
+    AppendJsonStringField(output, first, OUTPUT_FIELD_SUBSYSTEM, subsystem, TrimRight(subsystem, strlen(subsystem)));
+  }
+
+  if (flags.Location)
+  {
+    AppendJsonStringField(
+      output
+      , first
+      , OUTPUT_FIELD_FILE
+      , flags.Location == DETALITY_SHORT ? File.GetShortName() : File.FullName
+    );
+    AppendJsonUInt64Field(output, first, OUTPUT_FIELD_LINE, (uint64_t)Line);
+  }
+
+  if (flags.Method && Method && !flags.ProcPrint)
+    AppendJsonStringField(output, first, OUTPUT_FIELD_METHOD, Method);
+
+  AppendJsonStringField(output, first, OUTPUT_FIELD_MESSAGE, TempBuffer, TempBufferSize);
+
+  if (appendText)
+    AppendJsonStringField(output, first, OUTPUT_FIELD_DURATION, appendText);
+
+  output.push_back('}');
+
+  if (flags.Eol)
+    output.push_back('\n');
+
+  size_t required = output.size() + 1;
+  char* buffer = Buffer;
+  if (required > sizeof(Buffer))
+  {
+    if (ExtBufferSize < required)
+    {
+      ExtBuffer = std::make_unique<char[]>(required);
+      ExtBufferSize = required;
+    }
+
+    buffer = ExtBuffer.get();
+  }
+
+  memcpy(buffer, output.data(), output.size());
+  buffer[output.size()] = '\0';
+
+  Applied.Value = flags.Value;
+  LastData = buffer;
+  LastLen = (int)output.size();
+  nc = LastLen;
+  return LastData;
+}
+
+const char* Context::ApplyXml(const ChannelPtr& ch, OutputFlags flags, int& nc)
+{
+  if (Applied.Value == flags.Value)
+  {
+    nc = LastLen;
+    return LastData;
+  }
+
+  if (flags.Timestamp != TIME_FORMAT_NONE && *Timestamp == '\0')
+    InitTimestamp((TimeFormat)flags.Timestamp);
+
+  if (flags.Method && Method && !flags.ProcPrint)
+  {
+    Method = ch->ShortenerRun(Method, MethodShortener);
+
+    if (Ovr != nullptr)
+      Method = ch->ShortenerRun(Method, MethodShortener, *Ovr);
+  }
+
+  const char* appendText = nullptr;
+  if (flags.Duration && !flags.ProcPrintIn && AppendProc)
+    appendText = AppendProc(*this);
+
+  std::string output;
+  output.reserve(TempBufferSize + 256);
+  output += "<event>";
+
+  if (flags.Timestamp != TIME_FORMAT_NONE)
+  {
+    size_t len = TrimRight(Timestamp, strlen(Timestamp));
+    AppendXmlElement(output, OUTPUT_FIELD_TIMESTAMP, Timestamp, len);
+  }
+
+  if (flags.Signature)
+    AppendXmlElement(output, OUTPUT_FIELD_LEVEL, GetStructuredLevelName(ErrorLevel));
+
+  if (flags.ProcessID)
+    AppendXmlUInt64Element(output, OUTPUT_FIELD_PROCESS_ID, (uint64_t)GetCurrentProcessId());
+
+  if (flags.ThreadID)
+    AppendXmlUInt64Element(output, OUTPUT_FIELD_THREAD_ID, (uint64_t)GetCurrentThreadId());
+
+  if (flags.Channel)
+    AppendXmlElement(output, OUTPUT_FIELD_CHANNEL, Channel->Name ? Channel->Name : "");
+
+  if (flags.Subsystem && Subsystem.Name)
+  {
+    char subsystem[9];
+    memcpy(subsystem, (const char*)&Subsystem.Name, 8);
+    subsystem[8] = '\0';
+    AppendXmlElement(output, OUTPUT_FIELD_SUBSYSTEM, subsystem, TrimRight(subsystem, strlen(subsystem)));
+  }
+
+  if (flags.Location)
+  {
+    AppendXmlElement(
+      output
+      , OUTPUT_FIELD_FILE
+      , flags.Location == DETALITY_SHORT ? File.GetShortName() : File.FullName
+    );
+    AppendXmlUInt64Element(output, OUTPUT_FIELD_LINE, (uint64_t)Line);
+  }
+
+  if (flags.Method && Method && !flags.ProcPrint)
+    AppendXmlElement(output, OUTPUT_FIELD_METHOD, Method);
+
+  AppendXmlElement(output, OUTPUT_FIELD_MESSAGE, TempBuffer, TempBufferSize);
+
+  if (appendText)
+    AppendXmlElement(output, OUTPUT_FIELD_DURATION, appendText);
+
+  output += "</event>";
+
+  if (flags.Eol)
+    output.push_back('\n');
+
+  size_t required = output.size() + 1;
+  char* buffer = Buffer;
+  if (required > sizeof(Buffer))
+  {
+    if (ExtBufferSize < required)
+    {
+      ExtBuffer = std::make_unique<char[]>(required);
+      ExtBufferSize = required;
+    }
+
+    buffer = ExtBuffer.get();
+  }
+
+  memcpy(buffer, output.data(), output.size());
+  buffer[output.size()] = '\0';
+
+  Applied.Value = flags.Value;
+  LastData = buffer;
+  LastLen = (int)output.size();
+  nc = LastLen;
+  return LastData;
+}
+
 const char* Context::Apply(const ChannelPtr& ch, OutputFlags flags, int& nc)
 {
   assert(TempBuffer != nullptr);
@@ -400,6 +747,12 @@ const char* Context::Apply(const ChannelPtr& ch, OutputFlags flags, int& nc)
   // Copy control flags
   flags.ProcPrint = Applied.ProcPrint;
   flags.ProcPrintIn = Applied.ProcPrintIn;
+
+  if (flags.Format == OUTPUT_JSON)
+    return ApplyJson(ch, flags, nc);
+
+  if (flags.Format == OUTPUT_XML)
+    return ApplyXml(ch, flags, nc);
 
   if (Applied.Value == flags.Value)
   {

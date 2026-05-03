@@ -90,6 +90,12 @@ bool Logger::LoadConfiguration(
     return false;
   }
 
+  if (!ParseStructuredFieldNames(config))
+  {
+    SetConfigurationError(error, "structured field name parsing failed");
+    return false;
+  }
+
   OutputFlagsMap flags;
   if (!ParseFlags(config, flags))
   {

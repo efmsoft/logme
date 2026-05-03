@@ -1,3 +1,4 @@
+#include <atomic>
 #include <functional>
 #include <vector>
 
@@ -10,6 +11,81 @@
 #endif
 
 using namespace Logme;
+
+
+namespace
+{
+  struct OutputFieldNames
+  {
+    std::string Names[OUTPUT_FIELD_COUNT];
+
+    OutputFieldNames()
+    {
+      Names[OUTPUT_FIELD_TIMESTAMP] = "timestamp";
+      Names[OUTPUT_FIELD_LEVEL] = "level";
+      Names[OUTPUT_FIELD_PROCESS_ID] = "process_id";
+      Names[OUTPUT_FIELD_THREAD_ID] = "thread_id";
+      Names[OUTPUT_FIELD_CHANNEL] = "channel";
+      Names[OUTPUT_FIELD_SUBSYSTEM] = "subsystem";
+      Names[OUTPUT_FIELD_FILE] = "file";
+      Names[OUTPUT_FIELD_LINE] = "line";
+      Names[OUTPUT_FIELD_METHOD] = "method";
+      Names[OUTPUT_FIELD_MESSAGE] = "message";
+      Names[OUTPUT_FIELD_DURATION] = "duration";
+    }
+  };
+
+  const OutputFieldNames* CreateDefaultFieldNames()
+  {
+    return new OutputFieldNames();
+  }
+
+  std::atomic<const OutputFieldNames*> CurrentFieldNames(CreateDefaultFieldNames());
+
+  bool IsValidField(OutputField field)
+  {
+    return field >= 0 && field < OUTPUT_FIELD_COUNT;
+  }
+}
+
+void Logme::SetOutputFieldName(OutputField field, const char* name)
+{
+  if (!IsValidField(field) || name == nullptr || *name == '\0')
+    return;
+
+  const OutputFieldNames* current = CurrentFieldNames.load(std::memory_order_acquire);
+  OutputFieldNames* updated = new OutputFieldNames(*current);
+  updated->Names[field] = name;
+  CurrentFieldNames.store(updated, std::memory_order_release);
+}
+
+void Logme::SetOutputFieldNames(const OutputFieldNameMap& names)
+{
+  const OutputFieldNames* current = CurrentFieldNames.load(std::memory_order_acquire);
+  OutputFieldNames* updated = new OutputFieldNames(*current);
+
+  for (const auto& item : names)
+  {
+    if (IsValidField(item.first) && !item.second.empty())
+      updated->Names[item.first] = item.second;
+  }
+
+  CurrentFieldNames.store(updated, std::memory_order_release);
+}
+
+const char* Logme::GetOutputFieldName(OutputField field)
+{
+  const OutputFieldNames* current = CurrentFieldNames.load(std::memory_order_acquire);
+  if (!IsValidField(field))
+    return "";
+
+  return current->Names[field].c_str();
+}
+
+void Logme::ResetOutputFieldNames()
+{
+  CurrentFieldNames.store(CreateDefaultFieldNames(), std::memory_order_release);
+}
 
 OutputFlags::OutputFlags()
   : Value(0)
@@ -98,6 +174,7 @@ std::string OutputFlags::ToString(const char* separator, bool brackets) const
   APPEND_FLAG(DisableLink);
   APPEND_FLAG(ThreadTransition);
   APPEND_FLAG(Subsystem);
+  APPEND_FLAG(Format);
 
   std::string result = Join(flags, separator);
   if (brackets && !result.empty())

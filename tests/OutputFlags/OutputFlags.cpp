@@ -289,6 +289,70 @@ TEST(OutputFlags, Subsystem)
   EXPECT_EQ(Be->Line.starts_with("#sb"), true);
 }
 
+
+TEST(OutputFlags, Json)
+{
+  ResetOutputFieldNames();
+
+  OutputFlags flags;
+  flags.Value = 0;
+  flags.Format = OUTPUT_JSON;
+  flags.Signature = true;
+  flags.Channel = true;
+  flags.Method = true;
+  Be->Owner->SetFlags(flags);
+
+  Be->Clear();
+  LogmeE(CHT, "hello \"world\"");
+  EXPECT_EQ(
+    Be->Line
+    , std::string("{\"level\":\"error\",\"channel\":\"")
+      + CHT.Name
+      + "\",\"method\":\"TestBody\",\"message\":\"hello \\\"world\\\"\"}"
+  );
+}
+
+TEST(OutputFlags, JsonCustomFieldNames)
+{
+  ResetOutputFieldNames();
+  SetOutputFieldName(OUTPUT_FIELD_MESSAGE, "msg");
+  SetOutputFieldName(OUTPUT_FIELD_LEVEL, "lvl");
+
+  OutputFlags flags;
+  flags.Value = 0;
+  flags.Format = OUTPUT_JSON;
+  flags.Signature = true;
+  Be->Owner->SetFlags(flags);
+
+  Be->Clear();
+  LogmeW(CHT, "custom");
+  EXPECT_EQ(Be->Line, "{\"lvl\":\"warn\",\"msg\":\"custom\"}");
+
+  ResetOutputFieldNames();
+}
+
+TEST(OutputFlags, Xml)
+{
+  ResetOutputFieldNames();
+
+  OutputFlags flags;
+  flags.Value = 0;
+  flags.Format = OUTPUT_XML;
+  flags.Signature = true;
+  flags.Channel = true;
+  flags.Method = true;
+  Be->Owner->SetFlags(flags);
+
+  Be->Clear();
+  LogmeE(CHT, "a < b && c > d");
+  EXPECT_EQ(
+    Be->Line
+    , std::string("<event><level>error</level><channel>")
+      + CHT.Name
+      + "</channel><method>TestBody</method><message>a &lt; b &amp;&amp; c &gt; d</message></event>"
+  );
+}
+
 TEST(OutputFlags, Timestamp)
 {
   OutputFlags flags;

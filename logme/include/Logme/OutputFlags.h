@@ -27,6 +27,33 @@
 
 namespace Logme
 {
+  enum OutputField
+  {
+    OUTPUT_FIELD_TIMESTAMP,
+    OUTPUT_FIELD_LEVEL,
+    OUTPUT_FIELD_PROCESS_ID,
+    OUTPUT_FIELD_THREAD_ID,
+    OUTPUT_FIELD_CHANNEL,
+    OUTPUT_FIELD_SUBSYSTEM,
+    OUTPUT_FIELD_FILE,
+    OUTPUT_FIELD_LINE,
+    OUTPUT_FIELD_METHOD,
+    OUTPUT_FIELD_MESSAGE,
+    OUTPUT_FIELD_DURATION,
+    OUTPUT_FIELD_COUNT
+  };
+
+  typedef std::map<OutputField, std::string> OutputFieldNameMap;
+
+  /// <summary>Sets the structured output field name used by JSON/XML formatters.</summary>
+  LOGMELNK void SetOutputFieldName(OutputField field, const char* name);
+  /// <summary>Returns the structured output field name used by JSON/XML formatters.</summary>
+  LOGMELNK const char* GetOutputFieldName(OutputField field);
+  /// <summary>Restores default structured output field names.</summary>
+  LOGMELNK void ResetOutputFieldNames();
+  /// <summary>Applies multiple structured output field names at once.</summary>
+  LOGMELNK void SetOutputFieldNames(const OutputFieldNameMap& names);
+
   /// <summary>
   /// Bit-field set controlling which parts of a log record are printed and how they are printed.
   /// It is used in channel configuration and in per-message Override objects. Individual fields are
@@ -55,7 +82,8 @@ namespace Logme
       uint32_t DisableLink : 1; // Do not send to linked channel
       uint32_t ThreadTransition : 1; // Log thread name transitions
       uint32_t Subsystem : 1; // Print name of subsystem
-      uint32_t : 10;
+      uint32_t Format: 2; // Format of output: text / json / xml (OutputFormat enum)
+      uint32_t : 8;
       uint32_t ProcPrint : 1; // Working in the context of Procedure::xxx
       uint32_t ProcPrintIn : 1; // Input parameters
       uint32_t None : 1; // Invalid flags bit

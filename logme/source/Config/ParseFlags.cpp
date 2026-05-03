@@ -46,6 +46,94 @@ static NAMED_VALUE ConsoleValues[] =
   {nullptr, 0}
 };
 
+static NAMED_VALUE FormatValues[] =
+{
+  {"", OUTPUT_TEXT},
+  {"text", OUTPUT_TEXT},
+  {"json", OUTPUT_JSON},
+  {"xml", OUTPUT_XML},
+  {nullptr, 0}
+};
+
+
+struct FIELD_CONFIG
+{
+  const char* Name;
+  OutputField Field;
+};
+
+static FIELD_CONFIG FieldConfig[] =
+{
+  {"timestamp", OUTPUT_FIELD_TIMESTAMP},
+  {"level", OUTPUT_FIELD_LEVEL},
+  {"processid", OUTPUT_FIELD_PROCESS_ID},
+  {"process_id", OUTPUT_FIELD_PROCESS_ID},
+  {"threadid", OUTPUT_FIELD_THREAD_ID},
+  {"thread_id", OUTPUT_FIELD_THREAD_ID},
+  {"channel", OUTPUT_FIELD_CHANNEL},
+  {"subsystem", OUTPUT_FIELD_SUBSYSTEM},
+  {"file", OUTPUT_FIELD_FILE},
+  {"line", OUTPUT_FIELD_LINE},
+  {"method", OUTPUT_FIELD_METHOD},
+  {"message", OUTPUT_FIELD_MESSAGE},
+  {"duration", OUTPUT_FIELD_DURATION},
+  {nullptr, OUTPUT_FIELD_COUNT}
+};
+
+static bool GetOutputField(const Json::String& name, OutputField& field)
+{
+  std::string lcname(name);
+  std::transform(lcname.begin(), lcname.end(), lcname.begin(), ::tolower);
+
+  for (const FIELD_CONFIG* p = &FieldConfig[0]; p->Name; p++)
+  {
+    if (lcname == p->Name)
+    {
+      field = p->Field;
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool ParseStructuredFieldNames(const Json::Value& root)
+{
+  if (!root.isMember("structured_fields"))
+    return true;
+
+  auto& o = root["structured_fields"];
+  if (!o.isObject())
+  {
+    LogmeE(CHINT, "\"structured_fields\" is not an object");
+    return false;
+  }
+
+  OutputFieldNameMap names;
+  auto members = o.getMemberNames();
+  for (const auto& n : members)
+  {
+    OutputField field;
+    if (!GetOutputField(n, field))
+    {
+      LogmeW(CHINT, "structured_fields.%s is unsupported", n.c_str());
+      continue;
+    }
+
+    auto& v = o[n];
+    if (!v.isString())
+    {
+      LogmeE(CHINT, "structured_fields.%s is not a string value", n.c_str());
+      return false;
+    }
+
+    names[field] = v.asString();
+  }
+
+  SetOutputFieldNames(names);
+  return true;
+}
+
 static FLAG_CONFIG FlagConfig[] =
 {
   {"timestamp", TimeStampValues, [](OutputFlags& f, int v) {f.Timestamp = v; } },
@@ -62,6 +150,8 @@ static FLAG_CONFIG FlagConfig[] =
   {"console", ConsoleValues, [](OutputFlags& f, int v) {f.Console = v; } },
   {"disablelink", nullptr, [](OutputFlags& f, int v) {f.DisableLink = v; } },
   {"transition", nullptr, [](OutputFlags& f, int v) {f.ThreadTransition = v; } },
+  {"subsystem", nullptr, [](OutputFlags& f, int v) {f.Subsystem = v; } },
+  {"format", FormatValues, [](OutputFlags& f, int v) {f.Format = v; } },
   {nullptr, nullptr, nullptr, }
 };
 

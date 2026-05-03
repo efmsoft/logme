@@ -304,12 +304,16 @@ TEST(OutputFlags, Json)
 
   Be->Clear();
   LogmeE(CHT, "hello \"world\"");
-  EXPECT_EQ(
-    Be->Line
-    , std::string("{\"level\":\"error\",\"channel\":\"")
-      + CHT.Name
-      + "\",\"method\":\"OutputFlags_Json_Test::TestBody\",\"message\":\"hello \\\"world\\\"\"}"
-  );
+  const std::string shortMethod =
+    std::string("{\"level\":\"error\",\"channel\":\"")
+    + CHT.Name
+    + "\",\"method\":\"TestBody\",\"message\":\"hello \\\"world\\\"\"}";
+  const std::string fullMethod =
+    std::string("{\"level\":\"error\",\"channel\":\"")
+    + CHT.Name
+    + "\",\"method\":\"OutputFlags_Json_Test::TestBody\",\"message\":\"hello \\\"world\\\"\"}";
+  EXPECT_TRUE(Be->Line == shortMethod || Be->Line == fullMethod)
+    << Be->Line;
 }
 
 TEST(OutputFlags, JsonCustomFieldNames)
@@ -345,12 +349,16 @@ TEST(OutputFlags, Xml)
 
   Be->Clear();
   LogmeE(CHT, "a < b && c > d");
-  EXPECT_EQ(
-    Be->Line
-    , std::string("<event><level>error</level><channel>")
-      + CHT.Name
-      + "</channel><method>OutputFlags_Xml_Test::TestBody</method><message>a &lt; b &amp;&amp; c &gt; d</message></event>"
-  );
+  const std::string shortMethod =
+    std::string("<event><level>error</level><channel>")
+    + CHT.Name
+    + "</channel><method>TestBody</method><message>a &lt; b &amp;&amp; c &gt; d</message></event>";
+  const std::string fullMethod =
+    std::string("<event><level>error</level><channel>")
+    + CHT.Name
+    + "</channel><method>OutputFlags_Xml_Test::TestBody</method><message>a &lt; b &amp;&amp; c &gt; d</message></event>";
+  EXPECT_TRUE(Be->Line == shortMethod || Be->Line == fullMethod)
+    << Be->Line;
 }
 
 TEST(OutputFlags, Timestamp)

@@ -55,7 +55,7 @@ namespace
     return quoted;
   }
 
-  static int Run(const std::string& command)
+  static int RunTool(const std::string& command)
   {
     return std::system(command.c_str());
   }
@@ -129,7 +129,7 @@ TEST(LogmeFmtTool, ConvertsJsonToFinalizedXmlWithRenamedFields)
     + " --out "
     + Quote(output);
 
-  ASSERT_EQ(0, Run(command));
+  ASSERT_EQ(0, RunTool(command));
 
   EXPECT_EQ(
     "<records>\n"
@@ -159,7 +159,7 @@ TEST(LogmeFmtTool, ConvertsXmlToFinalizedJson)
     + " --out "
     + Quote(output);
 
-  ASSERT_EQ(0, Run(command));
+  ASSERT_EQ(0, RunTool(command));
 
   EXPECT_EQ(
     "[\n"
@@ -185,7 +185,7 @@ TEST(LogmeFmtTool, ConvertsTextToJsonLines)
     + " --out "
     + Quote(output);
 
-  ASSERT_EQ(0, Run(command));
+  ASSERT_EQ(0, RunTool(command));
 
   EXPECT_EQ(
     "{\"message\":\"plain message\"}\n"
@@ -210,7 +210,7 @@ TEST(LogmeObfTool, GeneratesKeyInAllFormats)
     + " --name TEST_KEY --base64 > "
     + Quote(base64);
 
-  ASSERT_EQ(0, Run(command));
+  ASSERT_EQ(0, RunTool(command));
 
   EXPECT_EQ(32u, ReadBytes(key).size());
 
@@ -246,7 +246,7 @@ TEST(LogmeObfTool, ObfuscatesTextWithFixedGoldenOutput)
     + " --out "
     + Quote(obf);
 
-  ASSERT_EQ(0, Run(command));
+  ASSERT_EQ(0, RunTool(command));
 
   EXPECT_EQ(
     "5AA537000000000000000000000000002A88700780D693FC23527C519E797E15C281C0CFD19D6F7CA5D89A7B5846017C1E616608DB8D5333E9E83651057A6953F5809A37B038535AA52600000000000100000000000000AD67C169981A9A3519858E6C63AFA9B5FF4DDF34775B558D8644C63EEE87B3C0F826BFC281C2"
@@ -262,7 +262,7 @@ TEST(LogmeObfTool, ObfuscatesTextWithFixedGoldenOutput)
     + " --out "
     + Quote(plain);
 
-  ASSERT_EQ(0, Run(command));
+  ASSERT_EQ(0, RunTool(command));
   EXPECT_EQ(ReadText(input), ReadText(plain));
 }
 
@@ -288,7 +288,7 @@ TEST(LogmeObfTool, ObfuscatesJsonAndDeobfuscatesBack)
     + " --out "
     + Quote(obf);
 
-  ASSERT_EQ(0, Run(command));
+  ASSERT_EQ(0, RunTool(command));
 
   command =
     ToolCommand(LOGMEOBF_EXE)
@@ -299,6 +299,6 @@ TEST(LogmeObfTool, ObfuscatesJsonAndDeobfuscatesBack)
     + " --out "
     + Quote(plain);
 
-  ASSERT_EQ(0, Run(command));
+  ASSERT_EQ(0, RunTool(command));
   EXPECT_EQ(ReadText(input), ReadText(plain));
 }

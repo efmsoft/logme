@@ -772,7 +772,6 @@ namespace
   {
     int json = 0;
     int xml = 0;
-    int text = 0;
     int seen = 0;
 
     for (const std::string& line : lines)
@@ -785,9 +784,6 @@ namespace
         ++json;
       else if (IsXmlRecordLine(line))
         ++xml;
-      else if (IsTextRecordStart(line))
-        ++text;
-
       ++seen;
       if (seen >= 10)
         break;

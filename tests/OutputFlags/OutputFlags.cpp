@@ -308,7 +308,7 @@ TEST(OutputFlags, Json)
     Be->Line
     , std::string("{\"level\":\"error\",\"channel\":\"")
       + CHT.Name
-      + "\",\"method\":\"TestBody\",\"message\":\"hello \\\"world\\\"\"}"
+      + "\",\"method\":\"OutputFlags_Json_Test::TestBody\",\"message\":\"hello \\\"world\\\"\"}"
   );
 }
 
@@ -349,7 +349,7 @@ TEST(OutputFlags, Xml)
     Be->Line
     , std::string("<event><level>error</level><channel>")
       + CHT.Name
-      + "</channel><method>TestBody</method><message>a &lt; b &amp;&amp; c &gt; d</message></event>"
+      + "</channel><method>OutputFlags_Xml_Test::TestBody</method><message>a &lt; b &amp;&amp; c &gt; d</message></event>"
   );
 }
 

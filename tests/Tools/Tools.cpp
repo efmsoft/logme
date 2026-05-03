@@ -57,7 +57,12 @@ namespace
 
   static int RunTool(const std::string& command)
   {
+#if defined(_WIN32)
+    std::string wrapped = "\"" + command + "\"";
+    return std::system(wrapped.c_str());
+#else
     return std::system(command.c_str());
+#endif
   }
 
   static void WriteText(const fs::path& path, const std::string& text)

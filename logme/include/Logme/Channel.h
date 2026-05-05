@@ -6,12 +6,12 @@
 #include <mutex>
 #include <optional>
 #include <string>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
 #include <Logme/Backend/Backend.h>
-#include <Logme/CritSection.h>
 #include <Logme/Context.h>
+#include <Logme/CritSection.h>
 #include <Logme/OutputFlags.h>
 #include <Logme/Override.h>
 #include <Logme/SafeID.h>

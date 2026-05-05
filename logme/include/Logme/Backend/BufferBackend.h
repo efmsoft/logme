@@ -7,7 +7,6 @@
 #include <Logme/Backend/Backend.h>
 #include <Logme/Channel.h>
 
-
 namespace Logme
 {
   enum class BufferBackendPolicy

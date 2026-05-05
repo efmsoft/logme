@@ -1,5 +1,5 @@
-#include <Logme/Colorizer.h>
 #include <Logme/AnsiColorEscape.h>
+#include <Logme/Colorizer.h>
 
 #include <stdlib.h>
 

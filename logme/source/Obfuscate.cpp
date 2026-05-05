@@ -1,10 +1,10 @@
-#include <string.h>
 #include <cstring>
+#include <string.h>
 #include <time.h>
 
-#include <Logme/Obfuscate.h>
 #include <Logme/Logger.h>
 #include <Logme/Logme.h>
+#include <Logme/Obfuscate.h>
 
 #if LOGME_ACTIVE
 static const char* ErrnoText(int e)

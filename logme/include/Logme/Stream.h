@@ -1,10 +1,10 @@
 #pragma once
 
-#include <Logme/Context.h>
-#include <Logme/Types.h>
-
 #include <memory>
 #include <sstream>
+
+#include <Logme/Context.h>
+#include <Logme/Types.h>
 
 namespace Logme
 {

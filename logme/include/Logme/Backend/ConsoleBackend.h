@@ -1,8 +1,5 @@
 #pragma once
 
-#include <Logme/Backend/Backend.h>
-#include <Logme/Backend/FileBackend.h>
-
 #include <atomic>
 #include <condition_variable>
 #include <cstdio>
@@ -10,6 +7,9 @@
 #include <mutex>
 #include <string>
 #include <vector>
+
+#include <Logme/Backend/Backend.h>
+#include <Logme/Backend/FileBackend.h>
 
 namespace Logme
 {

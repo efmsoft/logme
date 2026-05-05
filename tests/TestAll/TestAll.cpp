@@ -1,5 +1,5 @@
-#include <Logme/Logme.h>
 #include <Logme/Backend/FileBackend.h>
+#include <Logme/Logme.h>
 
 #include <string.h>
 #include <thread>

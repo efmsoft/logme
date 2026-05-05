@@ -1,7 +1,8 @@
 #pragma once
 
-#include <cstddef>
 #include <cstdarg>
+#include <cstddef>
+#include <cstdint>
 
 namespace Logme
 {

@@ -4,12 +4,15 @@
 #include <stdarg.h>
 #include <string>
 
+#include <Logme/Channel.h>
 #include <Logme/ID.h>
 #include <Logme/Printer.h>
 #include <Logme/Types.h>
 
 namespace Logme
 {
+  struct Context;
+
   class Procedure
   {
   protected:

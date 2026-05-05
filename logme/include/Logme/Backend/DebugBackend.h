@@ -1,7 +1,8 @@
 #pragma once
 
-#include <Logme/Backend/Backend.h>
 #include <memory>
+
+#include <Logme/Backend/Backend.h>
 
 namespace Logme
 {

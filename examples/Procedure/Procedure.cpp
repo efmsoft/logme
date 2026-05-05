@@ -1,5 +1,5 @@
-#include <Logme/Logme.h>
 #include <Logme/ArgumentList.h>
+#include <Logme/Logme.h>
 #include <Logme/Procedure.h>
 
 #include <thread>

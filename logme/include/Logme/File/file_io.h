@@ -1,8 +1,8 @@
 #pragma once
 
 #include <mutex>
-#include <string>
 #include <stdio.h>
+#include <string>
 
 #include <Logme/CritSection.h>
 

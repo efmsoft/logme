@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+
 #include <Logme/Utils.h>
 
 namespace Logme

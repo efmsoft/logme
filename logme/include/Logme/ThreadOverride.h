@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+
 #include <Logme/Override.h>
 
 namespace Logme

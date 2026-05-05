@@ -3,14 +3,16 @@
 #include <filesystem>
 #include <regex>
 #include <stdint.h>
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
 #include <vector>
 
 #include <Logme/Backend/FileBackend.h>
 #include <Logme/Channel.h>
 #include <Logme/Context.h>
+
 #include <Logme/File/exe_path.h>
+
 #include <Logme/File/FileManagerFactory.h>
 #include <Logme/Logger.h>
 #include <Logme/Logme.h>

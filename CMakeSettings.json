@@ -9,7 +9,10 @@
       "installRoot": "${projectDir}\\out\\install\\${name}",
       "cmakeCommandArgs": "",
       "buildCommandArgs": "",
-      "ctestCommandArgs": ""
+      "ctestCommandArgs": "",
+	  "clangTidyChecks": "llvm-include-order, -modernize-use-override",
+      "enableMicrosoftCodeAnalysis": true,
+      "enableClangTidyCodeAnalysis": true
     },
     {
       "name": "x86-Debug",
@@ -20,7 +23,10 @@
       "cmakeCommandArgs": "",
       "buildCommandArgs": "",
       "ctestCommandArgs": "",
-      "inheritEnvironments": [ "msvc_x86" ]
+      "inheritEnvironments": [ "msvc_x86" ],
+	  "clangTidyChecks": "llvm-include-order, -modernize-use-override, clang-analyzer-*, bugprone-*, performance-*, cppcoreguidelines-*, -cppcoreguidelines-avoid-magic-numbers, -cppcoreguidelines-pro-bounds-array-to-pointer-decay",
+      "enableMicrosoftCodeAnalysis": true,
+      "enableClangTidyCodeAnalysis": true
     },
     {
       "name": "x64-Release",
@@ -32,7 +38,10 @@
       "buildCommandArgs": "",
       "ctestCommandArgs": "",
       "inheritEnvironments": [ "msvc_x64_x64" ],
-      "variables": []
+      "variables": [],
+	  "clangTidyChecks": "llvm-include-order, -modernize-use-override, clang-analyzer-*, bugprone-*, performance-*, cppcoreguidelines-*, -cppcoreguidelines-avoid-magic-numbers, -cppcoreguidelines-pro-bounds-array-to-pointer-decay",
+      "enableMicrosoftCodeAnalysis": true,
+      "enableClangTidyCodeAnalysis": true
     },
     {
       "name": "x86-Release",
@@ -44,7 +53,10 @@
       "buildCommandArgs": "",
       "ctestCommandArgs": "",
       "inheritEnvironments": [ "msvc_x86" ],
-      "variables": []
+      "variables": [],
+	  "clangTidyChecks": "llvm-include-order, -modernize-use-override, clang-analyzer-*, bugprone-*, performance-*, cppcoreguidelines-*, -cppcoreguidelines-avoid-magic-numbers, -cppcoreguidelines-pro-bounds-array-to-pointer-decay",
+      "enableMicrosoftCodeAnalysis": true,
+      "enableClangTidyCodeAnalysis": true
     }
   ]
 }

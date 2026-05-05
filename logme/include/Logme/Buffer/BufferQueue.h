@@ -1,9 +1,5 @@
 #pragma once
 
-#include <Logme/Buffer/BufferCounters.h>
-#include <Logme/CritSection.h>
-#include <Logme/Buffer/DataBuffer.h>
-
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
@@ -11,6 +7,10 @@
 #include <memory>
 #include <mutex>
 #include <vector>
+
+#include <Logme/Buffer/BufferCounters.h>
+#include <Logme/Buffer/DataBuffer.h>
+#include <Logme/CritSection.h>
 
 namespace Logme
 {

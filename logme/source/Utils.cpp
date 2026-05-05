@@ -1,4 +1,5 @@
 #include <algorithm>
+
 #include <Logme/Utils.h>
 
 #if defined(__GNUC__) && !defined(__DJGPP__)

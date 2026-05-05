@@ -1,7 +1,6 @@
-#include <string>
 #include <algorithm>
 #include <cctype>
-
+#include <string>
 
 #include <Logme/Backend/Backend.h>
 #include <Logme/Logger.h>

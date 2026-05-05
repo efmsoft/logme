@@ -2,6 +2,8 @@
 
 #include <memory>
 
+#include <Logme/SafeID.h>
+
 namespace Logme
 {
   class Logger;

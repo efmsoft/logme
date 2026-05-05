@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Logme/Context.h>
+
 namespace Logme
 {
   namespace Detail

@@ -217,6 +217,8 @@ static void PrintWithAnsiSegments(
     fputs(p, stream);
   }
 
+  (void)defaultApplied;
+
   // Colorizer dtor will restore original console attributes.
 }
 

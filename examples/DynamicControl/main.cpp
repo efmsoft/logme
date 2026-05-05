@@ -4,11 +4,10 @@
 
 #include "Worker.h"
 
+#include <cstring>
+#include <fstream>
 #include <iostream>
 #include <string>
-#include <cstring>
-
-#include <fstream>
 
 #include <Logme/Logger.h>
 #include <Logme/Logme.h>

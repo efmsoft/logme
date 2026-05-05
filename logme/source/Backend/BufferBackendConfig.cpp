@@ -9,6 +9,7 @@
 
 using namespace Logme;
 
+#ifdef USE_JSONCPP
 static NAMED_VALUE PolicyValues[] =
 {
   {"", (int)BufferBackendPolicy::STOP_APPENDING},
@@ -23,6 +24,7 @@ static NAMED_VALUE PolicyValues[] =
 
   {nullptr, 0}
 };
+#endif
 
 BufferBackendConfig::BufferBackendConfig()
   : BackendConfig(BufferBackend::TYPE_ID)

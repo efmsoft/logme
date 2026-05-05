@@ -1,17 +1,17 @@
 #pragma once
 
-#include <Logme/Backend/Backend.h>
-#include <Logme/DayChangeDetector.h>
-#include <Logme/Buffer/BufferQueue.h>
-#include <Logme/File/file_io.h>
-#include <Logme/Obfuscate.h>
-#include <Logme/Types.h>
-
 #include <atomic>
 #include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <vector>
+
+#include <Logme/Backend/Backend.h>
+#include <Logme/Buffer/BufferQueue.h>
+#include <Logme/DayChangeDetector.h>
+#include <Logme/File/file_io.h>
+#include <Logme/Obfuscate.h>
+#include <Logme/Types.h>
 
 namespace Logme
 {

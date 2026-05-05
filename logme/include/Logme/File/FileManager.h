@@ -1,12 +1,13 @@
 #pragma once
 
-#include <Logme/Buffer/BufferCounters.h>
-
 #include <condition_variable>
 #include <mutex>
 #include <set>
 #include <stdint.h>
 #include <thread>
+
+#include <Logme/Backend/FileBackend.h>
+#include <Logme/Buffer/BufferCounters.h>
 
 namespace Logme
 {

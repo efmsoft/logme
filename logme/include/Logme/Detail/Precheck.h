@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Logme/Logger.h>
+
 namespace Logme
 {
   namespace Detail
@@ -8,7 +10,7 @@ namespace Logme
     {
     };
 
-    inline bool WouldLog(Logger* logger, Level level, const ChannelPtr& ch)
+    inline bool WouldLog(Logger* logger, const Level level, const ChannelPtr& ch)
     {
       if (level >= Level::LEVEL_ERROR && logger->GetErrorChannel() != nullptr)
         return true;
@@ -22,12 +24,12 @@ namespace Logme
       return ch->GetActive();
     }
 
-    inline bool WouldLogFirst(Logger*, Level, const PrecheckEmptyArg&)
+    inline bool WouldLogFirst(Logger*, const Level, const PrecheckEmptyArg&)
     {
       return true;
     }
 
-    inline bool WouldLogFirst(Logger* logger, Level level, const ChannelPtr& ch)
+    inline bool WouldLogFirst(Logger* logger, const Level level, const ChannelPtr& ch)
     {
       return WouldLog(logger, level, ch);
     }

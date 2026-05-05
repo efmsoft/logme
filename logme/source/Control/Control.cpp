@@ -1,15 +1,17 @@
 #include <algorithm>
-#include <cstdlib>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <vector>
 
 #ifdef _WIN32
 #include <io.h> 
+
 #include <winsock2.h>
 #include <ws2ipdef.h>
-#include <ws2tcpip.h>
+
 #include <windows.h>
+#include <ws2tcpip.h>
 
 #define SOCKADDR_IN_ADDR(pa) (pa)->sin_addr.S_un.S_addr
 #define read _read

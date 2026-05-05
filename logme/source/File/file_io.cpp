@@ -1,13 +1,13 @@
-#include <Logme/File/file_io.h>
-#include <Logme/Logme.h>
-#include <Logme/Time/datetime.h>
-
 #include <cassert>
+#include <cstring>
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <vector>
-#include <cstring>
+
+#include <Logme/File/file_io.h>
+#include <Logme/Logme.h>
+#include <Logme/Time/datetime.h>
 
 #ifndef _WIN32
 #include <sys/file.h>
@@ -81,7 +81,10 @@ void FileIo::Close()
 
     int rc = _close(h);
     if (rc < 0)
-      IO_ERROR(close());
+    {
+      Error = errno; 
+      LogmeE(CHINT, "FileIo(?): close() failed: %s", ERRNO_STR(Error));
+    }
   }
 }
 

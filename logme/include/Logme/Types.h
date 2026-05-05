@@ -130,29 +130,29 @@ namespace Logme
 }
 
 #if defined(_MSC_VER) && defined(_MSVC_TRADITIONAL) && _MSVC_TRADITIONAL
-#define _LOGME_NONEMPTY(...) ,
+#define LOGMEP_NONEMPTY(...) ,
 #else
-#define _LOGME_EMPTYFIRST(x,...) _LOGME_A x (_LOGME_B)
-#define _LOGME_A(x) x()
-#define _LOGME_B() ,
+#define LOGMEP_EMPTYFIRST(x,...) LOGMEP_A x (LOGMEP_B)
+#define LOGMEP_A(x) x()
+#define LOGMEP_B() ,
 
-#define _LOGME_EMPTY(...) _LOGME_C(_LOGME_EMPTYFIRST(__VA_ARGS__) _LOGME_SINGLE(__VA_ARGS__))
-#define _LOGME_C(...) _LOGME_D(__VA_ARGS__)
-#define _LOGME_D(x,...) __VA_ARGS__
+#define LOGMEP_EMPTY(...) LOGMEP_C(LOGMEP_EMPTYFIRST(__VA_ARGS__) LOGMEP_SINGLE(__VA_ARGS__))
+#define LOGMEP_C(...) LOGMEP_D(__VA_ARGS__)
+#define LOGMEP_D(x,...) __VA_ARGS__
 
-#define _LOGME_SINGLE(...) _LOGME_E(__VA_ARGS__, _LOGME_B)
-#define _LOGME_E(x,y,...) _LOGME_C(y(),)
+#define LOGMEP_SINGLE(...) LOGMEP_E(__VA_ARGS__, LOGMEP_B)
+#define LOGMEP_E(x,y,...) LOGMEP_C(y(),)
 
-#define _LOGME_NONEMPTY(...) _LOGME_F(_LOGME_EMPTY(__VA_ARGS__) _LOGME_D, _LOGME_B)
-#define _LOGME_F(...) _LOGME_G(__VA_ARGS__)
-#define _LOGME_G(x,y,...) y()
+#define LOGMEP_NONEMPTY(...) LOGMEP_F(LOGMEP_EMPTY(__VA_ARGS__) LOGMEP_D, LOGMEP_B)
+#define LOGMEP_F(...) LOGMEP_G(__VA_ARGS__)
+#define LOGMEP_G(x,y,...) y()
 #endif
 
-#ifndef _LOGME_ACTIVE
+#ifndef LOGME_ACTIVE
   #if !defined(_DEBUG) && !defined(LOGME_INRELEASE)
-    #define _LOGME_ACTIVE 0
+    #define LOGME_ACTIVE 0
   #else
-    #define _LOGME_ACTIVE 1
+    #define LOGME_ACTIVE 1
   #endif
 #endif
 

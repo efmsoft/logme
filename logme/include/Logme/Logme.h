@@ -15,14 +15,15 @@
 #include <Logme/ThreadOverride.h>
 #include <utility>
 
-// String conversion
+// Performs simple encoding conversion. If you need reliable, high-quality conversion in all cases, 
+// use https://github.com/efmsoft/utf8 and the functions utf8::AnsiToUtf8 / WstringToUtf8
 
-#ifndef _S
-#define _S(str) Logme::ToStdString(str)
+#ifndef LS
+#define LS(str) Logme::ToStdString(str)
 #endif
 
-#ifndef _WS
-#define _WS(str) Logme::ToStdWString(str)
+#ifndef LWS
+#define LWS(str) Logme::ToStdWString(str)
 #endif
 
 #include <Logme/Detail/Dispatch.h>
@@ -30,7 +31,7 @@
 
 // C/C++ - style logging
 
-#if _LOGME_ACTIVE
+#if LOGME_ACTIVE
 #ifdef _MSC_VER
   #define Logme_If(condition, logger, level, ...) \
     if (static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); (condition)) \
@@ -372,7 +373,7 @@
 #define LogmeE_Do1(ch, code, ...) LogmeE_Do(ch, code, ## __VA_ARGS__)
 #define LogmeC_Do1(ch, code, ...) LogmeC_Do(ch, code, ## __VA_ARGS__)
 
-#if _LOGME_ACTIVE
+#if LOGME_ACTIVE
   #define LOGMEP_ONCE_OVR() ([]() -> Logme::Override& { static Logme::Override ovr(1); return ovr; }())
   #define LOGMEP_RATE_OVR(ms) ([]() -> Logme::Override& { static Logme::Override ovr(-1, ms); return ovr; }())
 #else
@@ -395,7 +396,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeD_Once(...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, LOGMEP_ONCE_OVR() _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, LOGMEP_ONCE_OVR() LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 
 #ifdef _MSC_VER
@@ -411,7 +412,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeI_Once(...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, LOGMEP_ONCE_OVR() _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, LOGMEP_ONCE_OVR() LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 
 #ifdef _MSC_VER
@@ -427,7 +428,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeW_Once(...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, LOGMEP_ONCE_OVR() _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, LOGMEP_ONCE_OVR() LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 
 #ifdef _MSC_VER
@@ -443,7 +444,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeE_Once(...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, LOGMEP_ONCE_OVR() _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, LOGMEP_ONCE_OVR() LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 
 #ifdef _MSC_VER
@@ -459,7 +460,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeC_Once(...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, LOGMEP_ONCE_OVR() _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, LOGMEP_ONCE_OVR() LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 
 // Log with interval (rate-limited)
@@ -479,7 +480,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeD_Every(ms, ...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, LOGMEP_RATE_OVR(ms) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, LOGMEP_RATE_OVR(ms) LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 
 #ifdef _MSC_VER
@@ -497,7 +498,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeI_Every(ms, ...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, LOGMEP_RATE_OVR(ms) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, LOGMEP_RATE_OVR(ms) LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 
 #ifdef _MSC_VER
@@ -515,7 +516,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeW_Every(ms, ...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, LOGMEP_RATE_OVR(ms) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, LOGMEP_RATE_OVR(ms) LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 
 #ifdef _MSC_VER
@@ -533,7 +534,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeE_Every(ms, ...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, LOGMEP_RATE_OVR(ms) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, LOGMEP_RATE_OVR(ms) LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 
 #ifdef _MSC_VER
@@ -551,12 +552,12 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeC_Every(ms, ...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, LOGMEP_RATE_OVR(ms) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, LOGMEP_RATE_OVR(ms) LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 
 // std::format
 
-#if _LOGME_ACTIVE
+#if LOGME_ACTIVE
 #ifdef _MSC_VER
   #define fLogme_If(condition, logger, level, ...) \
     do \

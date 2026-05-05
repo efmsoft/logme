@@ -16,7 +16,7 @@ static int ProcedureWithReturn()
   return result;
 }
 
-#define _LogmePV1() \
+#define LogmePV1() \
   static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); \
   const Logme::Context& _procContext = \
     Logme::Context( \
@@ -32,7 +32,7 @@ static int ProcedureWithReturn()
 
 static void ProcedureVoid()
 {
-  _LogmePV1();
+  LogmePV1();
 }
 
 TEST(PreprocessorCompat, MacrosBuildAndRunWithoutConformingPreprocessor)

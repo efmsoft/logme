@@ -54,7 +54,7 @@ namespace Logme
 
 #define NoRetval  Logme::None
 
-#if _LOGME_ACTIVE
+#if LOGME_ACTIVE
 
 #if defined(__CLION_IDE__) || defined(__JETBRAINS_IDE__)
 #define LOGMEP_LogmeP(level, retval, ...) \
@@ -77,7 +77,7 @@ namespace Logme
 #define LOGMEP_LogmePV(level, ...) \
   static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); \
   const Logme::Context& _procContext = LOGME_CONTEXT(LOGME_JOIN(_logme_ctx_, __LINE__), level, &CH, &SUBSID __VA_OPT__(,) __VA_ARGS__); \
-  Logme::Procedure logme_proc(_procContext, nullptr _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme::Procedure logme_proc(_procContext, nullptr LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #elif defined(__GNUC__)
   #define LOGMEP_LogmeP(level, retval, ...) \
     unsigned char _procStorage[sizeof(Logme::PrinterT<int>)]; \
@@ -88,7 +88,7 @@ namespace Logme
   #define LOGMEP_LogmePV(level, ...) \
     static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); \
     const Logme::Context& _procContext = LOGME_CONTEXT(LOGME_JOIN(_logme_ctx_, __LINE__), level, &CH, &SUBSID, ## __VA_ARGS__); \
-    Logme::Procedure logme_proc(_procContext, nullptr _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+    Logme::Procedure logme_proc(_procContext, nullptr LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #else
 #define LOGMEP_LogmeP(level, retval, ...) \
   unsigned char _procStorage[sizeof(Logme::PrinterT<int>)]; \
@@ -103,7 +103,7 @@ namespace Logme
 #endif 
 #else
 #define LOGMEP_LogmeP(level, retval, ...)
-#define LOGMEP_LogmePV(level)
+#define LOGMEP_LogmePV(level, ...)
 #endif
 
 #if defined(__cplusplus) && (__cplusplus >= 202002L) && defined(__clang__)

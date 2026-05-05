@@ -6,7 +6,7 @@
 #include <Logme/Logger.h>
 #include <Logme/Logme.h>
 
-#if _LOGME_ACTIVE
+#if LOGME_ACTIVE
 static const char* ErrnoText(int e)
 {
   const char* s = std::strerror(e);

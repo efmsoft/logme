@@ -373,11 +373,11 @@
 #define LogmeC_Do1(ch, code, ...) LogmeC_Do(ch, code, ## __VA_ARGS__)
 
 #if _LOGME_ACTIVE
-  #define _LOGME_ONCE_OVR() ([]() -> Logme::Override& { static Logme::Override ovr(1); return ovr; }())
-  #define _LOGME_RATE_OVR(ms) ([]() -> Logme::Override& { static Logme::Override ovr(-1, ms); return ovr; }())
+  #define LOGMEP_ONCE_OVR() ([]() -> Logme::Override& { static Logme::Override ovr(1); return ovr; }())
+  #define LOGMEP_RATE_OVR(ms) ([]() -> Logme::Override& { static Logme::Override ovr(-1, ms); return ovr; }())
 #else
-  #define _LOGME_ONCE_OVR()
-  #define _LOGME_RATE_OVR(ms)
+  #define LOGMEP_ONCE_OVR()
+  #define LOGMEP_RATE_OVR(ms)
 #endif
 
 // Log once (per call site)
@@ -388,14 +388,14 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeD_Once(...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, _LOGME_ONCE_OVR(), ## __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
 #else
 /// <summary>
 /// Writes DEBUG log message once per call site (printf-style when called with a format string) or returns a stream (C++ style of output).
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeD_Once(...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, _LOGME_ONCE_OVR() _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, LOGMEP_ONCE_OVR() _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 
 #ifdef _MSC_VER
@@ -404,14 +404,14 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeI_Once(...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, _LOGME_ONCE_OVR(), ## __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
 #else
 /// <summary>
 /// Writes INFO log message once per call site (printf-style when called with a format string) or returns a stream (C++ style of output).
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeI_Once(...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, _LOGME_ONCE_OVR() _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, LOGMEP_ONCE_OVR() _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 
 #ifdef _MSC_VER
@@ -420,14 +420,14 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeW_Once(...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, _LOGME_ONCE_OVR(), ## __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
 #else
 /// <summary>
 /// Writes WARN log message once per call site (printf-style when called with a format string) or returns a stream (C++ style of output).
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeW_Once(...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, _LOGME_ONCE_OVR() _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, LOGMEP_ONCE_OVR() _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 
 #ifdef _MSC_VER
@@ -436,14 +436,14 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeE_Once(...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, _LOGME_ONCE_OVR(), ## __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
 #else
 /// <summary>
 /// Writes ERROR log message once per call site (printf-style when called with a format string) or returns a stream (C++ style of output).
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeE_Once(...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, _LOGME_ONCE_OVR() _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, LOGMEP_ONCE_OVR() _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 
 #ifdef _MSC_VER
@@ -452,14 +452,14 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeC_Once(...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, _LOGME_ONCE_OVR(), ## __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
 #else
 /// <summary>
 /// Writes CRITICAL log message once per call site (printf-style when called with a format string) or returns a stream (C++ style of output).
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeC_Once(...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, _LOGME_ONCE_OVR() _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, LOGMEP_ONCE_OVR() _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 
 // Log with interval (rate-limited)
@@ -471,7 +471,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeD_Every(ms, ...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
 #else
 /// <summary>
 /// Writes DEBUG log message at most once per interval per call site (printf-style when called with a format string) or returns a stream (C++ style of output).
@@ -479,7 +479,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeD_Every(ms, ...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, _LOGME_RATE_OVR(ms) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, LOGMEP_RATE_OVR(ms) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 
 #ifdef _MSC_VER
@@ -489,7 +489,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeI_Every(ms, ...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
 #else
 /// <summary>
 /// Writes INFO log message at most once per interval per call site (printf-style when called with a format string) or returns a stream (C++ style of output).
@@ -497,7 +497,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeI_Every(ms, ...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, _LOGME_RATE_OVR(ms) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, LOGMEP_RATE_OVR(ms) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 
 #ifdef _MSC_VER
@@ -507,7 +507,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeW_Every(ms, ...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
 #else
 /// <summary>
 /// Writes WARN log message at most once per interval per call site (printf-style when called with a format string) or returns a stream (C++ style of output).
@@ -515,7 +515,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeW_Every(ms, ...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, _LOGME_RATE_OVR(ms) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, LOGMEP_RATE_OVR(ms) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 
 #ifdef _MSC_VER
@@ -525,7 +525,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeE_Every(ms, ...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
 #else
 /// <summary>
 /// Writes ERROR log message at most once per interval per call site (printf-style when called with a format string) or returns a stream (C++ style of output).
@@ -533,7 +533,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeE_Every(ms, ...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, _LOGME_RATE_OVR(ms) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, LOGMEP_RATE_OVR(ms) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 
 #ifdef _MSC_VER
@@ -543,7 +543,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeC_Every(ms, ...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
 #else
 /// <summary>
 /// Writes CRITICAL log message at most once per interval per call site (printf-style when called with a format string) or returns a stream (C++ style of output).
@@ -551,7 +551,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeC_Every(ms, ...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, _LOGME_RATE_OVR(ms) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, LOGMEP_RATE_OVR(ms) _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 
 // std::format
@@ -765,35 +765,35 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeD_Once(...) \
-  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), _LOGME_ONCE_OVR(), ## __VA_ARGS__)
+  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes INFO message using std::format-style formatting once per call site.
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeI_Once(...) \
-  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), _LOGME_ONCE_OVR(), ## __VA_ARGS__)
+  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes WARN message using std::format-style formatting once per call site.
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeW_Once(...) \
-  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), _LOGME_ONCE_OVR(), ## __VA_ARGS__)
+  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes ERROR message using std::format-style formatting once per call site.
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeE_Once(...) \
-  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), _LOGME_ONCE_OVR(), ## __VA_ARGS__)
+  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes CRITICAL message using std::format-style formatting once per call site.
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeC_Once(...) \
-  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), _LOGME_ONCE_OVR(), ## __VA_ARGS__)
+  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes DEBUG message using std::format-style formatting and global CH/SUBSID once per call site.
@@ -801,7 +801,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeDg_Once(...) \
-  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), _LOGME_ONCE_OVR(), ## __VA_ARGS__)
+  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes INFO message using std::format-style formatting and global CH/SUBSID once per call site.
@@ -809,7 +809,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeIg_Once(...) \
-  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), _LOGME_ONCE_OVR(), ## __VA_ARGS__)
+  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes WARN message using std::format-style formatting and global CH/SUBSID once per call site.
@@ -817,7 +817,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeWg_Once(...) \
-  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), _LOGME_ONCE_OVR(), ## __VA_ARGS__)
+  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes ERROR message using std::format-style formatting and global CH/SUBSID once per call site.
@@ -825,7 +825,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeEg_Once(...) \
-  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), _LOGME_ONCE_OVR(), ## __VA_ARGS__)
+  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes CRITICAL message using std::format-style formatting and global CH/SUBSID once per call site.
@@ -833,7 +833,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeCg_Once(...) \
-  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), _LOGME_ONCE_OVR(), ## __VA_ARGS__)
+  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes DEBUG message using std::format-style formatting at most once per interval per call site.
@@ -841,7 +841,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeD_Every(ms, ...) \
-  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
+  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes INFO message using std::format-style formatting at most once per interval per call site.
@@ -849,7 +849,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeI_Every(ms, ...) \
-  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
+  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes WARN message using std::format-style formatting at most once per interval per call site.
@@ -857,7 +857,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeW_Every(ms, ...) \
-  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
+  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes ERROR message using std::format-style formatting at most once per interval per call site.
@@ -865,7 +865,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeE_Every(ms, ...) \
-  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
+  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes CRITICAL message using std::format-style formatting at most once per interval per call site.
@@ -873,7 +873,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeC_Every(ms, ...) \
-  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
+  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes DEBUG message using std::format-style formatting and global CH/SUBSID at most once per interval per call site.
@@ -882,7 +882,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeDg_Every(ms, ...) \
-  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
+  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes INFO message using std::format-style formatting and global CH/SUBSID at most once per interval per call site.
@@ -891,7 +891,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeIg_Every(ms, ...) \
-  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
+  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes WARN message using std::format-style formatting and global CH/SUBSID at most once per interval per call site.
@@ -900,7 +900,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeWg_Every(ms, ...) \
-  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
+  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes ERROR message using std::format-style formatting and global CH/SUBSID at most once per interval per call site.
@@ -909,7 +909,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeEg_Every(ms, ...) \
-  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
+  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes CRITICAL message using std::format-style formatting and global CH/SUBSID at most once per interval per call site.
@@ -918,7 +918,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeCg_Every(ms, ...) \
-  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), _LOGME_RATE_OVR(ms), ## __VA_ARGS__)
+  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
 
 
 #define fLogmeD_Do0(ch, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (Logme::Detail::WouldLog(Logme::Instance.get(), Logme::Level::LEVEL_DEBUG, _logme_resolved_ch_)) { LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_DEBUG, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)

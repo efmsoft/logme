@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <chrono>
 #include <cstring>
 
 #include <Logme/AnsiColorEscape.h>
@@ -229,7 +230,16 @@ bool ConsoleManager::PushRecord(
     if (forceBlock)
     {
       CONSOLE_CNT(Counters.BlockedCalls++);
-      NotFull.wait(lock, hasSpace);
+      while (!hasSpace() && !Stopping() && WorkerAvailable())
+      {
+        NotFull.wait_for(
+          lock
+          , std::chrono::milliseconds(100)
+        );
+      }
+
+      if (!hasSpace())
+        DrainPending(lock);
     }
     else
     {
@@ -237,7 +247,16 @@ bool ConsoleManager::PushRecord(
       {
         case ConsoleOverflowPolicy::BLOCK:
           CONSOLE_CNT(Counters.BlockedCalls++);
-          NotFull.wait(lock, hasSpace);
+          while (!hasSpace() && !Stopping() && WorkerAvailable())
+          {
+            NotFull.wait_for(
+              lock
+              , std::chrono::milliseconds(100)
+            );
+          }
+
+          if (!hasSpace())
+            DrainPending(lock);
           break;
 
         case ConsoleOverflowPolicy::DROP_NEW:
@@ -375,7 +394,22 @@ void ConsoleManager::Flush()
   {
     std::unique_lock lock(Lock);
     CV.notify_one();
-    NotFull.wait(lock, [this]() { return Buffer.empty() && !Processing; });
+
+    while (Processing && WorkerAvailable())
+    {
+      NotFull.wait_for(
+        lock
+        , std::chrono::milliseconds(100)
+      );
+    }
+
+    if (Processing && !WorkerAvailable())
+    {
+      Processing = false;
+      NotFull.notify_all();
+    }
+
+    DrainPending(lock);
 
     stdoutBackend = RedirectStdout;
     stderrBackend = RedirectStderr;
@@ -444,6 +478,38 @@ static bool ThreadExists(uint64_t threadId)
   return exitCode == STILL_ACTIVE;
 }
 #endif
+
+bool ConsoleManager::WorkerAvailable() const
+{
+#ifdef _WIN32
+  return ThreadID != 0 && ThreadExists(ThreadID);
+#else
+  return ManagerThread.joinable() && !Stopping();
+#endif
+}
+
+void ConsoleManager::DrainPending(std::unique_lock<std::mutex>& lock)
+{
+  while (!Buffer.empty())
+  {
+    std::vector<unsigned char> buffer;
+
+    buffer.swap(Buffer);
+    Processing = true;
+    QueuedRecords = 0;
+    QueuedBytes = 0;
+    CONSOLE_CNT(Counters.QueuedRecords = 0);
+    CONSOLE_CNT(Counters.QueuedBytes = 0);
+    NotFull.notify_all();
+
+    lock.unlock();
+    ProcessBuffer(buffer);
+    lock.lock();
+
+    Processing = false;
+    NotFull.notify_all();
+  }
+}
 
 void ConsoleManager::SetStopping()
 {

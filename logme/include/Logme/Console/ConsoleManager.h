@@ -132,6 +132,8 @@ namespace Logme
       , bool forceBlock
     );
     bool DropOldest(size_t recordSize);
+    bool WorkerAvailable() const;
+    void DrainPending(std::unique_lock<std::mutex>& lock);
     FileBackendPtr GetRedirectBackend(
       const ChannelPtr& owner
       , ConsoleTarget target

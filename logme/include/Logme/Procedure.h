@@ -78,6 +78,17 @@ namespace Logme
   static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); \
   const Logme::Context& _procContext = LOGME_CONTEXT(LOGME_JOIN(_logme_ctx_, __LINE__), level, &CH, &SUBSID __VA_OPT__(,) __VA_ARGS__); \
   Logme::Procedure logme_proc(_procContext, nullptr _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+#elif defined(__GNUC__)
+  #define LOGMEP_LogmeP(level, retval, ...) \
+    unsigned char _procStorage[sizeof(Logme::PrinterT<int>)]; \
+    static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); \
+    const Logme::Context& _procContext = LOGME_CONTEXT(LOGME_JOIN(_logme_ctx_, __LINE__), level, &CH, &SUBSID, ## __VA_ARGS__); \
+    Logme::Procedure logme_proc(_procContext, Logme::CreatePrinter(retval, _procStorage), ## __VA_ARGS__)
+
+  #define LOGMEP_LogmePV(level, ...) \
+    static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); \
+    const Logme::Context& _procContext = LOGME_CONTEXT(LOGME_JOIN(_logme_ctx_, __LINE__), level, &CH, &SUBSID, ## __VA_ARGS__); \
+    Logme::Procedure logme_proc(_procContext, nullptr _LOGME_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #else
 #define LOGMEP_LogmeP(level, retval, ...) \
   unsigned char _procStorage[sizeof(Logme::PrinterT<int>)]; \

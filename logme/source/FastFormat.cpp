@@ -515,9 +515,16 @@ namespace
     if (entry.SpecCount == 2)
       maxArg2 = GetMaxArgTextSize(entry.Kind2);
 
-    if (maxArg1)
+    if (maxArg1 > 0 && (entry.SpecCount < 2 || maxArg2 > 0))
     {
-      size_t maxSize = (size_t)entry.Part0Len + (size_t)entry.Part1Len + (size_t)entry.Part2Len + maxArg1 + maxArg2 + 1;
+      size_t maxSize = 
+        (size_t)entry.Part0Len
+        + (size_t)entry.Part1Len
+        + (size_t)entry.Part2Len
+        + maxArg1
+        + maxArg2
+        + 1;
+
       entry.BufferSizeHint = AlignBufferSizeHint(maxSize);
     }
 

@@ -34,8 +34,8 @@ namespace Logme
 
     ContextCache()
       : State(ContextCacheState::EMPTY)
+      , Ffe{}
     {
-      Ffe.Format = nullptr;
     }  
   };
 

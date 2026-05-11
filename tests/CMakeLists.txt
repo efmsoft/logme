@@ -27,6 +27,7 @@ if(GTEST)
 
     add_subdirectory(ChannelRedirect)
     add_subdirectory(ConsoleBackend)
+    add_subdirectory(FastFormat)
     add_subdirectory(LevelFilter)
     add_subdirectory(OutputFlags)
     if(TARGET logmefmt AND TARGET logmeobf)

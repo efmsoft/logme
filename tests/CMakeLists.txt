@@ -47,3 +47,4 @@ endif()
 
 add_subdirectory(TestAll)
 add_subdirectory(NoInRelease)   
+add_subdirectory(CApi)

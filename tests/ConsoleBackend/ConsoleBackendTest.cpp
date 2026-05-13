@@ -77,7 +77,9 @@ namespace
 
       if (SavedFd >= 0)
       {
-        LOGME_TEST_DUP2(SavedFd, Fd);
+        auto v = LOGME_TEST_DUP2(SavedFd, Fd);
+        (void)v;
+
         LOGME_TEST_CLOSE(SavedFd);
       }
     }

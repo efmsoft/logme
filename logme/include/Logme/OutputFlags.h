@@ -1,8 +1,11 @@
 #pragma once
 
-#include <map>
 #include <stdint.h>
+
+#ifdef __cplusplus
+#include <map>
 #include <string>
+#endif
 
 #include <Logme/Types.h>
 
@@ -25,8 +28,10 @@
 #endif
 
 
+#ifdef __cplusplus
 namespace Logme
 {
+#endif
   enum OutputField
   {
     OUTPUT_FIELD_TIMESTAMP,
@@ -43,6 +48,7 @@ namespace Logme
     OUTPUT_FIELD_COUNT
   };
 
+#ifdef __cplusplus
   typedef std::map<OutputField, std::string> OutputFieldNameMap;
 
   /// <summary>Sets the structured output field name used by JSON/XML formatters.</summary>
@@ -53,6 +59,7 @@ namespace Logme
   LOGMELNK void ResetOutputFieldNames();
   /// <summary>Applies multiple structured output field names at once.</summary>
   LOGMELNK void SetOutputFieldNames(const OutputFieldNameMap& names);
+#endif
 
   /// <summary>
   /// Bit-field set controlling which parts of a log record are printed and how they are printed.
@@ -89,6 +96,7 @@ namespace Logme
       uint32_t None : 1; // Invalid flags bit
     };
 
+#ifdef __cplusplus
     /// <summary>
     /// Creates the default output flag set used by channels: timestamp, level signature, method name,
     /// error prefix, console highlighting, line ending, and thread-transition logging are enabled.
@@ -105,10 +113,16 @@ namespace Logme
     LOGMELNK std::string LocationType() const;
     /// <summary>Returns the readable name of the selected console-output routing mode.</summary>
     LOGMELNK std::string ConsoleType() const;
+#endif
   };
 
+#ifdef __cplusplus
   typedef std::map<std::string, OutputFlags> OutputFlagsMap;
+#endif
+
+#ifdef __cplusplus
 }
+#endif
 
 #if defined(__clang__)
   #pragma clang diagnostic pop

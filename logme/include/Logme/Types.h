@@ -1,8 +1,11 @@
 #pragma once
 
+#include <stdint.h>
+
+#ifdef __cplusplus
 #include <memory>
 #include <mutex>
-#include <stdint.h>
+#endif
 
 // printf-format for uint64_t as uppercase hex (no 0x prefix).
 // Use LOGME_ prefix to avoid collisions with other projects.
@@ -22,8 +25,10 @@
 typedef struct x509_st X509;
 typedef struct evp_pkey_st EVP_PKEY;
 
+#ifdef __cplusplus
 namespace Logme
 {
+#endif
   enum Result
   {
     RC_NOERROR,
@@ -39,6 +44,7 @@ namespace Logme
     LEVEL_CRITICAL,
   };
 
+#ifdef __cplusplus
 #if defined(_MSC_VER)
   #pragma warning(push)
   #pragma warning(disable : 26812)
@@ -46,6 +52,7 @@ namespace Logme
   static constexpr const Level DEFAULT_LEVEL = Level::LEVEL_INFO;
 #if defined(_MSC_VER)
   #pragma warning(pop)
+#endif
 #endif
 
   enum Detality
@@ -79,6 +86,7 @@ namespace Logme
     OUTPUT_XML
   };
 
+#ifdef __cplusplus
   struct ControlConfig
   {
     bool Enable;
@@ -127,7 +135,11 @@ namespace Logme
   #define xuint32_t HexType<uint32_t>
   #define xint64_t HexType<int64_t>
   #define xuint64_t HexType<uint64_t>
+#endif
+
+#ifdef __cplusplus
 }
+#endif
 
 #if defined(_MSC_VER) && defined(_MSVC_TRADITIONAL) && _MSVC_TRADITIONAL
 #define LOGMEP_NONEMPTY(...) ,

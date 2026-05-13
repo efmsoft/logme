@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef __cplusplus
+#include <Logme/LogmeC.h>
+#else
+
 #include <Logme/AllStatI.h>
 #include <Logme/AnsiColorEscape.h>
 #include <Logme/ArgumentList.h>
@@ -1041,3 +1045,5 @@
 /// <param name="ovr">Override object used by log records from this scope.</param>
 #define LogmeThreadOverride(ovr) \
   Logme::ThreadOverride _logme_thread_override(Logme::Instance, ovr)
+
+#endif

@@ -20,6 +20,35 @@ It is designed for both high-load servers and simple applications, providing sel
 
 ---
 
+## Why logme is more than a logger
+
+**logme** is designed as a logging infrastructure layer, not just a set of formatting macros. Its core model is built around runtime control: channels, subsystems, links, backends, output flags, and configuration can be changed while the application is running. This makes it useful for production systems where detailed diagnostics must be enabled only when needed and only for the affected component.
+
+The project also includes companion tools and operational features: `logmectl` for runtime control, `logmefmt` for converting readable logme output to JSON/XML, `logmeobf` for log obfuscation, file rotation and retention, structured output, function tracing/profiling macros, and early/boot logging support.
+
+For the design background, see the logging articles at [tips.efmsoft.com](https://tips.efmsoft.com/ru/logging-ru/).
+
+---
+
+## Performance highlights
+
+Performance is one of logme's main design goals, especially when logging is disabled, filtered out, or routed to asynchronous output. The separate [logbench](https://github.com/efmsoft/logbench) repository contains a reproducible benchmark suite and an article with charts and methodology.
+
+Recent throughput results, measured as completed cycles during the same benchmark interval:
+
+| Library | null | file | console | file+console |
+|---|---:|---:|---:|---:|
+| logme (c) | 1,121,998,419 | 153,752,170 | 325,518 | 359,772 |
+| logme (cpp-stream) | 1,053,074,266 | 24,290,646 | 335,276 | 364,349 |
+| logme (std::format) | 1,082,512,863 | 90,255,191 | 362,369 | 365,770 |
+| spdlog | 244,991,156 | 118,546,708 | 368,944 | 355,449 |
+| quill | 1,568,610 | 1,357,532 | 191,531 | 200,378 |
+| easylogging++ | 25,597,177 | 1,656,726 | 356,948 | 277,846 |
+
+The result is not based on a single trick. logme combines early filtering, call-site context caching, low-cost disabled paths, multiple formatting APIs, asynchronous file output, and runtime routing designed to avoid doing unnecessary work in hot paths.
+
+See the wiki pages [Performance](https://github.com/efmsoft/logme/wiki/Performance) and [Why logme is fast](https://github.com/efmsoft/logme/wiki/Why-logme-is-fast) for details.
+
 ## Key features
 
 - **Runtime control** via a built-in control server: enable, disable, and reconfigure logging dynamically without restarting or recompiling the application.

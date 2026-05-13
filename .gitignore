@@ -35,5 +35,6 @@ out/
 build/
 .vscode/
 bin/
+*.user
 obj/
 .idea/

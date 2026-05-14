@@ -1,4 +1,8 @@
+<img src="docs/assets/logme.png" align="left" height="96px">
+
 # logme
+
+<br clear="all" />
 
 [![CI](https://github.com/efmsoft/logme/actions/workflows/ci.yml/badge.svg)](https://github.com/efmsoft/logme/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/efmsoft/logme)](https://github.com/efmsoft/logme/releases)

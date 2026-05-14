@@ -180,6 +180,8 @@ else()
 endif()
 
 set(LOGME_USE_JSONCPP ${LOGME_USE_JSONCPP} CACHE INTERNAL "Resolved JsonCpp usage" FORCE)
+# Keep legacy subdirectory checks like if(USE_JSONCPP) safe when AUTO resolves to disabled.
+set(USE_JSONCPP ${LOGME_USE_JSONCPP})
 
 if(LOGME_BUILD_STATIC)
  add_subdirectory(logme out/Static)

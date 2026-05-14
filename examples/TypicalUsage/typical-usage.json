@@ -1,0 +1,20 @@
+{
+  "channels": [
+    {
+      "name": "",
+      "level": "debug",
+      "backends": [
+        {
+          "type": "ConsoleBackend",
+          "async": false
+        },
+        {
+          "type": "FileBackend",
+          "append": true,
+          "max-size": "1Mb",
+          "file": "typical-usage-config.log"
+        }
+      ]
+    }
+  ]
+}

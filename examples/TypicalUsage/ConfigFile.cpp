@@ -2,15 +2,38 @@
 
 #include <Logme/Logme.h>
 
-static bool LoadLogmeConfiguration(const std::string& path)
+static const char* TYPICAL_USAGE_CONFIGURATION = R"json(
+{
+  "channels": [
+    {
+      "name": "",
+      "level": "debug",
+      "backends": [
+        {
+          "type": "ConsoleBackend",
+          "async": false
+        },
+        {
+          "type": "FileBackend",
+          "append": true,
+          "max-size": "1Mb",
+          "file": "typical-usage-config.log"
+        }
+      ]
+    }
+  ]
+}
+)json";
+
+static bool LoadLogmeConfiguration()
 {
   std::string error;
-  if (Logme::Instance->LoadConfigurationFile(path, std::string(), &error))
+  if (Logme::Instance->LoadConfiguration(TYPICAL_USAGE_CONFIGURATION, std::string(), &error))
   {
     return true;
   }
 
-  LogmeE("cannot load logme configuration '%s': %s", path.c_str(), error.c_str());
+  LogmeE("cannot load logme configuration: %s", error.c_str());
   return false;
 }
 
@@ -20,18 +43,14 @@ static void ProcessRequest(int requestId)
   LogmeW("request %d took longer than expected", requestId);
 }
 
-int main(int argc, char* argv[])
+int main()
 {
-  const char* configPath = argc > 1
-    ? argv[1]
-    : "typical-usage.json";
-
-  if (!LoadLogmeConfiguration(configPath))
+  if (!LoadLogmeConfiguration())
   {
     return 1;
   }
 
-  LogmeI("application started with configuration file '%s'", configPath);
+  LogmeI("application started with embedded configuration");
 
   ProcessRequest(1001);
   LogmeE("example error record");

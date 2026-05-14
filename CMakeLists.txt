@@ -43,7 +43,8 @@ option(LOGME_BUILD_STATIC "Build logme as static library" ON)
 option(LOGME_BUILD_DYNAMIC "Build logme as dynamic library" ON)
 option(LOGME_BUILD_TOOLS "Build logme tools" ON)
 
-option(USE_JSONCPP "Enable JsonCpp support" OFF)
+set(USE_JSONCPP "AUTO" CACHE STRING "JsonCpp support: AUTO, ON, or OFF")
+set_property(CACHE USE_JSONCPP PROPERTY STRINGS AUTO ON OFF)
 
 set(LOGME_FMT_FORMAT "AUTO" CACHE STRING "fmt formatting logging API: AUTO, ON, or OFF")
 set_property(CACHE LOGME_FMT_FORMAT PROPERTY STRINGS AUTO ON OFF)
@@ -74,6 +75,7 @@ int main()
 
 string(TOUPPER "${LOGME_FMT_FORMAT}" _LOGME_FMT_FORMAT_MODE)
 string(TOUPPER "${LOGME_STD_FORMAT}" _LOGME_STD_FORMAT_MODE)
+string(TOUPPER "${USE_JSONCPP}" _LOGME_JSONCPP_MODE)
 
 foreach(_LOGME_FORMAT_MODE_NAME _LOGME_FMT_FORMAT_MODE _LOGME_STD_FORMAT_MODE)
   if(NOT "${${_LOGME_FORMAT_MODE_NAME}}" STREQUAL "AUTO"
@@ -85,6 +87,14 @@ endforeach()
 
 set(LOGME_FMT_FORMAT "${_LOGME_FMT_FORMAT_MODE}" CACHE STRING "fmt formatting logging API: AUTO, ON, or OFF" FORCE)
 set(LOGME_STD_FORMAT "${_LOGME_STD_FORMAT_MODE}" CACHE STRING "std::format logging API: AUTO, ON, or OFF" FORCE)
+
+if(NOT "${_LOGME_JSONCPP_MODE}" STREQUAL "AUTO"
+  AND NOT "${_LOGME_JSONCPP_MODE}" STREQUAL "ON"
+  AND NOT "${_LOGME_JSONCPP_MODE}" STREQUAL "OFF")
+  message(FATAL_ERROR "USE_JSONCPP must be AUTO, ON, or OFF")
+endif()
+
+set(USE_JSONCPP "${_LOGME_JSONCPP_MODE}" CACHE STRING "JsonCpp support: AUTO, ON, or OFF" FORCE)
 
 if(_LOGME_FMT_FORMAT_MODE STREQUAL "ON" AND _LOGME_STD_FORMAT_MODE STREQUAL "ON")
   message(FATAL_ERROR "LOGME_FMT_FORMAT=ON and LOGME_STD_FORMAT=ON are mutually exclusive")
@@ -144,10 +154,32 @@ if (LOGME_USE_FMT_FORMAT)
 endif()
 
 
-if(USE_JSONCPP)
-  find_package(jsoncpp CONFIG REQUIRED)
-  set(JSONCPP_LIBRARIES JsonCpp::JsonCpp)
+set(LOGME_USE_JSONCPP 0)
+set(JSONCPP_LIBRARIES "")
+
+if(NOT _LOGME_JSONCPP_MODE STREQUAL "OFF")
+  if(_LOGME_JSONCPP_MODE STREQUAL "ON")
+    find_package(jsoncpp CONFIG REQUIRED)
+  else()
+    find_package(jsoncpp CONFIG QUIET)
+  endif()
+
+  if(TARGET JsonCpp::JsonCpp)
+    set(LOGME_USE_JSONCPP 1)
+    set(JSONCPP_LIBRARIES JsonCpp::JsonCpp)
+  elseif(_LOGME_JSONCPP_MODE STREQUAL "ON")
+    message(FATAL_ERROR "USE_JSONCPP=ON but JsonCpp::JsonCpp is not available")
+  endif()
 endif()
+
+message(STATUS "USE_JSONCPP = ${USE_JSONCPP}")
+if(LOGME_USE_JSONCPP)
+  message(STATUS "Logme JsonCpp support: enabled")
+else()
+  message(STATUS "Logme JsonCpp support: disabled")
+endif()
+
+set(LOGME_USE_JSONCPP ${LOGME_USE_JSONCPP} CACHE INTERNAL "Resolved JsonCpp usage" FORCE)
 
 if(LOGME_BUILD_STATIC)
  add_subdirectory(logme out/Static)

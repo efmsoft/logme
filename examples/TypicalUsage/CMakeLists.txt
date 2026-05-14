@@ -43,6 +43,13 @@ if(LOGME_LINK_TARGET STREQUAL "logme")
   )
 endif()
 
+if (WIN32)
+  target_link_libraries(TypicalUsageOutOfBox PRIVATE ws2_32)
+  target_link_libraries(TypicalUsageCodeConfiguration PRIVATE ws2_32)
+  target_link_libraries(TypicalUsageConfigFile PRIVATE ws2_32)
+endif()
+
+
 set_target_properties(TypicalUsageOutOfBox PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Examples"
 )

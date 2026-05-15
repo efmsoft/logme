@@ -25,6 +25,7 @@ Channel::Channel(
   , BackendCount(0)
   , Active(false)
   , AccessCount(0)
+  , LoggedBytes(0)
   , ShortenerList(nullptr)
 {
 }
@@ -376,6 +377,16 @@ bool Channel::GetActive() const
 uint64_t Channel::GetAccessCount() const
 {
   return AccessCount.load(std::memory_order_relaxed);
+}
+
+void Channel::AddLoggedBytes(uint64_t bytes)
+{
+  LoggedBytes.fetch_add(bytes, std::memory_order_relaxed);
+}
+
+uint64_t Channel::GetLoggedBytes() const
+{
+  return LoggedBytes.load(std::memory_order_relaxed);
 }
 
 Logger* Channel::GetOwner() const

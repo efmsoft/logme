@@ -60,6 +60,7 @@ namespace Logme
 
     BackendArray Backends;
     std::atomic<uint64_t> AccessCount;
+    std::atomic<uint64_t> LoggedBytes;
 
     IDPtr Link;
     ChannelPtr LinkTo;
@@ -199,6 +200,18 @@ namespace Logme
     /// </summary>
     /// <returns>Access counter value.</returns>
     LOGMELNK uint64_t GetAccessCount() const;
+
+    /// <summary>
+    /// Adds formatted output byte count to channel statistics.
+    /// </summary>
+    /// <param name="bytes">Number of bytes produced for one log record.</param>
+    LOGMELNK void AddLoggedBytes(uint64_t bytes);
+
+    /// <summary>
+    /// Returns total number of formatted bytes produced by this channel.
+    /// </summary>
+    /// <returns>Formatted byte counter value.</returns>
+    LOGMELNK uint64_t GetLoggedBytes() const;
 
     /// <summary>
     /// Links this channel to channel id.

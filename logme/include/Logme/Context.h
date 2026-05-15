@@ -95,6 +95,7 @@ namespace Logme
     OutputFlags Applied;
     const char* LastData;
     int LastLen;
+    bool LoggedBytesCounted;
 
     char Buffer[OUTPUT_BUFFER_SIZE];
     std::unique_ptr<char[]> ExtBuffer;

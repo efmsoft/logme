@@ -672,6 +672,8 @@ namespace Logme
     static bool CommandLevel(StringArray& arr, std::string& response);
 
     static bool CommandTrace(StringArray& arr, std::string& response);
+
+    static bool CommandOverview(StringArray& arr, std::string& response);
   };
 
   typedef std::shared_ptr<Logger> LoggerPtr;

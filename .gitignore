@@ -38,3 +38,4 @@ bin/
 *.user
 obj/
 .idea/
+*.pyc

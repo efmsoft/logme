@@ -3,6 +3,9 @@
 #include <string>
 
 #include <Logme/Backend/Backend.h>
+#include <Logme/Backend/ConsoleBackend.h>
+#include <Logme/Backend/FileBackend.h>
+#include <Logme/Backend/SharedFileBackend.h>
 #include <Logme/Logger.h>
 
 #include "../CommandRegistrar.h"
@@ -151,6 +154,75 @@ bool Logger::CommandBackend(Logme::StringArray& arr, std::string& response)
     if (!backend)
     {
       response = "error: unknown backend type: " + typeInput;
+      return true;
+    }
+
+    BackendConfigPtr config = backend->CreateConfig();
+
+    for (size_t i = index + 2; i < arr.size(); ++i)
+    {
+      const std::string& arg = arr[i];
+
+      if (arg == "--async")
+      {
+        auto consoleConfig = std::dynamic_pointer_cast<ConsoleBackendConfig>(config);
+        if (consoleConfig)
+        {
+          consoleConfig->Async = true;
+          continue;
+        }
+
+        response = "error: --async is only supported by ConsoleBackend";
+        return true;
+      }
+
+      if (arg == "--file")
+      {
+        if (i + 1 >= arr.size())
+        {
+          response = "error: missing file name";
+          return true;
+        }
+
+        auto fileConfig = std::dynamic_pointer_cast<FileBackendConfig>(config);
+        auto sharedFileConfig = std::dynamic_pointer_cast<SharedFileBackendConfig>(config);
+
+        if (fileConfig)
+        {
+          fileConfig->Filename = arr[++i];
+          continue;
+        }
+
+        if (sharedFileConfig)
+        {
+          sharedFileConfig->Filename = arr[++i];
+          continue;
+        }
+
+        response = "error: --file is only supported by file backends";
+        return true;
+      }
+
+      if (arg == "--append" || arg == "--overwrite")
+      {
+        auto fileConfig = std::dynamic_pointer_cast<FileBackendConfig>(config);
+        if (fileConfig)
+        {
+          fileConfig->Append = (arg == "--append");
+          continue;
+        }
+
+        response = "error: " + arg + " is only supported by FileBackend";
+        return true;
+      }
+
+      response = "error: unknown backend option: " + arg;
+      return true;
+    }
+
+    if (config && !backend->ApplyConfig(config))
+    {
+      response = "error: failed to apply backend configuration";
       return true;
     }
 

@@ -28,6 +28,17 @@ using namespace Logme;
 
 namespace
 {
+  const char* CountLoggedBytesAndReturn(Context& context, const ChannelPtr& ch, int nc, const char* data)
+  {
+    if (!context.LoggedBytesCounted && ch)
+    {
+      ch->AddLoggedBytes((uint64_t)nc);
+      context.LoggedBytesCounted = true;
+    }
+
+    return data;
+  }
+
   const char* GetStructuredLevelName(Level level)
   {
     switch (level)
@@ -749,15 +760,21 @@ const char* Context::Apply(const ChannelPtr& ch, OutputFlags flags, int& nc)
   flags.ProcPrintIn = Applied.ProcPrintIn;
 
   if (flags.Format == OUTPUT_JSON)
-    return ApplyJson(ch, flags, nc);
+  {
+    const char* data = ApplyJson(ch, flags, nc);
+    return CountLoggedBytesAndReturn(*this, ch, nc, data);
+  }
 
   if (flags.Format == OUTPUT_XML)
-    return ApplyXml(ch, flags, nc);
+  {
+    const char* data = ApplyXml(ch, flags, nc);
+    return CountLoggedBytesAndReturn(*this, ch, nc, data);
+  }
 
   if (Applied.Value == flags.Value)
   {
     nc = LastLen;
-    return LastData;
+    return CountLoggedBytesAndReturn(*this, ch, nc, LastData);
   }
 
   *Buffer = '\0';
@@ -891,7 +908,7 @@ const char* Context::Apply(const ChannelPtr& ch, OutputFlags flags, int& nc)
       Applied.Value = flags.Value;
       
       nc = LastLen;
-      return LastData;
+      return CountLoggedBytesAndReturn(*this, ch, nc, LastData);
     }
   }
 
@@ -989,6 +1006,6 @@ const char* Context::Apply(const ChannelPtr& ch, OutputFlags flags, int& nc)
   LastLen = n - 1;
 
   nc = LastLen;
-  return buffer;
+  return CountLoggedBytesAndReturn(*this, ch, nc, buffer);
 }
 

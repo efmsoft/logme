@@ -73,13 +73,13 @@ body
 
 .hero-logo
 {
-  width: 118px;
-  height: 118px;
+  width: 96px;
+  height: 96px;
   object-fit: contain;
-  border-radius: 28px;
+  border-radius: 22px;
   background: rgba(255, 255, 255, 0.92);
   box-shadow: 0 20px 48px rgba(0, 0, 0, 0.28);
-  padding: 8px;
+  padding: 4px;
 }
 
 .hero h1
@@ -113,7 +113,7 @@ body
   grid-template-columns: minmax(0, 1.7fr) minmax(320px, 0.8fr);
   gap: 24px;
   padding: 28px 56px;
-  margin-top: -64px;
+  margin-top: 24px;
 }
 
 .card
@@ -296,12 +296,12 @@ button.full
 
 .brand-logo
 {
-  width: 46px;
-  height: 46px;
+  width: 40px;
+  height: 40px;
   object-fit: contain;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.96);
-  padding: 3px;
+  padding: 2px;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
 }
 
@@ -732,4 +732,554 @@ pre
   {
     grid-template-columns: 1fr;
   }
+}
+
+.filter-input
+{
+  width: 100%;
+  box-sizing: border-box;
+  margin: 10px 0 12px 0;
+}
+
+.detail-grid
+{
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 18px;
+  align-items: start;
+}
+
+.detail-main
+{
+  min-width: 0;
+}
+
+.side-actions
+{
+  position: sticky;
+  top: 16px;
+}
+
+.side-actions hr
+{
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin: 16px 0;
+}
+
+.selected-entity
+{
+  font-family: Consolas, Monaco, monospace;
+  font-size: 13px;
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.button-row
+{
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+button.danger
+{
+  background: #6d2630;
+  color: #fff;
+  border: 1px solid #9b3944;
+}
+
+button.danger:disabled
+{
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.compact-card
+{
+  margin-top: 16px;
+}
+
+.compact-card h3
+{
+  margin-top: 0;
+}
+
+@media (max-width: 1100px)
+{
+  .detail-grid
+  {
+    grid-template-columns: 1fr;
+  }
+
+  .side-actions
+  {
+    position: static;
+  }
+}
+
+.channel-detail-layout
+{
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 18px;
+  align-items: start;
+}
+
+.channel-detail-main
+{
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.compact-header
+{
+  align-items: center;
+}
+
+.compact-stats
+{
+  margin-top: 14px;
+}
+
+.backend-list
+{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.backend-item
+{
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.backend-name
+{
+  font-weight: 700;
+  color: var(--text);
+}
+
+.backend-details
+{
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-family: Consolas, Monaco, monospace;
+}
+
+.small-button
+{
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+.form-grid
+{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.check-line
+{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.check-line input
+{
+  width: auto;
+}
+
+.raw-details
+{
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.raw-details summary
+{
+  cursor: pointer;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.raw-details .result-card
+{
+  margin-top: 12px;
+}
+
+@media (max-width: 1000px)
+{
+  .channel-detail-layout
+  {
+    grid-template-columns: 1fr;
+  }
+}
+
+.overview-stats
+{
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+
+.channel-manager .detail-panel
+{
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.channel-properties
+{
+  display: grid;
+  gap: 0;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  background: white;
+}
+
+.property-row
+{
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.property-row:last-child
+{
+  border-bottom: 0;
+}
+
+.property-label
+{
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.property-value
+{
+  min-width: 0;
+  font-weight: 700;
+}
+
+.property-edit
+{
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.property-edit select,
+.property-edit input
+{
+  width: auto;
+  min-width: 190px;
+}
+
+.property-edit.wide-edit input
+{
+  flex: 1;
+  min-width: 260px;
+}
+
+.status-pill
+{
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: #eef3fb;
+  color: #42526c;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.status-pill.on
+{
+  background: #dff6ea;
+  color: #075b34;
+}
+
+.status-pill.off
+{
+  background: #ffe1e1;
+  color: #7a1717;
+}
+
+.status-text
+{
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.status-text.on
+{
+  color: #087047;
+}
+
+.status-text.off
+{
+  color: #a32222;
+}
+
+.flag-value-hint
+{
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+}
+
+#addFlagValueHolder
+{
+  display: inline-flex;
+  align-items: center;
+}
+
+.error-channel-chip
+{
+  background: #eef4ff;
+  color: #1d4c89;
+}
+
+.error-channel-chip button
+{
+  color: #1d4c89;
+}
+
+.inline-muted
+{
+  color: var(--muted);
+  font-weight: 500;
+}
+
+@media (max-width: 800px)
+{
+  .property-row
+  {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+.plain-properties .property-row
+{
+  align-items: flex-start;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  padding: 12px 0;
+}
+
+.inline-edit
+{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.inline-edit select
+{
+  width: auto;
+  min-width: 140px;
+}
+
+.inline-edit input
+{
+  width: auto;
+  min-width: 220px;
+}
+
+.current-value
+{
+  min-width: 90px;
+}
+
+.flag-value
+{
+  font-family: Consolas, Monaco, monospace;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.flag-chip-list
+{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.flag-chip
+{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #e9f7f3;
+  color: #0b7259;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.flag-chip button
+{
+  border: 0;
+  background: transparent;
+  color: #0b7259;
+  padding: 0 2px;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.flag-add-row
+{
+  margin-top: 8px;
+}
+
+.tall-row .property-value
+{
+  width: 100%;
+}
+
+.modal-backdrop
+{
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 20, 35, 0.55);
+  padding: 24px;
+}
+
+.modal-card
+{
+  width: min(680px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  background: var(--panel);
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.28);
+  padding: 24px;
+}
+
+.modal-actions
+{
+  margin-top: 18px;
+  justify-content: flex-end;
+}
+
+.frozen-badge
+{
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #fff3cd;
+  color: #8a6400;
+  font-size: 11px;
+  vertical-align: middle;
+}
+
+.backend-item.frozen
+{
+  opacity: 0.75;
+}
+
+.mono-value
+{
+  font-family: Consolas, Monaco, monospace;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+
+/* Channel details use a simple two-column form, not spreadsheet cells. */
+.plain-properties
+{
+  padding: 4px 18px;
+}
+
+.plain-properties .property-row
+{
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+  padding: 14px 0;
+}
+
+.plain-properties .property-label
+{
+  padding-left: 2px;
+  line-height: 1.3;
+}
+
+.plain-properties .property-value
+{
+  display: flex;
+  align-items: center;
+  min-height: 38px;
+}
+
+.plain-properties .property-value:not(.property-edit)
+{
+  font-size: 16px;
+}
+
+.plain-properties .tall-row
+{
+  align-items: start;
+}
+
+.plain-properties .tall-row .property-value
+{
+  display: block;
+}
+
+@media (max-width: 800px)
+{
+  .plain-properties .property-row
+  {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+#addBackendAdvanced
+{
+  display: contents;
+}
+
+.bound-channel-chip
+{
+  margin-right: 2px;
 }

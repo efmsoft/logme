@@ -74,6 +74,40 @@ bool ParseControlConfig(const Json::Value& root, ControlConfig& cc)
     }
   }
 
+  if (o.isMember("discovery"))
+  {
+    auto& d = o["discovery"];
+    if (!d.isObject())
+    {
+      LogmeE(CHINT, "\"control.discovery\" is not an object");
+      return false;
+    }
+
+    if (d.isMember("enable"))
+    {
+      if (!d["enable"].isBool())
+      {
+        LogmeE(CHINT, "\"control.discovery.enable\" is not a boolean value");
+        return false;
+      }
+
+      cc.DiscoveryEnable = d["enable"].asBool();
+    }
+
+    if (d.isMember("namePrefix"))
+    {
+      if (!d["namePrefix"].isString())
+      {
+        LogmeE(CHINT, "\"control.discovery.namePrefix\" is not a string value");
+        return false;
+      }
+
+      static std::string discoveryNamePrefix;
+      discoveryNamePrefix = d["namePrefix"].asString();
+      cc.DiscoveryNamePrefix = discoveryNamePrefix.c_str();
+    }
+  }
+
   if (cc.Enable && cc.Port == 0)
   {
     LogmeW(CHINT, "Disable control interface because of zero value of Port");

@@ -42,6 +42,7 @@
 #endif
 
 #include <Logme/Logme.h>
+#include "ControlDiscovery.h"
 #include <Logme/Utils.h>
 
 #include "CommandDescriptor.h"
@@ -379,6 +380,12 @@ void Logger::StopControlServer()
 {
   ThreadPtr thread;
 
+  if (ControlDiscoveryServer)
+  {
+    ControlDiscoveryServer->Stop();
+    ControlDiscoveryServer.reset();
+  }
+
   if (ControlSocket != -1)
   {
     std::lock_guard guard(DataLock);
@@ -499,7 +506,9 @@ bool Logger::StartControlServer(const ControlConfig& c)
 
   ControlCfg = c;
   ControlPassword = c.Password ? c.Password : "";
+  ControlDiscoveryNamePrefix = c.DiscoveryNamePrefix ? c.DiscoveryNamePrefix : "";
   ControlCfg.Password = ControlPassword.empty() ? nullptr : ControlPassword.c_str();
+  ControlCfg.DiscoveryNamePrefix = ControlDiscoveryNamePrefix.empty() ? nullptr : ControlDiscoveryNamePrefix.c_str();
 
   if (c.Cert && c.Key)
   {
@@ -566,6 +575,13 @@ bool Logger::StartControlServer(const ControlConfig& c)
     ControlSocket = -1;
 
     return false;
+  }
+
+  if (ControlCfg.DiscoveryEnable)
+  {
+    ControlDiscoveryServer.reset(new ControlDiscovery(ControlCfg));
+    if (!ControlDiscoveryServer->Start())
+      LogmeW(CHINT, "Unable to start control discovery endpoint");
   }
 
   ListenerThread = std::make_shared<std::thread>(&Logger::ControlListener, this);

@@ -41,6 +41,7 @@ namespace Logme
   struct StdFormat{};
 #endif
   struct ControlSslContext;
+  class ControlDiscovery;
   LOGMELNK extern bool ShutdownCalled;
 
   class Logger : public std::enable_shared_from_this<Logger>
@@ -73,6 +74,8 @@ namespace Logme
     std::string ControlPassword;
     TControlHandler ControlExtension;
     ControlSslContext* ControlSsl;
+    std::string ControlDiscoveryNamePrefix;
+    std::unique_ptr<ControlDiscovery> ControlDiscoveryServer;
     
     typedef std::shared_ptr<std::thread> ThreadPtr;
     ThreadPtr ListenerThread;

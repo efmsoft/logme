@@ -95,6 +95,8 @@ namespace Logme
     X509* Cert;
     EVP_PKEY* Key;
     const char* Password;
+    bool DiscoveryEnable = true;
+    const char* DiscoveryNamePrefix = nullptr;
   };
 
   struct NAMED_VALUE

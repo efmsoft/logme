@@ -9,6 +9,7 @@
 #include <Logme/FastFormat.h>
 #include <Logme/File/exe_path.h>
 #include <Logme/Logger.h>
+#include "Control/ControlDiscovery.h"
 #include <Logme/Time/datetime.h>
 #include <Logme/Utils.h>
 

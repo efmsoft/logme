@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>logme Control Center</title>
+  <link rel="icon" href="/static/assets/logme.png">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div id="app">
+    <section id="connectScreen" class="screen active">
+      <div class="hero">
+        <div class="hero-content">
+          <img class="hero-logo" src="/static/assets/logme.png" alt="logme logo">
+          <div>
+            <div class="eyebrow">runtime logging control</div>
+            <h1>logme Control Center</h1>
+            <p>Discover a running logme application, connect to its control server, and inspect or change logging state without restarting the process.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="connect-grid">
+        <div class="card discovered-card">
+          <div class="card-header">
+            <div>
+              <h2>Discovered applications</h2>
+              <p>Applications that expose logme discovery endpoint.</p>
+            </div>
+            <button class="secondary" id="refreshDiscoveryButton">Refresh</button>
+          </div>
+
+          <div id="discoveryStatus" class="muted status-line">Loading...</div>
+          <div id="discoveryList" class="discovery-list"></div>
+        </div>
+
+        <div class="card manual-card">
+          <h2>Manual connection</h2>
+          <p>Use this when discovery is disabled or you want to connect to a remote target.</p>
+
+          <label>Host</label>
+          <input id="manualHost" value="127.0.0.1">
+
+          <label>Port</label>
+          <input id="manualPort" type="number" value="7791">
+
+          <label>Protocol</label>
+          <select id="manualProtocol">
+            <option value="http">HTTP</option>
+            <option value="https">HTTPS</option>
+          </select>
+
+          <label>Password</label>
+          <input id="manualPassword" type="password" placeholder="Optional">
+
+          <button class="primary full" id="manualConnectButton">Connect</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="mainScreen" class="screen">
+      <aside class="sidebar">
+        <div class="brand">
+          <img class="brand-logo" src="/static/assets/logme.png" alt="logme logo">
+          <div>
+            <div class="brand-title">logme</div>
+            <div class="brand-subtitle">Control Center</div>
+          </div>
+        </div>
+
+        <div id="targetSummary" class="target-summary"></div>
+
+        <nav class="nav">
+          <button class="nav-item active" data-view="overview">Overview</button>
+          <button class="nav-item" data-view="channels">Channels</button>
+          <button class="nav-item" data-view="subsystems">Subsystems</button>
+          <button class="nav-item" data-view="tracepoints">Trace points</button>
+          <button class="nav-item" data-view="flags">Flags</button>
+          <button class="nav-item" data-view="manual">Manual command</button>
+        </nav>
+
+        <button class="secondary full" id="disconnectButton">Disconnect</button>
+      </aside>
+
+      <main class="workspace">
+        <div class="workspace-header">
+          <div>
+            <div class="eyebrow" id="viewEyebrow">connected target</div>
+            <h1 id="viewTitle">Overview</h1>
+          </div>
+          <button class="secondary" id="reloadViewButton">Reload</button>
+        </div>
+
+        <div id="workArea" class="work-area"></div>
+      </main>
+    </section>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

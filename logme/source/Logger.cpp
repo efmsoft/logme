@@ -44,6 +44,7 @@ Logger::Logger()
   , NumDeleting(0)
   , EnableVTMode(false)
   , Obfuscate(false)
+  , TracePoints(nullptr)
   , Condition(&Logger::DefaultCondition)
 {
   CreateDefaultChannelLayout();
@@ -980,6 +981,30 @@ void Logger::Log(
     return;
 
   Context& context2 = *(Context*)&context;
+  context2.Ovr = &ovr;
+  ApplyThreadChannel(context2);
+
+  va_list args;
+  va_start(args, format);
+
+  DoLog(context2, format, args);
+
+  va_end(args);
+}
+
+void Logger::Log(
+  const Context& context
+  , Override& ovr
+  , const SID& sid
+  , const char* format
+  , ...
+)
+{
+  if (ShutdownCalled)
+    return;
+
+  Context& context2 = *(Context*)&context;
+  context2.Subsystem = sid;
   context2.Ovr = &ovr;
   ApplyThreadChannel(context2);
 

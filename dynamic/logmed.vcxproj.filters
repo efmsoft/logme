@@ -70,6 +70,12 @@
     <Filter Include="..\logme\include\Logme\Console">
       <UniqueIdentifier>{ea556654-0235-5c0a-9806-edbf888e2aae}</UniqueIdentifier>
     </Filter>
+    <Filter Include="LogmeC.cpp">
+      <UniqueIdentifier>{abc23ecd-60ee-5a4a-b490-943ca3f07f36}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="TracePoint.cpp">
+      <UniqueIdentifier>{6506254b-b968-5760-bbbe-1e53ac483479}</UniqueIdentifier>
+    </Filter>
 </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\logme\source\Backend\Backend.cpp">
@@ -259,6 +265,15 @@
     <ClCompile Include="..\logme\source\File\handle_path.cpp">
       <Filter>File</Filter>
     </ClCompile>
+    <ClCompile Include="..\logme\source\Control\Command\CmdTrace.cpp">
+      <Filter>Control\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\LogmeC.cpp">
+      <Filter>LogmeC.cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\TracePoint.cpp">
+      <Filter>TracePoint.cpp</Filter>
+    </ClCompile>
 </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\logme\source\Time\utils.h">
@@ -444,6 +459,12 @@
     </ClInclude>
     <ClInclude Include="..\logme\include\Logme\Console\ConsoleManagerFactory.h">
       <Filter>..\logme\include\Logme\Console</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\LogmeC.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\TracePoint.h">
+      <Filter>..\logme\include\Logme</Filter>
     </ClInclude>
 </ItemGroup>
 </Project>

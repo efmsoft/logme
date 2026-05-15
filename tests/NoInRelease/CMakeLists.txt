@@ -18,3 +18,5 @@ if (WIN32)
 endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Tests")
+
+add_test(NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME})

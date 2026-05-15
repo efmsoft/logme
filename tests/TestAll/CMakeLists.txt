@@ -15,3 +15,5 @@ LogmeCopyRuntime(${PROJECT_NAME})
 target_compile_definitions(${PROJECT_NAME} PRIVATE LOGME_INRELEASE)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Tests")
+
+add_test(NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME})

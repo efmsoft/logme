@@ -17,6 +17,7 @@
 #include <Logme/ThreadChannel.h>
 #include <Logme/ThreadName.h>
 #include <Logme/ThreadOverride.h>
+#include <Logme/TracePoint.h>
 #include <utility>
 
 // Performs simple encoding conversion. If you need reliable, high-quality conversion in all cases, 
@@ -1014,6 +1015,93 @@
 
 #define fLogmeWg(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
 
+#endif
+
+// Trace Points
+
+#if LOGME_ACTIVE
+#ifdef _MSC_VER
+  #define LOGME_TP_BODY(level, dispatch, ...) \
+    do \
+    { \
+      static Logme::TracePoint tracePoint(__FILE__, __FUNCTION__, __LINE__); \
+      tracePoint.Hit(); \
+      if (!tracePoint.Registered) \
+        Logme::Detail::RegisterTracePointOnce(tracePoint); \
+      if (tracePoint.Enabled && Logme::Instance->Condition()) \
+      { \
+        static Logme::ContextCache contextCache; \
+        dispatch(Logme::Instance, contextCache, level, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, ## __VA_ARGS__); \
+      } \
+    } while (0)
+#else
+  #define LOGME_TP_BODY(level, dispatch, ...) \
+    do \
+    { \
+      static Logme::TracePoint tracePoint(__FILE__, __FUNCTION__, __LINE__); \
+      tracePoint.Hit(); \
+      if (!tracePoint.Registered) \
+        Logme::Detail::RegisterTracePointOnce(tracePoint); \
+      if (tracePoint.Enabled && Logme::Instance->Condition()) \
+      { \
+        static Logme::ContextCache contextCache; \
+        dispatch(Logme::Instance, contextCache, level, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__ __VA_OPT__(, __VA_ARGS__)); \
+      } \
+    } while (0)
+#endif
+
+#ifdef _MSC_VER
+  #define LogmeD_TPt(...) LOGME_TP_BODY(Logme::Level::LEVEL_DEBUG, Logme::Detail::DispatchTracePoint, ## __VA_ARGS__)
+  #define LogmeI_TPt(...) LOGME_TP_BODY(Logme::Level::LEVEL_INFO, Logme::Detail::DispatchTracePoint, ## __VA_ARGS__)
+  #define LogmeW_TPt(...) LOGME_TP_BODY(Logme::Level::LEVEL_WARN, Logme::Detail::DispatchTracePoint, ## __VA_ARGS__)
+  #define LogmeE_TPt(...) LOGME_TP_BODY(Logme::Level::LEVEL_ERROR, Logme::Detail::DispatchTracePoint, ## __VA_ARGS__)
+  #define LogmeC_TPt(...) LOGME_TP_BODY(Logme::Level::LEVEL_CRITICAL, Logme::Detail::DispatchTracePoint, ## __VA_ARGS__)
+#else
+  #define LogmeD_TPt(...) LOGME_TP_BODY(Logme::Level::LEVEL_DEBUG, Logme::Detail::DispatchTracePoint __VA_OPT__(, __VA_ARGS__))
+  #define LogmeI_TPt(...) LOGME_TP_BODY(Logme::Level::LEVEL_INFO, Logme::Detail::DispatchTracePoint __VA_OPT__(, __VA_ARGS__))
+  #define LogmeW_TPt(...) LOGME_TP_BODY(Logme::Level::LEVEL_WARN, Logme::Detail::DispatchTracePoint __VA_OPT__(, __VA_ARGS__))
+  #define LogmeE_TPt(...) LOGME_TP_BODY(Logme::Level::LEVEL_ERROR, Logme::Detail::DispatchTracePoint __VA_OPT__(, __VA_ARGS__))
+  #define LogmeC_TPt(...) LOGME_TP_BODY(Logme::Level::LEVEL_CRITICAL, Logme::Detail::DispatchTracePoint __VA_OPT__(, __VA_ARGS__))
+#endif
+
+#define LogmeTPt(...) LogmeI_TPt(__VA_ARGS__)
+
+#ifndef LOGME_DISABLE_STD_FORMAT
+#ifdef _MSC_VER
+  #define fLogmeD_TPt(...) LOGME_TP_BODY(Logme::Level::LEVEL_DEBUG, Logme::Detail::DispatchTracePointStdFormat, Logme::GetStdFormat(), ## __VA_ARGS__)
+  #define fLogmeI_TPt(...) LOGME_TP_BODY(Logme::Level::LEVEL_INFO, Logme::Detail::DispatchTracePointStdFormat, Logme::GetStdFormat(), ## __VA_ARGS__)
+  #define fLogmeW_TPt(...) LOGME_TP_BODY(Logme::Level::LEVEL_WARN, Logme::Detail::DispatchTracePointStdFormat, Logme::GetStdFormat(), ## __VA_ARGS__)
+  #define fLogmeE_TPt(...) LOGME_TP_BODY(Logme::Level::LEVEL_ERROR, Logme::Detail::DispatchTracePointStdFormat, Logme::GetStdFormat(), ## __VA_ARGS__)
+  #define fLogmeC_TPt(...) LOGME_TP_BODY(Logme::Level::LEVEL_CRITICAL, Logme::Detail::DispatchTracePointStdFormat, Logme::GetStdFormat(), ## __VA_ARGS__)
+#else
+  #define fLogmeD_TPt(...) LOGME_TP_BODY(Logme::Level::LEVEL_DEBUG, Logme::Detail::DispatchTracePointStdFormat, Logme::GetStdFormat() __VA_OPT__(, __VA_ARGS__))
+  #define fLogmeI_TPt(...) LOGME_TP_BODY(Logme::Level::LEVEL_INFO, Logme::Detail::DispatchTracePointStdFormat, Logme::GetStdFormat() __VA_OPT__(, __VA_ARGS__))
+  #define fLogmeW_TPt(...) LOGME_TP_BODY(Logme::Level::LEVEL_WARN, Logme::Detail::DispatchTracePointStdFormat, Logme::GetStdFormat() __VA_OPT__(, __VA_ARGS__))
+  #define fLogmeE_TPt(...) LOGME_TP_BODY(Logme::Level::LEVEL_ERROR, Logme::Detail::DispatchTracePointStdFormat, Logme::GetStdFormat() __VA_OPT__(, __VA_ARGS__))
+  #define fLogmeC_TPt(...) LOGME_TP_BODY(Logme::Level::LEVEL_CRITICAL, Logme::Detail::DispatchTracePointStdFormat, Logme::GetStdFormat() __VA_OPT__(, __VA_ARGS__))
+#endif
+#define fLogmeTPt(...) fLogmeI_TPt(__VA_ARGS__)
+#else
+  #define fLogmeD_TPt(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
+  #define fLogmeI_TPt(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
+  #define fLogmeW_TPt(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
+  #define fLogmeE_TPt(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
+  #define fLogmeC_TPt(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
+  #define fLogmeTPt(...) do { static_assert(false, "logme: fLogme* macros require std::format support. Enable LOGME_STD_FORMAT=ON/AUTO."); } while (0)
+#endif
+#else
+  #define LogmeD_TPt(...)
+  #define LogmeI_TPt(...)
+  #define LogmeW_TPt(...)
+  #define LogmeE_TPt(...)
+  #define LogmeC_TPt(...)
+  #define LogmeTPt(...)
+  #define fLogmeD_TPt(...)
+  #define fLogmeI_TPt(...)
+  #define fLogmeW_TPt(...)
+  #define fLogmeE_TPt(...)
+  #define fLogmeC_TPt(...)
+  #define fLogmeTPt(...)
 #endif
 
 #if defined(__clang__)

@@ -30,6 +30,8 @@
 
 namespace Logme
 {
+  struct TracePoint;
+
   typedef std::shared_ptr<std::string> StringPtr;
   typedef std::function<bool(const std::string&, std::string&)> TControlHandler;
   typedef bool (*TCondition)();
@@ -44,6 +46,7 @@ namespace Logme
   class Logger : public std::enable_shared_from_this<Logger>
   {
     CS DataLock;
+    CS TracePointLock;
 
     ChannelMap Channels;
     ChannelPtr Default;
@@ -98,6 +101,8 @@ namespace Logme
 
     ObfKey Key;
     bool Obfuscate;
+
+    TracePoint* TracePoints;
 
   public:
     TCondition Condition;
@@ -327,8 +332,19 @@ namespace Logme
       std::string out = LOGME_VFORMAT(fmt, LOGME_MAKE_FORMAT_ARGS(args...));
       Log(context, ovr, "%s", out.c_str());
     }
+
+    template<typename... Args>
+    void Log(const Context& context, const StdFormat*, Override& ovr, const SID& sid, const char* fmt, Args&&... args)
+    {
+      if (ShutdownCalled)
+        return;
+
+      std::string out = LOGME_VFORMAT(fmt, LOGME_MAKE_FORMAT_ARGS(args...));
+      Log(context, ovr, sid, "%s", out.c_str());
+    }
 #endif
     LOGMELNK void Log(const Context& context, Override& ovr, const char* format, ...);
+    LOGMELNK void Log(const Context& context, Override& ovr, const SID& sid, const char* format, ...);
 
 #ifndef LOGME_DISABLE_STD_FORMAT
     template<typename... Args>
@@ -352,6 +368,29 @@ namespace Logme
 
       std::string out = LOGME_VFORMAT(fmt, LOGME_MAKE_FORMAT_ARGS(args...));
       Log(context, ovr, ch, "%s", out.c_str());
+    }
+
+    template<typename... Args>
+    void Log(const Context& context, const StdFormat*, Override& ovr, const ID& id, const SID& sid, const char* fmt, Args&&... args)
+    {
+      if (ShutdownCalled)
+        return;
+
+      std::string out = LOGME_VFORMAT(fmt, LOGME_MAKE_FORMAT_ARGS(args...));
+      Log(context, ovr, id, sid, "%s", out.c_str());
+    }
+
+    template<typename... Args>
+    void Log(const Context& context, const StdFormat*, Override& ovr, const ChannelPtr& ch, const SID& sid, const char* fmt, Args&&... args)
+    {
+      if (ShutdownCalled)
+        return;
+
+      if (ch && context.ErrorLevel < Level::LEVEL_ERROR && ch->IsOutputActive(context) == false)
+        return;
+
+      std::string out = LOGME_VFORMAT(fmt, LOGME_MAKE_FORMAT_ARGS(args...));
+      Log(context, ovr, ch, sid, "%s", out.c_str());
     }
 
     template<typename... Args>
@@ -488,6 +527,36 @@ namespace Logme
     /// <param name="ch">Channel id of existing channel that should also receive error records.</param>
     LOGMELNK void SetErrorChannel(const ID& ch);
 
+    /// <summary>
+    /// Registers a trace point in the logger-owned trace point list.
+    /// </summary>
+    /// <param name="point">Static trace point descriptor owned by a call site.</param>
+    LOGMELNK void RegisterTracePoint(TracePoint& point);
+
+    /// <summary>
+    /// Enables or disables registered trace points matched by module:function:line wildcard pattern.
+    /// </summary>
+    /// <param name="pattern">Wildcard pattern. Empty pattern matches all trace points.</param>
+    /// <param name="enabled">true to enable log output for matching trace points.</param>
+    /// <returns>Number of matching trace points.</returns>
+    LOGMELNK size_t SetTracePointsEnabled(
+      const std::string& pattern
+      , bool enabled
+    );
+
+    /// <summary>
+    /// Resets call counters for registered trace points matched by module:function:line wildcard pattern.
+    /// </summary>
+    /// <param name="pattern">Wildcard pattern. Empty pattern matches all trace points.</param>
+    /// <returns>Number of matching trace points.</returns>
+    LOGMELNK size_t ResetTracePointCounters(const std::string& pattern);
+
+    /// <summary>
+    /// Returns textual trace point list with enabled state and call counters.
+    /// </summary>
+    /// <param name="pattern">Wildcard pattern. Empty pattern matches all trace points.</param>
+    LOGMELNK std::string DumpTracePoints(const std::string& pattern);
+
     LOGMELNK void DeleteAllChannels();
 
     /// <summary>
@@ -598,6 +667,8 @@ namespace Logme
     static bool CommandFlags(StringArray& arr, std::string& response);
 
     static bool CommandLevel(StringArray& arr, std::string& response);
+
+    static bool CommandTrace(StringArray& arr, std::string& response);
   };
 
   typedef std::shared_ptr<Logger> LoggerPtr;

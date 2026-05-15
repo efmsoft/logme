@@ -230,6 +230,7 @@
     <ClCompile Include="source\Control\Command\CmdLevel.cpp" />
     <ClCompile Include="source\Control\Command\CmdList.cpp" />
     <ClCompile Include="source\Control\Command\CmdSubsystem.cpp" />
+    <ClCompile Include="source\Control\Command\CmdTrace.cpp" />
     <ClCompile Include="source\Control\Control.cpp" />
     <ClCompile Include="source\Control\Json.cpp" />
     <ClCompile Include="source\Convert.cpp" />
@@ -257,6 +258,7 @@
     <ClCompile Include="source\ThreadChannel.cpp" />
     <ClCompile Include="source\ThreadName.cpp" />
     <ClCompile Include="source\ThreadOverride.cpp" />
+    <ClCompile Include="source\TracePoint.cpp" />
     <ClCompile Include="source\Time\datetime_common.cpp" />
     <ClCompile Include="source\Time\datetime_lx.cpp" />
     <ClCompile Include="source\Time\datetime_win.cpp" />
@@ -272,6 +274,7 @@
     <ClCompile Include="source\Console\ConsoleManager.cpp" />
     <ClCompile Include="source\Console\ConsoleManagerFactory.cpp" />
     <ClCompile Include="source\File\handle_path.cpp" />
+    <ClCompile Include="source\LogmeC.cpp" />
 </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

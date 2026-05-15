@@ -882,10 +882,9 @@ const char* Context::Apply(const ChannelPtr& ch, OutputFlags flags, int& nc)
       }
 
       if (nEol)
-      {
         *p++ = '\n';
-        *p = '\0';
-      }
+
+      *p = '\0';
 
       LastData = text;
       LastLen = nLine + nAppend + nEol;

@@ -1,20 +1,19 @@
-project(ProcedurePrint)
+project(TracePoints)
 
-add_executable(ProcedurePrint
-  ProcedurePrint.cpp
+add_executable(TracePoints
+  TracePoints.cpp
 )
 
 if(LOGME_LINK_TARGET STREQUAL "logme")
   target_compile_definitions(${PROJECT_NAME} PRIVATE _LOGME_STATIC_BUILD_)
 endif()
 
-
 if(WIN32)
   set(WINDOWS_LIBRARIES Ws2_32.lib)
 endif()
 
-target_link_libraries(ProcedurePrint ${LOGME_LINK_TARGET} gtest_main ${WINDOWS_LIBRARIES})
-LogmeCopyRuntime(ProcedurePrint)
+target_link_libraries(TracePoints ${LOGME_LINK_TARGET} gtest_main ${WINDOWS_LIBRARIES})
+LogmeCopyRuntime(TracePoints)
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE LOGME_INRELEASE)
 
@@ -31,4 +30,4 @@ endif()
 include(GoogleTest)
 gtest_discover_tests(${PROJECT_NAME})
 
-set_target_properties(ProcedurePrint PROPERTIES FOLDER "Tests")
+set_target_properties(TracePoints PROPERTIES FOLDER "Tests")

@@ -964,6 +964,13 @@ std::string Logger::Control(const std::string& command)
     if (n)
     {
       const std::string& c = items[0];
+
+      if (c == "trace")
+      {
+        if (Logger::CommandTrace(items, response))
+          return response;
+      }
+
       for (CommandDescriptor* d = CommandDescriptor::Head; d; d = d->Next)
       {
         if (d->Command != c)

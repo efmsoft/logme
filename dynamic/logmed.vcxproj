@@ -96,6 +96,9 @@
     <ClCompile Include="..\logme\source\Console\ConsoleManager.cpp" />
     <ClCompile Include="..\logme\source\Console\ConsoleManagerFactory.cpp" />
     <ClCompile Include="..\logme\source\File\handle_path.cpp" />
+    <ClCompile Include="..\logme\source\Control\Command\CmdTrace.cpp" />
+    <ClCompile Include="..\logme\source\LogmeC.cpp" />
+    <ClCompile Include="..\logme\source\TracePoint.cpp" />
 </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\logme\source\Config\Helper.h" />

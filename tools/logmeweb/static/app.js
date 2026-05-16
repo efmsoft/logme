@@ -43,15 +43,44 @@ function NormalizeTarget(item, password)
   };
 }
 
-function ConnectToTarget(item, password)
+async function ConnectToTarget(item, password, statusElement = null)
 {
-  CurrentTarget = NormalizeTarget(item, password);
-  CurrentView = 'overview';
-  CachedChannels = null;
-  UpdateTargetSummary();
-  SetScreen('main');
-  LoadTargetVersion();
-  SelectView('overview');
+  const target = NormalizeTarget(item, password);
+
+  if (statusElement)
+  {
+    statusElement.classList.remove('error-inline');
+    statusElement.classList.add('muted');
+    statusElement.textContent = 'Connecting...';
+  }
+
+  try
+  {
+    const check = await SendCommandToTarget(target, 'overview', 'text');
+    if (!check.ok)
+      throw new Error(check.error || check.text || 'connection check failed');
+
+    CurrentTarget = target;
+    CurrentView = 'overview';
+    CachedChannels = null;
+    UpdateTargetSummary();
+    SetScreen('main');
+    LoadTargetVersion();
+    await SelectView('overview');
+  }
+  catch (e)
+  {
+    if (statusElement)
+    {
+      statusElement.classList.remove('muted');
+      statusElement.classList.add('error-inline');
+      statusElement.textContent = `Connection failed: ${e.message || e}`;
+    }
+    else
+    {
+      alert(`Connection failed: ${e.message || e}`);
+    }
+  }
 }
 
 function ParseVersionText(text)
@@ -158,7 +187,14 @@ async function LoadDiscovery()
       div.querySelector('button').addEventListener('click', () =>
       {
         const password = div.querySelector('input').value;
-        ConnectToTarget(item, password);
+        let status = div.querySelector('.connect-status');
+        if (!status)
+        {
+          status = document.createElement('div');
+          status.className = 'connect-status status-line muted';
+          div.querySelector('.discovery-auth').appendChild(status);
+        }
+        ConnectToTarget(item, password, status);
       });
 
       list.appendChild(div);
@@ -170,21 +206,18 @@ async function LoadDiscovery()
   }
 }
 
-async function SendCommand(command, format = 'text')
+async function SendCommandToTarget(target, command, format = 'text')
 {
-  if (!CurrentTarget)
-    throw new Error('No target selected');
-
   const response = await fetch('/api/command', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      host: CurrentTarget.host,
-      port: CurrentTarget.port,
-      protocol: CurrentTarget.protocol,
-      password: CurrentTarget.password,
+      host: target.host,
+      port: target.port,
+      protocol: target.protocol,
+      password: target.password,
       command: command,
       format: format
     })
@@ -196,6 +229,14 @@ async function SendCommand(command, format = 'text')
     throw new Error(data.detail || 'request failed');
 
   return data;
+}
+
+async function SendCommand(command, format = 'text')
+{
+  if (!CurrentTarget)
+    throw new Error('No target selected');
+
+  return await SendCommandToTarget(CurrentTarget, command, format);
 }
 
 function RenderResponseCard(title, command, result)

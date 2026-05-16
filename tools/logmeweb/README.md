@@ -17,6 +17,28 @@ Open:
 http://127.0.0.1:8080
 ```
 
+The web UI host and port can be changed when needed:
+
+```bash
+python tools/logmeweb/logmeweb.py --host 127.0.0.1 --port 8080
+```
+
+## HTTPS
+
+`logmeweb` can serve the UI over HTTPS:
+
+```bash
+python tools/logmeweb/logmeweb.py --https
+```
+
+When `--https` is used without `--cert` and `--key`, `logmeweb` generates a temporary self-signed certificate automatically. The generated certificate is valid for `localhost`, `127.0.0.1`, and `::1` and is removed when the process exits. Browsers will still show a warning because the certificate is self-signed.
+
+A custom certificate can be provided explicitly:
+
+```bash
+python tools/logmeweb/logmeweb.py --https --cert server-cert.pem --key server-key.pem
+```
+
 ## Local discovery
 
 Discovery is opt-in on the logme control server side.

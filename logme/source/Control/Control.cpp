@@ -963,11 +963,14 @@ std::string Logger::Control(const std::string& command)
 
   auto ControlInternal = [&](const std::string& cmd) -> std::string
   {
-    std::string k(cmd);
-    ToLowerAsciiInplace(k);
-
     StringArray items;
-    size_t n = WordSplit(k, items);
+    size_t n = WordSplit(cmd, items);
+
+    if (n)
+      ToLowerAsciiInplace(items[0]);
+
+    if (n >= 2 && items[0] == "trace")
+      ToLowerAsciiInplace(items[1]);
 
     std::string response;
     if (ControlExtension)

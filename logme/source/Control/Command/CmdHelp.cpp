@@ -1,8 +1,16 @@
 #include "../CommandRegistrar.h"
 
+#include <Logme/version.h>
+
 using namespace Logme;
 
-COMMAND_DESCRIPTOR("help", CommandHelp);
+static bool CommandHelp(Logme::StringArray& arr, std::string& response);
+static bool CommandVersion(Logme::StringArray& arr, std::string& response);
+
+static Logme::CommandDescriptor HelpDescriptor("help", CommandHelp);
+static Logme::CommandRegistrar HelpRegistrar(&HelpDescriptor);
+static Logme::CommandDescriptor VersionDescriptor("version", CommandVersion);
+static Logme::CommandRegistrar VersionRegistrar(&VersionDescriptor);
 
 static size_t FindHelpSplit(const std::string& line)
 {
@@ -96,6 +104,17 @@ static void AlignHelpColumns(std::string& s)
   s.swap(out);
 }
 
+static bool CommandVersion(Logme::StringArray& arr, std::string& response)
+{
+  (void)arr;
+
+  response += "Logme version: ";
+  response += LOGME_VERSION_STRING;
+  response += "\n";
+  response += "Control protocol: 1\n";
+  return true;
+}
+
 static bool CommandHelp(Logme::StringArray& arr, std::string& response)
 {
   (void)arr;
@@ -139,7 +158,8 @@ static bool CommandHelp(Logme::StringArray& arr, std::string& response)
     "trace [list|stat|stats] [pattern]              List trace points and counters\n"
     "trace enable pattern                           Enable trace points by module:function:line wildcard\n"
     "trace disable pattern                          Disable trace points by module:function:line wildcard\n"
-    "trace reset [pattern]                          Reset trace point counters"
+    "trace reset [pattern]                          Reset trace point counters\n"
+    "version                                        Display logme and control protocol version"
   ;
 
   SortLines(response);

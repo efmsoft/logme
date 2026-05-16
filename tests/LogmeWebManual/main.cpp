@@ -22,8 +22,6 @@
 #include <Logme/Logme.h>
 #include <Logme/Ssl.h>
 
-namespace
-{
 struct Options
 {
   bool UseSsl = false;
@@ -209,7 +207,7 @@ static void ConfigureDemoBackends(const Logme::ChannelPtr& channel)
 
   auto file = std::make_shared<Logme::FileBackend>(channel);
   file->SetAppend(true);
-  file->SetMaxSize(1024 * 1024);
+  file->SetMaxSize(1024ULL * 1024);
   if (file->CreateLog("logmeweb-manual-webtest.log"))
     channel->AddBackend(file);
 
@@ -618,6 +616,17 @@ static bool StartControl(
   return Logme::Instance->StartControlServer(config);
 }
 
+static void TraceCounter(const Logme::ChannelPtr& webtest, const Logme::SID& net, int counter)
+{
+  LogmeI_TPt(webtest, net, "WorkerLoop visible info record %d", counter);
+}
+
+static void TraceCounterHttp(const Logme::ChannelPtr& webtest, const Logme::SID& http, int counter)
+{
+  LogmeD_TPt(webtest, http, "HttpRequest debug record %d", counter);
+}
+
+
 static void WorkerLoop(
   std::atomic<bool>& stop
   , const Options& options
@@ -635,17 +644,20 @@ static void WorkerLoop(
   int counter = 0;
   while (!stop.load())
   {
-    LogmeI_TPt(webtest, net, "WorkerLoop visible info record %d", counter);
-    LogmeD_TPt(webtest, http, "HttpRequest debug record %d", counter);
+    LogmeTPt(webtest);
+
+    TraceCounter(webtest, net, counter);
+    TraceCounterHttp(webtest, http, counter);
+    
     LogmeW(webtest, cache, "Cache warning record %d", counter);
     LogmeI(quiet, auth, "QUIET channel record %d", counter);
+    
     LogmeE_TPt(errtest, auth, "ErrorPath error record %d", counter);
     LogmeI(webtest, blocked, "Blocked subsystem record %d", counter);
 
     ++counter;
     std::this_thread::sleep_for(std::chrono::milliseconds(options.IntervalMs));
   }
-}
 }
 
 int main(int argc, char* argv[])

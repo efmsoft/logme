@@ -100,10 +100,10 @@ body
 
 .eyebrow
 {
-  color: #4be2bd;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 1.8px;
+  color: var(--primary-dark);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
   text-transform: uppercase;
 }
 
@@ -566,13 +566,25 @@ pre
 }
 
 .error-text,
-.error-card
+.error-card,
+.error-inline
 {
   color: var(--bad);
   background: #fff0f0;
   border: 1px solid #ffd0d0;
   border-radius: 12px;
   padding: 12px;
+}
+
+.connect-status
+{
+  min-width: 220px;
+  margin: 0;
+}
+
+.connect-error
+{
+  margin: 24px 56px 0;
 }
 
 .manual-command

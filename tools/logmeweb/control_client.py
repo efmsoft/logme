@@ -69,29 +69,16 @@ def SendControlCommand(host, port, protocol, password, command, fmt):
 
     try:
       if password:
-        if real_format == "json":
-          auth_command = "format json auth " + password
-        else:
-          auth_command = "auth " + password
-
+        auth_command = "auth " + password
         auth_response = _send_request(sock, auth_command)
 
-        if real_format == "json":
-          if not _json_ok(auth_response):
-            return {
-              "ok": False,
-              "error": "auth failed",
-              "text": auth_response,
-              "json": None
-            }
-        else:
-          if not _trim_response(auth_response).startswith("ok"):
-            return {
-              "ok": False,
-              "error": "auth failed",
-              "text": auth_response,
-              "json": None
-            }
+        if not _trim_response(auth_response).startswith("ok"):
+          return {
+            "ok": False,
+            "error": "auth failed",
+            "text": auth_response,
+            "json": None
+          }
 
       response = _send_request(sock, real_command)
 
@@ -107,6 +94,11 @@ def SendControlCommand(host, port, protocol, password, command, fmt):
         except Exception as e:
           ok = False
           error = f"invalid JSON response: {e}"
+      else:
+        trimmed = _trim_response(response)
+        if trimmed.startswith("error:"):
+          ok = False
+          error = trimmed.splitlines()[0]
 
       return {
         "ok": ok,

@@ -1,4 +1,5 @@
 #include "ControlDiscovery.h"
+#include <Logme/version.h>
 
 #include <cstddef>
 #include <cstring>
@@ -209,6 +210,8 @@ namespace Logme
     os
       << "{"
       << "\"version\":1,"
+      << "\"protocolVersion\":1,"
+      << "\"logmeVersion\":\"" << JsonEscape(LOGME_VERSION_STRING) << "\","
       << "\"pid\":" << GetProcessIdForDiscovery() << ","
       << "\"process\":\"" << JsonEscape(GetProcessNameForDiscovery()) << "\","
       << "\"control\":{"

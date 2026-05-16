@@ -33,6 +33,8 @@ function NormalizeTarget(item, password)
     process: item.process || 'Manual target',
     instance: item.instance || '',
     version: item.version || '',
+    logmeVersion: item.logmeVersion || '',
+    protocolVersion: item.protocolVersion || item.version || '',
     host: control.host || item.host || '127.0.0.1',
     port: Number(control.port || item.port || 0),
     protocol: (control.protocol || item.protocol || 'http').toLowerCase(),
@@ -48,7 +50,57 @@ function ConnectToTarget(item, password)
   CachedChannels = null;
   UpdateTargetSummary();
   SetScreen('main');
+  LoadTargetVersion();
   SelectView('overview');
+}
+
+function ParseVersionText(text)
+{
+  const result = {};
+  const lines = String(text || '').split(/\r?\n/);
+
+  for (const line of lines)
+  {
+    const match = line.match(/^([^:]+):\s*(.*)$/);
+    if (!match)
+      continue;
+
+    const key = match[1].trim().toLowerCase();
+    const value = match[2].trim();
+
+    if (key === 'logme version')
+      result.logmeVersion = value;
+    else if (key === 'control protocol')
+      result.protocolVersion = value;
+  }
+
+  return result;
+}
+
+async function LoadTargetVersion()
+{
+  if (!CurrentTarget)
+    return;
+
+  try
+  {
+    const result = await SendCommand('version', 'text');
+    if (!result.ok)
+      return;
+
+    const parsed = ParseVersionText(result.text);
+
+    if (parsed.logmeVersion)
+      CurrentTarget.logmeVersion = parsed.logmeVersion;
+
+    if (parsed.protocolVersion)
+      CurrentTarget.protocolVersion = parsed.protocolVersion;
+
+    UpdateTargetSummary();
+  }
+  catch (e)
+  {
+  }
 }
 
 function UpdateTargetSummary()
@@ -59,7 +111,8 @@ function UpdateTargetSummary()
     <div class="target-name">${EscapeHtml(target.process)}</div>
     <div class="target-line">${EscapeHtml(target.protocol.toUpperCase())} ${EscapeHtml(target.host)}:${EscapeHtml(target.port)}</div>
     <div class="target-line">PID: ${EscapeHtml(target.pid || 'n/a')}</div>
-    <div class="target-line">Control version: ${EscapeHtml(target.version || 'n/a')}</div>
+    <div class="target-line">Logme version: ${EscapeHtml(target.logmeVersion || 'n/a')}</div>
+    <div class="target-line">Control protocol: ${EscapeHtml(target.protocolVersion || target.version || 'n/a')}</div>
   `;
 }
 
@@ -178,6 +231,15 @@ function QuoteArg(value)
     return text;
 
   return '"' + text.replaceAll('\\', '\\\\').replaceAll('"', '\\"') + '"';
+}
+
+function TracePointPatternArg(value)
+{
+  const text = String(value ?? '');
+  if (!/[\s"]/.test(text))
+    return text;
+
+  return '*' + text.replaceAll('"', '?').replaceAll(/\s+/g, '*') + '*';
 }
 
 function ChannelControlNameArg(channel)
@@ -1297,34 +1359,309 @@ async function RenderSubsystems()
   });
 }
 
+function ParseTracePointLine(line)
+{
+  const text = String(line || '').trim();
+  if (!text || text === 'none')
+    return null;
+
+  const match = text.match(/^(on|off)\s+(.+)\s+hits=(\d+)\s*$/i);
+  if (!match)
+  {
+    return {
+      raw: text,
+      state: 'unknown',
+      enabled: false,
+      module: '',
+      method: '',
+      line: '',
+      hits: '',
+      pattern: text
+    };
+  }
+
+  const body = match[2];
+  const lineMatch = body.match(/^(.*):(\d+)$/);
+  const keyWithoutLine = lineMatch ? lineMatch[1] : body;
+  const lineNumber = lineMatch ? lineMatch[2] : '';
+  const moduleMatch = keyWithoutLine.match(/^(.*\.(?:c|cc|cpp|cxx|h|hpp|hxx)):(.*)$/i);
+  const module = moduleMatch ? moduleMatch[1] : '';
+  const method = moduleMatch ? moduleMatch[2] : keyWithoutLine;
+
+  return {
+    raw: text,
+    state: match[1].toLowerCase(),
+    enabled: match[1].toLowerCase() === 'on',
+    module: module,
+    method: method,
+    line: lineNumber,
+    hits: match[3],
+    pattern: body
+  };
+}
+
+function ParseTracePoints(text)
+{
+  return String(text || '')
+    .split(/\r?\n/)
+    .map(ParseTracePointLine)
+    .filter(point => point !== null);
+}
+
+function TracePointRowHtml(point, index)
+{
+  const stateClass = point.enabled ? 'ok' : point.state === 'off' ? 'bad' : '';
+  const stateText = point.state === 'unknown' ? 'UNKNOWN' : point.state.toUpperCase();
+  const action = point.enabled ? 'disable' : 'enable';
+
+  return `
+    <tr data-trace-index="${index}">
+      <td><span class="badge ${stateClass}">${EscapeHtml(stateText)}</span></td>
+      <td class="trace-file-cell">${EscapeHtml(point.module || point.raw)}</td>
+      <td class="trace-method-cell">${EscapeHtml(point.method || '')}</td>
+      <td class="trace-line-cell">${EscapeHtml(point.line || '')}</td>
+      <td class="trace-hits-cell">${EscapeHtml(point.hits || 'n/a')}</td>
+      <td class="trace-actions-cell">
+        <button class="secondary small-button" data-trace-action="${action}" data-trace-index="${index}">${point.enabled ? 'Disable' : 'Enable'}</button>
+        <button class="secondary small-button" data-trace-action="reset" data-trace-index="${index}">Reset hits</button>
+      </td>
+    </tr>
+  `;
+}
+
+function FilterTracePoints(points, filter)
+{
+  const needle = String(filter || '').toLowerCase();
+  return points
+    .map((point, index) => ({ point, index }))
+    .filter(item => !needle || item.point.raw.toLowerCase().includes(needle));
+}
+
+function SortTracePointItems(items, sortKey, sortDir)
+{
+  const direction = sortDir === 'desc' ? -1 : 1;
+
+  return items.slice().sort((a, b) =>
+  {
+    const left = a.point;
+    const right = b.point;
+    let result = 0;
+
+    if (sortKey === 'state')
+      result = left.state.localeCompare(right.state);
+    else if (sortKey === 'file')
+      result = left.module.localeCompare(right.module);
+    else if (sortKey === 'method')
+      result = left.method.localeCompare(right.method);
+    else if (sortKey === 'line')
+      result = (Number(left.line) || 0) - (Number(right.line) || 0);
+    else if (sortKey === 'hits')
+      result = (Number(left.hits) || 0) - (Number(right.hits) || 0);
+
+    if (!result)
+      result = left.raw.localeCompare(right.raw);
+
+    return result * direction;
+  });
+}
+
+function TraceSortMark(sortKey, currentKey, currentDir)
+{
+  if (sortKey !== currentKey)
+    return '';
+
+  return currentDir === 'desc' ? ' ↓' : ' ↑';
+}
+
+function RenderTracePointTable(points, filter, sortKey, sortDir)
+{
+  const filtered = FilterTracePoints(points, filter);
+  const sorted = SortTracePointItems(filtered, sortKey, sortDir);
+
+  if (!sorted.length)
+    return '<div class="hint">No trace points match the filter.</div>';
+
+  return `
+    <div class="trace-table-wrap">
+      <table class="trace-table">
+        <thead>
+          <tr>
+            <th><button data-trace-sort="state">State${TraceSortMark('state', sortKey, sortDir)}</button></th>
+            <th><button data-trace-sort="file">File${TraceSortMark('file', sortKey, sortDir)}</button></th>
+            <th><button data-trace-sort="method">Function${TraceSortMark('method', sortKey, sortDir)}</button></th>
+            <th><button data-trace-sort="line">Line${TraceSortMark('line', sortKey, sortDir)}</button></th>
+            <th><button data-trace-sort="hits">Hits${TraceSortMark('hits', sortKey, sortDir)}</button></th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sorted.map(item => TracePointRowHtml(item.point, item.index)).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+async function ExecuteTraceCommand(command)
+{
+  const result = await SendCommand(command, 'text');
+  if (!result.ok)
+    throw new Error(result.error || result.text || 'trace command failed');
+
+  return result;
+}
+
 async function RenderTracepoints()
 {
   $('workArea').innerHTML = '<div class="loading">Loading trace points...</div>';
 
-  const result = await SendCommand('trace', 'text');
+  const result = await SendCommand('trace list', 'text');
+  const points = ParseTracePoints(result.text || '');
 
   $('workArea').innerHTML = `
-    <div class="toolbar">
-      <input id="traceFilter" placeholder="Filter trace points...">
+    <div class="toolbar trace-toolbar">
+      <input id="traceFilter" placeholder="Filter trace points by file, function or line...">
+      <button id="traceReloadButton" class="secondary">Reload</button>
+      <button id="traceEnableFilteredButton" class="secondary">Enable filtered</button>
+      <button id="traceDisableFilteredButton" class="secondary">Disable filtered</button>
+      <button id="traceResetFilteredButton" class="secondary">Reset filtered hits</button>
     </div>
+    <div id="traceStatus"></div>
     <div id="traceOutput" class="result-card">
       <div class="result-header">
         <div>
           <div class="result-title">Trace points</div>
-          <div class="command-line">trace</div>
+          <div class="command-line">trace list</div>
         </div>
         <span class="badge ${result.ok ? 'ok' : 'bad'}">${result.ok ? 'OK' : 'ERROR'}</span>
       </div>
-      <pre>${EscapeHtml(result.text || '')}</pre>
+      ${result.ok ? `
+        <div id="traceSummary" class="trace-summary">${points.length} trace point(s)</div>
+        <div id="tracePointList" class="trace-point-list"></div>
+      ` : `
+        <div class="error-text">${EscapeHtml(result.error || result.text || 'Trace command failed')}</div>
+        <pre>${EscapeHtml(result.text || '')}</pre>
+      `}
     </div>
   `;
 
-  $('traceFilter').addEventListener('input', () =>
+  let sortKey = 'hits';
+  let sortDir = 'desc';
+
+  const refreshFilteredList = () =>
   {
-    const filter = $('traceFilter').value.toLowerCase();
-    const lines = (result.text || '').split(/\r?\n/);
-    const filtered = lines.filter(line => line.toLowerCase().includes(filter)).join('\n');
-    document.querySelector('#traceOutput pre').textContent = filtered;
+    const list = $('tracePointList');
+    if (!list)
+      return;
+
+    const filteredCount = FilterTracePoints(points, $('traceFilter').value).length;
+    $('traceSummary').textContent = `${filteredCount} of ${points.length} trace point(s)`;
+    list.innerHTML = RenderTracePointTable(points, $('traceFilter').value, sortKey, sortDir);
+    BindTracePointActionButtons(points);
+    BindTraceSortButtons(points, () => sortKey, value => { sortKey = value; }, () => sortDir, value => { sortDir = value; }, refreshFilteredList);
+  };
+
+  $('traceFilter').addEventListener('input', refreshFilteredList);
+  $('traceReloadButton').addEventListener('click', () => RenderTracepoints());
+
+  $('traceEnableFilteredButton').addEventListener('click', async () =>
+  {
+    await ExecuteTraceFilteredCommand(points, 'enable');
+  });
+
+  $('traceDisableFilteredButton').addEventListener('click', async () =>
+  {
+    await ExecuteTraceFilteredCommand(points, 'disable');
+  });
+
+  $('traceResetFilteredButton').addEventListener('click', async () =>
+  {
+    await ExecuteTraceFilteredCommand(points, 'reset');
+  });
+
+  refreshFilteredList();
+}
+
+async function ExecuteTraceToolbarCommand(command)
+{
+  const status = $('traceStatus');
+  status.innerHTML = '<div class="loading">Sending command...</div>';
+
+  try
+  {
+    const result = await ExecuteTraceCommand(command);
+    status.innerHTML = `<div class="success-card">${EscapeHtml(result.text || 'ok')}</div>`;
+    await RenderTracepoints();
+  }
+  catch (e)
+  {
+    status.innerHTML = `<div class="error-card">${EscapeHtml(e.message || e)}</div>`;
+  }
+}
+
+
+async function ExecuteTraceFilteredCommand(points, action)
+{
+  const items = FilterTracePoints(points, $('traceFilter').value);
+  const status = $('traceStatus');
+
+  if (!items.length)
+  {
+    status.innerHTML = '<div class="error-card">No trace points match the filter.</div>';
+    return;
+  }
+
+  status.innerHTML = `<div class="loading">Sending ${items.length} command(s)...</div>`;
+
+  try
+  {
+    for (const item of items)
+      await ExecuteTraceCommand(`trace ${action} ${TracePointPatternArg(item.point.pattern)}`);
+
+    status.innerHTML = `<div class="success-card">${EscapeHtml(action)} completed for ${items.length} trace point(s)</div>`;
+    await RenderTracepoints();
+  }
+  catch (e)
+  {
+    status.innerHTML = `<div class="error-card">${EscapeHtml(e.message || e)}</div>`;
+  }
+}
+
+function BindTraceSortButtons(points, getSortKey, setSortKey, getSortDir, setSortDir, refresh)
+{
+  document.querySelectorAll('[data-trace-sort]').forEach(button =>
+  {
+    button.addEventListener('click', () =>
+    {
+      const key = button.dataset.traceSort;
+      if (getSortKey() === key)
+        setSortDir(getSortDir() === 'asc' ? 'desc' : 'asc');
+      else
+      {
+        setSortKey(key);
+        setSortDir(key === 'hits' ? 'desc' : 'asc');
+      }
+
+      refresh();
+    });
+  });
+}
+
+function BindTracePointActionButtons(points)
+{
+  document.querySelectorAll('[data-trace-action]').forEach(button =>
+  {
+    button.addEventListener('click', async () =>
+    {
+      const index = Number(button.dataset.traceIndex);
+      const point = points[index];
+      if (!point)
+        return;
+
+      const action = button.dataset.traceAction;
+      const command = `trace ${action} ${TracePointPatternArg(point.pattern)}`;
+      await ExecuteTraceToolbarCommand(command);
+    });
   });
 }
 
@@ -1879,7 +2216,6 @@ async function SelectView(view)
   };
 
   $('viewTitle').textContent = titleMap[view] || view;
-  $('viewEyebrow').textContent = `${CurrentTarget.process} · ${CurrentTarget.host}:${CurrentTarget.port}`;
 
   try
   {

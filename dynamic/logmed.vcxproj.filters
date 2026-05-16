@@ -274,6 +274,15 @@
     <ClCompile Include="..\logme\source\TracePoint.cpp">
       <Filter>TracePoint.cpp</Filter>
     </ClCompile>
+    <ClCompile Include="..\logme\source\Control\Command\CmdOverview.cpp">
+      <Filter>Control\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Control\ControlDiscovery.cpp">
+      <Filter>Control</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Control\Discovery.cpp">
+      <Filter>Control</Filter>
+    </ClCompile>
 </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\logme\source\Time\utils.h">
@@ -465,6 +474,12 @@
     </ClInclude>
     <ClInclude Include="..\logme\include\Logme\TracePoint.h">
       <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\ControlConfig.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\source\Control\ControlDiscovery.h">
+      <Filter>Control</Filter>
     </ClInclude>
 </ItemGroup>
 </Project>

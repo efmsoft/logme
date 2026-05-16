@@ -275,6 +275,9 @@
     <ClCompile Include="source\Console\ConsoleManagerFactory.cpp" />
     <ClCompile Include="source\File\handle_path.cpp" />
     <ClCompile Include="source\LogmeC.cpp" />
+    <ClCompile Include="source\Control\Command\CmdOverview.cpp" />
+    <ClCompile Include="source\Control\ControlDiscovery.cpp" />
+    <ClCompile Include="source\Control\Discovery.cpp" />
 </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

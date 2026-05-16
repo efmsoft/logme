@@ -260,6 +260,12 @@
     <ClInclude Include="include\Logme\LogmeC.h">
       <Filter>include\Logme</Filter>
     </ClInclude>
+    <ClInclude Include="include\Logme\ControlConfig.h">
+      <Filter>include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Control\ControlDiscovery.h">
+      <Filter>source\Control</Filter>
+    </ClInclude>
 </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Time\datetime_common.cpp">
@@ -501,6 +507,15 @@
     </ClCompile>
     <ClCompile Include="source\LogmeC.cpp">
       <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Control\Command\CmdOverview.cpp">
+      <Filter>source\Control\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Control\ControlDiscovery.cpp">
+      <Filter>source\Control</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Control\Discovery.cpp">
+      <Filter>source\Control</Filter>
     </ClCompile>
 </ItemGroup>
 </Project>

@@ -99,6 +99,9 @@
     <ClCompile Include="..\logme\source\Control\Command\CmdTrace.cpp" />
     <ClCompile Include="..\logme\source\LogmeC.cpp" />
     <ClCompile Include="..\logme\source\TracePoint.cpp" />
+    <ClCompile Include="..\logme\source\Control\Command\CmdOverview.cpp" />
+    <ClCompile Include="..\logme\source\Control\ControlDiscovery.cpp" />
+    <ClCompile Include="..\logme\source\Control\Discovery.cpp" />
 </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\logme\source\Config\Helper.h" />

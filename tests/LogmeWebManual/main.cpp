@@ -1,12 +1,14 @@
 #ifdef _WIN32
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <winsock2.h>
-#include <windows.h>
 #endif
 
 #include <atomic>
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -392,6 +394,51 @@ static bool ContainsOpenSslRuntime(const std::string& dir)
   return hasSsl && hasCrypto;
 }
 
+static void AddInstalledOpenSslDirs(
+  std::vector<std::string>& dirs
+  , const std::string& installed
+)
+{
+  if (installed.empty())
+    return;
+
+  std::string mask = installed + "\\*";
+
+  WIN32_FIND_DATAA data{};
+  HANDLE find = FindFirstFileA(mask.c_str(), &data);
+  if (find != INVALID_HANDLE_VALUE)
+  {
+    do
+    {
+      if ((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
+        continue;
+
+      if (std::strcmp(data.cFileName, ".") == 0 || std::strcmp(data.cFileName, "..") == 0)
+        continue;
+
+      std::string tripletDir = installed + "\\" + data.cFileName;
+      dirs.push_back(tripletDir + "\\bin");
+      dirs.push_back(tripletDir + "\\debug\\bin");
+    } while (FindNextFileA(find, &data));
+
+    FindClose(find);
+  }
+
+  static const char* FALLBACK_TRIPLETS[] =
+  {
+    "x64-windows",
+    "x64-windows-static-md",
+    "x64-windows-static",
+    nullptr
+  };
+
+  for (const char** triplet = FALLBACK_TRIPLETS; *triplet; ++triplet)
+  {
+    dirs.push_back(installed + "\\" + *triplet + "\\bin");
+    dirs.push_back(installed + "\\" + *triplet + "\\debug\\bin");
+  }
+}
+
 static void AddCandidateOpenSslDirs(
   std::vector<std::string>& dirs
   , const std::string& root
@@ -400,18 +447,26 @@ static void AddCandidateOpenSslDirs(
   if (root.empty())
     return;
 
-  static const char* TRIPLETS[] =
-  {
-    "x64-windows",
-    "x64-windows-static-md",
-    "x64-windows-static",
-    nullptr
-  };
+  AddInstalledOpenSslDirs(dirs, root + "\\installed");
+}
 
-  for (const char** triplet = TRIPLETS; *triplet; ++triplet)
+static void AddBuildTreeOpenSslDirs(
+  std::vector<std::string>& dirs
+  , const std::string& startDir
+)
+{
+  std::string dir = startDir;
+
+  for (int i = 0; i < 8 && !dir.empty(); ++i)
   {
-    dirs.push_back(root + "\\installed\\" + *triplet + "\\bin");
-    dirs.push_back(root + "\\installed\\" + *triplet + "\\debug\\bin");
+    AddInstalledOpenSslDirs(dirs, JoinPath(dir, "vcpkg_installed"));
+    AddCandidateOpenSslDirs(dirs, dir);
+
+    std::string parent = ParentDirectory(dir);
+    if (parent == dir)
+      break;
+
+    dir = parent;
   }
 }
 
@@ -424,6 +479,7 @@ static std::vector<std::string> GetOpenSslRuntimeDirs()
   {
     dirs.push_back(exeDir);
     dirs.push_back(ParentDirectory(exeDir));
+    AddBuildTreeOpenSslDirs(dirs, exeDir);
   }
 
   const char* vcpkgRoot = std::getenv("VCPKG_ROOT");
@@ -557,7 +613,7 @@ static bool StartControl(
   config.Key = key;
   config.Password = options.Password.empty() ? nullptr : options.Password.c_str();
   config.DiscoveryEnable = true;
-  config.DiscoveryNamePrefix = "logmeweb-manual";
+  config.DiscoveryNamePrefix = nullptr;
 
   return Logme::Instance->StartControlServer(config);
 }

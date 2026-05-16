@@ -116,37 +116,12 @@ namespace Logme
       SID SNone;
       const SID& Subsystem;
 
-      Params(...) 
-        : None{0}
-        , Channel(None)
-        , SNone{0}
-        , Subsystem(SNone)
-      {
-      }
-
-      Params(const ID& ch, ...)
-        : None{0}
-        , Channel(ch)
-        , SNone{0}
-        , Subsystem(SNone)
-      {
-      }
-
-      Params(const SID& sid, ...)
-        : None{ 0 }
-        , Channel(None)
-        , SNone{0}
-        , Subsystem(sid)
-      {
-      }
-
-      Params(const ID& ch, const SID& sid, ...)
-        : None{ 0 }
-        , Channel(ch)
-        , SNone{0}
-        , Subsystem(sid)
-      {
-      }
+      Params(...);
+      Params(const ID& ch, ...);
+      Params(const ChannelPtr& channel, ...);
+      Params(const SID& sid, ...);
+      Params(const ID& ch, const SID& sid, ...);
+      Params(const ChannelPtr& channel, const SID& sid, ...);
     };
 
   public:

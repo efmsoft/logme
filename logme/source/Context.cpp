@@ -1010,3 +1010,51 @@ const char* Context::Apply(const ChannelPtr& ch, OutputFlags flags, int& nc)
   return CountLoggedBytesAndReturn(*this, ch, nc, buffer);
 }
 
+  Context::Params::Params(...)
+    : None{0}
+    , Channel(None)
+    , SNone{0}
+    , Subsystem(SNone)
+  {
+  }
+
+  Context::Params::Params(const ID& ch, ...)
+    : None{0}
+    , Channel(ch)
+    , SNone{0}
+    , Subsystem(SNone)
+  {
+  }
+
+  Context::Params::Params(const ChannelPtr& channel, ...)
+    : None{0}
+    , Channel(channel ? channel->GetID() : None)
+    , SNone{0}
+    , Subsystem(SNone)
+  {
+  }
+
+  Context::Params::Params(const SID& sid, ...)
+    : None{0}
+    , Channel(None)
+    , SNone{0}
+    , Subsystem(sid)
+  {
+  }
+
+  Context::Params::Params(const ID& ch, const SID& sid, ...)
+    : None{0}
+    , Channel(ch)
+    , SNone{0}
+    , Subsystem(sid)
+  {
+  }
+
+  Context::Params::Params(const ChannelPtr& channel, const SID& sid, ...)
+    : None{0}
+    , Channel(channel ? channel->GetID() : None)
+    , SNone{0}
+    , Subsystem(sid)
+  {
+  }
+

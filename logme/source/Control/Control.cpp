@@ -581,7 +581,9 @@ bool Logger::StartControlServer(const ControlConfig& c)
   {
     ControlDiscoveryServer.reset(new ControlDiscovery(ControlCfg));
     if (!ControlDiscoveryServer->Start())
+    {
       LogmeW(CHINT, "Unable to start control discovery endpoint");
+    }
   }
 
   ListenerThread = std::make_shared<std::thread>(&Logger::ControlListener, this);

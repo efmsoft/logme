@@ -2,6 +2,7 @@
 #include <chrono>
 #include <filesystem>
 #include <regex>
+#include <sstream>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -173,11 +174,14 @@ void FileBackend::SetQueueSizeLimitDefault(size_t size)
 
 std::string FileBackend::FormatDetails()
 {
-  std::string out = NameTemplate;
-  if (Append)
-    out += " APPEND";
+  std::ostringstream os;
+  os << NameTemplate;
+  os << (Append ? " APPEND" : " OVERWRITE");
+  os << " MaxSize=" << MaxSize;
+  os << " DailyRotation=" << (DailyRotation ? "YES" : "NO");
+  os << " MaxParts=" << MaxParts;
 
-  return out;
+  return os.str();
 }
 
 BackendConfigPtr FileBackend::CreateConfig()

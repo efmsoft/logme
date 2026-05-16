@@ -180,6 +180,14 @@ function QuoteArg(value)
   return '"' + text.replaceAll('\\', '\\\\').replaceAll('"', '\\"') + '"';
 }
 
+function ChannelControlNameArg(channel)
+{
+  if (!channel || channel === '<default>')
+    return '<default>';
+
+  return QuoteArg(channel);
+}
+
 function ChannelOptionArg(channel)
 {
   if (!channel)
@@ -784,7 +792,7 @@ function BuildBackendAdvancedFields()
 {
   const type = $('addBackendType') ? $('addBackendType').value : '';
 
-  if (type === 'FileBackend' || type === 'SharedFileBackend')
+  if (type === 'FileBackend')
   {
     return `
       <label>File name</label>
@@ -794,6 +802,45 @@ function BuildBackendAdvancedFields()
         <input id="addBackendAppend" type="checkbox" checked>
         Append to existing file
       </label>
+
+      <label>Max size</label>
+      <input id="addBackendMaxSize" placeholder="8mb">
+
+      <label class="check-line">
+        <input id="addBackendDailyRotation" type="checkbox">
+        Daily rotation
+      </label>
+
+      <label>Max parts</label>
+      <input id="addBackendMaxParts" placeholder="2">
+    `;
+  }
+
+  if (type === 'SharedFileBackend')
+  {
+    return `
+      <label>File name</label>
+      <input id="addBackendFileName" placeholder="log file path">
+
+      <label>Max size</label>
+      <input id="addBackendMaxSize" placeholder="8mb">
+
+      <label>Timeout</label>
+      <input id="addBackendTimeout" placeholder="10ms">
+    `;
+  }
+
+  if (type === 'BufferBackend')
+  {
+    return `
+      <label>Max size</label>
+      <input id="addBackendMaxSize" placeholder="4mb">
+
+      <label>Policy</label>
+      <select id="addBackendPolicy">
+        <option value="stop-appending">stop-appending</option>
+        <option value="delete-oldest">delete-oldest</option>
+      </select>
     `;
   }
 
@@ -812,12 +859,45 @@ function BuildAddBackendCommand(channel)
   if (type === 'FileBackend' || type === 'SharedFileBackend')
   {
     const fileName = $('addBackendFileName') ? $('addBackendFileName').value.trim() : '';
-    const append = $('addBackendAppend') ? $('addBackendAppend').checked : false;
+    const maxSize = $('addBackendMaxSize') ? $('addBackendMaxSize').value.trim() : '';
 
     if (fileName)
       tail += ` --file ${QuoteArg(fileName)}`;
 
+    if (maxSize)
+      tail += ` --max-size ${QuoteArg(maxSize)}`;
+  }
+
+  if (type === 'FileBackend')
+  {
+    const append = $('addBackendAppend') ? $('addBackendAppend').checked : false;
+    const dailyRotation = $('addBackendDailyRotation') ? $('addBackendDailyRotation').checked : false;
+    const maxParts = $('addBackendMaxParts') ? $('addBackendMaxParts').value.trim() : '';
+
     tail += append ? ' --append' : ' --overwrite';
+    tail += dailyRotation ? ' --daily-rotation' : ' --no-daily-rotation';
+
+    if (maxParts)
+      tail += ` --max-parts ${QuoteArg(maxParts)}`;
+  }
+
+  if (type === 'SharedFileBackend')
+  {
+    const timeout = $('addBackendTimeout') ? $('addBackendTimeout').value.trim() : '';
+    if (timeout)
+      tail += ` --timeout ${QuoteArg(timeout)}`;
+  }
+
+  if (type === 'BufferBackend')
+  {
+    const maxSize = $('addBackendMaxSize') ? $('addBackendMaxSize').value.trim() : '';
+    const policy = $('addBackendPolicy') ? $('addBackendPolicy').value : '';
+
+    if (maxSize)
+      tail += ` --max-size ${QuoteArg(maxSize)}`;
+
+    if (policy)
+      tail += ` --policy ${policy}`;
   }
 
   return BuildChannelCommand('backend', channel, tail);
@@ -908,10 +988,10 @@ async function RenderChannelDetails(channel)
       </div>
     `;
 
-    $('enableChannelButton').addEventListener('click', () => ExecuteChannelAction(channel, `channel --enable ${QuoteArg(channel || '<default>')}`, 'channelActionResult'));
-    $('disableChannelButton').addEventListener('click', () => ExecuteChannelAction(channel, `channel --disable ${QuoteArg(channel || '<default>')}`, 'channelActionResult'));
+    $('enableChannelButton').addEventListener('click', () => ExecuteChannelAction(channel, `channel --enable ${ChannelControlNameArg(channel)}`, 'channelActionResult'));
+    $('disableChannelButton').addEventListener('click', () => ExecuteChannelAction(channel, `channel --disable ${ChannelControlNameArg(channel)}`, 'channelActionResult'));
     $('deleteChannelButton').addEventListener('click', () => ExecuteChannelAction(channel, `channel --delete ${QuoteArg(channel)}`, 'channelActionResult'));
-    $('setErrorChannelButton').addEventListener('click', () => ExecuteChannelAction(channel, `channel --error ${QuoteArg(channel || '<default>')}`, 'channelActionResult'));
+    $('setErrorChannelButton').addEventListener('click', () => ExecuteChannelAction(channel, `channel --error ${ChannelControlNameArg(channel)}`, 'channelActionResult'));
     if ($('clearErrorChannelChipButton'))
       $('clearErrorChannelChipButton').addEventListener('click', () => ExecuteChannelAction(channel, 'channel --clear-error', 'channelActionResult'));
 
@@ -925,14 +1005,14 @@ async function RenderChannelDetails(channel)
     $('bindChannelButton').addEventListener('click', () =>
     {
       const target = $('bindChannelSelect').value;
-      ExecuteChannelAction(channel, `channel --bind ${QuoteArg(channel)} ${QuoteArg(target)}`, 'channelActionResult');
+      ExecuteChannelAction(channel, `channel --bind ${ChannelControlNameArg(channel)} ${ChannelControlNameArg(target)}`, 'channelActionResult');
     });
 
     if ($('unbindChannelChipButton'))
     {
       $('unbindChannelChipButton').addEventListener('click', () =>
       {
-        ExecuteChannelAction(channel, `channel --unbind ${QuoteArg(channel || '<default>')}`, 'channelActionResult');
+        ExecuteChannelAction(channel, `channel --unbind ${ChannelControlNameArg(channel)}`, 'channelActionResult');
       });
     }
 
@@ -970,7 +1050,7 @@ async function RenderChannelDetails(channel)
     {
       $('addBackendAdvanced').innerHTML = BuildBackendAdvancedFields();
 
-      ['addBackendFileName', 'addBackendAppend'].forEach(id =>
+      ['addBackendFileName', 'addBackendAppend', 'addBackendMaxSize', 'addBackendDailyRotation', 'addBackendMaxParts', 'addBackendTimeout', 'addBackendPolicy'].forEach(id =>
       {
         const element = $(id);
         if (element)
@@ -1392,6 +1472,10 @@ function UpdateManualBuilder()
         <option value="--delete">delete</option>
         <option value="--enable">enable</option>
         <option value="--disable">disable</option>
+        <option value="--bind">bind</option>
+        <option value="--unbind">unbind</option>
+        <option value="--error">set error channel</option>
+        <option value="--clear-error">clear error channel</option>
       </select>
       <div id="builderChannelTarget"></div>
     `;
@@ -1399,11 +1483,29 @@ function UpdateManualBuilder()
     const update = () =>
     {
       const op = $('builderChannelOp').value;
+
+      if (op === '--clear-error')
+      {
+        SetManualCommand('channel --clear-error');
+        return;
+      }
+
+      if (op === '--bind')
+      {
+        const source = $('builderSourceChannel') ? $('builderSourceChannel').value : '';
+        const target = $('builderTargetChannel') ? $('builderTargetChannel').value : '';
+        SetManualCommand(`channel --bind ${ChannelControlNameArg(source)} ${ChannelControlNameArg(target)}`);
+        return;
+      }
+
       const name = op === '--create'
         ? ($('builderChannelName') ? $('builderChannelName').value : '')
         : ($('builderChannel') ? $('builderChannel').value : '');
+      const channelName = op === '--create'
+        ? QuoteArg(name)
+        : ChannelControlNameArg(name);
 
-      SetManualCommand(`channel ${op} ${QuoteArg(name)}`.trim());
+      SetManualCommand(`channel ${op} ${channelName}`.trim());
     };
 
     const renderTarget = () =>
@@ -1411,13 +1513,32 @@ function UpdateManualBuilder()
       const op = $('builderChannelOp').value;
       const target = $('builderChannelTarget');
 
-      if (op === '--create')
+      if (op === '--clear-error')
+      {
+        target.innerHTML = '<div class="hint compact">This command does not take a channel name.</div>';
+      }
+      else if (op === '--create')
       {
         target.innerHTML = `
           <label>New channel name</label>
           <input id="builderChannelName" placeholder="channel name">
         `;
         $('builderChannelName').addEventListener('input', update);
+      }
+      else if (op === '--bind')
+      {
+        target.innerHTML = `
+          <label>Source channel</label>
+          <select id="builderSourceChannel">
+            ${channels.map(channel => `<option value="${EscapeHtml(channel)}">${EscapeHtml(ChannelNameForDisplay(channel))}</option>`).join('')}
+          </select>
+          <label>Target channel</label>
+          <select id="builderTargetChannel">
+            ${channels.map(channel => `<option value="${EscapeHtml(channel)}">${EscapeHtml(ChannelNameForDisplay(channel))}</option>`).join('')}
+          </select>
+        `;
+        $('builderSourceChannel').addEventListener('change', update);
+        $('builderTargetChannel').addEventListener('change', update);
       }
       else
       {
@@ -1485,12 +1606,124 @@ function UpdateManualBuilder()
         <option value="SharedFileBackend">SharedFileBackend</option>
         <option value="BufferBackend">BufferBackend</option>
       </select>
+      <div id="builderBackendOptions"></div>
     `;
-    const update = () => SetManualCommand(`backend${GetBuilderChannelArg()} ${$('builderBackendOp').value} ${$('builderBackendType').value}`);
+
+    const update = () =>
+    {
+      let command = `backend${GetBuilderChannelArg()} ${$('builderBackendOp').value} ${$('builderBackendType').value}`;
+
+      if ($('builderBackendOp').value === '--add')
+      {
+        const type = $('builderBackendType').value;
+
+        if (type === 'ConsoleBackend' && $('builderBackendAsync').checked)
+          command += ' --async';
+
+        if ((type === 'FileBackend' || type === 'SharedFileBackend') && $('builderBackendFile').value)
+          command += ` --file ${QuoteArg($('builderBackendFile').value)}`;
+
+        if ((type === 'FileBackend' || type === 'SharedFileBackend' || type === 'BufferBackend') && $('builderBackendMaxSize') && $('builderBackendMaxSize').value)
+          command += ` --max-size ${QuoteArg($('builderBackendMaxSize').value)}`;
+
+        if (type === 'FileBackend')
+        {
+          command += ` ${$('builderBackendFileMode').value}`;
+          command += $('builderBackendDailyRotation').checked ? ' --daily-rotation' : ' --no-daily-rotation';
+
+          if ($('builderBackendMaxParts').value)
+            command += ` --max-parts ${QuoteArg($('builderBackendMaxParts').value)}`;
+        }
+
+        if (type === 'SharedFileBackend' && $('builderBackendTimeout').value)
+          command += ` --timeout ${QuoteArg($('builderBackendTimeout').value)}`;
+
+        if (type === 'BufferBackend')
+          command += ` --policy ${$('builderBackendPolicy').value}`;
+      }
+
+      SetManualCommand(command);
+    };
+
+    const renderOptions = () =>
+    {
+      const op = $('builderBackendOp').value;
+      const type = $('builderBackendType').value;
+      const options = $('builderBackendOptions');
+
+      if (op !== '--add')
+      {
+        options.innerHTML = '<div class="hint compact">Delete does not use backend creation options.</div>';
+      }
+      else if (type === 'ConsoleBackend')
+      {
+        options.innerHTML = `
+          <label class="checkbox-line"><input id="builderBackendAsync" type="checkbox"> async</label>
+        `;
+        $('builderBackendAsync').addEventListener('change', update);
+      }
+      else if (type === 'FileBackend')
+      {
+        options.innerHTML = `
+          <label>File name</label>
+          <input id="builderBackendFile" placeholder="optional output file path">
+          <label>File mode</label>
+          <select id="builderBackendFileMode">
+            <option value="--append">append</option>
+            <option value="--overwrite">overwrite</option>
+          </select>
+          <label>Max size</label>
+          <input id="builderBackendMaxSize" placeholder="8mb">
+          <label class="checkbox-line"><input id="builderBackendDailyRotation" type="checkbox"> daily rotation</label>
+          <label>Max parts</label>
+          <input id="builderBackendMaxParts" placeholder="2">
+        `;
+        $('builderBackendFile').addEventListener('input', update);
+        $('builderBackendFileMode').addEventListener('change', update);
+        $('builderBackendMaxSize').addEventListener('input', update);
+        $('builderBackendDailyRotation').addEventListener('change', update);
+        $('builderBackendMaxParts').addEventListener('input', update);
+      }
+      else if (type === 'SharedFileBackend')
+      {
+        options.innerHTML = `
+          <label>File name</label>
+          <input id="builderBackendFile" placeholder="optional output file path">
+          <label>Max size</label>
+          <input id="builderBackendMaxSize" placeholder="8mb">
+          <label>Timeout</label>
+          <input id="builderBackendTimeout" placeholder="10ms">
+        `;
+        $('builderBackendFile').addEventListener('input', update);
+        $('builderBackendMaxSize').addEventListener('input', update);
+        $('builderBackendTimeout').addEventListener('input', update);
+      }
+      else if (type === 'BufferBackend')
+      {
+        options.innerHTML = `
+          <label>Max size</label>
+          <input id="builderBackendMaxSize" placeholder="4mb">
+          <label>Policy</label>
+          <select id="builderBackendPolicy">
+            <option value="stop-appending">stop-appending</option>
+            <option value="delete-oldest">delete-oldest</option>
+          </select>
+        `;
+        $('builderBackendMaxSize').addEventListener('input', update);
+        $('builderBackendPolicy').addEventListener('change', update);
+      }
+      else
+      {
+        options.innerHTML = '<div class="hint compact">This backend type has no Manual command creation options.</div>';
+      }
+
+      update();
+    };
+
     $('builderChannel').addEventListener('change', update);
-    $('builderBackendOp').addEventListener('change', update);
-    $('builderBackendType').addEventListener('change', update);
-    update();
+    $('builderBackendOp').addEventListener('change', renderOptions);
+    $('builderBackendType').addEventListener('change', renderOptions);
+    renderOptions();
     return;
   }
 
@@ -1531,9 +1764,9 @@ function UpdateManualBuilder()
       <label>Operation</label>
       <select id="builderTraceOp">
         <option value="">list</option>
-        <option value="overview">overview</option>
-          <option value="list">list</option>
+        <option value="list">list</option>
         <option value="stat">stat</option>
+        <option value="stats">stats</option>
         <option value="enable">enable</option>
         <option value="disable">disable</option>
         <option value="reset">reset</option>

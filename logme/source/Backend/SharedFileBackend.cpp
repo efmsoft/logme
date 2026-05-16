@@ -1,3 +1,5 @@
+#include <sstream>
+
 #include <Logme/Backend/SharedFileBackend.h>
 #include <Logme/Channel.h>
 #include <Logme/File/exe_path.h>
@@ -59,7 +61,13 @@ std::string SharedFileBackend::GetPathName(int index)
 std::string SharedFileBackend::FormatDetails()
 {
   std::lock_guard guard(Lock);
-  return NameTemplate;
+
+  std::ostringstream os;
+  os << NameTemplate;
+  os << " MaxSize=" << MaxSize;
+  os << " Timeout=" << Timeout;
+
+  return os.str();
 }
 
 BackendConfigPtr SharedFileBackend::CreateConfig()

@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cstring>
 #include <iterator>
+#include <sstream>
 
 #include <Logme/Backend/BufferBackend.h>
 #include <Logme/Channel.h>
@@ -10,6 +11,23 @@ using namespace Logme;
 BufferBackend::BufferBackend(Logme::ChannelPtr owner)
   : Backend(owner, TYPE_ID)
 {
+}
+
+
+std::string BufferBackend::FormatDetails()
+{
+  std::lock_guard guard(Lock);
+
+  std::ostringstream os;
+  os << "MaxSize=" << Config.MaxSize;
+
+  if (Config.Policy == BufferBackendPolicy::DELETE_OLDEST)
+    os << " Policy=DELETE_OLDEST";
+  else
+    os << " Policy=STOP_APPENDING";
+
+  os << " Used=" << Buffer.size();
+  return os.str();
 }
 
 BackendConfigPtr BufferBackend::CreateConfig()

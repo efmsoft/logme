@@ -82,6 +82,11 @@ bool ConsoleBackend::ApplyConfig(BackendConfigPtr c)
   return true;
 }
 
+std::string ConsoleBackend::FormatDetails()
+{
+  return Async ? "ASYNC" : "SYNC";
+}
+
 void ConsoleBackend::Freeze()
 {
   if (Owner == nullptr)

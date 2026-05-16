@@ -19,8 +19,11 @@ static std::string FormatBool(bool value)
 
 static std::string FormatErrorChannel(const StringPtr& channel)
 {
-  if (!channel || channel->empty())
+  if (!channel)
     return "<none>";
+
+  if (channel->empty())
+    return "<default>";
 
   return *channel;
 }

@@ -1,12 +1,16 @@
 #include <algorithm>
 #include <cctype>
+#include <cstdlib>
+#include <limits>
 #include <string>
 
 #include <Logme/Backend/Backend.h>
+#include <Logme/Backend/BufferBackend.h>
 #include <Logme/Backend/ConsoleBackend.h>
 #include <Logme/Backend/FileBackend.h>
 #include <Logme/Backend/SharedFileBackend.h>
 #include <Logme/Logger.h>
+#include <Logme/Utils.h>
 
 #include "../CommandRegistrar.h"
 
@@ -61,6 +65,156 @@ static std::string NormalizeBackendType(const std::string& input)
   return std::string();
 }
 
+
+static bool ParseSizeValue(const std::string& input, size_t& value)
+{
+  if (input.empty())
+    return false;
+
+  size_t numberEnd = 0;
+  while (numberEnd < input.size() && std::isdigit(static_cast<unsigned char>(input[numberEnd])))
+    ++numberEnd;
+
+  if (numberEnd == 0)
+    return false;
+
+  unsigned long long number = 0;
+  try
+  {
+    number = std::stoull(input.substr(0, numberEnd));
+  }
+  catch (...)
+  {
+    return false;
+  }
+
+  std::string suffix = input.substr(numberEnd);
+  ToLowerAsciiInplace(suffix);
+
+  unsigned long long multiplier = 1;
+  if (suffix.empty() || suffix == "b")
+  {
+    multiplier = 1;
+  }
+  else if (suffix == "k" || suffix == "kb" || suffix == "kib")
+  {
+    multiplier = 1024ULL;
+  }
+  else if (suffix == "m" || suffix == "mb" || suffix == "mib")
+  {
+    multiplier = 1024ULL * 1024ULL;
+  }
+  else if (suffix == "g" || suffix == "gb" || suffix == "gib")
+  {
+    multiplier = 1024ULL * 1024ULL * 1024ULL;
+  }
+  else
+  {
+    return false;
+  }
+
+  if (number > std::numeric_limits<size_t>::max() / multiplier)
+    return false;
+
+  value = static_cast<size_t>(number * multiplier);
+  return true;
+}
+
+
+static bool ParseIntervalValue(const std::string& input, size_t& value)
+{
+  if (input.empty())
+    return false;
+
+  size_t numberEnd = 0;
+  while (numberEnd < input.size() && std::isdigit(static_cast<unsigned char>(input[numberEnd])))
+    ++numberEnd;
+
+  if (numberEnd == 0)
+    return false;
+
+  unsigned long long number = 0;
+  try
+  {
+    number = std::stoull(input.substr(0, numberEnd));
+  }
+  catch (...)
+  {
+    return false;
+  }
+
+  std::string suffix = input.substr(numberEnd);
+  ToLowerAsciiInplace(suffix);
+
+  unsigned long long multiplier = 1;
+  if (suffix.empty() || suffix == "ms" || suffix == "millisecond" || suffix == "milliseconds")
+  {
+    multiplier = 1;
+  }
+  else if (suffix == "s" || suffix == "sec" || suffix == "second" || suffix == "seconds")
+  {
+    multiplier = 1000ULL;
+  }
+  else if (suffix == "m" || suffix == "min" || suffix == "minute" || suffix == "minutes")
+  {
+    multiplier = 60ULL * 1000ULL;
+  }
+  else if (suffix == "h" || suffix == "hour" || suffix == "hours")
+  {
+    multiplier = 60ULL * 60ULL * 1000ULL;
+  }
+  else
+  {
+    return false;
+  }
+
+  if (number > std::numeric_limits<size_t>::max() / multiplier)
+    return false;
+
+  value = static_cast<size_t>(number * multiplier);
+  return true;
+}
+
+static bool ParseIntValue(const std::string& input, int& value)
+{
+  if (input.empty())
+    return false;
+
+  try
+  {
+    size_t pos = 0;
+    int parsed = std::stoi(input, &pos);
+    if (pos != input.size())
+      return false;
+
+    value = parsed;
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+
+static bool ParseBufferPolicy(const std::string& input, BufferBackendPolicy& policy)
+{
+  std::string s = input;
+  ToLowerAsciiInplace(s);
+
+  if (s == "stop" || s == "stop-appending" || s == "stop_appending")
+  {
+    policy = BufferBackendPolicy::STOP_APPENDING;
+    return true;
+  }
+
+  if (s == "delete" || s == "delete-oldest" || s == "delete_oldest")
+  {
+    policy = BufferBackendPolicy::DELETE_OLDEST;
+    return true;
+  }
+
+  return false;
+}
 
 static bool GetChannelFromArgs(
   Logme::StringArray& arr
@@ -143,11 +297,14 @@ bool Logger::CommandBackend(Logme::StringArray& arr, std::string& response)
 
   if (op == "--add")
   {
-    int ctx = 0;
-    if (ch->FindFirstBackend(type.c_str(), ctx))
+    if (type != FileBackend::TYPE_ID && type != SharedFileBackend::TYPE_ID)
     {
-      response = "error: backend already exists: " + typeInput;
-      return true;
+      int ctx = 0;
+      if (ch->FindFirstBackend(type.c_str(), ctx))
+      {
+        response = "error: backend already exists: " + typeInput;
+        return true;
+      }
     }
 
     auto backend = Backend::Create(type.c_str(), ch);
@@ -213,6 +370,138 @@ bool Logger::CommandBackend(Logme::StringArray& arr, std::string& response)
         }
 
         response = "error: " + arg + " is only supported by FileBackend";
+        return true;
+      }
+
+      if (arg == "--max-size")
+      {
+        if (i + 1 >= arr.size())
+        {
+          response = "error: missing max size";
+          return true;
+        }
+
+        size_t value = 0;
+        if (!ParseSizeValue(arr[++i], value))
+        {
+          response = "error: invalid max size";
+          return true;
+        }
+
+        auto fileConfig = std::dynamic_pointer_cast<FileBackendConfig>(config);
+        auto sharedFileConfig = std::dynamic_pointer_cast<SharedFileBackendConfig>(config);
+        auto bufferConfig = std::dynamic_pointer_cast<BufferBackendConfig>(config);
+
+        if (fileConfig)
+        {
+          fileConfig->MaxSize = value;
+          continue;
+        }
+
+        if (sharedFileConfig)
+        {
+          sharedFileConfig->MaxSize = value;
+          continue;
+        }
+
+        if (bufferConfig)
+        {
+          bufferConfig->MaxSize = value;
+          continue;
+        }
+
+        response = "error: --max-size is only supported by file and buffer backends";
+        return true;
+      }
+
+      if (arg == "--daily-rotation" || arg == "--no-daily-rotation")
+      {
+        auto fileConfig = std::dynamic_pointer_cast<FileBackendConfig>(config);
+        if (fileConfig)
+        {
+          fileConfig->DailyRotation = (arg == "--daily-rotation");
+          continue;
+        }
+
+        response = "error: " + arg + " is only supported by FileBackend";
+        return true;
+      }
+
+      if (arg == "--max-parts")
+      {
+        if (i + 1 >= arr.size())
+        {
+          response = "error: missing max parts";
+          return true;
+        }
+
+        int value = 0;
+        if (!ParseIntValue(arr[++i], value))
+        {
+          response = "error: invalid max parts";
+          return true;
+        }
+
+        auto fileConfig = std::dynamic_pointer_cast<FileBackendConfig>(config);
+        if (fileConfig)
+        {
+          fileConfig->MaxParts = value;
+          continue;
+        }
+
+        response = "error: --max-parts is only supported by FileBackend";
+        return true;
+      }
+
+      if (arg == "--timeout")
+      {
+        if (i + 1 >= arr.size())
+        {
+          response = "error: missing timeout";
+          return true;
+        }
+
+        size_t value = 0;
+        if (!ParseIntervalValue(arr[++i], value))
+        {
+          response = "error: invalid timeout";
+          return true;
+        }
+
+        auto sharedFileConfig = std::dynamic_pointer_cast<SharedFileBackendConfig>(config);
+        if (sharedFileConfig)
+        {
+          sharedFileConfig->Timeout = value;
+          continue;
+        }
+
+        response = "error: --timeout is only supported by SharedFileBackend";
+        return true;
+      }
+
+      if (arg == "--policy")
+      {
+        if (i + 1 >= arr.size())
+        {
+          response = "error: missing buffer policy";
+          return true;
+        }
+
+        BufferBackendPolicy policy;
+        if (!ParseBufferPolicy(arr[++i], policy))
+        {
+          response = "error: invalid buffer policy";
+          return true;
+        }
+
+        auto bufferConfig = std::dynamic_pointer_cast<BufferBackendConfig>(config);
+        if (bufferConfig)
+        {
+          bufferConfig->Policy = policy;
+          continue;
+        }
+
+        response = "error: --policy is only supported by BufferBackend";
         return true;
       }
 

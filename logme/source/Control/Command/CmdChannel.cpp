@@ -214,6 +214,7 @@ bool Logger::CommandChannel(Logme::StringArray& arr, std::string& response)
   response += "Logged bytes: " + std::to_string(ch->GetLoggedBytes()) + "\n";
 
   response += "Flags: 0x" + ToHexUpper(ch->GetFlags().Value) + " " + ch->GetFlags().ToString(" ", true) + "\n";
+  response += "Format: " + ch->GetFlags().FormatType() + "\n";
   response += "Level: " + std::string(GetLevelName(ch->GetFilterLevel())) + "\n";
 
   bool isErrorChannel = false;

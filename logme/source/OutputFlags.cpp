@@ -155,6 +155,17 @@ std::string OutputFlags::ConsoleType() const
   }
 }
 
+std::string OutputFlags::FormatType() const
+{
+  switch (Format)
+  {
+  case OUTPUT_TEXT: return "text";
+  case OUTPUT_JSON: return "json";
+  case OUTPUT_XML: return "xml";
+  default: return "Unknown";
+  }
+}
+
 std::string OutputFlags::ToString(const char* separator, bool brackets) const
 {
   std::vector<std::string> flags;
@@ -174,7 +185,7 @@ std::string OutputFlags::ToString(const char* separator, bool brackets) const
   APPEND_FLAG(DisableLink);
   APPEND_FLAG(ThreadTransition);
   APPEND_FLAG(Subsystem);
-  APPEND_FLAG(Format);
+  APPEND_FLAG(Format, [this]() {return FormatType(); });
 
   std::string result = Join(flags, separator);
   if (brackets && !result.empty())

@@ -113,6 +113,8 @@ namespace Logme
     LOGMELNK std::string LocationType() const;
     /// <summary>Returns the readable name of the selected console-output routing mode.</summary>
     LOGMELNK std::string ConsoleType() const;
+    /// <summary>Returns the readable name of the selected output format.</summary>
+    LOGMELNK std::string FormatType() const;
 #endif
   };
 

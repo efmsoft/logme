@@ -50,6 +50,15 @@ static NamedValue ConsoleValues[] =
   {nullptr, 0}
 };
 
+static NamedValue FormatValues[] =
+{
+  {"", OUTPUT_TEXT},
+  {"text", OUTPUT_TEXT},
+  {"json", OUTPUT_JSON},
+  {"xml", OUTPUT_XML},
+  {nullptr, 0}
+};
+
 static std::string ToLower(std::string s)
 {
   std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return (char)std::tolower(c); });
@@ -267,6 +276,23 @@ bool Logger::CommandFlags(Logme::StringArray& arr, std::string& response)
         return true;
       }
       f.Console = v;
+      continue;
+    }
+
+    if (name == "format")
+    {
+      int v = 0;
+      if (value.empty())
+      {
+        if (!DefaultEnumValue1(FormatValues, v))
+          v = OUTPUT_TEXT;
+      }
+      else if (!FindNamed(FormatValues, value, v) && !ParseInt(value, v))
+      {
+        response = "error: invalid value for format: " + value;
+        return true;
+      }
+      f.Format = v;
       continue;
     }
 

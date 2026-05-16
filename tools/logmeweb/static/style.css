@@ -1283,3 +1283,67 @@ button.danger:disabled
 {
   margin-right: 2px;
 }
+
+.manual-send-button
+{
+  margin-top: 16px;
+}
+
+.subsystem-layout
+{
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.subsystem-add-grid
+{
+  display: grid;
+  grid-template-columns: 140px minmax(220px, 360px);
+  gap: 10px 14px;
+  align-items: center;
+  margin-top: 14px;
+}
+
+.subsystem-add-grid button
+{
+  grid-column: 2;
+  justify-self: start;
+}
+
+.subsystem-chip-list
+{
+  margin-top: 12px;
+}
+
+.subsystem-check-row
+{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.subsystem-check-row input
+{
+  max-width: 360px;
+}
+
+@media (max-width: 800px)
+{
+  .subsystem-add-grid
+  {
+    grid-template-columns: 1fr;
+  }
+
+  .subsystem-add-grid button
+  {
+    grid-column: 1;
+  }
+
+  .subsystem-check-row
+  {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

@@ -1073,15 +1073,65 @@ async function RenderChannels()
     await RenderChannels();
   });
 
+  async function SelectChannelButton(button)
+  {
+    document.querySelectorAll('#channelList .list-item').forEach(x => x.classList.remove('selected'));
+    button.classList.add('selected');
+    await RenderChannelDetails(button.dataset.channel);
+  }
+
   document.querySelectorAll('#channelList .list-item').forEach(button =>
   {
     button.addEventListener('click', async () =>
     {
-      document.querySelectorAll('#channelList .list-item').forEach(x => x.classList.remove('selected'));
-      button.classList.add('selected');
-      await RenderChannelDetails(button.dataset.channel);
+      await SelectChannelButton(button);
     });
   });
+
+  const defaultChannelButton = document.querySelector('#channelList .list-item[data-channel=""]');
+  if (defaultChannelButton)
+    await SelectChannelButton(defaultChannelButton);
+}
+
+function RenderSubsystemChip(name, listName)
+{
+  const command = listName === 'blocked'
+    ? `subsystem --unblock ${QuoteArg(name)}`
+    : `subsystem --disallow ${QuoteArg(name)}`;
+
+  return `
+    <span class="flag-chip subsystem-chip">
+      ${EscapeHtml(name)}
+      <button title="Remove from ${EscapeHtml(listName)} list" data-subsystem-command="${EscapeHtml(command)}">×</button>
+    </span>
+  `;
+}
+
+function RenderSubsystemList(items, listName, emptyText)
+{
+  if (!items.length)
+    return `<div class="empty-state small">${EscapeHtml(emptyText)}</div>`;
+
+  return `<div class="flag-chip-list subsystem-chip-list">${items.map(item => RenderSubsystemChip(item, listName)).join('')}</div>`;
+}
+
+async function ExecuteSubsystemCommand(command)
+{
+  const resultBox = $('subsystemActionResult');
+  resultBox.innerHTML = '<div class="loading">Sending command...</div>';
+
+  try
+  {
+    const result = await SendCommand(command, 'text');
+    resultBox.innerHTML = RenderResponseCard('Subsystem command result', command, result);
+
+    if (result.ok)
+      await RenderSubsystems();
+  }
+  catch (e)
+  {
+    resultBox.innerHTML = `<div class="error-text">${EscapeHtml(e)}</div>`;
+  }
 }
 
 async function RenderSubsystems()
@@ -1094,18 +1144,77 @@ async function RenderSubsystems()
   const allowed = data.allowedSubsystems || [];
 
   $('workArea').innerHTML = `
-    <div class="cards-grid">
+    <div class="subsystem-layout">
       <div class="card soft">
-        <h2>Blocked subsystems</h2>
-        ${RenderTags(blocked, 'No blocked subsystems')}
+        <div class="card-header compact-header">
+          <div>
+            <h2>Subsystem filters</h2>
+            <p>Add or remove subsystem names from the runtime block and allow lists.</p>
+          </div>
+        </div>
+
+        <div class="subsystem-add-grid">
+          <label>List</label>
+          <select id="subsystemListKind">
+            <option value="block">Block list</option>
+            <option value="allow">Allow list</option>
+          </select>
+
+          <label>Subsystem name</label>
+          <input id="subsystemNameInput" placeholder="subsystem name, max 8 chars">
+
+          <button class="primary" id="addSubsystemButton">Add subsystem</button>
+        </div>
       </div>
-      <div class="card soft">
-        <h2>Allowed subsystems</h2>
-        ${RenderTags(allowed, 'No allowed subsystems')}
+
+      <div class="cards-grid two-columns">
+        <div class="card soft">
+          <div class="card-header compact-header">
+            <div>
+              <h2>Blocked subsystems</h2>
+              <p>Subsystems explicitly blocked at runtime.</p>
+            </div>
+            <button class="secondary small-button" id="clearBlockedSubsystemsButton">Clear</button>
+          </div>
+          ${RenderSubsystemList(blocked, 'blocked', 'No blocked subsystems')}
+        </div>
+
+        <div class="card soft">
+          <div class="card-header compact-header">
+            <div>
+              <h2>Allowed subsystems</h2>
+              <p>Subsystems explicitly allowed at runtime.</p>
+            </div>
+            <button class="secondary small-button" id="clearAllowedSubsystemsButton">Clear</button>
+          </div>
+          ${RenderSubsystemList(allowed, 'allowed', 'No allowed subsystems')}
+        </div>
       </div>
+      <div id="subsystemActionResult"></div>
+
+      <details class="raw-details">
+        <summary>Raw subsystem response</summary>
+        ${RenderResponseCard('Raw response', 'subsystem', result)}
+      </details>
     </div>
-    ${RenderResponseCard('Raw response', 'subsystem', result)}
   `;
+
+  $('addSubsystemButton').addEventListener('click', () =>
+  {
+    const name = $('subsystemNameInput').value.trim();
+    if (!name)
+      return;
+
+    const op = $('subsystemListKind').value === 'block' ? '--block' : '--allow';
+    ExecuteSubsystemCommand(`subsystem ${op} ${QuoteArg(name)}`);
+  });
+
+  $('clearBlockedSubsystemsButton').addEventListener('click', () => ExecuteSubsystemCommand('subsystem --clear-blocked'));
+  $('clearAllowedSubsystemsButton').addEventListener('click', () => ExecuteSubsystemCommand('subsystem --clear-allowed'));
+  document.querySelectorAll('[data-subsystem-command]').forEach(button =>
+  {
+    button.addEventListener('click', () => ExecuteSubsystemCommand(button.dataset.subsystemCommand));
+  });
 }
 
 async function RenderTracepoints()
@@ -1488,17 +1597,14 @@ async function RenderManual()
           <option value="json">JSON</option>
         </select>
 
-        <button class="primary" id="sendManualButton">Send command</button>
+        <button class="primary manual-send-button" id="sendManualButton">Send command</button>
       </div>
 
       <div id="manualResult" class="manual-result"></div>
     </div>
   `;
 
-  $('commandPreset').addEventListener('change', UpdateManualBuilder);
-  UpdateManualBuilder();
-
-  $('sendManualButton').addEventListener('click', async () =>
+  async function SendManualCommand()
   {
     const command = $('manualCommandText').value;
     const format = $('manualFormat').value;
@@ -1513,7 +1619,13 @@ async function RenderManual()
     {
       $('manualResult').innerHTML = `<div class="error-text">${EscapeHtml(e)}</div>`;
     }
-  });
+  }
+
+  $('commandPreset').addEventListener('change', UpdateManualBuilder);
+  UpdateManualBuilder();
+
+  $('sendManualButton').addEventListener('click', SendManualCommand);
+  await SendManualCommand();
 }
 
 async function SelectView(view)

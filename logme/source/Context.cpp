@@ -256,6 +256,7 @@ void Context::InitContext()
   TempBuffer = nullptr;
   TempBufferSize = 0;
   TempBufferCapacity = 0;
+  LoggedBytesCounted = false;
   Applied.None = true;
 }
 

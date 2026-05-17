@@ -1359,3 +1359,58 @@ button.danger:disabled
     flex-direction: column;
   }
 }
+
+.login-page
+{
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 16% 12%, rgba(15, 191, 145, 0.22), transparent 30%),
+    radial-gradient(circle at 84% 20%, rgba(22, 132, 247, 0.18), transparent 28%),
+    var(--bg);
+}
+
+.login-shell
+{
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+}
+
+.login-card
+{
+  width: min(560px, 100%);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  padding: 34px;
+}
+
+.login-logo
+{
+  width: 100%;
+  max-width: 430px;
+  display: block;
+  margin: 0 auto 26px;
+}
+
+.login-card h1
+{
+  margin: 8px 0 10px;
+  font-size: 32px;
+}
+
+.login-card p
+{
+  margin: 0 0 22px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+button:disabled
+{
+  cursor: default;
+  opacity: 0.65;
+}

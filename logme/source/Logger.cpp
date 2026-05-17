@@ -136,6 +136,11 @@ const std::string& Logger::GetHomeDirectory() const
   return HomeDirectory;
 }
 
+std::vector<std::string> Logger::GetHomeDirectoryLogExtensions() const
+{
+  return HomeDirectoryWatchDog.GetExtensions();
+}
+
 void Logger::SetEnableVTMode(bool enable)
 {
   EnableVTMode = enable;

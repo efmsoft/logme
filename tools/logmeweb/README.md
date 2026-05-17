@@ -71,7 +71,7 @@ By default, `logmeweb` keeps the previous local-only behavior and does not requi
 python tools/logmeweb/logmeweb.py --host 0.0.0.0 --port 8080 --https --password 1234
 ```
 
-After a successful login, the server creates an in-memory session and sends a session cookie. The cookie is `HttpOnly`, uses `SameSite=Lax`, and is marked `Secure` when HTTPS is enabled. The cookie contains only a random session id, not the password. A session is bound to the client IP address and User-Agent and expires after the configured inactivity timeout. When `logmeweb` is accessed through Cloudflare, the client IP is taken from the `CF-Connecting-IP` header so that session validation keeps working even if Cloudflare uses different edge addresses for subsequent requests.
+After a successful login, the server creates an in-memory session and sends a session cookie. The cookie is `HttpOnly`, uses `SameSite=Lax`, and is marked `Secure` when HTTPS is enabled. The cookie contains only a random session id, not the password. A session is bound to the client IP address and User-Agent and expires after the configured inactivity timeout. When `logmeweb` is deployed behind a trusted reverse proxy or CDN, use `--trust-proxy-headers` so the client identity is taken from the forwarded client IP headers rather than from the proxy socket address.
 
 Useful authentication options:
 
@@ -81,6 +81,18 @@ python tools/logmeweb/logmeweb.py --password 1234 --login-max-failures 5 --login
 ```
 
 Repeated failed logins from the same client IP are temporarily blocked. Error messages intentionally do not reveal whether the password was close or valid.
+
+## Logs tab
+
+The `Logs` tab browses log files exposed by the target application's logme control server. The target process provides a read-only view of files below its configured home directory. `logmeweb` does not browse arbitrary server paths.
+
+Files are filtered by the extensions configured in the target application's `home-directory.watch-dog.file-extension` setting. If the target does not configure extensions, the control command falls back to the common logme log extensions:
+
+```text
+.log .nlb .nlr .b64 .dat .csv
+```
+
+The viewer reads the selected file from the beginning in bounded chunks and provides navigation controls for moving through the whole file. It also supports downloading the selected log, switching long-line wrapping on or off, changing the layout between top/bottom and side-by-side modes, and searching within the currently loaded text. Log lines are highlighted by severity keywords such as `DEBUG`, `INFO`, `WARN`, `ERROR`, and `CRITICAL`.
 
 ## Local discovery
 

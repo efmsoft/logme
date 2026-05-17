@@ -2239,6 +2239,873 @@ async function RenderManual()
   await SendManualCommand();
 }
 
+
+const LOG_INITIAL_CHUNK_SIZE = 4 * 1024;
+const LOG_BACKGROUND_CHUNK_SIZE = 64 * 1024;
+const LOG_PAGE_CHUNK_SIZE = 512 * 1024;
+let CurrentLogState = {
+  treePath: '',
+  filePath: '',
+  offset: 0,
+  limit: LOG_PAGE_CHUNK_SIZE,
+  size: 0,
+  loadedEnd: 0,
+  content: '',
+  nowrap: true,
+  layout: 'vertical',
+  search: '',
+  loading: false,
+  loadGeneration: 0,
+  renderLevel: 'info',
+  loadError: '',
+  searchMatches: [],
+  searchIndex: -1
+};
+
+function ParseLogTree(text)
+{
+  const result = {
+    home: '',
+    path: '',
+    dirs: [],
+    files: []
+  };
+
+  for (const line of String(text || '').split(/\r?\n/))
+  {
+    if (line.startsWith('Home directory:'))
+    {
+      result.home = line.substring('Home directory:'.length).trim();
+      continue;
+    }
+
+    if (line.startsWith('Path:'))
+    {
+      result.path = line.substring('Path:'.length).trim();
+      continue;
+    }
+
+    if (line.startsWith('DIR\t'))
+    {
+      result.dirs.push(line.substring(4));
+      continue;
+    }
+
+    if (line.startsWith('FILE\t'))
+    {
+      const parts = line.split('\t');
+      result.files.push({
+        path: parts[1] || '',
+        size: Number(parts[2] || 0),
+        time: parts[3] || ''
+      });
+    }
+  }
+
+  return result;
+}
+
+function ParseLogRange(text)
+{
+  const value = String(text || '');
+  const lineEnd = value.indexOf('\n');
+  if (!value.startsWith('LOGMEWEB-RANGE\t') || lineEnd < 0)
+  {
+    return {
+      offset: 0,
+      limit: LOG_PAGE_CHUNK_SIZE,
+      size: value.length,
+      content: value
+    };
+  }
+
+  const header = value.substring(0, lineEnd).split('\t');
+  return {
+    offset: Number(header[1] || 0),
+    limit: Number(header[2] || LOG_PAGE_CHUNK_SIZE),
+    size: Number(header[3] || 0),
+    content: value.substring(lineEnd + 1)
+  };
+}
+
+function LogPathArg(path)
+{
+  return String(path || '').replace(/[\r\n\t]/g, ' ');
+}
+
+function GetParentLogPath(path)
+{
+  const text = String(path || '').replaceAll('\\', '/');
+  const pos = text.lastIndexOf('/');
+  if (pos < 0)
+    return '';
+
+  return text.substring(0, pos);
+}
+
+function GetLogBaseName(path)
+{
+  const text = String(path || '').replaceAll('\\', '/');
+  const pos = text.lastIndexOf('/');
+  if (pos < 0)
+    return text;
+
+  return text.substring(pos + 1);
+}
+
+function GetSelectedLogFile(tree, selectedPath)
+{
+  if (!tree || !selectedPath)
+    return null;
+
+  return (tree.files || []).find(file => file.path === selectedPath) || null;
+}
+
+function FormatLogTime(value)
+{
+  const text = String(value || '').trim();
+  if (!text)
+    return '';
+
+  const numeric = Number(text);
+  if (Number.isFinite(numeric) && numeric > 0)
+  {
+    let milliseconds = numeric;
+
+    // Windows FILETIME: 100 ns ticks since 1601-01-01.
+    if (numeric > 100000000000000000)
+      milliseconds = (numeric / 10000) - 11644473600000;
+    else if (numeric > 1000000000000)
+      milliseconds = numeric;
+    else
+      milliseconds = numeric * 1000;
+
+    const date = new Date(milliseconds);
+    if (!Number.isNaN(date.getTime()))
+      return FormatDateTime(date);
+  }
+
+  const date = new Date(text);
+  if (!Number.isNaN(date.getTime()))
+    return FormatDateTime(date);
+
+  return text;
+}
+
+function Pad2(value)
+{
+  return String(value).padStart(2, '0');
+}
+
+function FormatDateTime(date)
+{
+  return [
+    date.getFullYear()
+    , '-'
+    , Pad2(date.getMonth() + 1)
+    , '-'
+    , Pad2(date.getDate())
+    , ' '
+    , Pad2(date.getHours())
+    , ':'
+    , Pad2(date.getMinutes())
+    , ':'
+    , Pad2(date.getSeconds())
+  ].join('');
+}
+
+
+function HighlightLogSearch(text, query)
+{
+  const escaped = EscapeHtml(text || ' ');
+  if (!query)
+    return escaped;
+
+  const needle = EscapeHtml(query);
+  const pattern = new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+  return escaped.replace(pattern, match => `<mark>${match}</mark>`);
+}
+
+function GetLogmeLineInfo(line)
+{
+  const text = String(line || '');
+
+  const match = text.match(
+    /^(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}[:.]\d{3}\s+)([DIWEC])?(\s+.*?\]\s*)(.*)$/
+  );
+
+  if (!match)
+    return null;
+
+  const level = (match[2] || 'I').toUpperCase();
+  let name = 'info';
+
+  if (level === 'D')
+    name = 'debug';
+  else if (level === 'W')
+    name = 'warn';
+  else if (level === 'E')
+    name = 'error';
+  else if (level === 'C')
+    name = 'critical';
+
+  return {
+    level: name,
+    prefix: match[1] + (match[2] || ' ') + match[3],
+    message: match[4] || ''
+  };
+}
+
+function DetectLogmeLineLevel(line)
+{
+  const text = String(line || '');
+  const logmeInfo = GetLogmeLineInfo(text);
+  if (logmeInfo)
+    return logmeInfo.level;
+
+  if (/\b(CRITICAL|FATAL)\b/i.test(text))
+    return 'critical';
+
+  if (/\b(ERROR|ERR)\b/i.test(text))
+    return 'error';
+
+  if (/\b(WARN|WARNING)\b/i.test(text))
+    return 'warn';
+
+  if (/\b(DEBUG|TRACE)\b/i.test(text))
+    return 'debug';
+
+  if (/\bINFO\b/i.test(text))
+    return 'info';
+
+  return '';
+}
+
+function LogLevelClass(level)
+{
+  if (level === 'critical')
+    return 'log-critical';
+
+  if (level === 'error')
+    return 'log-error';
+
+  if (level === 'warn')
+    return 'log-warn';
+
+  if (level === 'debug')
+    return 'log-debug';
+
+  return 'log-info';
+}
+
+function RenderLogLine(line, query = '', inheritedLevel = 'info')
+{
+  const text = String(line || '');
+  const logmeInfo = GetLogmeLineInfo(text);
+  const level = logmeInfo ? logmeInfo.level : (DetectLogmeLineLevel(text) || inheritedLevel || 'info');
+
+  if (logmeInfo)
+  {
+    return `<div class="log-line ${LogLevelClass(level)}"><span class="log-system">${HighlightLogSearch(logmeInfo.prefix, query)}</span>${HighlightLogSearch(logmeInfo.message, query)}</div>`;
+  }
+
+  return `<div class="log-line ${LogLevelClass(level)}">${HighlightLogSearch(text, query)}</div>`;
+}
+
+function RenderLogTextPart(text, query = '', initialLevel = 'info')
+{
+  const lines = String(text || '').split(/\r?\n/);
+  let currentLevel = initialLevel || 'info';
+
+  const html = lines.map(line =>
+  {
+    const level = DetectLogmeLineLevel(line);
+    if (level)
+      currentLevel = level;
+
+    return RenderLogLine(line, query, currentLevel);
+  }).join('');
+
+  return { html, level: currentLevel };
+}
+
+function RenderLogText(text, query = '')
+{
+  return RenderLogTextPart(text, query, 'info').html;
+}
+
+async function LoadLogsTree(path = '')
+{
+  const command = path ? `logs --tree ${LogPathArg(path)}` : 'logs --tree';
+  const result = await SendCommand(command, 'text');
+  if (!result.ok)
+    throw new Error(result.error || result.text || 'unable to load log tree');
+
+  return ParseLogTree(result.text || '');
+}
+
+async function LoadLogRange(path, offset = 0, limit = LOG_CHUNK_SIZE)
+{
+  const command = `logs --read ${LogPathArg(path)} ${Math.max(0, offset)} ${limit}`;
+  const result = await SendCommand(command, 'text');
+  if (!result.ok)
+    throw new Error(result.error || result.text || 'unable to load log file');
+
+  return ParseLogRange(result.text || '');
+}
+
+function DecodeBase64ToBytes(text)
+{
+  const binary = atob(text || '');
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; ++i)
+    bytes[i] = binary.charCodeAt(i);
+
+  return bytes;
+}
+
+async function DownloadLogFile(path)
+{
+  const result = await SendCommand(`logs --download ${LogPathArg(path)}`, 'text');
+  if (!result.ok)
+    throw new Error(result.error || result.text || 'unable to download log file');
+
+  const text = result.text || '';
+  const lineEnd = text.indexOf('\n');
+  if (!text.startsWith('LOGMEWEB-DOWNLOAD-B64\t') || lineEnd < 0)
+    throw new Error('invalid download response');
+
+  const bytes = DecodeBase64ToBytes(text.substring(lineEnd + 1).trim());
+  const blob = new Blob([bytes], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = GetLogBaseName(path) || 'log.txt';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function GetLoadedEndOffset()
+{
+  return Math.min(Number(CurrentLogState.size || 0), Number(CurrentLogState.loadedEnd || 0));
+}
+
+function IsLogFullyLoaded()
+{
+  const size = Number(CurrentLogState.size || 0);
+  if (!CurrentLogState.filePath)
+    return false;
+
+  return size > 0 && GetLoadedEndOffset() >= size;
+}
+
+function UpdateLogLoadingStatus()
+{
+  const status = $('logLoadingStatus');
+  const position = $('logPositionStatus');
+
+  if (status)
+  {
+    status.textContent = '';
+    status.classList.add('hidden');
+  }
+
+  if (position)
+  {
+    position.textContent = '';
+    position.classList.add('hidden');
+  }
+
+  const size = Number(CurrentLogState.size || 0);
+  const loadedEnd = GetLoadedEndOffset();
+  const offset = Number(CurrentLogState.offset || 0);
+  const loadedBytes = Math.max(0, loadedEnd - offset);
+  const percent = size ? Math.floor((loadedEnd / size) * 100) : 0;
+  const isCompleteFile = CurrentLogState.filePath && size > 0 && offset === 0 && loadedEnd >= size;
+
+  if (position && CurrentLogState.filePath && !isCompleteFile)
+  {
+    position.textContent = `${FormatBytes(offset)} - ${FormatBytes(loadedEnd)} of ${FormatBytes(size)} (${percent}%)`;
+    position.classList.remove('hidden');
+  }
+
+  if (!status)
+    return;
+
+  if (CurrentLogState.loadError)
+  {
+    status.textContent = `Loading stopped: ${CurrentLogState.loadError}`;
+    status.classList.remove('hidden');
+    return;
+  }
+
+  if (CurrentLogState.loading)
+  {
+    status.textContent = `Loading... ${FormatBytes(loadedBytes)} loaded, ${percent}% of file`;
+    status.classList.remove('hidden');
+  }
+}
+
+function AppendLogContent(text)
+{
+  const chunk = String(text || '');
+  if (!chunk)
+    return;
+
+  CurrentLogState.content += chunk;
+
+  const viewer = document.querySelector('.log-viewer');
+  if (!viewer)
+    return;
+
+  if (CurrentLogState.search)
+  {
+    RefreshLogSearch(false);
+    return;
+  }
+
+  const rendered = RenderLogTextPart(chunk, '', CurrentLogState.renderLevel);
+  viewer.insertAdjacentHTML('beforeend', rendered.html);
+  CurrentLogState.renderLevel = rendered.level;
+}
+
+
+function UpdateLogSearchNavigation()
+{
+  const status = $('logSearchStatus');
+  if (!status)
+    return;
+
+  const query = CurrentLogState.search || '';
+  if (!query)
+  {
+    status.textContent = '';
+    return;
+  }
+
+  const text = CurrentLogState.content || '';
+  const lowerText = text.toLowerCase();
+  const lowerQuery = query.toLowerCase();
+  const matches = [];
+  let pos = lowerText.indexOf(lowerQuery);
+
+  while (pos >= 0 && matches.length < 10000)
+  {
+    matches.push(pos);
+    pos = lowerText.indexOf(lowerQuery, pos + Math.max(1, lowerQuery.length));
+  }
+
+  CurrentLogState.searchMatches = matches;
+
+  if (!matches.length)
+  {
+    CurrentLogState.searchIndex = -1;
+    status.textContent = '0 matches';
+    return;
+  }
+
+  if (CurrentLogState.searchIndex < 0 || CurrentLogState.searchIndex >= matches.length)
+    CurrentLogState.searchIndex = 0;
+
+  status.textContent = `${CurrentLogState.searchIndex + 1} of ${matches.length}`;
+}
+
+function ScrollToSearchMatch(index)
+{
+  const matches = CurrentLogState.searchMatches || [];
+  if (index < 0 || index >= matches.length)
+    return;
+
+  const textBefore = (CurrentLogState.content || '').substring(0, matches[index]);
+  const lineIndex = textBefore.split(/\r?\n/).length - 1;
+  const viewer = document.querySelector('.log-viewer');
+  const line = viewer ? viewer.querySelectorAll('.log-line')[lineIndex] : null;
+
+  if (line)
+    line.scrollIntoView({ block: 'center' });
+}
+
+function RefreshLogSearch(scrollToFirst = false)
+{
+  const viewer = document.querySelector('.log-viewer');
+  if (viewer)
+    viewer.innerHTML = RenderLogText(CurrentLogState.content, CurrentLogState.search);
+
+  UpdateLogSearchNavigation();
+
+  if (scrollToFirst && (CurrentLogState.searchMatches || []).length)
+    ScrollToSearchMatch(CurrentLogState.searchIndex);
+}
+
+
+function ResetLogContent()
+{
+  CurrentLogState.content = '';
+  CurrentLogState.loadedEnd = CurrentLogState.offset;
+  CurrentLogState.renderLevel = 'info';
+  CurrentLogState.loadError = '';
+  CurrentLogState.searchMatches = [];
+  CurrentLogState.searchIndex = -1;
+
+  const viewer = document.querySelector('.log-viewer');
+  if (viewer)
+    viewer.innerHTML = '';
+}
+
+async function Delay(ms)
+{
+  await new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function StartProgressiveLogLoad(path, offset = 0)
+{
+  const generation = ++CurrentLogState.loadGeneration;
+  CurrentLogState.loading = true;
+  CurrentLogState.filePath = path;
+  CurrentLogState.offset = Math.max(0, offset || 0);
+  CurrentLogState.limit = LOG_PAGE_CHUNK_SIZE;
+  ResetLogContent();
+  UpdateLogLoadingStatus();
+
+  try
+  {
+    let nextOffset = CurrentLogState.offset;
+    let limit = LOG_INITIAL_CHUNK_SIZE;
+
+    while (generation === CurrentLogState.loadGeneration)
+    {
+      const range = await LoadLogRange(path, nextOffset, limit);
+      if (generation !== CurrentLogState.loadGeneration)
+        return;
+
+      CurrentLogState.size = range.size;
+      CurrentLogState.loadedEnd = Math.min(range.size, range.offset + range.limit);
+      AppendLogContent(range.content);
+      UpdateLogLoadingStatus();
+
+      if (CurrentLogState.loadedEnd >= range.size)
+        break;
+
+      nextOffset = CurrentLogState.loadedEnd;
+      limit = LOG_BACKGROUND_CHUNK_SIZE;
+      await Delay(25);
+    }
+  }
+  catch (e)
+  {
+    if (generation === CurrentLogState.loadGeneration)
+      CurrentLogState.loadError = e.message || String(e);
+  }
+  finally
+  {
+    if (generation === CurrentLogState.loadGeneration)
+    {
+      CurrentLogState.loading = false;
+      UpdateLogLoadingStatus();
+      RenderLogsLayout(CurrentLogState.tree || { home: '', path: '', dirs: [], files: [] }, path);
+    }
+  }
+}
+
+function StopLogLoading()
+{
+  ++CurrentLogState.loadGeneration;
+  CurrentLogState.loading = false;
+  UpdateLogLoadingStatus();
+}
+
+function RenderLogViewer(tree, selectedPath = '')
+{
+  const state = CurrentLogState;
+  const offset = Number(state.offset || 0);
+  const size = Number(state.size || 0);
+  const endOffset = GetLoadedEndOffset();
+  const percent = size ? Math.floor((endOffset / size) * 100) : 0;
+  const isCompleteFile = selectedPath && size > 0 && offset === 0 && endOffset >= size;
+  const logPositionText = `${FormatBytes(offset)} - ${FormatBytes(endOffset)} of ${FormatBytes(size)} (${percent}%)`;
+  const logPositionClass = isCompleteFile ? 'muted log-position hidden' : 'muted log-position';
+  const selectedFile = GetSelectedLogFile(tree, selectedPath);
+  const modifiedTime = selectedFile ? FormatLogTime(selectedFile.time) : '';
+  const viewer = selectedPath
+    ? RenderLogText(state.content, state.search)
+    : '<div class="empty-state">Select a log file to view it from the beginning.</div>';
+  const noWrapClass = state.nowrap ? 'nowrap' : '';
+  const layoutClass = state.layout === 'horizontal' ? 'horizontal' : 'vertical';
+
+  return `
+    <div class="logs-layout ${layoutClass}">
+      ${RenderLogBrowser(tree, selectedPath)}
+
+      <div class="card soft logs-viewer-card">
+        <div class="logs-viewer-header">
+          <div>
+            <h2>${EscapeHtml(selectedPath ? GetLogBaseName(selectedPath) : 'Log viewer')}</h2>
+            <div class="muted">${EscapeHtml(selectedPath || '')}</div>
+            ${modifiedTime ? `<div class="muted log-modified">Modified: ${EscapeHtml(modifiedTime)}</div>` : ''}
+          </div>
+          <div class="logs-viewer-actions">
+            <button class="secondary small" id="toggleLogsLayoutButton">${state.layout === 'horizontal' ? 'Tree on top' : 'Side by side'}</button>
+            ${selectedPath ? '<button class="secondary small" id="toggleLogWrapButton">' + (state.nowrap ? 'Wrap lines' : 'No wrap') + '</button>' : ''}
+            ${selectedPath ? '<button class="secondary small" id="downloadLogFileButton">Download</button>' : ''}
+            ${selectedPath ? '<button class="secondary small" id="reloadLogFileButton">Reload</button>' : ''}
+            ${selectedPath && state.loading ? '<button class="secondary small" id="stopLogLoadingButton">Stop loading</button>' : ''}
+          </div>
+        </div>
+
+        ${selectedPath ? `
+          <div class="log-navigation">
+            <button class="secondary small" id="firstLogChunkButton">First</button>
+            <button class="secondary small" id="prevLogChunkButton">Previous</button>
+            <button class="secondary small" id="nextLogChunkButton">Next</button>
+            <button class="secondary small" id="lastLogChunkButton">Last</button>
+            <input id="logSearchInput" placeholder="Search in loaded text" value="${EscapeHtml(state.search || '')}">
+            <button class="secondary small" id="prevLogSearchButton">Previous match</button>
+            <button class="secondary small" id="nextLogSearchButton">Next match</button>
+            <span class="muted" id="logSearchStatus"></span>
+            <span class="${logPositionClass}" id="logPositionStatus">${EscapeHtml(logPositionText)}</span>
+            <span class="muted log-loading-status hidden" id="logLoadingStatus"></span>
+          </div>
+        ` : ''}
+
+        <div class="log-viewer ${noWrapClass}">${viewer}</div>
+      </div>
+    </div>
+  `;
+}
+
+function RenderLogBrowser(tree, selectedPath = '')
+{
+  const parent = GetParentLogPath(tree.path);
+  const upButton = tree.path
+    ? `<button class="secondary small log-folder-button" data-log-folder="${EscapeHtml(parent)}">..</button>`
+    : '';
+
+  const dirsHtml = tree.dirs.map(path => `
+    <button class="log-tree-item log-folder-button" data-log-folder="${EscapeHtml(path)}">
+      <span class="log-tree-icon">▸</span>
+      <span>${EscapeHtml(GetLogBaseName(path) || path)}</span>
+    </button>
+  `).join('');
+
+  const filesHtml = tree.files.map(file => `
+    <button class="log-tree-item log-file-button ${file.path === selectedPath ? 'selected' : ''}" data-log-file="${EscapeHtml(file.path)}">
+      <span class="log-tree-icon">•</span>
+      <span class="log-file-name">${EscapeHtml(GetLogBaseName(file.path) || file.path)}</span>
+      <span class="log-file-size">${EscapeHtml(FormatBytes(file.size))}</span>
+    </button>
+  `).join('');
+
+  return `
+    <div class="card soft logs-browser">
+      <div class="logs-toolbar">
+        <input id="logNameFilter" placeholder="Filter files and folders">
+        <button class="secondary" id="reloadLogsButton">Reload</button>
+      </div>
+      <div class="muted log-home">${EscapeHtml(tree.home || '')}</div>
+      <div class="log-current-path">${EscapeHtml(tree.path || '/')}</div>
+      <div class="log-tree">
+        ${upButton}
+        ${dirsHtml}
+        ${filesHtml}
+      </div>
+    </div>
+  `;
+}
+
+function BindLogsUi(tree, selectedPath)
+{
+  document.querySelectorAll('.log-folder-button').forEach(button =>
+  {
+    button.addEventListener('click', () => RenderLogs(button.dataset.logFolder || '', ''));
+  });
+
+  document.querySelectorAll('.log-file-button').forEach(button =>
+  {
+    button.addEventListener('click', () => RenderLogs(tree.path, button.dataset.logFile || '', 0));
+  });
+
+  const reloadLogsButton = $('reloadLogsButton');
+  if (reloadLogsButton)
+    reloadLogsButton.addEventListener('click', () => RenderLogs(tree.path, selectedPath, CurrentLogState.offset));
+
+  const reloadLogFileButton = $('reloadLogFileButton');
+  if (reloadLogFileButton)
+    reloadLogFileButton.addEventListener('click', () => RenderLogs(tree.path, selectedPath, CurrentLogState.offset));
+
+  const toggleLogWrapButton = $('toggleLogWrapButton');
+  if (toggleLogWrapButton)
+  {
+    toggleLogWrapButton.addEventListener('click', () =>
+    {
+      CurrentLogState.nowrap = !CurrentLogState.nowrap;
+      RenderLogsLayout(tree, selectedPath);
+    });
+  }
+
+  const toggleLogsLayoutButton = $('toggleLogsLayoutButton');
+  if (toggleLogsLayoutButton)
+  {
+    toggleLogsLayoutButton.addEventListener('click', () =>
+    {
+      CurrentLogState.layout = CurrentLogState.layout === 'horizontal' ? 'vertical' : 'horizontal';
+      RenderLogsLayout(tree, selectedPath);
+    });
+  }
+
+  const downloadLogFileButton = $('downloadLogFileButton');
+  if (downloadLogFileButton)
+  {
+    downloadLogFileButton.addEventListener('click', async () =>
+    {
+      downloadLogFileButton.disabled = true;
+      downloadLogFileButton.textContent = 'Downloading...';
+      try
+      {
+        await DownloadLogFile(selectedPath);
+      }
+      catch (e)
+      {
+        alert(e.message || e);
+      }
+      finally
+      {
+        downloadLogFileButton.disabled = false;
+        downloadLogFileButton.textContent = 'Download';
+      }
+    });
+  }
+
+  const stopLogLoadingButton = $('stopLogLoadingButton');
+  if (stopLogLoadingButton)
+    stopLogLoadingButton.addEventListener('click', StopLogLoading);
+
+  const firstLogChunkButton = $('firstLogChunkButton');
+  if (firstLogChunkButton)
+    firstLogChunkButton.addEventListener('click', () => RenderLogs(tree.path, selectedPath, 0));
+
+  const prevLogChunkButton = $('prevLogChunkButton');
+  if (prevLogChunkButton)
+  {
+    prevLogChunkButton.addEventListener('click', () =>
+    {
+      const offset = Math.max(0, CurrentLogState.offset - CurrentLogState.limit);
+      RenderLogs(tree.path, selectedPath, offset);
+    });
+  }
+
+  const nextLogChunkButton = $('nextLogChunkButton');
+  if (nextLogChunkButton)
+  {
+    nextLogChunkButton.addEventListener('click', () =>
+    {
+      const offset = Math.min(CurrentLogState.size, CurrentLogState.offset + CurrentLogState.limit);
+      RenderLogs(tree.path, selectedPath, offset);
+    });
+  }
+
+  const lastLogChunkButton = $('lastLogChunkButton');
+  if (lastLogChunkButton)
+  {
+    lastLogChunkButton.addEventListener('click', () =>
+    {
+      const offset = Math.max(0, CurrentLogState.size - CurrentLogState.limit);
+      RenderLogs(tree.path, selectedPath, offset);
+    });
+  }
+
+  const logSearchInput = $('logSearchInput');
+  if (logSearchInput)
+  {
+    logSearchInput.addEventListener('input', () =>
+    {
+      CurrentLogState.search = logSearchInput.value;
+      CurrentLogState.searchIndex = -1;
+      RefreshLogSearch(true);
+    });
+  }
+
+  const prevLogSearchButton = $('prevLogSearchButton');
+  if (prevLogSearchButton)
+  {
+    prevLogSearchButton.addEventListener('click', () =>
+    {
+      const count = (CurrentLogState.searchMatches || []).length;
+      if (!count)
+        return;
+
+      CurrentLogState.searchIndex = (CurrentLogState.searchIndex + count - 1) % count;
+      UpdateLogSearchNavigation();
+      ScrollToSearchMatch(CurrentLogState.searchIndex);
+    });
+  }
+
+  const nextLogSearchButton = $('nextLogSearchButton');
+  if (nextLogSearchButton)
+  {
+    nextLogSearchButton.addEventListener('click', () =>
+    {
+      const count = (CurrentLogState.searchMatches || []).length;
+      if (!count)
+        return;
+
+      CurrentLogState.searchIndex = (CurrentLogState.searchIndex + 1) % count;
+      UpdateLogSearchNavigation();
+      ScrollToSearchMatch(CurrentLogState.searchIndex);
+    });
+  }
+
+  const filterInput = $('logNameFilter');
+  if (filterInput)
+  {
+    filterInput.addEventListener('input', () =>
+    {
+      const filter = filterInput.value.trim().toLowerCase();
+      document.querySelectorAll('.log-tree-item').forEach(item =>
+      {
+        item.classList.toggle('hidden', filter && !item.textContent.toLowerCase().includes(filter));
+      });
+    });
+  }
+}
+
+function RenderLogsLayout(tree, selectedPath = '')
+{
+  $('workArea').innerHTML = RenderLogViewer(tree, selectedPath);
+  BindLogsUi(tree, selectedPath);
+  UpdateLogLoadingStatus();
+  UpdateLogSearchNavigation();
+}
+
+async function RenderLogs(path = '', selectedPath = '', offset = 0)
+{
+  StopLogLoading();
+  $('workArea').innerHTML = '<div class="loading">Loading logs...</div>';
+
+  const tree = await LoadLogsTree(path);
+
+  CurrentLogState.tree = tree;
+  CurrentLogState.treePath = tree.path;
+  CurrentLogState.filePath = selectedPath;
+  CurrentLogState.offset = Math.max(0, offset || 0);
+  CurrentLogState.limit = LOG_PAGE_CHUNK_SIZE;
+  CurrentLogState.size = 0;
+  CurrentLogState.loadedEnd = CurrentLogState.offset;
+  CurrentLogState.content = '';
+  CurrentLogState.renderLevel = 'info';
+  CurrentLogState.loadError = '';
+
+  if (!selectedPath)
+    CurrentLogState.search = '';
+
+  RenderLogsLayout(tree, selectedPath);
+
+  if (selectedPath)
+    StartProgressiveLogLoad(selectedPath, CurrentLogState.offset);
+}
+
+
 async function SelectView(view)
 {
   CurrentView = view;
@@ -2253,6 +3120,7 @@ async function SelectView(view)
     channels: 'Channels',
     subsystems: 'Subsystems',
     tracepoints: 'Trace points',
+    logs: 'Logs',
     manual: 'Manual command'
   };
 
@@ -2268,6 +3136,8 @@ async function SelectView(view)
       await RenderSubsystems();
     else if (view === 'tracepoints')
       await RenderTracepoints();
+    else if (view === 'logs')
+      await RenderLogs();
     else if (view === 'manual')
       await RenderManual();
   }

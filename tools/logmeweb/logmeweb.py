@@ -24,6 +24,7 @@ try:
   from fastapi import HTTPException
   from fastapi import Request
   from fastapi.responses import FileResponse
+  from fastapi.responses import HTMLResponse
   from fastapi.responses import JSONResponse
   from fastapi.responses import RedirectResponse
   from fastapi.staticfiles import StaticFiles
@@ -246,7 +247,10 @@ async def AuthMiddleware(request: Request, call_next):
 
 @app.get("/")
 async def Index():
-  return FileResponse(str(BASE_DIR / "templates" / "index.html"))
+  html = (BASE_DIR / "templates" / "index.html").read_text(encoding="utf-8")
+  auth_class = "auth-enabled" if Auth.enabled else "auth-disabled"
+  html = html.replace("<body>", f"<body class=\"{auth_class}\">")
+  return HTMLResponse(html)
 
 
 @app.get("/login")

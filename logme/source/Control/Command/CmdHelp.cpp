@@ -145,6 +145,7 @@ static bool CommandHelp(Logme::StringArray& arr, std::string& response)
     "help                                           Print this help text\n"
     "level [--channel name] [level]                 Get or set channel level\n"
     "list                                           List channels\n"
+    "logs [--info|--tree [path]|--tail path [bytes]] Browse log files under home directory\n"
     "overview                                       Display runtime logging summary\n"
     "subsystem                                      Display subsystem filters\n"
     "subsystem --block name                         Add blocked subsystem\n"

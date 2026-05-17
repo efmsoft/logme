@@ -503,6 +503,8 @@ namespace Logme
 
     LOGMELNK const std::string& GetHomeDirectory() const;
 
+    LOGMELNK std::vector<std::string> GetHomeDirectoryLogExtensions() const;
+
     LOGMELNK FileManagerFactory& GetFileManagerFactory();
     LOGMELNK ConsoleManagerFactory& GetConsoleManagerFactory();
 
@@ -674,6 +676,8 @@ namespace Logme
     static bool CommandTrace(StringArray& arr, std::string& response);
 
     static bool CommandOverview(StringArray& arr, std::string& response);
+
+    static bool CommandLogs(StringArray& arr, std::string& response);
   };
 
   typedef std::shared_ptr<Logger> LoggerPtr;

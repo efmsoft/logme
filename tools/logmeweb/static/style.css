@@ -1414,3 +1414,331 @@ button:disabled
   cursor: default;
   opacity: 0.65;
 }
+
+
+.logs-layout
+{
+  display: grid;
+  gap: 18px;
+  min-height: 620px;
+}
+
+.logs-layout.vertical
+{
+  grid-template-columns: 1fr;
+}
+
+.logs-layout.horizontal
+{
+  grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.8fr);
+}
+
+.logs-browser
+{
+  overflow: hidden;
+}
+
+.logs-toolbar
+{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.logs-toolbar input
+{
+  margin: 0;
+}
+
+.log-home
+{
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+
+.log-current-path
+{
+  margin: 8px 0 12px;
+  font-family: Consolas, Monaco, monospace;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.log-tree
+{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 260px;
+  overflow: auto;
+}
+
+.logs-layout.horizontal .log-tree
+{
+  max-height: 560px;
+}
+
+.log-tree-item
+{
+  width: 100%;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--text);
+  text-align: left;
+}
+
+.log-tree-item:hover,
+.log-tree-item.selected
+{
+  border-color: var(--primary);
+}
+
+.log-tree-item.hidden
+{
+  display: none;
+}
+
+.log-tree-icon
+{
+  color: var(--muted);
+}
+
+.log-file-name
+{
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.log-file-size
+{
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.logs-viewer-card
+{
+  min-width: 0;
+}
+
+.logs-viewer-header
+{
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.logs-viewer-header h2
+{
+  margin: 0 0 4px;
+}
+
+.logs-viewer-actions,
+.log-navigation
+{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.log-navigation
+{
+  margin-bottom: 10px;
+}
+
+.log-navigation input
+{
+  max-width: 260px;
+  margin: 0;
+}
+
+.log-position
+{
+  font-family: Consolas, Monaco, monospace;
+  font-size: 12px;
+}
+
+.log-loading-status
+{
+  font-family: Consolas, Monaco, monospace;
+  font-size: 12px;
+}
+
+.log-loading-status::before
+{
+  content: "";
+}
+
+.log-viewer
+{
+  height: 620px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #0d1420;
+  color: #dce7f3;
+  padding: 12px;
+  font-family: Consolas, Monaco, monospace;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.log-line
+{
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.log-viewer.nowrap .log-line
+{
+  white-space: pre;
+  overflow-wrap: normal;
+}
+
+.log-line mark
+{
+  background: #fff3a3;
+  color: #111827;
+  border-radius: 3px;
+  padding: 0 2px;
+}
+
+.log-debug
+{
+  color: #8b98aa;
+}
+
+.log-info
+{
+  color: #dce7f3;
+}
+
+.log-warn
+{
+  color: #ffd166;
+}
+
+.log-error
+{
+  color: #ff8585;
+}
+
+.log-critical
+{
+  color: #ffffff;
+  background: rgba(196, 56, 56, 0.55);
+  font-weight: 700;
+}
+
+button.small
+{
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+@media (max-width: 1100px)
+{
+  .logs-layout
+  {
+    grid-template-columns: 1fr;
+  }
+}
+
+body.auth-disabled #logoutButton
+{
+  display: none;
+}
+
+.trace-toolbar-fix-added
+{
+  display: none;
+}
+
+.tracepoints-toolbar,
+.tracepoint-actions,
+.tracepoints-actions,
+.trace-filter-actions
+{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+.log-system
+{
+  color: #6ea8ff;
+}
+
+.log-debug .log-system
+{
+  color: #7f8da0;
+}
+
+.log-warn .log-system
+{
+  color: #ffd166;
+}
+
+.log-error .log-system
+{
+  color: #ff8585;
+}
+
+.log-critical .log-system
+{
+  color: #ffffff;
+}
+
+
+.trace-toolbar
+{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.trace-toolbar input
+{
+  width: 100%;
+  margin: 0;
+}
+
+.trace-toolbar button
+{
+  justify-self: start;
+  margin-right: 0;
+}
+
+.trace-toolbar button + button
+{
+  margin-left: 0;
+}
+
+@media (min-width: 900px)
+{
+  .trace-toolbar
+  {
+    grid-template-columns: repeat(4, max-content);
+  }
+
+  .trace-toolbar input
+  {
+    grid-column: 1 / -1;
+  }
+}

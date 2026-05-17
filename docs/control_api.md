@@ -205,3 +205,59 @@ These commands are supported in JSON mode and return the standard envelope.
 For operations that only report success, `data` may be `{}`.
 
 In the future these commands may return structured `data` objects as needed.
+
+
+### `logs`
+
+The `logs` command exposes a read-only view of log files below the current
+logger home directory.
+
+Supported text commands:
+
+```text
+logs --info
+logs --tree [relative-path]
+logs --tail relative-file-path [bytes]
+logs --read relative-file-path [offset] [bytes]
+logs --download relative-file-path
+```
+
+The command never accepts absolute paths and rejects paths that resolve outside
+the logger home directory. Only files with extensions configured in
+`home-directory.watch-dog.file-extension` are exposed. If the configured list is
+empty, the control command uses the standard log extensions:
+
+```text
+.log .nlb .nlr .b64 .dat .csv
+```
+
+`logs --tree` returns tab-separated lines:
+
+```text
+Home directory: /var/log/my-app/
+Path: logs
+DIR     logs/archive
+FILE    logs/app.log  123456  132456789
+```
+
+`logs --tail` returns the last part of the selected file. The optional `bytes`
+argument is capped by the server to avoid returning very large files in one
+response.
+
+`logs --read` returns a bounded range of the selected file. The response starts
+with a metadata header followed by the file chunk:
+
+```text
+LOGMEWEB-RANGE    offset    requested-bytes    file-size
+```
+
+`logs --download` returns the selected file encoded as base64 with a metadata
+header:
+
+```text
+LOGMEWEB-DOWNLOAD-B64    file-size
+```
+
+The download response is intended for `logmeweb` and is also capped by the
+server to avoid transferring unexpectedly huge files through the control
+interface.

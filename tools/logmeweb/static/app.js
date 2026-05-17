@@ -2856,10 +2856,6 @@ function RenderLogViewer(tree, selectedPath = '')
 
         ${selectedPath ? `
           <div class="log-navigation">
-            <button class="secondary small" id="firstLogChunkButton">First</button>
-            <button class="secondary small" id="prevLogChunkButton">Previous</button>
-            <button class="secondary small" id="nextLogChunkButton">Next</button>
-            <button class="secondary small" id="lastLogChunkButton">Last</button>
             <input id="logSearchInput" placeholder="Search in loaded text" value="${EscapeHtml(state.search || '')}">
             <button class="secondary small" id="prevLogSearchButton">Previous match</button>
             <button class="secondary small" id="nextLogSearchButton">Next match</button>
@@ -2901,7 +2897,6 @@ function RenderLogBrowser(tree, selectedPath = '')
     <div class="card soft logs-browser">
       <div class="logs-toolbar">
         <input id="logNameFilter" placeholder="Filter files and folders">
-        <button class="secondary" id="reloadLogsButton">Reload</button>
       </div>
       <div class="muted log-home">${EscapeHtml(tree.home || '')}</div>
       <div class="log-current-path">${EscapeHtml(tree.path || '/')}</div>
@@ -2925,10 +2920,6 @@ function BindLogsUi(tree, selectedPath)
   {
     button.addEventListener('click', () => RenderLogs(tree.path, button.dataset.logFile || '', 0));
   });
-
-  const reloadLogsButton = $('reloadLogsButton');
-  if (reloadLogsButton)
-    reloadLogsButton.addEventListener('click', () => RenderLogs(tree.path, selectedPath, CurrentLogState.offset));
 
   const reloadLogFileButton = $('reloadLogFileButton');
   if (reloadLogFileButton)
@@ -2980,40 +2971,6 @@ function BindLogsUi(tree, selectedPath)
   const stopLogLoadingButton = $('stopLogLoadingButton');
   if (stopLogLoadingButton)
     stopLogLoadingButton.addEventListener('click', StopLogLoading);
-
-  const firstLogChunkButton = $('firstLogChunkButton');
-  if (firstLogChunkButton)
-    firstLogChunkButton.addEventListener('click', () => RenderLogs(tree.path, selectedPath, 0));
-
-  const prevLogChunkButton = $('prevLogChunkButton');
-  if (prevLogChunkButton)
-  {
-    prevLogChunkButton.addEventListener('click', () =>
-    {
-      const offset = Math.max(0, CurrentLogState.offset - CurrentLogState.limit);
-      RenderLogs(tree.path, selectedPath, offset);
-    });
-  }
-
-  const nextLogChunkButton = $('nextLogChunkButton');
-  if (nextLogChunkButton)
-  {
-    nextLogChunkButton.addEventListener('click', () =>
-    {
-      const offset = Math.min(CurrentLogState.size, CurrentLogState.offset + CurrentLogState.limit);
-      RenderLogs(tree.path, selectedPath, offset);
-    });
-  }
-
-  const lastLogChunkButton = $('lastLogChunkButton');
-  if (lastLogChunkButton)
-  {
-    lastLogChunkButton.addEventListener('click', () =>
-    {
-      const offset = Math.max(0, CurrentLogState.size - CurrentLogState.limit);
-      RenderLogs(tree.path, selectedPath, offset);
-    });
-  }
 
   const logSearchInput = $('logSearchInput');
   if (logSearchInput)

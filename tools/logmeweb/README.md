@@ -118,7 +118,7 @@ Passwords are never exposed through discovery. The user enters the password in t
 
 ## Platform discovery endpoints
 
-- Windows: named pipe `\\.\pipe\logme-discovery-<pid>`
+- Windows: named pipe `\\.\pipe\Global\logme-discovery-<pid>`
 - Linux: abstract Unix domain socket `logme-discovery-<pid>`
 - macOS/other Unix: Unix domain socket `/tmp/logme-discovery-<pid>.sock`
 

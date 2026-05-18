@@ -1,12 +1,7 @@
 #include <Logme/Backend/DebugBackend.h>
-#include <Logme/Backend/ConsoleBackend.h>
 #include <Logme/Channel.h>
-
-#include <condition_variable>
-#include <deque>
-#include <mutex>
-#include <string>
-#include <thread>
+#include <Logme/Debug/DebugManagerFactory.h>
+#include <Logme/Logger.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -16,155 +11,27 @@ using namespace Logme;
 
 namespace
 {
-  class DebugManager
+  static void WriteDebugText(const char* text)
   {
-  public:
-    DebugManager()
-      : Stopping(false)
-      , MaxRecords(ConsoleBackend::QUEUE_RECORD_LIMIT)
-      , MaxBytes(ConsoleBackend::QUEUE_BYTE_LIMIT)
-      , QueuedBytes(0)
-      , OverflowPolicy(ConsoleOverflowPolicy::BLOCK)
-    {
-      Worker = std::thread(&DebugManager::Run, this);
-    }
-
-    ~DebugManager()
-    {
-      {
-        std::lock_guard guard(Lock);
-        Stopping = true;
-      }
-
-      Wake.notify_all();
-
-      if (Worker.joinable())
-        Worker.join();
-    }
-
-    void Push(std::string&& text)
-    {
-      std::unique_lock locker(Lock);
-      const size_t size = text.size();
-
-      if (OverflowPolicy == ConsoleOverflowPolicy::BLOCK)
-      {
-        Space.wait(
-          locker
-          , [this, size]()
-          {
-            return Stopping || HasSpace(size);
-          }
-        );
-      }
-      else if (!HasSpace(size))
-      {
-        if (OverflowPolicy == ConsoleOverflowPolicy::DROP_NEW)
-          return;
-
-        while (!Records.empty() && !HasSpace(size))
-        {
-          QueuedBytes -= Records.front().size();
-          Records.pop_front();
-        }
-      }
-
-      if (Stopping || !HasSpace(size))
-        return;
-
-      QueuedBytes += size;
-      Records.push_back(std::move(text));
-      Wake.notify_one();
-    }
-
-    void Flush()
-    {
-      std::unique_lock locker(Lock);
-      Empty.wait(
-        locker
-        , [this]()
-        {
-          return Records.empty() && QueuedBytes == 0;
-        }
-      );
-    }
-
-  private:
-    bool HasSpace(size_t size) const
-    {
-      if (Records.size() >= MaxRecords)
-        return false;
-
-      if (QueuedBytes + size > MaxBytes)
-        return false;
-
-      return true;
-    }
-
-    void Run()
-    {
-      for (;;)
-      {
-        std::deque<std::string> local;
-        {
-          std::unique_lock locker(Lock);
-          Wake.wait(
-            locker
-            , [this]()
-            {
-              return Stopping || !Records.empty();
-            }
-          );
-
-          if (Stopping && Records.empty())
-            break;
-
-          local.swap(Records);
-          QueuedBytes = 0;
-          Space.notify_all();
-        }
-
-        for (const auto& item : local)
-        {
 #ifdef _WIN32
-          OutputDebugStringA(item.c_str());
+    OutputDebugStringA(text);
 #else
-          (void)item;
+    (void)text;
 #endif
-        }
-
-        {
-          std::lock_guard guard(Lock);
-          if (Records.empty() && QueuedBytes == 0)
-            Empty.notify_all();
-        }
-      }
-    }
-
-  private:
-    std::mutex Lock;
-    std::condition_variable Wake;
-    std::condition_variable Space;
-    std::condition_variable Empty;
-    std::deque<std::string> Records;
-    bool Stopping;
-    size_t MaxRecords;
-    size_t MaxBytes;
-    size_t QueuedBytes;
-    ConsoleOverflowPolicy OverflowPolicy;
-    std::thread Worker;
-  };
-
-  DebugManager& GetDebugManager()
-  {
-    static DebugManager manager;
-    return manager;
   }
 }
 
 DebugBackend::DebugBackend(ChannelPtr owner)
   : Backend(owner, TYPE_ID)
+  , Registered(false)
+  , ShutdownFlag(false)
+  , ShutdownCalled(owner == nullptr)
 {
+}
+
+DebugBackend::~DebugBackend()
+{
+  DoFreeze();
 }
 
 bool DebugBackend::IsAsyncSupported() const
@@ -174,8 +41,34 @@ bool DebugBackend::IsAsyncSupported() const
 
 void DebugBackend::Flush()
 {
-  if (GetAsync())
-    GetDebugManager().Flush();
+  GetFactory().Flush();
+}
+
+void DebugBackend::DoFreeze()
+{
+  if (Owner == nullptr)
+    return;
+
+  ShutdownFlag.store(true, std::memory_order_relaxed);
+  Backend::Freeze();
+
+  if (Registered.exchange(false, std::memory_order_relaxed))
+    GetFactory().Remove(this);
+  else
+    GetFactory().Flush();
+
+}
+
+void DebugBackend::Freeze()
+{
+  DoFreeze();
+}
+
+bool DebugBackend::IsIdle() const
+{
+  GetFactory().Flush();
+
+  return ShutdownFlag.load(std::memory_order_relaxed) || Registered.load(std::memory_order_relaxed) == false;
 }
 
 std::string DebugBackend::FormatDetails()
@@ -183,18 +76,49 @@ std::string DebugBackend::FormatDetails()
   return GetAsync() ? "ASYNC" : "SYNC";
 }
 
+DebugManagerFactory& DebugBackend::GetFactory() const
+{
+  auto logger = Owner->GetOwner();
+  return logger->GetDebugManagerFactory();
+}
+
+void DebugBackend::RegisterIfNeeded()
+{
+  if (Registered.load(std::memory_order_relaxed))
+    return;
+
+  DebugBackendPtr self = std::static_pointer_cast<DebugBackend>(shared_from_this());
+  GetFactory().Add(self);
+  Registered.store(true, std::memory_order_relaxed);
+}
+
 void DebugBackend::Display(Context& context)
 {
+#ifdef _WIN32
   int nc;
   const char* buffer = context.Apply(Owner, Owner->GetFlags(), nc);
 
-  if (GetAsync())
+  if (!GetAsync() || ShutdownFlag.load(std::memory_order_relaxed))
   {
-    GetDebugManager().Push(std::string(buffer, (size_t)nc));
+    bool flushed = false;
+
+    if (!ShutdownFlag.load(std::memory_order_relaxed))
+      flushed = GetFactory().PushAndFlush(buffer, static_cast<size_t>(nc));
+
+    if (!flushed)
+      WriteDebugText(buffer);
+
     return;
   }
 
-#ifdef _WIN32
-  OutputDebugStringA(buffer);
+  RegisterIfNeeded();
+
+  if (!GetFactory().Push(buffer, static_cast<size_t>(nc)))
+    WriteDebugText(buffer);
 #endif
+}
+
+void DebugBackend::OnShutdown()
+{
+  ShutdownCalled.store(true, std::memory_order_relaxed);
 }

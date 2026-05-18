@@ -63,6 +63,12 @@
     <Filter Include="include\Logme\Console">
       <UniqueIdentifier>{cb1e1df2-ba24-506c-909a-1776121cf1f7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="source\Debug">
+      <UniqueIdentifier>{7766eac2-f4cb-570f-94d2-bf6752177a6f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\Logme\Debug">
+      <UniqueIdentifier>{61a51ffd-e8ef-5c88-9a26-230c1f88ec38}</UniqueIdentifier>
+    </Filter>
 </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Logme\Backend\Backend.h">
@@ -262,6 +268,12 @@
     </ClInclude>
     <ClInclude Include="include\Logme\Console\ConsoleManagerFactory.h">
       <Filter>include\Logme\Console</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\Debug\DebugManager.h">
+      <Filter>include\Logme\Debug</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\Debug\DebugManagerFactory.h">
+      <Filter>include\Logme\Debug</Filter>
     </ClInclude>
     <ClInclude Include="include\Logme\LogmeC.h">
       <Filter>include\Logme</Filter>
@@ -516,6 +528,12 @@
     </ClCompile>
     <ClCompile Include="source\Console\ConsoleManagerFactory.cpp">
       <Filter>source\Console</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Debug\DebugManager.cpp">
+      <Filter>source\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Debug\DebugManagerFactory.cpp">
+      <Filter>source\Debug</Filter>
     </ClCompile>
     <ClCompile Include="source\File\handle_path.cpp">
       <Filter>source\File</Filter>

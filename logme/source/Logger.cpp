@@ -182,6 +182,11 @@ ConsoleManagerFactory& Logger::GetConsoleManagerFactory()
   return ConsoleFactory;
 }
 
+DebugManagerFactory& Logger::GetDebugManagerFactory()
+{
+  return DebugFactory;
+}
+
 void Logger::IterateChannels(const TChannelCallback& callback)
 {
   if (ShutdownCalled)

@@ -102,6 +102,8 @@ bool Logger::CommandOverview(Logme::StringArray& arr, std::string& response)
     );
   }
 
+  backendMemory += Instance->GetDebugManagerFactory().GetMemoryUsage();
+
   const ObfKey* key = Instance->GetObfuscationKey();
 
   response += "Home directory: " + Instance->HomeDirectory + "\n";

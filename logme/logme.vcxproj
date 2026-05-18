@@ -166,6 +166,8 @@
     <ClInclude Include="include\Logme\Backend\DebugBackend.h" />
     <ClInclude Include="include\Logme\Backend\FileBackend.h" />
     <ClInclude Include="include\Logme\Backend\MemoryTrackedBackend.h" />
+    <ClInclude Include="include\Logme\Debug\DebugManager.h" />
+    <ClInclude Include="include\Logme\Debug\DebugManagerFactory.h" />
     <ClInclude Include="include\Logme\Channel.h" />
     <ClInclude Include="include\Logme\Colorizer.h" />
     <ClInclude Include="include\Logme\Context.h" />
@@ -277,6 +279,8 @@
     <ClCompile Include="source\IntJeaiii.cpp" />
     <ClCompile Include="source\Console\ConsoleManager.cpp" />
     <ClCompile Include="source\Console\ConsoleManagerFactory.cpp" />
+    <ClCompile Include="source\Debug\DebugManager.cpp" />
+    <ClCompile Include="source\Debug\DebugManagerFactory.cpp" />
     <ClCompile Include="source\File\handle_path.cpp" />
     <ClCompile Include="source\LogmeC.cpp" />
     <ClCompile Include="source\Control\Command\CmdOverview.cpp" />

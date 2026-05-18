@@ -97,6 +97,8 @@
     <ClCompile Include="..\logme\source\IntJeaiii.cpp" />
     <ClCompile Include="..\logme\source\Console\ConsoleManager.cpp" />
     <ClCompile Include="..\logme\source\Console\ConsoleManagerFactory.cpp" />
+    <ClCompile Include="..\logme\source\Debug\DebugManager.cpp" />
+    <ClCompile Include="..\logme\source\Debug\DebugManagerFactory.cpp" />
     <ClCompile Include="..\logme\source\File\handle_path.cpp" />
     <ClCompile Include="..\logme\source\Control\Command\CmdTrace.cpp" />
     <ClCompile Include="..\logme\source\LogmeC.cpp" />
@@ -108,6 +110,8 @@
     <ClCompile Include="..\logme\source\File\buffered_file_io.cpp" />
 </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\logme\include\Logme\Debug\DebugManager.h" />
+    <ClInclude Include="..\logme\include\Logme\Debug\DebugManagerFactory.h" />
     <ClInclude Include="..\logme\source\Config\Helper.h" />
     <ClInclude Include="..\logme\source\Control\CommandDescriptor.h" />
     <ClInclude Include="..\logme\source\Control\CommandRegistrar.h" />

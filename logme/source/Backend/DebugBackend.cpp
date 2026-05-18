@@ -11,14 +11,12 @@ using namespace Logme;
 
 namespace
 {
+#ifdef _WIN32
   static void WriteDebugText(const char* text)
   {
-#ifdef _WIN32
     OutputDebugStringA(text);
-#else
-    (void)text;
-#endif
   }
+#endif
 }
 
 DebugBackend::DebugBackend(ChannelPtr owner)
@@ -31,7 +29,7 @@ DebugBackend::DebugBackend(ChannelPtr owner)
 
 DebugBackend::~DebugBackend()
 {
-  DoFreeze();
+  Freeze();
 }
 
 bool DebugBackend::IsAsyncSupported() const
@@ -44,7 +42,7 @@ void DebugBackend::Flush()
   GetFactory().Flush();
 }
 
-void DebugBackend::DoFreeze()
+void DebugBackend::Freeze()
 {
   if (Owner == nullptr)
     return;
@@ -56,12 +54,6 @@ void DebugBackend::DoFreeze()
     GetFactory().Remove(this);
   else
     GetFactory().Flush();
-
-}
-
-void DebugBackend::Freeze()
-{
-  DoFreeze();
 }
 
 bool DebugBackend::IsIdle() const
@@ -94,7 +86,6 @@ void DebugBackend::RegisterIfNeeded()
 
 void DebugBackend::Display(Context& context)
 {
-#ifdef _WIN32
   int nc;
   const char* buffer = context.Apply(Owner, Owner->GetFlags(), nc);
 
@@ -106,7 +97,13 @@ void DebugBackend::Display(Context& context)
       flushed = GetFactory().PushAndFlush(buffer, static_cast<size_t>(nc));
 
     if (!flushed)
+    {
+#ifdef _WIN32
       WriteDebugText(buffer);
+#else
+      (void)buffer;
+#endif
+    }
 
     return;
   }
@@ -114,8 +111,13 @@ void DebugBackend::Display(Context& context)
   RegisterIfNeeded();
 
   if (!GetFactory().Push(buffer, static_cast<size_t>(nc)))
+  {
+#ifdef _WIN32
     WriteDebugText(buffer);
+#else
+    (void)buffer;
 #endif
+  }
 }
 
 void DebugBackend::OnShutdown()

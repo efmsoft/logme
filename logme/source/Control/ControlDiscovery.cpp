@@ -9,6 +9,9 @@
 
 #ifdef _WIN32
 #include <Windows.h>
+#ifdef _MSC_VER
+#pragma comment(lib, "Advapi32.lib")
+#endif
 #else
 #include <fcntl.h>
 #include <signal.h>
@@ -204,6 +207,133 @@ namespace Logme
 #endif
   }
 
+#ifdef _WIN32
+  struct PipeSecurity
+  {
+    SECURITY_ATTRIBUTES Attributes{};
+    SECURITY_DESCRIPTOR Descriptor{};
+    PSID SystemSid = nullptr;
+    PSID AdminSid = nullptr;
+    PSID AuthenticatedUserSid = nullptr;
+    PACL Acl = nullptr;
+    bool Valid = false;
+
+    PipeSecurity()
+    {
+      SID_IDENTIFIER_AUTHORITY ntAuthority = SECURITY_NT_AUTHORITY;
+
+      if (!AllocateAndInitializeSid(
+        &ntAuthority
+        , 1
+        , SECURITY_LOCAL_SYSTEM_RID
+        , 0
+        , 0
+        , 0
+        , 0
+        , 0
+        , 0
+        , 0
+        , &SystemSid
+      ))
+        return;
+
+      if (!AllocateAndInitializeSid(
+        &ntAuthority
+        , 2
+        , SECURITY_BUILTIN_DOMAIN_RID
+        , DOMAIN_ALIAS_RID_ADMINS
+        , 0
+        , 0
+        , 0
+        , 0
+        , 0
+        , 0
+        , &AdminSid
+      ))
+        return;
+
+      if (!AllocateAndInitializeSid(
+        &ntAuthority
+        , 1
+        , SECURITY_AUTHENTICATED_USER_RID
+        , 0
+        , 0
+        , 0
+        , 0
+        , 0
+        , 0
+        , 0
+        , &AuthenticatedUserSid
+      ))
+        return;
+
+      DWORD aclSize = sizeof(ACL)
+        + GetLengthSid(SystemSid)
+        + GetLengthSid(AdminSid)
+        + GetLengthSid(AuthenticatedUserSid)
+        + 3 * (sizeof(ACCESS_ALLOWED_ACE) - sizeof(DWORD));
+
+      Acl = (PACL)LocalAlloc(LPTR, aclSize);
+      if (!Acl)
+        return;
+
+      if (!InitializeAcl(Acl, aclSize, ACL_REVISION))
+        return;
+
+      if (!AddAccessAllowedAce(Acl, ACL_REVISION, GENERIC_ALL, SystemSid))
+        return;
+
+      if (!AddAccessAllowedAce(Acl, ACL_REVISION, GENERIC_ALL, AdminSid))
+        return;
+
+      // A service can create the discovery pipe under a service account.
+      // logmeweb normally runs in an interactive user session, so the pipe
+      // must explicitly allow local authenticated users to query metadata.
+      if (!AddAccessAllowedAce(
+        Acl
+        , ACL_REVISION
+        , GENERIC_READ | GENERIC_WRITE
+        , AuthenticatedUserSid
+      ))
+        return;
+
+      if (!InitializeSecurityDescriptor(
+        &Descriptor
+        , SECURITY_DESCRIPTOR_REVISION
+      ))
+        return;
+
+      if (!SetSecurityDescriptorDacl(&Descriptor, TRUE, Acl, FALSE))
+        return;
+
+      Attributes.nLength = sizeof(Attributes);
+      Attributes.lpSecurityDescriptor = &Descriptor;
+      Attributes.bInheritHandle = FALSE;
+      Valid = true;
+    }
+
+    ~PipeSecurity()
+    {
+      if (Acl)
+        LocalFree(Acl);
+
+      if (AuthenticatedUserSid)
+        FreeSid(AuthenticatedUserSid);
+
+      if (AdminSid)
+        FreeSid(AdminSid);
+
+      if (SystemSid)
+        FreeSid(SystemSid);
+    }
+
+    SECURITY_ATTRIBUTES* Get()
+    {
+      return Valid ? &Attributes : nullptr;
+    }
+  };
+#endif
+
   std::string ControlDiscovery::BuildResponse() const
   {
     std::ostringstream os;
@@ -230,6 +360,7 @@ namespace Logme
   {
     while (!Stopped)
     {
+      PipeSecurity security;
       HANDLE pipe = CreateNamedPipeA(
         EndpointName.c_str()
         , PIPE_ACCESS_DUPLEX
@@ -238,7 +369,7 @@ namespace Logme
         , 65536
         , 65536
         , 0
-        , nullptr
+        , security.Get()
       );
 
       if (pipe == INVALID_HANDLE_VALUE)

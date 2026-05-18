@@ -64,7 +64,7 @@ if(NOT WIN32)
 endif()
 
 if(WIN32)
-  target_link_libraries(logmed PRIVATE Ws2_32)
+  target_link_libraries(logmed PRIVATE Ws2_32 Advapi32)
 else()
   target_link_libraries(logmed PRIVATE pthread dl) 
 endif()

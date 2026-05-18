@@ -322,14 +322,13 @@ bool Logger::CommandBackend(Logme::StringArray& arr, std::string& response)
 
       if (arg == "--async")
       {
-        auto consoleConfig = std::dynamic_pointer_cast<ConsoleBackendConfig>(config);
-        if (consoleConfig)
+        if (backend->IsAsyncSupported())
         {
-          consoleConfig->Async = true;
+          config->Async = true;
           continue;
         }
 
-        response = "error: --async is only supported by ConsoleBackend";
+        response = "error: --async is not supported by this backend";
         return true;
       }
 

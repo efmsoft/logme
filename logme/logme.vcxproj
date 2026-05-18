@@ -282,6 +282,8 @@
     <ClCompile Include="source\Control\Command\CmdOverview.cpp" />
     <ClCompile Include="source\Control\ControlDiscovery.cpp" />
     <ClCompile Include="source\Control\Discovery.cpp" />
+    <ClCompile Include="source\Control\Command\CmdLogs.cpp" />
+    <ClCompile Include="source\File\buffered_file_io.cpp" />
 </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

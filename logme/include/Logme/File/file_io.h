@@ -12,23 +12,25 @@ namespace Logme
   {
   public:
     FileIo();
-    ~FileIo();
+    virtual ~FileIo();
 
     time_t GetLastWriteTime(int fd);
+
+    virtual void Close();
+    virtual void Flush();
+    virtual bool Open(bool append, unsigned timeout = 0, const char* fileName = 0);
+    virtual int Write(const void* p, size_t size);
+    virtual int WriteRaw(const void* p, size_t size);
+    virtual int Read(void* p, size_t size);
+    virtual long long Seek(size_t offs, int whence);
+    virtual int Truncate(size_t offs);
+    virtual void TruncateToMaxSize(size_t maxSize);
+    virtual unsigned Read(int maxLines, std::string& content, int part);
+    bool IsOpen() const;
 
   protected:
     virtual std::string GetPathName(int index = 0) = 0;
 
-    void Close();
-    bool Open(bool append, unsigned timeout = 0, const char* fileName = 0);
-    int Write(const void* p, size_t size);
-    int WriteRaw(const void* p, size_t size);
-    int Read(void* p, size_t size);
-    long long Seek(size_t offs, int whence);
-    int Truncate(size_t offs);
-    void TruncateToMaxSize(size_t maxSize);
-
-    unsigned Read(int maxLines, std::string& content, int part);
 
   protected:
     CS IoLock;

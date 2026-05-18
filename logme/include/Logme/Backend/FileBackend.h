@@ -10,6 +10,7 @@
 #include <Logme/Buffer/BufferQueue.h>
 #include <Logme/DayChangeDetector.h>
 #include <Logme/File/file_io.h>
+#include <Logme/File/buffered_file_io.h>
 #include <Logme/Obfuscate.h>
 #include <Logme/Types.h>
 
@@ -101,6 +102,7 @@ namespace Logme
     static size_t QueueSizeLimitDefault;
 
     NonceGen Nonce;
+    std::unique_ptr<BufferedFileIo> BufferedIo;
   
   public:
     enum 
@@ -137,6 +139,7 @@ namespace Logme
     LOGMELNK void Freeze() override;
     LOGMELNK void Flush() override;
     LOGMELNK std::string FormatDetails() override;
+    LOGMELNK bool IsAsyncSupported() const override;
 
     LOGMELNK static size_t GetMaxSizeDefault();
     LOGMELNK static void SetMaxSizeDefault(size_t size);
@@ -159,6 +162,9 @@ namespace Logme
 
   private:
     class FileManagerFactory& GetFactory() const;
+    FileIo& GetActiveIo();
+    const FileIo& GetActiveIo() const;
+    bool IsLogOpen() const;
 
     void Truncate();
     void AppendObfuscated(const char* text, size_t add);

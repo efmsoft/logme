@@ -104,6 +104,8 @@
     <ClCompile Include="..\logme\source\Control\Command\CmdOverview.cpp" />
     <ClCompile Include="..\logme\source\Control\ControlDiscovery.cpp" />
     <ClCompile Include="..\logme\source\Control\Discovery.cpp" />
+    <ClCompile Include="..\logme\source\Control\Command\CmdLogs.cpp" />
+    <ClCompile Include="..\logme\source\File\buffered_file_io.cpp" />
 </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\logme\source\Config\Helper.h" />

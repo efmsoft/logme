@@ -58,6 +58,9 @@ bool ConsoleBackendConfig::Parse(const Json::Value* po)
   (void)po;
 
 #ifdef USE_JSONCPP
+  if (!BackendConfig::Parse(po))
+    return false;
+
   const Json::Value& o = *po;
 
   if (o.isMember("async"))

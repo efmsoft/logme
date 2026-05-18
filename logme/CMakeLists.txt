@@ -32,6 +32,14 @@ target_include_directories(logme PRIVATE
 
 target_compile_definitions(logme PRIVATE _WINSOCK_DEPRECATED_NO_WARNINGS _CRT_SECURE_NO_WARNINGS _LOGME_STATIC_BUILD_)
 
+if(LOGME_HAS_FWRITE_NOLOCK)
+  target_compile_definitions(logme PRIVATE LOGME_HAS_FWRITE_NOLOCK)
+endif()
+
+if(LOGME_HAS_FWRITE_UNLOCKED)
+  target_compile_definitions(logme PRIVATE LOGME_HAS_FWRITE_UNLOCKED)
+endif()
+
 if(MSVC)
   target_compile_options(logme PRIVATE /EHsc)
 endif()

@@ -12,6 +12,10 @@ namespace Logme
 
     LOGMELNK DebugBackend(ChannelPtr owner);
 
+    LOGMELNK bool IsAsyncSupported() const override;
+    LOGMELNK void Flush() override;
+    LOGMELNK std::string FormatDetails() override;
+
     LOGMELNK void Display(Context& context) override;
   };
 }

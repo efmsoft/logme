@@ -55,7 +55,6 @@ namespace Logme
     };
 
   private:
-    bool Async;
     std::atomic<bool> Registered;
     std::atomic<bool> ShutdownFlag;
     std::atomic<bool> ShutdownCalled;
@@ -64,8 +63,9 @@ namespace Logme
     LOGMELNK ConsoleBackend(ChannelPtr owner);
     LOGMELNK ~ConsoleBackend();
 
-    LOGMELNK void SetAsync(bool async);
-    LOGMELNK bool GetAsync() const;
+    LOGMELNK void SetAsync(bool async) override;
+    LOGMELNK bool GetAsync() const override;
+    LOGMELNK bool IsAsyncSupported() const override;
     LOGMELNK static void SetQueueLimits(size_t maxRecords, size_t maxBytes);
     LOGMELNK static void SetOverflowPolicy(ConsoleOverflowPolicy policy);
 

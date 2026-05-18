@@ -15,7 +15,6 @@ using namespace Logme;
 
 ConsoleBackend::ConsoleBackend(ChannelPtr owner)
   : Backend(owner, TYPE_ID)
-  , Async(false)
   , Registered(false)
   , ShutdownFlag(false)
   , ShutdownCalled(owner == nullptr)
@@ -35,12 +34,17 @@ ConsoleBackend::~ConsoleBackend()
 
 void ConsoleBackend::SetAsync(bool async)
 {
-  Async = async;
+  Backend::SetAsync(async);
 }
 
 bool ConsoleBackend::GetAsync() const
 {
-  return Async;
+  return Backend::GetAsync();
+}
+
+bool ConsoleBackend::IsAsyncSupported() const
+{
+  return true;
 }
 
 void ConsoleBackend::SetQueueLimits(size_t maxRecords, size_t maxBytes)
@@ -84,7 +88,7 @@ bool ConsoleBackend::ApplyConfig(BackendConfigPtr c)
 
 std::string ConsoleBackend::FormatDetails()
 {
-  return Async ? "ASYNC" : "SYNC";
+  return GetAsync() ? "ASYNC" : "SYNC";
 }
 
 void ConsoleBackend::Freeze()
@@ -354,7 +358,7 @@ void ConsoleBackend::Display(Context& context)
     return;
   }
 
-  if (!Async || ShutdownFlag.load(std::memory_order_relaxed))
+  if (!GetAsync() || ShutdownFlag.load(std::memory_order_relaxed))
   {
     bool flushed = false;
 

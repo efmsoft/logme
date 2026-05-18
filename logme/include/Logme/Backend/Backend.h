@@ -21,6 +21,7 @@ namespace Logme
   struct BackendConfig
   {
     std::string Type;
+    bool Async;
 
     LOGMELNK BackendConfig(const char* type);
 
@@ -46,6 +47,7 @@ namespace Logme
     ChannelPtr Owner;
     const char* Type;
     bool Freezed;
+    bool Async;
 
   public:
     LOGMELNK Backend(ChannelPtr owner, const char* type);
@@ -76,6 +78,11 @@ namespace Logme
     /// Flushes buffered backend output.
     /// </summary>
     LOGMELNK virtual void Flush();
+
+    LOGMELNK virtual void SetAsync(bool async);
+    LOGMELNK virtual bool GetAsync() const;
+    LOGMELNK virtual bool IsAsyncSupported() const;
+    LOGMELNK virtual bool IsAsyncActive() const;
 
     LOGMELNK const char* GetType() const;
 

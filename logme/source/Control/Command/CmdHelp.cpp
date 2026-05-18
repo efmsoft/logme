@@ -122,7 +122,7 @@ static bool CommandHelp(Logme::StringArray& arr, std::string& response)
   response +=
     "backend [--channel name] --add type [options] Add backend to a channel\n"
     "backend [--channel name] --delete type        Delete backend from a channel\n"
-    "backend option --async                       ConsoleBackend only: enable async output\n"
+    "backend option --async                       Enable async output when backend supports it\n"
     "backend option --file path                   FileBackend/SharedFileBackend: set output file\n"
     "backend option --append                      FileBackend only: append to output file\n"
     "backend option --overwrite                   FileBackend only: overwrite output file\n"

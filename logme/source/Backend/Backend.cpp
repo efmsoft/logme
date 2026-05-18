@@ -17,6 +17,7 @@ Backend::Backend(ChannelPtr owner, const char* type)
   : Owner(owner)
   , Type(type)
   , Freezed(false)
+  , Async(false)
 {
 }
 
@@ -43,15 +44,37 @@ void Backend::Flush()
 {
 }
 
+void Backend::SetAsync(bool async)
+{
+  Async = async;
+}
+
+bool Backend::GetAsync() const
+{
+  return Async;
+}
+
+bool Backend::IsAsyncSupported() const
+{
+  return false;
+}
+
+bool Backend::IsAsyncActive() const
+{
+  return Async && IsAsyncSupported();
+}
+
 BackendConfigPtr Backend::CreateConfig()
 {
-  return std::make_shared<BackendConfig>("");
+  return std::make_shared<BackendConfig>(Type);
 }
 
 bool Backend::ApplyConfig(BackendConfigPtr c)
 {
-  (void)c;
   assert(c->Type == Type);
+  if (IsAsyncSupported())
+    SetAsync(c->Async);
+
   return true;
 }
 

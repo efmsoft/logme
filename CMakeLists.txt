@@ -60,6 +60,33 @@ endif()
 
 include(CheckCXXSourceCompiles)
 
+set(_LOGME_FWRITE_NOLOCK_TEST [=[
+#include <cstdio>
+
+int main()
+{
+  FILE* fp = nullptr;
+  size_t rc = _fwrite_nolock("", 1, 0, fp);
+  (void)rc;
+  return 0;
+}
+]=])
+
+set(_LOGME_FWRITE_UNLOCKED_TEST [=[
+#include <cstdio>
+
+int main()
+{
+  FILE* fp = nullptr;
+  size_t rc = fwrite_unlocked("", 1, 0, fp);
+  (void)rc;
+  return 0;
+}
+]=])
+
+check_cxx_source_compiles("${_LOGME_FWRITE_NOLOCK_TEST}" LOGME_HAS_FWRITE_NOLOCK)
+check_cxx_source_compiles("${_LOGME_FWRITE_UNLOCKED_TEST}" LOGME_HAS_FWRITE_UNLOCKED)
+
 set(_LOGME_STD_FORMAT_TEST [=[
 #include <format>
 #include <string>

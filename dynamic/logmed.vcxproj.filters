@@ -287,6 +287,12 @@
     <ClCompile Include="..\logme\source\Control\Discovery.cpp">
       <Filter>Control</Filter>
     </ClCompile>
+    <ClCompile Include="..\logme\source\Control\Command\CmdLogs.cpp">
+      <Filter>Control\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\File\buffered_file_io.cpp">
+      <Filter>File</Filter>
+    </ClCompile>
 </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\logme\source\Time\utils.h">
@@ -484,6 +490,15 @@
     </ClInclude>
     <ClInclude Include="..\logme\source\Control\ControlDiscovery.h">
       <Filter>Control</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Backend\MemoryTrackedBackend.h">
+      <Filter>..\logme\include\Logme\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\File\buffered_file_io.h">
+      <Filter>..\logme\include\Logme\File</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\MemoryUsageTracker.h">
+      <Filter>..\logme\include\Logme</Filter>
     </ClInclude>
 </ItemGroup>
 </Project>

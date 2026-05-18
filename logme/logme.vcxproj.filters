@@ -272,6 +272,9 @@
     <ClInclude Include="source\Control\ControlDiscovery.h">
       <Filter>source\Control</Filter>
     </ClInclude>
+    <ClInclude Include="include\Logme\File\buffered_file_io.h">
+      <Filter>include\Logme\File</Filter>
+    </ClInclude>
 </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Time\datetime_common.cpp">
@@ -528,6 +531,12 @@
     </ClCompile>
     <ClCompile Include="source\Control\Discovery.cpp">
       <Filter>source\Control</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Control\Command\CmdLogs.cpp">
+      <Filter>source\Control\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="source\File\buffered_file_io.cpp">
+      <Filter>source\File</Filter>
     </ClCompile>
 </ItemGroup>
 </Project>

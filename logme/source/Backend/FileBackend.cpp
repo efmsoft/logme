@@ -102,7 +102,9 @@ FileBackend::FileBackend(ChannelPtr owner)
   , QueuedBytes(0)
   , DailyRotation(false)
   , MaxParts(2)
+  , BufferedIo(std::make_unique<BufferedFileIo>(this))
 {
+  SetAsync(true);
   NonceGenInit(&Nonce);
 }
 
@@ -184,6 +186,7 @@ std::string FileBackend::FormatDetails()
   os << " MaxSize=" << MaxSize;
   os << " DailyRotation=" << (DailyRotation ? "YES" : "NO");
   os << " MaxParts=" << MaxParts;
+  os << " Async=" << (GetAsync() ? "YES" : "NO");
 
   size_t memoryUsage = GetMemoryUsage();
   if (memoryUsage != 0)
@@ -197,8 +200,19 @@ BackendConfigPtr FileBackend::CreateConfig()
   return std::make_shared<FileBackendConfig>();
 }
 
+bool FileBackend::IsAsyncSupported() const
+{
+  return true;
+}
+
 void FileBackend::Flush()
 {
+  if (!GetAsync())
+  {
+    GetActiveIo().Flush();
+    return;
+  }
+
   FILE_CNT(GlobalFlushWaitCalls.fetch_add(1, std::memory_order_relaxed));
   for (;;)
   {
@@ -218,7 +232,8 @@ void FileBackend::Freeze()
   ShutdownFlag.store(true, std::memory_order_relaxed);
   Backend::Freeze();
 
-  RequestFlush();
+  if (GetAsync())
+    RequestFlush();
 }
 
 bool FileBackend::IsIdle() const
@@ -238,6 +253,7 @@ bool FileBackend::ApplyConfig(BackendConfigPtr c)
 
   FileBackendConfig* p = (FileBackendConfig*)c.get();
 
+  SetAsync(p->Async);
   SetAppend(p->DailyRotation ? true : p->Append);
   SetMaxSize(p->MaxSize);
 
@@ -310,7 +326,7 @@ bool FileBackend::CreateLog(const char* v)
     }
   }
 
-  if (!Open(Append))
+  if (!GetActiveIo().Open(Append))
   {
     FILE_CNT(GlobalCreateLogFailures.fetch_add(1, std::memory_order_relaxed));
     return false;
@@ -322,7 +338,7 @@ bool FileBackend::CreateLog(const char* v)
     return true;
   }
 
-  auto rc = Seek(0, SEEK_END);
+  auto rc = GetActiveIo().Seek(0, SEEK_END);
   if (rc < 0)
   {
     FILE_CNT(GlobalCreateLogFailures.fetch_add(1, std::memory_order_relaxed));
@@ -335,12 +351,14 @@ bool FileBackend::CreateLog(const char* v)
 
 void FileBackend::CloseLog()
 {
-  Close();
+  FileIo::Close();
+  if (BufferedIo)
+    BufferedIo->Close();
 }
 
 bool FileBackend::TestFileInUse(const std::string& file) const
 {
-  if (File == -1)
+  if (!IsLogOpen())
     return false;
 
   return Name == file;
@@ -348,7 +366,7 @@ bool FileBackend::TestFileInUse(const std::string& file) const
 
 size_t FileBackend::GetSize()
 {
-  if (File == -1)
+  if (!IsLogOpen())
     return static_cast<size_t>(-1);
 
   return CurrentSize;
@@ -390,10 +408,11 @@ void FileBackend::RegisterAsync()
 void FileBackend::Display(Context& context)
 {
   FILE_CNT(GlobalDisplayCalls.fetch_add(1, std::memory_order_relaxed));
-  if (File == -1 || ShutdownFlag.load(std::memory_order_relaxed))
+  if (!IsLogOpen() || ShutdownFlag.load(std::memory_order_relaxed))
     return;
 
-  RegisterAsync();
+  if (GetAsync())
+    RegisterAsync();
 
   if (DailyRotation && Day.IsSameDayCached() == false)
   {
@@ -411,9 +430,9 @@ void FileBackend::Truncate()
   if (MaxSize == 0 || CurrentSize < MaxSize)
     return;
 
-  FileIo::TruncateToMaxSize(MaxSize);
+  GetActiveIo().TruncateToMaxSize(MaxSize);
 
-  auto rc = Seek(0, SEEK_END);
+  auto rc = GetActiveIo().Seek(0, SEEK_END);
   if (rc >= 0)
     CurrentSize = (size_t)rc;
 }
@@ -437,10 +456,11 @@ void FileBackend::AppendString(const char* text, size_t len)
 {
   std::lock_guard guard(Owner->GetDataLock());
 
-  if (File == -1 || ShutdownFlag.load(std::memory_order_relaxed))
+  if (!IsLogOpen() || ShutdownFlag.load(std::memory_order_relaxed))
     return;
 
-  RegisterAsync();
+  if (GetAsync())
+    RegisterAsync();
   AppendStringInternal(text, len);
 }
 
@@ -488,6 +508,27 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
 
   if (add == 0)
     return;
+
+  if (!GetAsync())
+  {
+    FILE_CNT(GlobalAppendCalls.fetch_add(1, std::memory_order_relaxed));
+    FILE_CNT(GlobalInputBytes.fetch_add(add, std::memory_order_relaxed));
+
+    std::lock_guard guard(IoLock);
+    Truncate();
+
+    int rc = GetActiveIo().WriteRaw(text, add);
+    if (rc < 0)
+    {
+      FILE_CNT(GlobalWriteErrors.fetch_add(1, std::memory_order_relaxed));
+      return;
+    }
+
+    CurrentSize += (size_t)rc;
+    FILE_CNT(GlobalWrittenBytes.fetch_add((size_t)rc, std::memory_order_relaxed));
+    FILE_CNT(GlobalOutputBytes.fetch_add((size_t)rc, std::memory_order_relaxed));
+    return;
+  }
 
   bool needSignal = false;
   bool firstData = false;
@@ -565,6 +606,28 @@ void FileBackend::RequestFlush(uint64_t when)
 bool FileBackend::HasEvents() const
 {
   return FlushTime.load(std::memory_order_relaxed) != 0;
+}
+
+
+FileIo& FileBackend::GetActiveIo()
+{
+  if (!GetAsync() && BufferedIo)
+    return *BufferedIo;
+
+  return *this;
+}
+
+const FileIo& FileBackend::GetActiveIo() const
+{
+  if (!GetAsync() && BufferedIo)
+    return *BufferedIo;
+
+  return *this;
+}
+
+bool FileBackend::IsLogOpen() const
+{
+  return GetActiveIo().IsOpen();
 }
 
 FileManagerFactory& FileBackend::GetFactory() const

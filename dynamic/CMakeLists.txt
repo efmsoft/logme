@@ -39,6 +39,14 @@ target_include_directories(logmed PRIVATE
 
 target_compile_definitions(logmed PRIVATE _LOGME_DLL_BUILD_ _WINSOCK_DEPRECATED_NO_WARNINGS _CRT_SECURE_NO_WARNINGS _DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR)
 
+if(LOGME_HAS_FWRITE_NOLOCK)
+  target_compile_definitions(logmed PRIVATE LOGME_HAS_FWRITE_NOLOCK)
+endif()
+
+if(LOGME_HAS_FWRITE_UNLOCKED)
+  target_compile_definitions(logmed PRIVATE LOGME_HAS_FWRITE_UNLOCKED)
+endif()
+
 if(MSVC)
   target_compile_options(logmed PRIVATE /EHsc)
 endif()

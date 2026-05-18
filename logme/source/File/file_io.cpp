@@ -55,6 +55,15 @@ FileIo::~FileIo()
   Close();
 }
 
+bool FileIo::IsOpen() const
+{
+  return File != -1;
+}
+
+void FileIo::Flush()
+{
+}
+
 void FileIo::Close()
 {
   std::lock_guard guard(IoLock);

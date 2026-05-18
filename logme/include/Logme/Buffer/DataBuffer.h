@@ -6,6 +6,8 @@
 
 namespace Logme
 {
+  class MemoryUsageTracker;
+
   class DataBuffer
   {
     std::unique_ptr<char[]> DataPtr;
@@ -13,9 +15,12 @@ namespace Logme
     std::size_t SizeValue;
     std::uint64_t FirstWriteTimeValue;
     bool SeenOnSoftFlushValue;
+    MemoryUsageTracker* MemoryTracker;
 
   public:
-    explicit DataBuffer(std::size_t capacity);
+    DataBuffer(std::size_t capacity, MemoryUsageTracker* memoryTracker);
+
+    ~DataBuffer();
 
     DataBuffer(const DataBuffer&) = delete;
     DataBuffer& operator=(const DataBuffer&) = delete;

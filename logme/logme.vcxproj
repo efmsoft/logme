@@ -165,6 +165,7 @@
     <ClInclude Include="include\Logme\Backend\ConsoleBackend.h" />
     <ClInclude Include="include\Logme\Backend\DebugBackend.h" />
     <ClInclude Include="include\Logme\Backend\FileBackend.h" />
+    <ClInclude Include="include\Logme\Backend\MemoryTrackedBackend.h" />
     <ClInclude Include="include\Logme\Channel.h" />
     <ClInclude Include="include\Logme\Colorizer.h" />
     <ClInclude Include="include\Logme\Context.h" />
@@ -175,6 +176,7 @@
     <ClInclude Include="include\Logme\Json\RSJparser.hpp" />
     <ClInclude Include="include\Logme\Logger.h" />
     <ClInclude Include="include\Logme\Logme.h" />
+    <ClInclude Include="include\Logme\MemoryUsageTracker.h" />
     <ClInclude Include="include\Logme\Module.h" />
     <ClInclude Include="include\Logme\OutputFlags.h" />
     <ClInclude Include="include\Logme\Printer.h" />
@@ -197,6 +199,7 @@
   <ItemGroup>
     <ClCompile Include="source\Backend\Backend.cpp" />
     <ClCompile Include="source\Backend\BackendConfig.cpp" />
+    <ClCompile Include="source\Backend\MemoryTrackedBackend.cpp" />
     <ClCompile Include="source\Backend\BufferBackend.cpp" />
 	<ClCompile Include="source\Backend\BufferBackendConfig.cpp" />
     <ClCompile Include="source\Backend\RingBufferBackend.cpp" />
@@ -245,6 +248,7 @@
     <ClCompile Include="source\Json\Loader.cpp" />
     <ClCompile Include="source\Logger.cpp" />
     <ClCompile Include="source\Module.cpp" />
+    <ClCompile Include="source\MemoryUsageTracker.cpp" />
     <ClCompile Include="source\Obfuscate.cpp" />
     <ClCompile Include="source\OutputFlags.cpp" />
     <ClCompile Include="source\Override.cpp" />

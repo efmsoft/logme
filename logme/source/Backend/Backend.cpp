@@ -60,6 +60,11 @@ std::string Backend::FormatDetails()
   return std::string();
 }
 
+std::size_t Backend::GetMemoryUsage() const
+{
+  return 0;
+}
+
 BackendPtr Backend::Create(const char* type, ChannelPtr owner)
 {
   if (ShutdownCalled)

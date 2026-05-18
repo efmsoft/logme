@@ -1,16 +1,26 @@
 #include <Logme/Buffer/DataBuffer.h>
+#include <Logme/MemoryUsageTracker.h>
 
 #include <cstring>
 
 using namespace Logme;
 
-DataBuffer::DataBuffer(std::size_t capacity)
+DataBuffer::DataBuffer(std::size_t capacity, MemoryUsageTracker* memoryTracker)
   : DataPtr(new char[capacity])
   , CapacityValue(capacity)
   , SizeValue(0)
   , FirstWriteTimeValue(0)
   , SeenOnSoftFlushValue(false)
+  , MemoryTracker(memoryTracker)
 {
+  if (MemoryTracker)
+    MemoryTracker->AddMemoryUsage(CapacityValue);
+}
+
+DataBuffer::~DataBuffer()
+{
+  if (MemoryTracker)
+    MemoryTracker->RemoveMemoryUsage(CapacityValue);
 }
 
 std::size_t DataBuffer::Capacity() const

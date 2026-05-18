@@ -15,10 +15,12 @@
 namespace Logme
 {
   class Channel;
+  class MemoryUsageTracker;
 
   class BufferQueue
   {
     Channel* Owner;
+    MemoryUsageTracker* MemoryTracker;
 
   public:
     enum class SoftFlushState
@@ -68,7 +70,11 @@ namespace Logme
     std::atomic<std::uint64_t> SignalsSent;
 
   public:
-    explicit BufferQueue(Channel* Owner, const Options& options);
+    BufferQueue(
+      Channel* owner
+      , const Options& options
+      , MemoryUsageTracker* memoryTracker
+    );
 
     bool Append(
       const char* p

@@ -3,7 +3,7 @@
 #include <list>
 #include <mutex>
 
-#include <Logme/Backend/Backend.h>
+#include <Logme/Backend/MemoryTrackedBackend.h>
 
 namespace Logme
 {
@@ -17,7 +17,7 @@ namespace Logme
     LOGMELNK bool Parse(const Json::Value* po) override;
   };
 
-  struct RingBufferBackend : public Backend
+  struct RingBufferBackend : public MemoryTrackedBackend
   {
     std::mutex Lock;
     std::list<std::string> Ring;
@@ -35,5 +35,6 @@ namespace Logme
 
     LOGMELNK BackendConfigPtr CreateConfig() override;
     LOGMELNK bool ApplyConfig(BackendConfigPtr c) override;
+    LOGMELNK std::string FormatDetails() override;
   };
 }

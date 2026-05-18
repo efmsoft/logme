@@ -79,7 +79,7 @@ size_t FileBackend::MaxSizeDefault = FileBackend::MAX_SIZE_DEFAULT;
 size_t FileBackend::QueueSizeLimitDefault = FileBackend::QUEUE_SIZE_LIMIT;
 
 FileBackend::FileBackend(ChannelPtr owner)
-  : Backend(owner, TYPE_ID)
+  : MemoryTrackedBackend(owner, TYPE_ID)
   , Append(true)
   , MaxSize(MaxSizeDefault)
   , CurrentSize(0)
@@ -88,13 +88,17 @@ FileBackend::FileBackend(ChannelPtr owner)
   , ShutdownFlag(false)
   , ShutdownCalled(owner == nullptr)
   , FlushTime(0)
-  , Queue(Owner.get(), []
+  , Queue(
+    Owner.get()
+    , []
     {
       BufferQueue::Options o;
       o.BufferSize = QUEUE_BUFFER_SIZE;
       o.MaxTotalBuffers = MAX_TOTAL_BUFFERS;
       return o;
-    }())
+    }()
+    , GetMemoryUsageTracker()
+  )
   , QueuedBytes(0)
   , DailyRotation(false)
   , MaxParts(2)
@@ -180,6 +184,10 @@ std::string FileBackend::FormatDetails()
   os << " MaxSize=" << MaxSize;
   os << " DailyRotation=" << (DailyRotation ? "YES" : "NO");
   os << " MaxParts=" << MaxParts;
+
+  size_t memoryUsage = GetMemoryUsage();
+  if (memoryUsage != 0)
+    os << " Memory=" << memoryUsage;
 
   return os.str();
 }

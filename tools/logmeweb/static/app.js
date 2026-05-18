@@ -486,6 +486,7 @@ async function RenderOverview()
     const channels = values['channels'] || '0';
     const logCalls = values['log write calls'] || '0';
     const loggedBytes = Number(values['logged bytes'] || 0);
+    const backendMemory = Number(values['backend memory'] || 0);
     const errorChannel = values['error channel'] || '<none>';
     const obfuscation = values['obfuscation'] || 'Disabled';
 
@@ -511,6 +512,7 @@ async function RenderOverview()
             <div class="metric-line"><span>Error channel</span><strong>${EscapeHtml(errorChannel)}</strong></div>
             <div class="metric-line"><span>Auto delete channels</span><strong>${EscapeHtml(values['auto delete channels'] || '0')}</strong></div>
             <div class="metric-line"><span>VT mode</span><strong>${EscapeHtml(values['vt mode requested'] || 'Disabled')}</strong></div>
+            ${backendMemory > 0 ? `<div class="metric-line"><span>Backend memory</span><strong>${EscapeHtml(FormatBytesWithExact(backendMemory))}</strong></div>` : ''}
             <div class="metric-line"><span>Obfuscation</span><strong>${EscapeHtml(obfuscation)}</strong></div>
             ${values['obfuscation key'] ? `<div class="metric-line"><span>Obfuscation key</span><strong class="mono-value">${EscapeHtml(values['obfuscation key'])}</strong></div>` : ''}
           </div>

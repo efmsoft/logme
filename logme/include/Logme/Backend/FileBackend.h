@@ -6,7 +6,7 @@
 #include <mutex>
 #include <vector>
 
-#include <Logme/Backend/Backend.h>
+#include <Logme/Backend/MemoryTrackedBackend.h>
 #include <Logme/Buffer/BufferQueue.h>
 #include <Logme/DayChangeDetector.h>
 #include <Logme/File/file_io.h>
@@ -66,7 +66,7 @@ namespace Logme
   };
 
   class FileBackend 
-    : public Backend
+    : public MemoryTrackedBackend
     , public FileIo
   {
     typedef std::vector<char> CharBuffer;

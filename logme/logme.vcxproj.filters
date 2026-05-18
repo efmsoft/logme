@@ -77,6 +77,9 @@
     <ClInclude Include="include\Logme\Backend\FileBackend.h">
       <Filter>include\Logme\Backend</Filter>
     </ClInclude>
+    <ClInclude Include="include\Logme\Backend\MemoryTrackedBackend.h">
+      <Filter>include\Logme\Backend</Filter>
+    </ClInclude>
     <ClInclude Include="include\Logme\File\exe_path.h">
       <Filter>include\Logme\File</Filter>
     </ClInclude>
@@ -117,6 +120,9 @@
       <Filter>include\Logme</Filter>
     </ClInclude>
     <ClInclude Include="include\Logme\Logme.h">
+      <Filter>include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\MemoryUsageTracker.h">
       <Filter>include\Logme</Filter>
     </ClInclude>
     <ClInclude Include="include\Logme\Module.h">
@@ -286,6 +292,9 @@
     <ClCompile Include="source\Backend\BackendConfig.cpp">
       <Filter>source\Backend</Filter>
     </ClCompile>
+    <ClCompile Include="source\Backend\MemoryTrackedBackend.cpp">
+      <Filter>source\Backend</Filter>
+    </ClCompile>
     <ClCompile Include="source\Backend\BufferBackend.cpp">
       <Filter>source\Backend</Filter>
     </ClCompile>
@@ -368,6 +377,9 @@
       <Filter>source</Filter>
     </ClCompile>
     <ClCompile Include="source\Module.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\MemoryUsageTracker.cpp">
       <Filter>source</Filter>
     </ClCompile>
     <ClCompile Include="source\Obfuscate.cpp">

@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include <Logme/Backend/Backend.h>
+#include <Logme/Backend/MemoryTrackedBackend.h>
 #include <Logme/Channel.h>
 
 namespace Logme
@@ -27,7 +27,7 @@ namespace Logme
     LOGMELNK bool Parse(const Json::Value* po) override;
   };
 
-  struct BufferBackend : public Logme::Backend
+  struct BufferBackend : public Logme::MemoryTrackedBackend
   {
     enum { GROW = 4 * 1024 };
 

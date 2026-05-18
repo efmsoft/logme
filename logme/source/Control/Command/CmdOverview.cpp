@@ -51,6 +51,7 @@ static void CollectChannelStats(
   , uint64_t& accessCount
   , uint64_t& loggedBytes
   , std::map<std::string, size_t>& backendTypes
+  , size_t& backendMemory
 )
 {
   if (!channel)
@@ -67,6 +68,7 @@ static void CollectChannelStats(
       continue;
 
     backendTypes[backend->GetType()]++;
+    backendMemory += backend->GetMemoryUsage();
   }
 }
 
@@ -79,11 +81,26 @@ bool Logger::CommandOverview(Logme::StringArray& arr, std::string& response)
   uint64_t accessCount = 0;
   uint64_t loggedBytes = 0;
   std::map<std::string, size_t> backendTypes;
+  size_t backendMemory = 0;
 
-  CollectChannelStats(Instance->Default, accessCount, loggedBytes, backendTypes);
+  CollectChannelStats(
+    Instance->Default
+    , accessCount
+    , loggedBytes
+    , backendTypes
+    , backendMemory
+  );
 
   for (auto& item : Instance->Channels)
-    CollectChannelStats(item.second, accessCount, loggedBytes, backendTypes);
+  {
+    CollectChannelStats(
+      item.second
+      , accessCount
+      , loggedBytes
+      , backendTypes
+      , backendMemory
+    );
+  }
 
   const ObfKey* key = Instance->GetObfuscationKey();
 
@@ -99,6 +116,9 @@ bool Logger::CommandOverview(Logme::StringArray& arr, std::string& response)
   response += "Error channel: " + FormatErrorChannel(Instance->ErrorChannel) + "\n";
   response += "Log write calls: " + std::to_string(accessCount) + "\n";
   response += "Logged bytes: " + std::to_string(loggedBytes) + "\n";
+
+  if (backendMemory != 0)
+    response += "Backend memory: " + std::to_string(backendMemory) + "\n";
 
   if (backendTypes.empty())
   {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <memory>
 #include <vector>
 
@@ -91,6 +92,12 @@ namespace Logme
     /// </summary>
     /// <returns>Human-readable details string, or empty string when backend has no details.</returns>
     LOGMELNK virtual std::string FormatDetails();
+
+    /// <summary>
+    /// Returns backend-owned memory currently tracked by this backend.
+    /// </summary>
+    /// <returns>Tracked memory size in bytes, or 0 when memory is not tracked or not significant.</returns>
+    LOGMELNK virtual std::size_t GetMemoryUsage() const;
   
   protected:
     friend class Channel;

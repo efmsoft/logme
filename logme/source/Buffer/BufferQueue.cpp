@@ -18,8 +18,13 @@ namespace
   std::atomic<std::uint64_t> GlobalSignalsSent(0);
 }
 
-BufferQueue::BufferQueue(Channel* owner, const Options& options)
+BufferQueue::BufferQueue(
+  Channel* owner
+  , const Options& options
+  , MemoryUsageTracker* memoryTracker
+)
   : Owner(owner)
+  , MemoryTracker(memoryTracker)
   , OptionsValue(options)
   , HasCurrentDataFlag(false)
   , UsedBuffersCount(1)
@@ -38,7 +43,7 @@ BufferQueue::BufferQueue(Channel* owner, const Options& options)
   , WriteErrors(0)
   , SignalsSent(0)
 {
-  Current.reset(new DataBuffer(options.BufferSize));
+  Current.reset(new DataBuffer(options.BufferSize, MemoryTracker));
   TotalBuffers = 1;
   CountAllocated();
 }
@@ -397,7 +402,7 @@ DataBufferPtr BufferQueue::TryCreateBuffer()
     }
   }
 
-  DataBufferPtr buffer(new DataBuffer(OptionsValue.BufferSize));
+  DataBufferPtr buffer(new DataBuffer(OptionsValue.BufferSize, MemoryTracker));
 
   {
     std::lock_guard freeGuard(FreeLock);

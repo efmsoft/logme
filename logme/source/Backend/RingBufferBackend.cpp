@@ -1,14 +1,16 @@
 #include <algorithm>
 #include <cstring>
 #include <iterator>
+#include <sstream>
 
 #include <Logme/Backend/RingBufferBackend.h>
 #include <Logme/Channel.h>
+#include <Logme/MemoryUsageTracker.h>
 
 using namespace Logme;
 
 RingBufferBackend::RingBufferBackend(Logme::ChannelPtr owner)
-  : Backend(owner, TYPE_ID)
+  : MemoryTrackedBackend(owner, TYPE_ID)
 {
 }
 
@@ -33,6 +35,10 @@ bool RingBufferBackend::ApplyConfig(BackendConfigPtr c)
 void RingBufferBackend::Clear()
 {
   std::lock_guard guard(Lock);
+
+  for (const auto& item : Ring)
+    GetMemoryUsageTracker()->RemoveMemoryUsage(item.capacity());
+
   Ring.clear();
 }
 
@@ -64,9 +70,29 @@ void RingBufferBackend::Append(const char* str, int nc)
   std::lock_guard guard(Lock);
 
   Ring.emplace_back(str, nc);
+  GetMemoryUsageTracker()->AddMemoryUsage(Ring.back().capacity());
 
   while (Ring.size() > Config.MaxItems)
+  {
+    GetMemoryUsageTracker()->RemoveMemoryUsage(Ring.front().capacity());
     Ring.pop_front();
+  }
+}
+
+
+std::string RingBufferBackend::FormatDetails()
+{
+  std::lock_guard guard(Lock);
+
+  std::ostringstream os;
+  os << "MaxItems=" << Config.MaxItems;
+  os << " Used=" << Ring.size();
+
+  size_t memoryUsage = GetMemoryUsage();
+  if (memoryUsage != 0)
+    os << " Memory=" << memoryUsage;
+
+  return os.str();
 }
 
 void RingBufferBackend::Display(Logme::Context& context)

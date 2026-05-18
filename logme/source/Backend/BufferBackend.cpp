@@ -5,11 +5,12 @@
 
 #include <Logme/Backend/BufferBackend.h>
 #include <Logme/Channel.h>
+#include <Logme/MemoryUsageTracker.h>
 
 using namespace Logme;
 
 BufferBackend::BufferBackend(Logme::ChannelPtr owner)
-  : Backend(owner, TYPE_ID)
+  : MemoryTrackedBackend(owner, TYPE_ID)
 {
 }
 
@@ -27,6 +28,10 @@ std::string BufferBackend::FormatDetails()
     os << " Policy=STOP_APPENDING";
 
   os << " Used=" << Buffer.size();
+
+  size_t memoryUsage = GetMemoryUsage();
+  if (memoryUsage != 0)
+    os << " Memory=" << memoryUsage;
   return os.str();
 }
 
@@ -121,8 +126,13 @@ void BufferBackend::Append(const char* str, int nc)
 
   if (s > c)
   {
+    size_t oldCapacity = Buffer.capacity();
     c = ((s + GROW - 1) / GROW) * GROW;
     Buffer.reserve(c);
+
+    size_t newCapacity = Buffer.capacity();
+    if (newCapacity > oldCapacity)
+      GetMemoryUsageTracker()->AddMemoryUsage(newCapacity - oldCapacity);
   }
 
   Buffer.resize(s);

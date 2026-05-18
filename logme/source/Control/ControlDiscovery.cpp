@@ -33,20 +33,6 @@ namespace Logme
   {
     return "\\\\.\\pipe\\Global\\logme-discovery-";
   }
-
-  static std::string NormalizeDiscoveryPrefix(std::string prefix)
-  {
-    const char legacyPrefix[] = "\\\\.\\pipe\\";
-    const char globalPrefix[] = "\\\\.\\pipe\\Global\\";
-
-    if (prefix.rfind(globalPrefix, 0) == 0)
-      return prefix;
-
-    if (prefix.rfind(legacyPrefix, 0) == 0)
-      return std::string(globalPrefix) + prefix.substr(sizeof(legacyPrefix) - 1);
-
-    return prefix;
-  }
 #else
   static unsigned GetProcessIdForDiscovery()
   {
@@ -130,7 +116,6 @@ namespace Logme
       : GetDefaultDiscoveryPrefix();
 
 #ifdef _WIN32
-    prefix = NormalizeDiscoveryPrefix(prefix);
     EndpointName = prefix + std::to_string(GetProcessIdForDiscovery());
 #else
 #ifdef __linux__
@@ -140,6 +125,84 @@ namespace Logme
       EndpointName = prefix + std::to_string(GetProcessIdForDiscovery());
 #else
     EndpointName = prefix + std::to_string(GetProcessIdForDiscovery()) + ".sock";
+#endif
+#endif
+  }
+
+  ControlDiscovery::~ControlDiscovery()
+  {
+    Stop();
+  }
+
+  bool ControlDiscovery::Start()
+  {
+    Stopped = false;
+
+    try
+    {
+      Worker = std::thread(&ControlDiscovery::WorkerFunc, this);
+    }
+    catch (...)
+    {
+      return false;
+    }
+
+    return true;
+  }
+
+  void ControlDiscovery::Stop()
+  {
+    bool alreadyStopped = Stopped.exchange(true);
+    if (alreadyStopped)
+      return;
+
+#ifdef _WIN32
+    HANDLE pipe = CreateFileA(
+      EndpointName.c_str()
+      , GENERIC_READ | GENERIC_WRITE
+      , 0
+      , nullptr
+      , OPEN_EXISTING
+      , 0
+      , nullptr
+    );
+    if (pipe != INVALID_HANDLE_VALUE)
+      CloseHandle(pipe);
+#else
+    int fd = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (fd >= 0)
+    {
+      sockaddr_un addr{};
+      addr.sun_family = AF_UNIX;
+
+#ifdef __linux__
+      if (!EndpointName.empty() && EndpointName[0] != '/')
+      {
+        addr.sun_path[0] = '\0';
+        std::strncpy(addr.sun_path + 1, EndpointName.c_str(), sizeof(addr.sun_path) - 2);
+        size_t length = offsetof(sockaddr_un, sun_path) + 1 + EndpointName.size();
+        connect(fd, (sockaddr*)&addr, (socklen_t)length);
+      }
+      else
+#endif
+      {
+        std::strncpy(addr.sun_path, EndpointName.c_str(), sizeof(addr.sun_path) - 1);
+        connect(fd, (sockaddr*)&addr, sizeof(addr));
+      }
+
+      close(fd);
+    }
+#endif
+
+    if (Worker.joinable())
+      Worker.join();
+
+#ifndef _WIN32
+#ifndef __linux__
+    unlink(EndpointName.c_str());
+#else
+    if (!EndpointName.empty() && EndpointName[0] == '/')
+      unlink(EndpointName.c_str());
 #endif
 #endif
   }
@@ -223,6 +286,9 @@ namespace Logme
       if (!AddAccessAllowedAce(Acl, ACL_REVISION, GENERIC_ALL, AdminSid))
         return;
 
+      // A service can create the discovery pipe under a service account.
+      // logmeweb normally runs in an interactive user session, so the pipe
+      // must explicitly allow local authenticated users to query metadata.
       if (!AddAccessAllowedAce(
         Acl
         , ACL_REVISION
@@ -267,84 +333,6 @@ namespace Logme
     }
   };
 #endif
-
-  ControlDiscovery::~ControlDiscovery()
-  {
-    Stop();
-  }
-
-  bool ControlDiscovery::Start()
-  {
-    Stopped = false;
-
-    try
-    {
-      Worker = std::thread(&ControlDiscovery::WorkerFunc, this);
-    }
-    catch (...)
-    {
-      return false;
-    }
-
-    return true;
-  }
-
-  void ControlDiscovery::Stop()
-  {
-    bool alreadyStopped = Stopped.exchange(true);
-    if (alreadyStopped)
-      return;
-
-#ifdef _WIN32
-    HANDLE pipe = CreateFileA(
-      EndpointName.c_str()
-      , GENERIC_READ | GENERIC_WRITE
-      , 0
-      , nullptr
-      , OPEN_EXISTING
-      , 0
-      , nullptr
-    );
-    if (pipe != INVALID_HANDLE_VALUE)
-      CloseHandle(pipe);
-#else
-    int fd = socket(AF_UNIX, SOCK_STREAM, 0);
-    if (fd >= 0)
-    {
-      sockaddr_un addr{};
-      addr.sun_family = AF_UNIX;
-
-#ifdef __linux__
-      if (!EndpointName.empty() && EndpointName[0] != '/')
-      {
-        addr.sun_path[0] = '\0';
-        std::strncpy(addr.sun_path + 1, EndpointName.c_str(), sizeof(addr.sun_path) - 2);
-        size_t length = offsetof(sockaddr_un, sun_path) + 1 + EndpointName.size();
-        connect(fd, (sockaddr*)&addr, (socklen_t)length);
-      }
-      else
-#endif
-      {
-        std::strncpy(addr.sun_path, EndpointName.c_str(), sizeof(addr.sun_path) - 1);
-        connect(fd, (sockaddr*)&addr, sizeof(addr));
-      }
-
-      close(fd);
-    }
-#endif
-
-    if (Worker.joinable())
-      Worker.join();
-
-#ifndef _WIN32
-#ifndef __linux__
-    unlink(EndpointName.c_str());
-#else
-    if (!EndpointName.empty() && EndpointName[0] == '/')
-      unlink(EndpointName.c_str());
-#endif
-#endif
-  }
 
   std::string ControlDiscovery::BuildResponse() const
   {

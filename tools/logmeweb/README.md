@@ -96,7 +96,7 @@ The viewer reads the selected file from the beginning in bounded chunks and prov
 
 ## Local discovery
 
-Discovery is opt-in on the logme control server side.
+Discovery is enabled by default when the logme control server is enabled. It can be disabled explicitly in the control configuration.
 
 When enabled, the running process exposes only connection metadata:
 

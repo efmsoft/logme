@@ -14,7 +14,7 @@ using namespace Logme;
 
 bool ParseControlConfig(const Json::Value& root, ControlConfig& cc)
 {
-  memset(&cc, 0, sizeof(cc));
+  cc = ControlConfig{};
 
   if (!root.isMember("control"))
     return true;

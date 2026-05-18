@@ -16,10 +16,7 @@ except Exception:
   pywintypes = None
 
 
-WINDOWS_PIPE_PREFIXES = [
-  r"\\.\pipe\Global\logme-discovery-",
-  r"\\.\pipe\logme-discovery-"
-]
+WINDOWS_PIPE_PREFIX = r"\\.\pipe\Global\logme-discovery-"
 UNIX_SOCKET_PREFIX = "logme-discovery-"
 
 
@@ -27,17 +24,9 @@ def _iter_pids():
   if psutil:
     for proc in psutil.process_iter(["pid"]):
       try:
-        pid = int(proc.info.get("pid") or proc.pid)
+        yield int(proc.info["pid"]), ""
       except Exception:
         continue
-
-      name = ""
-      try:
-        name = proc.name() or ""
-      except Exception:
-        pass
-
-      yield pid, name
     return
 
   proc_dir = "/proc"
@@ -51,33 +40,30 @@ def _query_windows_pipe(pid):
   if not win32file:
     return None
 
-  for pipe_prefix in WINDOWS_PIPE_PREFIXES:
-    pipe_name = f"{pipe_prefix}{pid}"
+  pipe_name = f"{WINDOWS_PIPE_PREFIX}{pid}"
+
+  try:
+    handle = win32file.CreateFile(
+      pipe_name
+      , win32file.GENERIC_READ | win32file.GENERIC_WRITE
+      , 0
+      , None
+      , win32file.OPEN_EXISTING
+      , 0
+      , None
+    )
 
     try:
-      handle = win32file.CreateFile(
-        pipe_name
-        , win32file.GENERIC_READ | win32file.GENERIC_WRITE
-        , 0
-        , None
-        , win32file.OPEN_EXISTING
-        , 0
-        , None
-      )
+      win32file.WriteFile(handle, b"INFO\n")
+      result, data = win32file.ReadFile(handle, 64 * 1024)
+      return json.loads(data.decode("utf-8", errors="replace"))
+    finally:
+      win32file.CloseHandle(handle)
 
-      try:
-        win32file.WriteFile(handle, b"INFO\n")
-        result, data = win32file.ReadFile(handle, 64 * 1024)
-        return json.loads(data.decode("utf-8", errors="replace"))
-      finally:
-        win32file.CloseHandle(handle)
-
-    except pywintypes.error:
-      continue
-    except Exception:
-      continue
-
-  return None
+  except pywintypes.error:
+    return None
+  except Exception:
+    return None
 
 
 def _query_unix_socket_address(address):

@@ -116,12 +116,12 @@ namespace Logme
       SID SNone;
       const SID& Subsystem;
 
-      Params(...);
-      Params(const ID& ch, ...);
-      Params(const ChannelPtr& channel, ...);
-      Params(const SID& sid, ...);
-      Params(const ID& ch, const SID& sid, ...);
-      Params(const ChannelPtr& channel, const SID& sid, ...);
+      LOGMELNK Params(...);
+      LOGMELNK Params(const ID& ch, ...);
+      LOGMELNK Params(const ChannelPtr& channel, ...);
+      LOGMELNK Params(const SID& sid, ...);
+      LOGMELNK Params(const ID& ch, const SID& sid, ...);
+      LOGMELNK Params(const ChannelPtr& channel, const SID& sid, ...);
     };
 
   public:

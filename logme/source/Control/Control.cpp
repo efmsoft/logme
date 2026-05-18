@@ -467,6 +467,9 @@ Result Logger::SetControlCertificate(
 
   StopControlServer();
 
+  cfg.Cert = cert;
+  cfg.Key = key;
+
   {
     std::lock_guard guard(DataLock);
 

@@ -1,7 +1,9 @@
+import ctypes
 import json
 import os
 import platform
 import socket
+import sys
 
 try:
   import psutil
@@ -20,7 +22,48 @@ WINDOWS_PIPE_PREFIX = r"\\.\pipe\Global\logme-discovery-"
 UNIX_SOCKET_PREFIX = "logme-discovery-"
 
 
+def _debug(message):
+  if os.environ.get("LOGMEWEB_DISCOVERY_DEBUG"):
+    print(message, file=sys.stderr)
+
+
+def _iter_windows_pids():
+  kernel32 = ctypes.windll.kernel32
+  snapshot = kernel32.CreateToolhelp32Snapshot(0x00000002, 0)
+  if snapshot == ctypes.c_void_p(-1).value:
+    return
+
+  class PROCESSENTRY32(ctypes.Structure):
+    _fields_ = [
+      ("dwSize", ctypes.c_uint32),
+      ("cntUsage", ctypes.c_uint32),
+      ("th32ProcessID", ctypes.c_uint32),
+      ("th32DefaultHeapID", ctypes.c_void_p),
+      ("th32ModuleID", ctypes.c_uint32),
+      ("cntThreads", ctypes.c_uint32),
+      ("th32ParentProcessID", ctypes.c_uint32),
+      ("pcPriClassBase", ctypes.c_long),
+      ("dwFlags", ctypes.c_uint32),
+      ("szExeFile", ctypes.c_char * 260),
+    ]
+
+  entry = PROCESSENTRY32()
+  entry.dwSize = ctypes.sizeof(PROCESSENTRY32)
+
+  try:
+    ok = kernel32.Process32First(snapshot, ctypes.byref(entry))
+    while ok:
+      yield int(entry.th32ProcessID), ""
+      ok = kernel32.Process32Next(snapshot, ctypes.byref(entry))
+  finally:
+    kernel32.CloseHandle(snapshot)
+
+
 def _iter_pids():
+  if platform.system() == "Windows":
+    yield from _iter_windows_pids()
+    return
+
   if psutil:
     for proc in psutil.process_iter(["pid"]):
       try:
@@ -36,11 +79,9 @@ def _iter_pids():
         yield int(name), ""
 
 
-def _query_windows_pipe(pid):
+def _query_windows_pipe_with_pywintypes(pipe_name):
   if not win32file:
     return None
-
-  pipe_name = f"{WINDOWS_PIPE_PREFIX}{pid}"
 
   try:
     handle = win32file.CreateFile(
@@ -60,10 +101,76 @@ def _query_windows_pipe(pid):
     finally:
       win32file.CloseHandle(handle)
 
-  except pywintypes.error:
+  except Exception as e:
+    _debug(f"pipe={pipe_name} pywin32_error={e}")
     return None
-  except Exception:
+
+
+def _query_windows_pipe_with_ctypes(pipe_name):
+  kernel32 = ctypes.windll.kernel32
+  GENERIC_READ = 0x80000000
+  GENERIC_WRITE = 0x40000000
+  OPEN_EXISTING = 3
+  INVALID_HANDLE_VALUE = ctypes.c_void_p(-1).value
+
+  handle = kernel32.CreateFileW(
+    ctypes.c_wchar_p(pipe_name)
+    , GENERIC_READ | GENERIC_WRITE
+    , 0
+    , None
+    , OPEN_EXISTING
+    , 0
+    , None
+  )
+
+  if handle == INVALID_HANDLE_VALUE:
+    error = kernel32.GetLastError()
+    _debug(f"pipe={pipe_name} open_error={error}")
     return None
+
+  try:
+    request = b"INFO\n"
+    written = ctypes.c_uint32(0)
+    ok = kernel32.WriteFile(
+      handle
+      , request
+      , len(request)
+      , ctypes.byref(written)
+      , None
+    )
+    if not ok:
+      error = kernel32.GetLastError()
+      _debug(f"pipe={pipe_name} write_error={error}")
+      return None
+
+    buffer = ctypes.create_string_buffer(64 * 1024)
+    read = ctypes.c_uint32(0)
+    ok = kernel32.ReadFile(
+      handle
+      , buffer
+      , ctypes.sizeof(buffer)
+      , ctypes.byref(read)
+      , None
+    )
+    if not ok:
+      error = kernel32.GetLastError()
+      _debug(f"pipe={pipe_name} read_error={error}")
+      return None
+
+    data = buffer.raw[:read.value]
+    return json.loads(data.decode("utf-8", errors="replace"))
+  finally:
+    kernel32.CloseHandle(handle)
+
+
+def _query_windows_pipe(pid):
+  pipe_name = f"{WINDOWS_PIPE_PREFIX}{pid}"
+
+  info = _query_windows_pipe_with_pywintypes(pipe_name)
+  if info:
+    return info
+
+  return _query_windows_pipe_with_ctypes(pipe_name)
 
 
 def _query_unix_socket_address(address):

@@ -307,13 +307,17 @@ async def ApiDiscovery():
 @app.post("/api/command")
 async def ApiCommand(request: CommandRequest):
   try:
-    return SendControlCommand(
+    response = SendControlCommand(
       request.host
       , request.port
       , request.protocol
       , request.password or ""
       , request.command
       , request.format
+    )
+    return JSONResponse(
+      response
+      , media_type="application/json; charset=utf-8"
     )
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))

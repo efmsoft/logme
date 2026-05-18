@@ -2428,18 +2428,141 @@ function HighlightLogSearch(text, query)
   return escaped.replace(pattern, match => `<mark>${match}</mark>`);
 }
 
+function AppendLogSegment(parts, className, text, query)
+{
+  if (!text)
+    return;
+
+  const html = HighlightLogSearch(text, query);
+  if (!className)
+  {
+    parts.push(html);
+    return;
+  }
+
+  parts.push(`<span class="${className}">${html}</span>`);
+}
+
+function IsEscapedQuote(text, index)
+{
+  let count = 0;
+  for (let i = index - 1; i >= 0 && text[i] === '\\'; --i)
+    ++count;
+
+  return (count % 2) !== 0;
+}
+
+function AppendLogStringLiterals(parts, text, query)
+{
+  let start = 0;
+  let i = 0;
+
+  while (i < text.length)
+  {
+    const quote = text[i];
+    if ((quote !== '"' && quote !== "'") || IsEscapedQuote(text, i))
+    {
+      ++i;
+      continue;
+    }
+
+    let end = i + 1;
+    while (end < text.length)
+    {
+      if (text[end] === quote && !IsEscapedQuote(text, end))
+        break;
+
+      ++end;
+    }
+
+    if (end >= text.length)
+    {
+      ++i;
+      continue;
+    }
+
+    AppendLogSegment(parts, '', text.slice(start, i), query);
+    AppendLogSegment(parts, 'log-string', text.slice(i, end + 1), query);
+
+    i = end + 1;
+    start = i;
+  }
+
+  AppendLogSegment(parts, '', text.slice(start), query);
+}
+
+function ExtractLogToken(text, pattern)
+{
+  const match = text.match(pattern);
+  if (!match)
+    return null;
+
+  return {
+    token: match[1],
+    rest: text.slice(match[1].length)
+  };
+}
+
+function HighlightLogMessage(text, query)
+{
+  const parts = [];
+  let rest = String(text || '');
+  let token = ExtractLogToken(rest, /^(\{[^}\r\n]*\}\s*)/);
+  if (token)
+  {
+    AppendLogSegment(parts, 'log-channel', token.token, query);
+    rest = token.rest;
+  }
+
+  token = ExtractLogToken(rest, /^(#[^\s]{1,8}\s*)/);
+  if (token)
+  {
+    AppendLogSegment(parts, 'log-subsystem', token.token, query);
+    rest = token.rest;
+  }
+
+  const locationMatch = rest.match(/^([A-Za-z0-9_.:\\/-]+\(\d+\))(:\s*)/);
+  if (locationMatch)
+  {
+    AppendLogSegment(parts, 'log-location', locationMatch[1], query);
+    AppendLogSegment(parts, '', locationMatch[2], query);
+    rest = rest.slice(locationMatch[0].length);
+  }
+
+  token = ExtractLogToken(rest, /^([^\s\t]+\(\):\s*)/);
+  if (token)
+  {
+    AppendLogSegment(parts, 'log-method', token.token, query);
+    rest = token.rest;
+  }
+
+  AppendLogStringLiterals(parts, rest, query);
+  return parts.join('');
+}
+
+function AppendStandaloneLogSyntax(text, query)
+{
+  const parts = [];
+  AppendLogStringLiterals(parts, String(text || ''), query);
+  return parts.join('');
+}
+
+
 function GetLogmeLineInfo(line)
 {
   const text = String(line || '');
 
   const match = text.match(
-    /^(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}[:.]\d{3}\s+)([DIWEC])?(\s+.*?\]\s*)(.*)$/
+    /^(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}[:.]\d{3}\s+(?:[DIWEC])?\s+.*?\]\s*)(.*)$/
   );
 
   if (!match)
     return null;
 
-  const level = (match[2] || 'I').toUpperCase();
+  const levelMatch = match[1].match(
+    /^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}[:.]\d{3}\s+([DIWEC])\s+/
+  );
+  const level = (levelMatch ? levelMatch[1] : 'I').toUpperCase();
   let name = 'info';
 
   if (level === 'D')
@@ -2453,8 +2576,8 @@ function GetLogmeLineInfo(line)
 
   return {
     level: name,
-    prefix: match[1] + (match[2] || ' ') + match[3],
-    message: match[4] || ''
+    prefix: match[1],
+    message: match[2] || ''
   };
 }
 
@@ -2508,6 +2631,9 @@ function RenderLogLine(line, query = '', inheritedLevel = 'info')
 
   if (logmeInfo)
   {
+    if (level === 'info')
+      return `<div class="log-line ${LogLevelClass(level)}"><span class="log-system">${HighlightLogSearch(logmeInfo.prefix, query)}</span>${HighlightLogMessage(logmeInfo.message, query)}</div>`;
+
     return `<div class="log-line ${LogLevelClass(level)}"><span class="log-system">${HighlightLogSearch(logmeInfo.prefix, query)}</span>${HighlightLogSearch(logmeInfo.message, query)}</div>`;
   }
 
@@ -2877,7 +3003,13 @@ function RenderLogBrowser(tree, selectedPath = '')
 {
   const parent = GetParentLogPath(tree.path);
   const upButton = tree.path
-    ? `<button class="secondary small log-folder-button" data-log-folder="${EscapeHtml(parent)}">..</button>`
+    ? `
+    <button class="log-tree-item log-folder-button log-parent-folder-button" data-log-folder="${EscapeHtml(parent)}">
+      <span class="log-tree-icon">↰</span>
+      <span>..</span>
+      <span></span>
+    </button>
+  `
     : '';
 
   const dirsHtml = tree.dirs.map(path => `

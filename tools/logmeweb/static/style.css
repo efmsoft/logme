@@ -1684,6 +1684,37 @@ body.auth-disabled #logoutButton
   color: #6ea8ff;
 }
 
+.log-channel
+{
+  color: #4fc1ff;
+}
+
+.log-subsystem
+{
+  color: #9cdcfe;
+}
+
+.log-location
+{
+  color: #c8c8c8;
+  white-space: nowrap;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.log-method
+{
+  color: #dcdcaa;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.log-string
+{
+  color: #ce9178;
+}
+
 .log-debug .log-system
 {
   color: #7f8da0;

@@ -21,6 +21,7 @@ It is designed for both high-load servers and simple applications, providing sel
 
 - 📚 **Documentation (Wiki):** https://github.com/efmsoft/logme/wiki
 - 💬 **Support / feedback:** [GitHub issues](https://github.com/efmsoft/logme/issues) and [discussions](https://github.com/efmsoft/logme/discussions) are welcome.
+- 🧭 **Feature discovery map:** [docs/feature_discovery.md](docs/feature_discovery.md) maps common logging-library terms such as null sink, rate limiting, duplicate suppression, rotation, and retention to the corresponding logme mechanisms.
 
 ---
 

@@ -6,6 +6,9 @@ namespace Logme
 {
   namespace Detail
   {
+    // Early disabled-path filtering and null-sink equivalent.
+    // A channel with no effective output destinations can be rejected before
+    // argument preparation, formatting, and backend dispatch are performed.
     struct PrecheckEmptyArg
     {
     };

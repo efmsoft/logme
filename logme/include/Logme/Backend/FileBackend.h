@@ -66,6 +66,10 @@ namespace Logme
     BufferCounters Queue;
   };
 
+  // File sink with built-in file-size control, daily rotation, part switching,
+  // asynchronous buffering, and cooperation with the log directory retention
+  // watchdog. In comparisons with other logging libraries this covers the
+  // usual rotating-file-sink and retention use cases.
   class FileBackend 
     : public MemoryTrackedBackend
     , public FileIo

@@ -14,6 +14,9 @@ namespace Logme
 {
   typedef std::function<bool(const std::string&)> TTestFileInUse;
 
+  // Log retention helper for limiting total disk usage of a log directory.
+  // It complements per-file limits by deleting old matching files while
+  // respecting files that are still in use by active backends.
   class DirectorySizeWatchdog
   {
     const std::string& TargetDirectory;

@@ -23,6 +23,7 @@
 #include <Logme/Console/ConsoleManagerFactory.h>
 #include <Logme/CritSection.h>
 #include <Logme/Debug/DebugManagerFactory.h>
+#include <Logme/WindowsEventLog/WindowsEventLogManagerFactory.h>
 #include <Logme/File/DirectorySizeWatchdog.h>
 #include <Logme/File/FileManagerFactory.h>
 #include <Logme/Obfuscate.h>
@@ -67,6 +68,7 @@ namespace Logme
     FileManagerFactory Factory;
     ConsoleManagerFactory ConsoleFactory;
     DebugManagerFactory DebugFactory;
+    WindowsEventLogManagerFactory WindowsEventLogFactory;
 
     std::mutex ErrorLock;
     StringPtr ErrorChannel;
@@ -510,6 +512,7 @@ namespace Logme
     LOGMELNK FileManagerFactory& GetFileManagerFactory();
     LOGMELNK ConsoleManagerFactory& GetConsoleManagerFactory();
     LOGMELNK DebugManagerFactory& GetDebugManagerFactory();
+    LOGMELNK WindowsEventLogManagerFactory& GetWindowsEventLogManagerFactory();
 
     /// <summary>
     /// Returns channel name used to duplicate error-level records.

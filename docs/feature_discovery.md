@@ -12,6 +12,8 @@ This page maps common logging-library terms to the actual logme mechanisms and s
 | Log retention / total log directory limit | `DirectorySizeWatchdog`, oldest-file cleanup, in-use file protection | `logme/include/Logme/File/DirectorySizeWatchdog.h`, `logme/source/File/DirectorySizeWatchdog.cpp`, `logme/source/File/CleanOldest.cpp` | Controls total log storage, not only the currently open file. |
 | Early disabled-path filtering | `LOGME_WOULD_LOG_FIRST`, `WouldLogFirst`, `WouldLog`, channel active/filter-level checks | `logme/include/Logme/Detail/Precheck.h`, `logme/include/Logme/Detail/Dispatch.h` | Used by macros that can avoid evaluating expensive arguments or preparation code when the selected channel would not log. |
 | Dynamic runtime control | Control server commands, `logmectl`, `logmeweb` | `logme/source/Control`, `tools/logmectl`, `tools/logmeweb` | Channels, backends, flags, levels, logs, subsystems, and trace points can be inspected or changed at runtime. |
+| Callback sink / function appender | `CallbackBackend` calls an application function for each accepted record | `logme/include/Logme/Backend/CallbackBackend.h`, `logme/source/Backend/CallbackBackend.cpp` | Useful for embedding, tests, UI bridges, telemetry bridges, or application-owned forwarding without deriving a full backend class. |
+| Windows Event Log sink | `WindowsEventLogBackend` writes records through the Windows Event Log API and supports async delivery | `logme/include/Logme/Backend/WindowsEventLogBackend.h`, `logme/source/Backend/WindowsEventLogBackend.cpp`, `logme/source/WindowsEventLog` | Intended for Windows services and enterprise deployments. On non-Windows platforms the backend is a build-compatible no-op path. |
 | Structured output | `OutputFlags::Format`, text/JSON/XML conversion paths, structured-output example | `logme/include/Logme/OutputFlags.h`, `logme/source/OutputFlags.cpp`, `examples/StructuredOutput`, `tools/logmefmt` | logme can emit or convert structured log records depending on configuration and build options. |
 | Trace points / dormant diagnostics | Trace point macros and runtime trace control | `logme/include/Logme/TracePoint.h`, `logme/source/TracePoint.cpp`, `logme/source/Control/Command/CmdTrace.cpp`, `examples/TracePoints` | Disabled trace points keep lightweight counters and can be enabled dynamically. |
 
@@ -25,8 +27,10 @@ Built-in backend classes currently include:
 - `SharedFileBackend`
 - `BufferBackend`
 - `RingBufferBackend`
+- `CallbackBackend`
+- `WindowsEventLogBackend`
 
-Related managers provide asynchronous console, debugger, and file processing where supported.
+Related managers provide asynchronous console, debugger, file, and Windows Event Log processing where supported.
 
 ## Features intentionally implemented differently
 

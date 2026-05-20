@@ -56,6 +56,7 @@ Logger::Logger()
 Logger::~Logger()
 {
   ConsoleFactory.SetStopping();
+  WindowsEventLogFactory.SetStopping();
   Factory.SetStopping();
   StopControlServer();
   FreeControlSsl();
@@ -185,6 +186,11 @@ ConsoleManagerFactory& Logger::GetConsoleManagerFactory()
 DebugManagerFactory& Logger::GetDebugManagerFactory()
 {
   return DebugFactory;
+}
+
+WindowsEventLogManagerFactory& Logger::GetWindowsEventLogManagerFactory()
+{
+  return WindowsEventLogFactory;
 }
 
 void Logger::IterateChannels(const TChannelCallback& callback)

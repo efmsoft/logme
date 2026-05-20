@@ -69,15 +69,27 @@
     <Filter Include="include\Logme\Debug">
       <UniqueIdentifier>{61a51ffd-e8ef-5c88-9a26-230c1f88ec38}</UniqueIdentifier>
     </Filter>
+    <Filter Include="include\Logme\WindowsEventLog">
+      <UniqueIdentifier>{a53641ea-7be1-4c30-9825-e795ec9c4f21}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source\WindowsEventLog">
+      <UniqueIdentifier>{47c0a2e4-4e87-4d52-86ea-91b310d8b997}</UniqueIdentifier>
+    </Filter>
 </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Logme\Backend\Backend.h">
+      <Filter>include\Logme\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\Backend\CallbackBackend.h">
       <Filter>include\Logme\Backend</Filter>
     </ClInclude>
     <ClInclude Include="include\Logme\Backend\ConsoleBackend.h">
       <Filter>include\Logme\Backend</Filter>
     </ClInclude>
     <ClInclude Include="include\Logme\Backend\DebugBackend.h">
+      <Filter>include\Logme\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\Backend\WindowsEventLogBackend.h">
       <Filter>include\Logme\Backend</Filter>
     </ClInclude>
     <ClInclude Include="include\Logme\Backend\FileBackend.h">
@@ -275,6 +287,12 @@
     <ClInclude Include="include\Logme\Debug\DebugManagerFactory.h">
       <Filter>include\Logme\Debug</Filter>
     </ClInclude>
+    <ClInclude Include="include\Logme\WindowsEventLog\WindowsEventLogManager.h">
+      <Filter>include\Logme\WindowsEventLog</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\WindowsEventLog\WindowsEventLogManagerFactory.h">
+      <Filter>include\Logme\WindowsEventLog</Filter>
+    </ClInclude>
     <ClInclude Include="include\Logme\LogmeC.h">
       <Filter>include\Logme</Filter>
     </ClInclude>
@@ -307,6 +325,12 @@
     <ClCompile Include="source\Backend\BackendConfig.cpp">
       <Filter>source\Backend</Filter>
     </ClCompile>
+    <ClCompile Include="source\Backend\CallbackBackend.cpp">
+      <Filter>source\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Backend\CallbackBackendConfig.cpp">
+      <Filter>source\Backend</Filter>
+    </ClCompile>
     <ClCompile Include="source\Backend\MemoryTrackedBackend.cpp">
       <Filter>source\Backend</Filter>
     </ClCompile>
@@ -329,6 +353,12 @@
       <Filter>source\Backend</Filter>
     </ClCompile>
     <ClCompile Include="source\Backend\DebugBackend.cpp">
+      <Filter>source\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Backend\WindowsEventLogBackend.cpp">
+      <Filter>source\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Backend\WindowsEventLogBackendConfig.cpp">
       <Filter>source\Backend</Filter>
     </ClCompile>
     <ClCompile Include="source\Backend\FileBackend.cpp">
@@ -534,6 +564,12 @@
     </ClCompile>
     <ClCompile Include="source\Debug\DebugManagerFactory.cpp">
       <Filter>source\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="source\WindowsEventLog\WindowsEventLogManager.cpp">
+      <Filter>source\WindowsEventLog</Filter>
+    </ClCompile>
+    <ClCompile Include="source\WindowsEventLog\WindowsEventLogManagerFactory.cpp">
+      <Filter>source\WindowsEventLog</Filter>
     </ClCompile>
     <ClCompile Include="source\File\handle_path.cpp">
       <Filter>source\File</Filter>

@@ -3,11 +3,13 @@
 #include <Logme/Backend/Backend.h>
 
 #include <Logme/Backend/BufferBackend.h>
+#include <Logme/Backend/CallbackBackend.h>
 #include <Logme/Backend/ConsoleBackend.h>
 #include <Logme/Backend/DebugBackend.h>
 #include <Logme/Backend/FileBackend.h>
 #include <Logme/Backend/RingBufferBackend.h>
 #include <Logme/Backend/SharedFileBackend.h>
+#include <Logme/Backend/WindowsEventLogBackend.h>
 
 #include <Logme/Logger.h>
 
@@ -98,6 +100,9 @@ BackendPtr Backend::Create(const char* type, ChannelPtr owner)
   if (t == BufferBackend::TYPE_ID)
     return std::make_shared<BufferBackend>(owner);
 
+  if (t == CallbackBackend::TYPE_ID)
+    return std::make_shared<CallbackBackend>(owner);
+
   if (t == RingBufferBackend::TYPE_ID)
     return std::make_shared<RingBufferBackend>(owner);
 
@@ -112,6 +117,9 @@ BackendPtr Backend::Create(const char* type, ChannelPtr owner)
 
   if (t == SharedFileBackend::TYPE_ID)
     return std::make_shared<SharedFileBackend>(owner);
+
+  if (t == WindowsEventLogBackend::TYPE_ID)
+    return std::make_shared<WindowsEventLogBackend>(owner);
 
   return BackendPtr();
 }

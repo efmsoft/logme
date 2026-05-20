@@ -162,12 +162,16 @@
     <ClInclude Include="include\Logme\AnsiColorEscape.h" />
     <ClInclude Include="include\Logme\ArgumentList.h" />
     <ClInclude Include="include\Logme\Backend\Backend.h" />
+    <ClInclude Include="include\Logme\Backend\CallbackBackend.h" />
     <ClInclude Include="include\Logme\Backend\ConsoleBackend.h" />
     <ClInclude Include="include\Logme\Backend\DebugBackend.h" />
+    <ClInclude Include="include\Logme\Backend\WindowsEventLogBackend.h" />
     <ClInclude Include="include\Logme\Backend\FileBackend.h" />
     <ClInclude Include="include\Logme\Backend\MemoryTrackedBackend.h" />
     <ClInclude Include="include\Logme\Debug\DebugManager.h" />
     <ClInclude Include="include\Logme\Debug\DebugManagerFactory.h" />
+    <ClInclude Include="include\Logme\WindowsEventLog\WindowsEventLogManager.h" />
+    <ClInclude Include="include\Logme\WindowsEventLog\WindowsEventLogManagerFactory.h" />
     <ClInclude Include="include\Logme\Channel.h" />
     <ClInclude Include="include\Logme\Colorizer.h" />
     <ClInclude Include="include\Logme\Context.h" />
@@ -201,6 +205,8 @@
   <ItemGroup>
     <ClCompile Include="source\Backend\Backend.cpp" />
     <ClCompile Include="source\Backend\BackendConfig.cpp" />
+    <ClCompile Include="source\Backend\CallbackBackend.cpp" />
+    <ClCompile Include="source\Backend\CallbackBackendConfig.cpp" />
     <ClCompile Include="source\Backend\MemoryTrackedBackend.cpp" />
     <ClCompile Include="source\Backend\BufferBackend.cpp" />
 	<ClCompile Include="source\Backend\BufferBackendConfig.cpp" />
@@ -212,6 +218,8 @@
     <ClCompile Include="source\Backend\FileBackend.cpp" />
     <ClCompile Include="source\Backend\FileBackendConfig.cpp" />
     <ClCompile Include="source\Backend\SharedFileBackend.cpp" />
+    <ClCompile Include="source\Backend\WindowsEventLogBackend.cpp" />
+    <ClCompile Include="source\Backend\WindowsEventLogBackendConfig.cpp" />
     <ClCompile Include="source\Backend\SharedFileBackendConfig.cpp" />
     <ClCompile Include="source\BindAllStat.cpp" />
     <ClCompile Include="source\Channel.cpp" />
@@ -281,6 +289,8 @@
     <ClCompile Include="source\Console\ConsoleManagerFactory.cpp" />
     <ClCompile Include="source\Debug\DebugManager.cpp" />
     <ClCompile Include="source\Debug\DebugManagerFactory.cpp" />
+    <ClCompile Include="source\WindowsEventLog\WindowsEventLogManager.cpp" />
+    <ClCompile Include="source\WindowsEventLog\WindowsEventLogManagerFactory.cpp" />
     <ClCompile Include="source\File\handle_path.cpp" />
     <ClCompile Include="source\LogmeC.cpp" />
     <ClCompile Include="source\Control\Command\CmdOverview.cpp" />

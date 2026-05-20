@@ -29,6 +29,8 @@
     <ClCompile Include="..\logme\source\Backend\ConsoleBackend.cpp" />
     <ClCompile Include="..\logme\source\Backend\ConsoleBackendConfig.cpp" />
     <ClCompile Include="..\logme\source\Backend\DebugBackend.cpp" />
+    <ClCompile Include="..\logme\source\Backend\WindowsEventLogBackend.cpp" />
+    <ClCompile Include="..\logme\source\Backend\WindowsEventLogBackendConfig.cpp" />
     <ClCompile Include="..\logme\source\Backend\FileBackend.cpp" />
     <ClCompile Include="..\logme\source\Backend\FileBackendConfig.cpp" />
     <ClCompile Include="..\logme\source\Backend\SharedFileBackend.cpp" />
@@ -108,9 +110,16 @@
     <ClCompile Include="..\logme\source\File\buffered_file_io.cpp" />
     <ClCompile Include="..\logme\source\Debug\DebugManager.cpp" />
     <ClCompile Include="..\logme\source\Debug\DebugManagerFactory.cpp" />
+    <ClCompile Include="..\logme\source\WindowsEventLog\WindowsEventLogManager.cpp" />
+    <ClCompile Include="..\logme\source\WindowsEventLog\WindowsEventLogManagerFactory.cpp" />
+    <ClCompile Include="..\logme\source\Backend\CallbackBackend.cpp" />
+    <ClCompile Include="..\logme\source\Backend\CallbackBackendConfig.cpp" />
 </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\logme\source\Config\Helper.h" />
+    <ClInclude Include="..\logme\include\Logme\Backend\WindowsEventLogBackend.h" />
+    <ClInclude Include="..\logme\include\Logme\WindowsEventLog\WindowsEventLogManager.h" />
+    <ClInclude Include="..\logme\include\Logme\WindowsEventLog\WindowsEventLogManagerFactory.h" />
     <ClInclude Include="..\logme\source\Control\CommandDescriptor.h" />
     <ClInclude Include="..\logme\source\Control\CommandRegistrar.h" />
     <ClInclude Include="..\logme\source\Control\Json.h" />

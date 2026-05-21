@@ -220,9 +220,14 @@ bool Channel::IsIdle()
 
 void Channel::Flush()
 {
-  std::lock_guard guard(DataLock);
+  BackendArray backends;
 
-  for (auto& b : Backends)
+  {
+    std::lock_guard guard(DataLock);
+    backends = Backends;
+  }
+
+  for (auto& b : backends)
     b->Flush();
 }
 

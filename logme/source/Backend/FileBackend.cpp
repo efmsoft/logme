@@ -540,13 +540,6 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
 
   (void)needSignal;
 
-  uint64_t now = 0;
-  if (firstData)
-  {
-    now = GetTimeInMillisec64();
-    Queue.SetCurrentFirstWriteTime(now);
-  }
-
   FILE_CNT(GlobalAppendCalls.fetch_add(1, std::memory_order_relaxed));
   FILE_CNT(GlobalInputBytes.fetch_add(add, std::memory_order_relaxed));
 
@@ -556,14 +549,37 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
 
   if (usedBuffers >= FLUSH_PRESSURE_BUFFERS || queued >= QueueSizeLimit)
   {
+    if (firstData)
+    {
+      uint64_t firstWriteTime = 1;
+      if (flushTime != 0 && flushTime != RIGHT_NOW)
+        firstWriteTime = flushTime > FLUSH_AFTER ? flushTime - FLUSH_AFTER : 1;
+
+      Queue.SetCurrentFirstWriteTime(firstWriteTime);
+    }
+
     if (flushTime != RIGHT_NOW)
       RequestFlush();
+
+    return;
   }
-  else if (firstData)
+
+  if (firstData)
   {
-    uint64_t when = now + FLUSH_AFTER;
-    if (flushTime == 0 || (flushTime != RIGHT_NOW && flushTime > when))
-      RequestFlush(when);
+    if (flushTime == 0)
+    {
+      uint64_t now = GetTimeInMillisec64();
+      Queue.SetCurrentFirstWriteTime(now);
+      RequestFlush(now + FLUSH_AFTER);
+    }
+    else
+    {
+      uint64_t firstWriteTime = 1;
+      if (flushTime != RIGHT_NOW)
+        firstWriteTime = flushTime > FLUSH_AFTER ? flushTime - FLUSH_AFTER : 1;
+
+      Queue.SetCurrentFirstWriteTime(firstWriteTime);
+    }
   }
 }
 

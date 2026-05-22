@@ -300,10 +300,12 @@ void FileBackend::SetAppend(bool append)
 bool FileBackend::CreateLog(const char* v)
 {
   FILE_CNT(GlobalCreateLogCalls.fetch_add(1, std::memory_order_relaxed));
-  NameTemplate = v;
+
+  std::string nameTemplate = v;
+  NameTemplate = nameTemplate;
 
   ProcessTemplateParam param;
-  std::string name = ProcessTemplate(v, param);
+  std::string name = ProcessTemplate(nameTemplate.c_str(), param);
 
   if (!IsAbsolutePath(name))
     name = Owner->GetOwner()->GetHomeDirectory() + name;

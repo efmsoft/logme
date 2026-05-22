@@ -332,7 +332,7 @@ void Logger::DoAutodelete(bool force)
   if (n - LastDoAutodelete < periodicity)
     return;
 
-  LastDoAutodelete = GetTimeInMillisec64();
+  LastDoAutodelete = n;
 
   ChannelPtr ch;
   for (bool cont = true; cont;)

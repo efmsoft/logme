@@ -367,13 +367,10 @@ TEST(ConsoleBackendTest, ManagerDropNewKeepsExistingRecords)
 
   {
     StreamRedirect stdoutRedirect(stdout, stdoutPath);
-    auto fixture = CreateBackend(false, Logme::STREAM_ALL2COUT);
-
     Logme::ConsoleBackend::SetQueueLimits(1, 0);
     Logme::ConsoleBackend::SetOverflowPolicy(Logme::ConsoleOverflowPolicy::DROP_NEW);
 
     Logme::ConsoleManager manager;
-    manager.AddBackend(fixture.Backend);
 
     EXPECT_TRUE(manager.Push(Logme::ConsoleTarget::STDOUT, Logme::LEVEL_INFO, false, "first", 5));
     EXPECT_TRUE(manager.Push(Logme::ConsoleTarget::STDOUT, Logme::LEVEL_INFO, false, "second", 6));
@@ -400,13 +397,10 @@ TEST(ConsoleBackendTest, ManagerDropOldestKeepsNewestRecords)
 
   {
     StreamRedirect stdoutRedirect(stdout, stdoutPath);
-    auto fixture = CreateBackend(false, Logme::STREAM_ALL2COUT);
-
     Logme::ConsoleBackend::SetQueueLimits(1, 0);
     Logme::ConsoleBackend::SetOverflowPolicy(Logme::ConsoleOverflowPolicy::DROP_OLDEST);
 
     Logme::ConsoleManager manager;
-    manager.AddBackend(fixture.Backend);
 
     EXPECT_TRUE(manager.Push(Logme::ConsoleTarget::STDOUT, Logme::LEVEL_INFO, false, "first", 5));
     EXPECT_TRUE(manager.Push(Logme::ConsoleTarget::STDOUT, Logme::LEVEL_INFO, false, "second", 6));

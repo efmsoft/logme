@@ -51,7 +51,6 @@ BufferQueue::BufferQueue(
 bool BufferQueue::Append(
   const char* p
   , std::size_t cb
-  , std::uint64_t now
   , bool& needSignal
   , bool& firstData
 )
@@ -75,7 +74,6 @@ bool BufferQueue::Append(
     firstData = Current->Size() == 0;
     if (firstData)
     {
-      Current->SetFirstWriteTime(now);
       HasCurrentDataFlag.store(true, std::memory_order_relaxed);
     }
 
@@ -106,7 +104,6 @@ bool BufferQueue::Append(
     firstData = Current->Size() == 0;
     if (firstData)
     {
-      Current->SetFirstWriteTime(now);
       HasCurrentDataFlag.store(true, std::memory_order_relaxed);
     }
 
@@ -121,7 +118,6 @@ bool BufferQueue::Append(
   readyBuffer = std::move(Current);
 
   Current = std::move(replacement);
-  Current->SetFirstWriteTime(now);
   Current->Append(p, cb);
   HasCurrentDataFlag.store(true, std::memory_order_relaxed);
   firstData = true;
@@ -131,6 +127,16 @@ bool BufferQueue::Append(
 
   CountAppended(cb);
   return true;
+}
+
+void BufferQueue::SetCurrentFirstWriteTime(std::uint64_t value)
+{
+  // Must be called with Owner->GetDataLock() already held!!!!!
+
+  if (!Current || Current->Size() == 0 || Current->FirstWriteTime() != 0)
+    return;
+
+  Current->SetFirstWriteTime(value);
 }
 
 bool BufferQueue::TakeReady(std::vector<DataBufferPtr>& out)

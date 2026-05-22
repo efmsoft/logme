@@ -79,10 +79,10 @@ namespace Logme
     bool Append(
       const char* p
       , std::size_t cb
-      , std::uint64_t now
       , bool& needSignal
       , bool& firstData
     );
+    void SetCurrentFirstWriteTime(std::uint64_t value);
     bool TakeReady(std::vector<DataBufferPtr>& out);
     void Recycle(std::vector<DataBufferPtr>& buffers);
 

@@ -532,12 +532,18 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
 
   bool needSignal = false;
   bool firstData = false;
-  uint64_t now = GetTimeInMillisec64();
 
-  if (Queue.Append(text, add, now, needSignal, firstData) == false)
+  if (Queue.Append(text, add, needSignal, firstData) == false)
     return;
 
   (void)needSignal;
+
+  uint64_t now = 0;
+  if (firstData)
+  {
+    now = GetTimeInMillisec64();
+    Queue.SetCurrentFirstWriteTime(now);
+  }
 
   FILE_CNT(GlobalAppendCalls.fetch_add(1, std::memory_order_relaxed));
   FILE_CNT(GlobalInputBytes.fetch_add(add, std::memory_order_relaxed));

@@ -532,7 +532,7 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
 
   bool needSignal = false;
   bool firstData = false;
-  uint64_t now = uint64_t(GetTimeInMillisec());
+  uint64_t now = GetTimeInMillisec64();
 
   if (Queue.Append(text, add, now, needSignal, firstData) == false)
     return;
@@ -733,7 +733,7 @@ void FileBackend::UpdateFlushTimeAfterWork()
   }
 
   uint64_t deadline = oldest + FLUSH_AFTER;
-  uint64_t now = uint64_t(GetTimeInMillisec());
+  uint64_t now = GetTimeInMillisec64();
 
   if (deadline <= now)
     FlushTime.store(RIGHT_NOW, std::memory_order_relaxed);

@@ -4,6 +4,7 @@
 
 #if defined(__GNUC__) && !defined(__DJGPP__)
 #include <sys/time.h>
+#include <time.h>
 #endif
 
 #ifdef _WIN32
@@ -114,26 +115,26 @@ bool Logme::DateTimeToSystemTime(const DateTime& time, SystemTime& stime)
 
 #endif // #ifdef _WIN32
 
-unsigned Logme::GetTimeInMillisec()
+std::uint64_t Logme::GetTimeInMillisec64()
 {
-#if defined(__GNUC__) && !defined(__DJGPP__)
+#if defined(__linux__) && defined(CLOCK_MONOTONIC_COARSE)
+  timespec now;
+  clock_gettime(CLOCK_MONOTONIC_COARSE, &now);
+  return static_cast<std::uint64_t>(now.tv_sec) * 1000ULL +
+         static_cast<std::uint64_t>(now.tv_nsec) / 1000000ULL;
+#elif defined(__GNUC__) && !defined(__DJGPP__)
   timeval now;
   gettimeofday(&now, 0);
-  return now.tv_sec * 1000 + now.tv_usec / 1000;
+  return static_cast<std::uint64_t>(now.tv_sec) * 1000ULL +
+         static_cast<std::uint64_t>(now.tv_usec) / 1000ULL;
 #elif defined(_WIN32) || defined(_WIN64)
-  return ::GetTickCount();
+  return static_cast<std::uint64_t>(::GetTickCount64());
 #else
-  if (CLOCKS_PER_SEC == 1000)
-    return clock();
-  unsigned clocks = clock();
-  unsigned tmp = clocks * 1000;
-  if (tmp > clocks)
-  {
-    return tmp / CLOCKS_PER_SEC;
-  }
-  else
-  {
-    return clocks * (1000 / CLOCKS_PER_SEC);
-  }
+  return static_cast<std::uint64_t>(clock()) * 1000ULL / CLOCKS_PER_SEC;
 #endif
-} 
+}
+
+unsigned Logme::GetTimeInMillisec()
+{
+  return static_cast<unsigned>(GetTimeInMillisec64());
+}

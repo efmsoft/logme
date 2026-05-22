@@ -114,7 +114,7 @@ bool FileIo::Open(bool append, unsigned timeout, const char* fileName)
   if (!append)
     mode |= O_TRUNC;
 
-  for (unsigned start = GetTimeInMillisec();; Sleep(1))
+  for (uint64_t start = GetTimeInMillisec64();; Sleep(1))
   {
 #ifdef _WIN32
     _sopen_s(&File, fileName, mode | _O_NOINHERIT, _SH_DENYWR, _S_IREAD | _S_IWRITE);
@@ -126,7 +126,7 @@ bool FileIo::Open(bool append, unsigned timeout, const char* fileName)
 
     if (File < 0)
     {
-      unsigned t = GetTimeInMillisec();
+      uint64_t t = GetTimeInMillisec64();
       if (t < start || t - start >= timeout)
       {
         IO_ERROR(open);
@@ -156,7 +156,7 @@ bool FileIo::Open(bool append, unsigned timeout, const char* fileName)
     {
       Error = errno;
 
-      unsigned t = GetTimeInMillisec();
+      uint64_t t = GetTimeInMillisec64();
       if (t < start || t - start >= timeout)
       {
         IO_ERROR(flock(LOCK_EX));

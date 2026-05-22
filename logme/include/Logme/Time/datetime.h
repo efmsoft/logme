@@ -3,6 +3,8 @@
 #include <Logme/Time/types.h>
 #include <Logme/Types.h>
 
+#include <cstdint>
+
 namespace Logme
 {
   /**
@@ -395,6 +397,7 @@ namespace Logme
   */
   LOGMELNK bool AreTimesEqual(DateTime const& lhs, DateTime const& rhs);
 
+  LOGMELNK std::uint64_t GetTimeInMillisec64();
   LOGMELNK unsigned GetTimeInMillisec();
   LOGMELNK void Sleep(unsigned millisec);
 }

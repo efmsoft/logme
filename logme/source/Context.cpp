@@ -332,7 +332,7 @@ void Context::CreateTZD(char* tzd)
 
 void Context::InitTimestamp(TimeFormat tf)
 {
-  auto n = GetTimeInMillisec();
+  auto n = GetTimeInMillisec64();
 
   switch (tf)
   {
@@ -341,7 +341,7 @@ void Context::InitTimestamp(TimeFormat tf)
   {
     static std::mutex Lock;
     static DateTime LastStamp{};
-    static unsigned int LastStampTicks = 0;
+    static std::uint64_t LastStampTicks = 0;
     static char timestamp[TIMESTAMP_BUFFER_SIZE]{};
 
     std::lock_guard lock(Lock);
@@ -377,7 +377,7 @@ void Context::InitTimestamp(TimeFormat tf)
   {
     static std::mutex Lock;
     static DateTime LastStamp;
-    static unsigned int LastStampTicks{};
+    static std::uint64_t LastStampTicks{};
     static char timestamp[TIMESTAMP_BUFFER_SIZE]{};
 
     std::lock_guard lock(Lock);

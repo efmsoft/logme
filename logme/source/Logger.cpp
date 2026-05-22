@@ -328,11 +328,11 @@ void Logger::DoAutodelete(bool force)
 
   static const unsigned periodicity = 100;
   
-  auto n = GetTimeInMillisec();
+  auto n = GetTimeInMillisec64();
   if (n - LastDoAutodelete < periodicity)
     return;
 
-  LastDoAutodelete = GetTimeInMillisec();
+  LastDoAutodelete = GetTimeInMillisec64();
 
   ChannelPtr ch;
   for (bool cont = true; cont;)
@@ -1062,7 +1062,7 @@ void Logger::DoLog(Context& context, const char* format, va_list args)
 
   if (context.Ovr && context.Ovr->MaxFrequency)
   {
-    auto ticks = GetTimeInMillisec();
+    auto ticks = GetTimeInMillisec64();
 
     std::lock_guard guard(DataLock);
     if (context.Ovr->LastTime && ticks - context.Ovr->LastTime < context.Ovr->MaxFrequency)

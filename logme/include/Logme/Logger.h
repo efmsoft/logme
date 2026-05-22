@@ -18,6 +18,7 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include <cstdint>
 
 #include <Logme/Channel.h>
 #include <Logme/Console/ConsoleManagerFactory.h>
@@ -85,7 +86,7 @@ namespace Logme
     ThreadPtr ListenerThread;
 
     ChannelArray ToDelete;
-    unsigned LastDoAutodelete;
+    std::uint64_t LastDoAutodelete;
     int NumDeleting;
 
     bool EnableVTMode;

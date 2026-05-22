@@ -326,7 +326,7 @@ void FileManager::ManagementThread()
 
     if (earliest != 0)
     {
-      uint64_t now = GetTimeInMillisec();
+      uint64_t now = GetTimeInMillisec64();
       
       // To avoid frequent sleeping and rapid wake-ups, it's better to
       // handle the request slightly earlier than the requested time.

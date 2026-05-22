@@ -1,3 +1,35 @@
+## 2.4.17
+
+### Added
+- Added `logmeweb`, a lightweight FastAPI-based web UI for the logme control server. It can discover running logme-enabled processes, connect to the selected target, show overview data, manage channels/backends, browse logs, execute manual commands, and control trace points from a browser.
+- Added `LogmeWebManual`, a manual smoke-test host for `logmeweb`, including HTTP/HTTPS modes, password-protected control access, obfuscation mode, backend management checks, trace point checks, and log browsing checks.
+- Added local control-server discovery so tools can locate running logme control servers without hard-coded host/port values. Discovery exposes only connection metadata and never publishes passwords.
+- Added HTTPS support for the control/web workflow, including SSL helper APIs, generated local self-signed certificates for manual testing, and `logmectl` / DynamicControl SSL coverage.
+- Added optional web UI authentication for `logmeweb`, including login sessions, secure cookie handling, IP/User-Agent session binding, failed-login throttling, configurable session timeout, and trusted reverse-proxy header support.
+- Added a `logs` control command for bounded, read-only browsing/downloading/tailing of log files under the configured home directory, with extension filtering based on logme home-directory settings.
+- Added `overview` control command output with aggregated channel/backend statistics, logged bytes, backend memory, obfuscation state, error-channel information, and backend type counts.
+- Added `backend` control command support for runtime backend operations, including adding/removing backends and configuring backend-specific options such as async mode, file name, size limits, rotation parts, shared-file timeout, and buffer policy.
+- Added Trace Points support for lightweight opt-in diagnostics that can be discovered and controlled at runtime, including counters, enable/disable by pattern, counter reset, `trace` control command support, tests, and example project.
+- Added `WindowsEventLogBackend` for writing log records to Windows Event Log, including JSON configuration support, async Windows Event Log manager/factory, example project, and tests.
+- Added `CallbackBackend` example and tests to demonstrate routing log records into user-provided callbacks.
+
+### Improved
+- Improved runtime control protocol behavior and command coverage, including normalized `ok` / `error:` responses that are easier for tools and the web UI to consume.
+- Improved `logmeweb` UI coverage for overview, channels, backend details, backend add/delete operations, logs, trace points, discovery, password-protected targets, and manual command execution.
+- Improved `DynamicControl` and `logmectl` examples/tests around SSL, password authentication, command handling, and runtime control scenarios.
+- Improved backend inspection output so web/control tools can display richer ConsoleBackend, FileBackend, BufferBackend and related backend state.
+- Improved build system coverage for examples, tests, tools, static/dynamic builds, Windows solution/MSBuild, Linux, macOS, CMake options, and C++20 requirements.
+- Improved README and documentation around supported platforms, CMake integration, runtime control, discovery, web UI usage, HTTPS, authentication, trace points, and available examples.
+
+### Fixed
+- Fixed deadlock-prone logging paths by avoiding channel `DataLock` being held across linked-channel dispatch and filter callbacks, so recursive/channel-link logging paths do not block on the same channel lock.
+- Fixed BufferQueue / async file-output deadlock and flush issues by separating ready/free/current-buffer locking, publishing the current buffer before waiting, and preventing soft-flush paths from waiting forever on data that remains in the current buffer.
+- Fixed shutdown/flush handling for async backends and managers so ConsoleBackend, DebugBackend, FileBackend, and WindowsEventLogBackend can drain or unregister consistently during shutdown.
+- Fixed POSIX `SIGPIPE` handling for control/network code paths.
+- Fixed C++ formatting through log macros in release builds.
+- Fixed password handling in web/control workflows so protected targets continue to receive the password on subsequent requests after connection.
+- Fixed multiple build issues affecting examples, tests, Linux, macOS, MSVC, legacy project generation, and generated Visual Studio project files.
+
 ## 2.4.16
 
 - Added optional fmt-based formatting backend via `LOGME_FMT_FORMAT=AUTO|ON|OFF`.

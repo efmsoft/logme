@@ -85,6 +85,7 @@
     <ClCompile Include="..\logme\source\ThreadChannel.cpp" />
     <ClCompile Include="..\logme\source\ThreadName.cpp" />
     <ClCompile Include="..\logme\source\ThreadOverride.cpp" />
+    <ClCompile Include="..\logme\source\ThreadSubsystem.cpp" />
     <ClCompile Include="..\logme\source\Time\datetime_common.cpp" />
     <ClCompile Include="..\logme\source\Time\datetime_lx.cpp" />
     <ClCompile Include="..\logme\source\Time\datetime_utils.cpp" />

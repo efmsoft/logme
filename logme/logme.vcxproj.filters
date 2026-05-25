@@ -248,6 +248,9 @@
     <ClInclude Include="include\Logme\ThreadOverride.h">
       <Filter>include\Logme</Filter>
     </ClInclude>
+    <ClInclude Include="include\Logme\ThreadSubsystem.h">
+      <Filter>include\Logme</Filter>
+    </ClInclude>
     <ClInclude Include="include\Logme\TracePoint.h">
       <Filter>include\Logme</Filter>
     </ClInclude>
@@ -461,6 +464,9 @@
       <Filter>source</Filter>
     </ClCompile>
     <ClCompile Include="source\ThreadOverride.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\ThreadSubsystem.cpp">
       <Filter>source</Filter>
     </ClCompile>
     <ClCompile Include="source\TracePoint.cpp">

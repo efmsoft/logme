@@ -272,6 +272,7 @@
     <ClCompile Include="source\ThreadChannel.cpp" />
     <ClCompile Include="source\ThreadName.cpp" />
     <ClCompile Include="source\ThreadOverride.cpp" />
+    <ClCompile Include="source\ThreadSubsystem.cpp" />
     <ClCompile Include="source\TracePoint.cpp" />
     <ClCompile Include="source\Time\datetime_common.cpp" />
     <ClCompile Include="source\Time\datetime_lx.cpp" />

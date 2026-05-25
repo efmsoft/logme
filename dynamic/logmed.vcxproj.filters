@@ -235,6 +235,7 @@
     <ClCompile Include="..\logme\source\ThreadChannel.cpp" />
     <ClCompile Include="..\logme\source\ThreadName.cpp" />
     <ClCompile Include="..\logme\source\ThreadOverride.cpp" />
+    <ClCompile Include="..\logme\source\ThreadSubsystem.cpp" />
     <ClCompile Include="..\logme\source\Utils.cpp" />
     <ClCompile Include="..\logme\source\Control\Command\CmdBackend.cpp">
       <Filter>Control\Command</Filter>
@@ -471,6 +472,9 @@
       <Filter>..\logme\include\Logme</Filter>
     </ClInclude>
     <ClInclude Include="..\logme\include\Logme\ThreadOverride.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\ThreadSubsystem.h">
       <Filter>..\logme\include\Logme</Filter>
     </ClInclude>
     <ClInclude Include="..\logme\include\Logme\Time\datetime.h">

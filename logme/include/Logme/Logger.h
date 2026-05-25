@@ -168,6 +168,24 @@ namespace Logme
     LOGMELNK Override GetThreadOverride();
 
     /// <summary>
+    /// Sets or clears default subsystem for current thread.
+    /// </summary>
+    /// <param name="sid">Subsystem id used by this thread, or nullptr to clear thread subsystem.</param>
+    LOGMELNK void SetThreadSubsystem(const SID* sid);
+
+    /// <summary>
+    /// Checks whether current thread has its own default subsystem.
+    /// </summary>
+    /// <returns>true if SetThreadSubsystem assigned subsystem for current thread.</returns>
+    LOGMELNK bool IsSubsystemDefinedForCurrentThread();
+
+    /// <summary>
+    /// Returns current thread subsystem id or global default subsystem id.
+    /// </summary>
+    /// <returns>Thread-local subsystem id when set; otherwise global SUBSID.</returns>
+    LOGMELNK SID GetDefaultSubsystem();
+
+    /// <summary>
     /// Adds subsystem id to the blocked subsystem list. Empty SID is ignored.
     /// Blocked subsystems are never logged.
     /// </summary>
@@ -658,6 +676,7 @@ namespace Logme
     );
 
     void ApplyThreadChannel(Context& context);
+    void ApplyThreadSubsystem(Context& context);
     bool CreateChannels(ChannelConfigArray& arr);
     void ReplaceChannels(ChannelConfigArray& arr);
 

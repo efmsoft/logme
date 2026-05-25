@@ -17,6 +17,7 @@
 #include <Logme/ThreadChannel.h>
 #include <Logme/ThreadName.h>
 #include <Logme/ThreadOverride.h>
+#include <Logme/ThreadSubsystem.h>
 #include <Logme/TracePoint.h>
 #include <utility>
 
@@ -1133,5 +1134,16 @@
 /// <param name="ovr">Override object used by log records from this scope.</param>
 #define LogmeThreadOverride(ovr) \
   Logme::ThreadOverride _logme_thread_override(Logme::Instance, ovr)
+
+// Thread subsystem
+
+/// <summary>Sets the current thread subsystem for the current scope.</summary>
+/// <param name="sid">Subsystem id used by log records from this scope.</param>
+#define LogmeThreadSubsystem(sid) \
+  Logme::ThreadSubsystem _logme_thread_subsystem(Logme::Instance, sid)
+
+/// <summary>Returns true when the current thread has an explicitly assigned subsystem.</summary>
+#define LogmeThreadSubsystemDefined() \
+  Logme::Instance->IsSubsystemDefinedForCurrentThread()
 
 #endif

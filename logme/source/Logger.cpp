@@ -9,10 +9,10 @@
 #include <Logme/FastFormat.h>
 #include <Logme/File/exe_path.h>
 #include <Logme/Logger.h>
-#include "Control/ControlDiscovery.h"
 #include <Logme/Time/datetime.h>
 #include <Logme/Utils.h>
 
+#include "Control/ControlDiscovery.h"
 #include "StringHelpers.h"
 
 #if defined(_MSC_VER)
@@ -32,6 +32,9 @@ namespace
 
   thread_local bool HasThreadOverride = false;
   thread_local Override CurrentThreadOverride;
+
+  thread_local bool HasThreadSubsystem = false;
+  thread_local SID CurrentThreadSubsystem;
 }
 
 Logger::Logger()
@@ -253,6 +256,39 @@ Override Logger::GetThreadOverride()
     return CurrentThreadOverride;
 
   return Override();
+}
+
+void Logger::SetThreadSubsystem(const SID* sid)
+{
+  if (sid == nullptr)
+  {
+    HasThreadSubsystem = false;
+    CurrentThreadSubsystem = SID{};
+  }
+  else
+  {
+    CurrentThreadSubsystem = *sid;
+    HasThreadSubsystem = true;
+  }
+}
+
+bool Logger::IsSubsystemDefinedForCurrentThread()
+{
+  return HasThreadSubsystem;
+}
+
+SID Logger::GetDefaultSubsystem()
+{
+  if (HasThreadSubsystem)
+    return CurrentThreadSubsystem;
+
+  return SID{};
+}
+
+void Logger::ApplyThreadSubsystem(Context& context)
+{
+  if (HasThreadSubsystem)
+    context.Subsystem = CurrentThreadSubsystem;
 }
 
 void Logger::SetThreadChannel(const ID* id)
@@ -607,6 +643,7 @@ Stream Logger::Log(const Context& context) // @1
   context2.Ovr = ovr.get();
 
   ApplyThreadChannel(context2);
+  ApplyThreadSubsystem(context2);
 
   return Stream(shared_from_this(), context2, ovr);
 }
@@ -617,6 +654,7 @@ Stream Logger::Log(const Context& context, Override& ovr) // @2
   context2.Ovr = &ovr;
 
   ApplyThreadChannel(context2);
+  ApplyThreadSubsystem(context2);
 
   return Stream(shared_from_this(), context2);
 }
@@ -644,6 +682,7 @@ Stream Logger::Log(const Context& context, const ID& id) // @4
 
   OverridePtr ovr = std::make_shared<Override>(GetThreadOverride());
   context2.Ovr = ovr.get();
+  ApplyThreadSubsystem(context2);
 
   return Stream(shared_from_this(), context2, ovr);
 }
@@ -656,6 +695,7 @@ Stream Logger::Log(const Context& context, const ChannelPtr& ch) // @5
 
   OverridePtr ovr = std::make_shared<Override>(GetThreadOverride());
   context2.Ovr = ovr.get();
+  ApplyThreadSubsystem(context2);
 
   return Stream(shared_from_this(), context2, ovr);
 }
@@ -700,6 +740,7 @@ Stream Logger::Log(const Context& context, const ID& id, Override& ovr) // @8
   Context& context2 = *(Context*)&context;
   context2.Channel = &id;
   context2.Ovr = &ovr;
+  ApplyThreadSubsystem(context2);
 
   return Stream(shared_from_this(), context2);
 }
@@ -710,6 +751,7 @@ Stream Logger::Log(const Context& context, const ChannelPtr& ch, Override& ovr) 
   context2.ChRef = ch;
   context2.Ch = context2.ChRef.get();
   context2.Ovr = &ovr;
+  ApplyThreadSubsystem(context2);
 
   return Stream(shared_from_this(), context2);
 }
@@ -759,6 +801,7 @@ void Logger::Log(
   Context& context2 = *(Context*)&context;
   context2.Channel = &id;
   context2.Ovr = &ovr;
+  ApplyThreadSubsystem(context2);
 
   va_list args;
   va_start(args, format);
@@ -785,6 +828,7 @@ void Logger::Log(
   Context& context2 = *(Context*)&context;
   context2.Ch = ch.get();
   context2.Ovr = &ovr;
+  ApplyThreadSubsystem(context2);
 
   va_list args;
   va_start(args, format);
@@ -862,6 +906,7 @@ void Logger::Log(
 
   auto ovr = GetThreadOverride();
   context2.Ovr = &ovr;
+  ApplyThreadSubsystem(context2);
 
   va_list args;
   va_start(args, format);
@@ -889,6 +934,7 @@ void Logger::Log(
 
   auto ovr = GetThreadOverride();
   context2.Ovr = &ovr;
+  ApplyThreadSubsystem(context2);
 
   va_list args;
   va_start(args, format);
@@ -952,6 +998,7 @@ void Logger::Log(
   Context& context2 = *(Context*)&context;
   context2.Channel = &id;
   context2.Ovr = &ovr;
+  ApplyThreadSubsystem(context2);
 
   va_list args;
   va_start(args, format);
@@ -978,6 +1025,7 @@ void Logger::Log(
   Context& context2 = *(Context*)&context;
   context2.Ch = ch.get();
   context2.Ovr = &ovr;
+  ApplyThreadSubsystem(context2);
 
   va_list args;
   va_start(args, format);
@@ -1000,6 +1048,7 @@ void Logger::Log(
   Context& context2 = *(Context*)&context;
   context2.Ovr = &ovr;
   ApplyThreadChannel(context2);
+  ApplyThreadSubsystem(context2);
 
   va_list args;
   va_start(args, format);
@@ -1044,6 +1093,7 @@ void Logger::Log(const Context& context, const char* format, ...)
   context2.Ovr = &ovr;
 
   ApplyThreadChannel(context2);
+  ApplyThreadSubsystem(context2);
 
   va_list args;
   va_start(args, format);

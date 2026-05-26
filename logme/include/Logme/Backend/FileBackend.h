@@ -82,6 +82,7 @@ namespace Logme
     size_t MaxSize;
     size_t CurrentSize;
     size_t QueueSizeLimit;
+    uint64_t FlushAfter;
     std::string Name;
     std::string NameTemplate;
 
@@ -104,6 +105,7 @@ namespace Logme
 
     static size_t MaxSizeDefault;
     static size_t QueueSizeLimitDefault;
+    static uint64_t FlushAfterDefault;
 
     NonceGen Nonce;
     std::unique_ptr<BufferedFileIo> BufferedIo;
@@ -120,7 +122,7 @@ namespace Logme
       STAT_OUTPUT_PERIOD = 10 * 60 * 1000,  // 10 min
 
       RIGHT_NOW = 1,                        // Force flush right now
-      FLUSH_AFTER = 100,
+      FLUSH_AFTER_DEFAULT = 500,
     };
 
     constexpr static const char* TYPE_ID = "FileBackend";
@@ -150,6 +152,9 @@ namespace Logme
 
     LOGMELNK static size_t GetQueueSizeLimitDefault();
     LOGMELNK static void SetQueueSizeLimitDefault(size_t size);
+
+    LOGMELNK static uint64_t GetFlushAfterDefault();
+    LOGMELNK static void SetFlushAfterDefault(uint64_t ms);
 
     using FileIo::Truncate;
 

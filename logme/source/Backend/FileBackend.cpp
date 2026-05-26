@@ -77,6 +77,7 @@ namespace
 
 size_t FileBackend::MaxSizeDefault = FileBackend::MAX_SIZE_DEFAULT;
 size_t FileBackend::QueueSizeLimitDefault = FileBackend::QUEUE_SIZE_LIMIT;
+uint64_t FileBackend::FlushAfterDefault = FileBackend::FLUSH_AFTER_DEFAULT;
 
 FileBackend::FileBackend(ChannelPtr owner)
   : MemoryTrackedBackend(owner, TYPE_ID)
@@ -84,6 +85,7 @@ FileBackend::FileBackend(ChannelPtr owner)
   , MaxSize(MaxSizeDefault)
   , CurrentSize(0)
   , QueueSizeLimit(QueueSizeLimitDefault)
+  , FlushAfter(FlushAfterDefault)
   , Registered(false)
   , ShutdownFlag(false)
   , ShutdownCalled(owner == nullptr)
@@ -126,6 +128,16 @@ void FileBackend::SetMaxSizeDefault(size_t size)
 size_t FileBackend::GetMaxSizeDefault()
 {
   return MaxSizeDefault;
+}
+
+void FileBackend::SetFlushAfterDefault(uint64_t ms)
+{
+  FlushAfterDefault = ms;
+}
+
+uint64_t FileBackend::GetFlushAfterDefault()
+{
+  return FlushAfterDefault;
 }
 
 size_t FileBackend::GetQueueSizeLimitDefault()
@@ -553,7 +565,7 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
     {
       uint64_t firstWriteTime = 1;
       if (flushTime != 0 && flushTime != RIGHT_NOW)
-        firstWriteTime = flushTime > FLUSH_AFTER ? flushTime - FLUSH_AFTER : 1;
+        firstWriteTime = flushTime > FlushAfter ? flushTime - FlushAfter : 1;
 
       Queue.SetCurrentFirstWriteTime(firstWriteTime);
     }
@@ -570,13 +582,13 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
     {
       uint64_t now = GetTimeInMillisec64();
       Queue.SetCurrentFirstWriteTime(now);
-      RequestFlush(now + FLUSH_AFTER);
+      RequestFlush(now + FlushAfter);
     }
     else
     {
       uint64_t firstWriteTime = 1;
       if (flushTime != RIGHT_NOW)
-        firstWriteTime = flushTime > FLUSH_AFTER ? flushTime - FLUSH_AFTER : 1;
+        firstWriteTime = flushTime > FlushAfter ? flushTime - FlushAfter : 1;
 
       Queue.SetCurrentFirstWriteTime(firstWriteTime);
     }
@@ -756,7 +768,7 @@ void FileBackend::UpdateFlushTimeAfterWork()
     return;
   }
 
-  uint64_t deadline = oldest + FLUSH_AFTER;
+  uint64_t deadline = oldest + FlushAfter;
   uint64_t now = GetTimeInMillisec64();
 
   if (deadline <= now)

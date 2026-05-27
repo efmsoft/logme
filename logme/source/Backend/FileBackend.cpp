@@ -68,6 +68,64 @@ namespace
   std::atomic<std::uint64_t> GlobalWrittenBuffers(0);
   std::atomic<std::uint64_t> GlobalWrittenBytes(0);
   std::atomic<std::uint64_t> GlobalWriteErrors(0);
+
+#if FILE_ENABLE_WRITE_READY_COUNTERS
+  std::atomic<std::uint64_t> GlobalWriteReadyEmptyCalls(0);
+  std::atomic<std::uint64_t> GlobalWriteReadyRawCalls(0);
+  std::atomic<std::uint64_t> GlobalWriteReadyRawBytes(0);
+  std::atomic<std::uint64_t> GlobalWriteReadyRawMaxBytes(0);
+  std::atomic<std::uint64_t> GlobalWriteReadyMaxBuffers(0);
+  std::atomic<std::uint64_t> GlobalWriteReadyMaxBytes(0);
+  std::atomic<std::uint64_t> GlobalWorkerWriteLoopIterations(0);
+  std::atomic<std::uint64_t> GlobalWorkerWriteLoopMaxIterations(0);
+  std::atomic<std::uint64_t> GlobalWorkerPublishCurrentCalls(0);
+  std::atomic<std::uint64_t> GlobalWorkerPublishCurrentSuccess(0);
+  std::atomic<std::uint64_t> GlobalWorkerBreaks(0);
+
+  void UpdateMaxCounter(
+    std::atomic<std::uint64_t>& counter
+    , std::uint64_t value
+  )
+  {
+    std::uint64_t oldMax = counter.load(std::memory_order_relaxed);
+    while (
+      oldMax < value
+      && !counter.compare_exchange_weak(
+        oldMax
+        , value
+        , std::memory_order_relaxed
+        , std::memory_order_relaxed
+      )
+    )
+    {
+    }
+  }
+#endif
+
+#if FILE_ENABLE_FLUSH_SOURCE_COUNTERS
+  std::atomic<std::uint64_t> GlobalPublishFromFlushCalls(0);
+  std::atomic<std::uint64_t> GlobalPublishFromFlushSuccess(0);
+  std::atomic<std::uint64_t> GlobalPublishFromWorkerImmediateCalls(0);
+  std::atomic<std::uint64_t> GlobalPublishFromWorkerImmediateSuccess(0);
+  std::atomic<std::uint64_t> GlobalPublishFromWorkerShutdownCalls(0);
+  std::atomic<std::uint64_t> GlobalPublishFromWorkerShutdownSuccess(0);
+  std::atomic<std::uint64_t> GlobalPublishFromOnShutdownCalls(0);
+  std::atomic<std::uint64_t> GlobalPublishFromOnShutdownSuccess(0);
+  std::atomic<std::uint64_t> GlobalRequestRightNowFromFlush(0);
+  std::atomic<std::uint64_t> GlobalRequestRightNowFromFreeze(0);
+  std::atomic<std::uint64_t> GlobalRequestRightNowFromPressureBuffers(0);
+  std::atomic<std::uint64_t> GlobalRequestRightNowFromPressureBytes(0);
+  std::atomic<std::uint64_t> GlobalRequestRightNowFromPressureBoth(0);
+  std::atomic<std::uint64_t> GlobalRequestScheduledFromFirstData(0);
+  std::atomic<std::uint64_t> GlobalPressureByBuffers(0);
+  std::atomic<std::uint64_t> GlobalPressureByBytes(0);
+  std::atomic<std::uint64_t> GlobalPressureByBoth(0);
+  std::atomic<std::uint64_t> GlobalPublishCurrentQueuedBytes(0);
+  std::atomic<std::uint64_t> GlobalPublishCurrentMaxQueuedBytes(0);
+  std::atomic<std::uint64_t> GlobalPublishCurrentAgeMs(0);
+  std::atomic<std::uint64_t> GlobalPublishCurrentMaxAgeMs(0);
+#endif
+
   std::atomic<std::uint64_t> GlobalCreateLogCalls(0);
   std::atomic<std::uint64_t> GlobalCreateLogFailures(0);
   std::atomic<std::uint64_t> GlobalChangePartCalls(0);
@@ -174,6 +232,75 @@ FileBackendCounters FileBackend::GetCounters()
   out.WrittenBuffers = GlobalWrittenBuffers.load(std::memory_order_relaxed);
   out.WrittenBytes = GlobalWrittenBytes.load(std::memory_order_relaxed);
   out.WriteErrors = GlobalWriteErrors.load(std::memory_order_relaxed);
+#if FILE_ENABLE_WRITE_READY_COUNTERS
+  out.WriteReadyEmptyCalls =
+    GlobalWriteReadyEmptyCalls.load(std::memory_order_relaxed);
+  out.WriteReadyRawCalls =
+    GlobalWriteReadyRawCalls.load(std::memory_order_relaxed);
+  out.WriteReadyRawBytes =
+    GlobalWriteReadyRawBytes.load(std::memory_order_relaxed);
+  out.WriteReadyRawMaxBytes =
+    GlobalWriteReadyRawMaxBytes.load(std::memory_order_relaxed);
+  out.WriteReadyMaxBuffers =
+    GlobalWriteReadyMaxBuffers.load(std::memory_order_relaxed);
+  out.WriteReadyMaxBytes =
+    GlobalWriteReadyMaxBytes.load(std::memory_order_relaxed);
+  out.WorkerWriteLoopIterations =
+    GlobalWorkerWriteLoopIterations.load(std::memory_order_relaxed);
+  out.WorkerWriteLoopMaxIterations =
+    GlobalWorkerWriteLoopMaxIterations.load(std::memory_order_relaxed);
+  out.WorkerPublishCurrentCalls =
+    GlobalWorkerPublishCurrentCalls.load(std::memory_order_relaxed);
+  out.WorkerPublishCurrentSuccess =
+    GlobalWorkerPublishCurrentSuccess.load(std::memory_order_relaxed);
+  out.WorkerBreaks =
+    GlobalWorkerBreaks.load(std::memory_order_relaxed);
+#endif
+#if FILE_ENABLE_FLUSH_SOURCE_COUNTERS
+  out.PublishFromFlushCalls =
+    GlobalPublishFromFlushCalls.load(std::memory_order_relaxed);
+  out.PublishFromFlushSuccess =
+    GlobalPublishFromFlushSuccess.load(std::memory_order_relaxed);
+  out.PublishFromWorkerImmediateCalls =
+    GlobalPublishFromWorkerImmediateCalls.load(std::memory_order_relaxed);
+  out.PublishFromWorkerImmediateSuccess =
+    GlobalPublishFromWorkerImmediateSuccess.load(std::memory_order_relaxed);
+  out.PublishFromWorkerShutdownCalls =
+    GlobalPublishFromWorkerShutdownCalls.load(std::memory_order_relaxed);
+  out.PublishFromWorkerShutdownSuccess =
+    GlobalPublishFromWorkerShutdownSuccess.load(std::memory_order_relaxed);
+  out.PublishFromOnShutdownCalls =
+    GlobalPublishFromOnShutdownCalls.load(std::memory_order_relaxed);
+  out.PublishFromOnShutdownSuccess =
+    GlobalPublishFromOnShutdownSuccess.load(std::memory_order_relaxed);
+  out.RequestRightNowFromFlush =
+    GlobalRequestRightNowFromFlush.load(std::memory_order_relaxed);
+  out.RequestRightNowFromFreeze =
+    GlobalRequestRightNowFromFreeze.load(std::memory_order_relaxed);
+  out.RequestRightNowFromPressureBuffers =
+    GlobalRequestRightNowFromPressureBuffers.load(std::memory_order_relaxed);
+  out.RequestRightNowFromPressureBytes =
+    GlobalRequestRightNowFromPressureBytes.load(std::memory_order_relaxed);
+  out.RequestRightNowFromPressureBoth =
+    GlobalRequestRightNowFromPressureBoth.load(std::memory_order_relaxed);
+  out.RequestScheduledFromFirstData =
+    GlobalRequestScheduledFromFirstData.load(std::memory_order_relaxed);
+  out.PressureByBuffers =
+    GlobalPressureByBuffers.load(std::memory_order_relaxed);
+  out.PressureByBytes =
+    GlobalPressureByBytes.load(std::memory_order_relaxed);
+  out.PressureByBoth =
+    GlobalPressureByBoth.load(std::memory_order_relaxed);
+  out.PublishCurrentQueuedBytes =
+    GlobalPublishCurrentQueuedBytes.load(std::memory_order_relaxed);
+  out.PublishCurrentMaxQueuedBytes =
+    GlobalPublishCurrentMaxQueuedBytes.load(std::memory_order_relaxed);
+  out.PublishCurrentAgeMs =
+    GlobalPublishCurrentAgeMs.load(std::memory_order_relaxed);
+  out.PublishCurrentMaxAgeMs =
+    GlobalPublishCurrentMaxAgeMs.load(std::memory_order_relaxed);
+#endif
+
   out.CreateLogCalls = GlobalCreateLogCalls.load(std::memory_order_relaxed);
   out.CreateLogFailures = GlobalCreateLogFailures.load(std::memory_order_relaxed);
   out.ChangePartCalls = GlobalChangePartCalls.load(std::memory_order_relaxed);
@@ -185,8 +312,8 @@ FileBackendCounters FileBackend::GetCounters()
 
 void FileBackend::SetQueueSizeLimitDefault(size_t size)
 {
-  if (size < 4ULL * 1024)
-    size = 4ULL * 1024;
+  if (size < 2ULL * QUEUE_BUFFER_SIZE)
+    size = 2ULL * QUEUE_BUFFER_SIZE;
 
   QueueSizeLimitDefault = size;
 }
@@ -230,11 +357,11 @@ void FileBackend::Flush()
   for (;;)
   {
     bool needSignal = false;
-    if (!Queue.PublishCurrent(needSignal))
+    if (!PublishCurrentCounted(needSignal, PublishCurrentSource::FLUSH))
       break;
   }
 
-  RequestFlush();
+  RequestFlush(RIGHT_NOW, FlushRequestSource::FLUSH);
 
   std::unique_lock locker(BufferLock);
   Done.wait(locker, [this]() { return QueuedBytes.load(std::memory_order_relaxed) == 0; });
@@ -246,7 +373,7 @@ void FileBackend::Freeze()
   Backend::Freeze();
 
   if (GetAsync())
-    RequestFlush();
+    RequestFlush(RIGHT_NOW, FlushRequestSource::FREEZE);
 }
 
 bool FileBackend::IsIdle() const
@@ -562,6 +689,25 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
 
   if (usedBuffers >= FLUSH_PRESSURE_BUFFERS || queued >= QueueSizeLimit)
   {
+    const bool pressureByBuffers = usedBuffers >= FLUSH_PRESSURE_BUFFERS;
+    const bool pressureByBytes = queued >= QueueSizeLimit;
+    FlushRequestSource source = FlushRequestSource::PRESSURE_BUFFERS;
+
+    if (pressureByBuffers && pressureByBytes)
+    {
+      source = FlushRequestSource::PRESSURE_BOTH;
+      FILE_FSCNT(GlobalPressureByBoth.fetch_add(1, std::memory_order_relaxed));
+    }
+    else if (pressureByBytes)
+    {
+      source = FlushRequestSource::PRESSURE_BYTES;
+      FILE_FSCNT(GlobalPressureByBytes.fetch_add(1, std::memory_order_relaxed));
+    }
+    else
+    {
+      FILE_FSCNT(GlobalPressureByBuffers.fetch_add(1, std::memory_order_relaxed));
+    }
+
     if (firstData)
     {
       uint64_t firstWriteTime = 1;
@@ -572,7 +718,7 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
     }
 
     if (flushTime != RIGHT_NOW)
-      RequestFlush();
+      RequestFlush(RIGHT_NOW, source);
 
     return;
   }
@@ -583,7 +729,7 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
     {
       uint64_t now = GetTimeInMillisec64();
       Queue.SetCurrentFirstWriteTime(now);
-      RequestFlush(now + FlushAfter);
+      RequestFlush(now + FlushAfter, FlushRequestSource::FIRST_DATA);
     }
     else
     {
@@ -596,7 +742,10 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
   }
 }
 
-void FileBackend::RequestFlush(uint64_t when)
+void FileBackend::RequestFlush(
+  uint64_t when
+  , FlushRequestSource source
+)
 {
   const bool immediate = when == RIGHT_NOW;
   FILE_CNT(GlobalFlushRequests.fetch_add(1, std::memory_order_relaxed));
@@ -604,6 +753,26 @@ void FileBackend::RequestFlush(uint64_t when)
     FILE_CNT(GlobalImmediateFlushRequests.fetch_add(1, std::memory_order_relaxed));
   else
     FILE_CNT(GlobalScheduledFlushRequests.fetch_add(1, std::memory_order_relaxed));
+
+#if FILE_ENABLE_FLUSH_SOURCE_COUNTERS
+  if (immediate)
+  {
+    if (source == FlushRequestSource::FLUSH)
+      GlobalRequestRightNowFromFlush.fetch_add(1, std::memory_order_relaxed);
+    else if (source == FlushRequestSource::FREEZE)
+      GlobalRequestRightNowFromFreeze.fetch_add(1, std::memory_order_relaxed);
+    else if (source == FlushRequestSource::PRESSURE_BUFFERS)
+      GlobalRequestRightNowFromPressureBuffers.fetch_add(1, std::memory_order_relaxed);
+    else if (source == FlushRequestSource::PRESSURE_BYTES)
+      GlobalRequestRightNowFromPressureBytes.fetch_add(1, std::memory_order_relaxed);
+    else if (source == FlushRequestSource::PRESSURE_BOTH)
+      GlobalRequestRightNowFromPressureBoth.fetch_add(1, std::memory_order_relaxed);
+  }
+  else if (source == FlushRequestSource::FIRST_DATA)
+  {
+    GlobalRequestScheduledFromFirstData.fetch_add(1, std::memory_order_relaxed);
+  }
+#endif
 
   uint64_t old = FlushTime.load(std::memory_order_relaxed);
 
@@ -678,6 +847,11 @@ bool FileBackend::WriteReadyData(std::vector<DataBufferPtr>& data)
   FILE_CNT(GlobalWriteReadyCalls.fetch_add(1, std::memory_order_relaxed));
   if (!Queue.TakeReady(data))
   {
+    FILE_WRCNT(GlobalWriteReadyEmptyCalls.fetch_add(
+      1
+      , std::memory_order_relaxed
+    ));
+
     if (QueuedBytes.load(std::memory_order_relaxed) == 0)
     {
       std::lock_guard guard(BufferLock);
@@ -693,6 +867,8 @@ bool FileBackend::WriteReadyData(std::vector<DataBufferPtr>& data)
 
   FILE_CNT(GlobalWriteBatches.fetch_add(1, std::memory_order_relaxed));
   FILE_CNT(GlobalWriteBatchBytes.fetch_add(bytes, std::memory_order_relaxed));
+  FILE_WRCNT(UpdateMaxCounter(GlobalWriteReadyMaxBuffers, data.size()));
+  FILE_WRCNT(UpdateMaxCounter(GlobalWriteReadyMaxBytes, bytes));
   {
     std::uint64_t oldMax = GlobalWriteBatchMaxBytes.load(std::memory_order_relaxed);
     while (oldMax < bytes && !GlobalWriteBatchMaxBytes.compare_exchange_weak(
@@ -715,6 +891,16 @@ bool FileBackend::WriteReadyData(std::vector<DataBufferPtr>& data)
     {
       if (!b)
         continue;
+
+      FILE_WRCNT(GlobalWriteReadyRawCalls.fetch_add(
+        1
+        , std::memory_order_relaxed
+      ));
+      FILE_WRCNT(GlobalWriteReadyRawBytes.fetch_add(
+        b->Size()
+        , std::memory_order_relaxed
+      ));
+      FILE_WRCNT(UpdateMaxCounter(GlobalWriteReadyRawMaxBytes, b->Size()));
 
       int rc = FileIo::WriteRaw(b->Data(), b->Size());
       if (rc < 0)
@@ -758,6 +944,52 @@ bool FileBackend::WriteReadyData(std::vector<DataBufferPtr>& data)
   return true;
 }
 
+bool FileBackend::PublishCurrentCounted(
+  bool& needSignal
+  , PublishCurrentSource source
+)
+{
+#if FILE_ENABLE_FLUSH_SOURCE_COUNTERS
+  const std::uint64_t oldest = Queue.GetOldestDataTime();
+  const std::uint64_t queued = QueuedBytes.load(std::memory_order_relaxed);
+
+  if (source == PublishCurrentSource::FLUSH)
+    GlobalPublishFromFlushCalls.fetch_add(1, std::memory_order_relaxed);
+  else if (source == PublishCurrentSource::WORKER_IMMEDIATE)
+    GlobalPublishFromWorkerImmediateCalls.fetch_add(1, std::memory_order_relaxed);
+  else if (source == PublishCurrentSource::WORKER_SHUTDOWN)
+    GlobalPublishFromWorkerShutdownCalls.fetch_add(1, std::memory_order_relaxed);
+  else if (source == PublishCurrentSource::ON_SHUTDOWN)
+    GlobalPublishFromOnShutdownCalls.fetch_add(1, std::memory_order_relaxed);
+#endif
+
+  const bool ok = Queue.PublishCurrent(needSignal);
+
+#if FILE_ENABLE_FLUSH_SOURCE_COUNTERS
+  if (ok)
+  {
+    const std::uint64_t now = GetTimeInMillisec64();
+    const std::uint64_t age = oldest != 0 && now >= oldest ? now - oldest : 0;
+
+    if (source == PublishCurrentSource::FLUSH)
+      GlobalPublishFromFlushSuccess.fetch_add(1, std::memory_order_relaxed);
+    else if (source == PublishCurrentSource::WORKER_IMMEDIATE)
+      GlobalPublishFromWorkerImmediateSuccess.fetch_add(1, std::memory_order_relaxed);
+    else if (source == PublishCurrentSource::WORKER_SHUTDOWN)
+      GlobalPublishFromWorkerShutdownSuccess.fetch_add(1, std::memory_order_relaxed);
+    else if (source == PublishCurrentSource::ON_SHUTDOWN)
+      GlobalPublishFromOnShutdownSuccess.fetch_add(1, std::memory_order_relaxed);
+
+    GlobalPublishCurrentQueuedBytes.fetch_add(queued, std::memory_order_relaxed);
+    GlobalPublishCurrentAgeMs.fetch_add(age, std::memory_order_relaxed);
+    UpdateMaxCounter(GlobalPublishCurrentMaxQueuedBytes, queued);
+    UpdateMaxCounter(GlobalPublishCurrentMaxAgeMs, age);
+  }
+#endif
+
+  return ok;
+}
+
 void FileBackend::UpdateFlushTimeAfterWork()
 {
   uint64_t oldest = Queue.GetOldestDataTime();
@@ -795,8 +1027,15 @@ bool FileBackend::WorkerFunc()
   else
     FILE_CNT(GlobalWorkerTimedRuns.fetch_add(1, std::memory_order_relaxed));
 
+  int writeLoops = 0;
   for (int i = 0; i < maxWriteLoops; i++)
   {
+    FILE_WRCNT(GlobalWorkerWriteLoopIterations.fetch_add(
+      1
+      , std::memory_order_relaxed
+    ));
+    writeLoops++;
+
     if (WriteReadyData(ReadyData))
     {
       forceFlush = false;
@@ -806,8 +1045,21 @@ bool FileBackend::WorkerFunc()
     if (forceFlush)
     {
       bool needSignal = false;
-      if (Queue.PublishCurrent(needSignal))
+      FILE_WRCNT(GlobalWorkerPublishCurrentCalls.fetch_add(
+        1
+        , std::memory_order_relaxed
+      ));
+      if (PublishCurrentCounted(
+        needSignal
+        , shutdownRun
+          ? PublishCurrentSource::WORKER_SHUTDOWN
+          : PublishCurrentSource::WORKER_IMMEDIATE
+      ))
       {
+        FILE_WRCNT(GlobalWorkerPublishCurrentSuccess.fetch_add(
+          1
+          , std::memory_order_relaxed
+        ));
         (void)needSignal;
         forceFlush = false;
         continue;
@@ -815,16 +1067,14 @@ bool FileBackend::WorkerFunc()
     }
     else
     {
-      bool needSignal = false;
-      if (Queue.PublishCurrent(needSignal))
-      {
-        (void)needSignal;
-        continue;
-      }
+      break;
     }
 
+    FILE_WRCNT(GlobalWorkerBreaks.fetch_add(1, std::memory_order_relaxed));
     break;
   }
+
+  FILE_WRCNT(UpdateMaxCounter(GlobalWorkerWriteLoopMaxIterations, writeLoops));
 
   UpdateFlushTimeAfterWork();
   return !ShutdownFlag.load(std::memory_order_relaxed);
@@ -838,7 +1088,7 @@ void FileBackend::OnShutdown()
     if (!WriteReadyData(ReadyData))
     {
       bool needSignal = false;
-      if (!Queue.PublishCurrent(needSignal))
+      if (!PublishCurrentCounted(needSignal, PublishCurrentSource::ON_SHUTDOWN))
         break;
 
       (void)needSignal;

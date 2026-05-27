@@ -7,10 +7,30 @@
 #define FILE_ENABLE_COUNTERS 0
 #endif
 
+#ifndef FILE_ENABLE_WRITE_READY_COUNTERS
+#define FILE_ENABLE_WRITE_READY_COUNTERS 0
+#endif
+
+#ifndef FILE_ENABLE_FLUSH_SOURCE_COUNTERS
+#define FILE_ENABLE_FLUSH_SOURCE_COUNTERS 0
+#endif
+
 #if FILE_ENABLE_COUNTERS
 #define FILE_CNT(x) x
 #else
 #define FILE_CNT(x) ((void)0)
+#endif
+
+#if FILE_ENABLE_WRITE_READY_COUNTERS
+#define FILE_WRCNT(x) x
+#else
+#define FILE_WRCNT(x) ((void)0)
+#endif
+
+#if FILE_ENABLE_FLUSH_SOURCE_COUNTERS
+#define FILE_FSCNT(x) x
+#else
+#define FILE_FSCNT(x) ((void)0)
 #endif
 
 #define BFW_CNT(x) FILE_CNT(x)

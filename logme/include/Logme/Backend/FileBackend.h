@@ -14,6 +14,10 @@
 #include <Logme/Obfuscate.h>
 #include <Logme/Types.h>
 
+#ifndef FILE_ENABLE_FLUSH_SOURCE_COUNTERS
+#define FILE_ENABLE_FLUSH_SOURCE_COUNTERS 0
+#endif
+
 namespace Logme
 {
   struct FileBackendConfig : public BackendConfig
@@ -58,6 +62,44 @@ namespace Logme
     std::uint64_t WrittenBuffers = 0;
     std::uint64_t WrittenBytes = 0;
     std::uint64_t WriteErrors = 0;
+
+#if FILE_ENABLE_WRITE_READY_COUNTERS
+    std::uint64_t WriteReadyEmptyCalls = 0;
+    std::uint64_t WriteReadyRawCalls = 0;
+    std::uint64_t WriteReadyRawBytes = 0;
+    std::uint64_t WriteReadyRawMaxBytes = 0;
+    std::uint64_t WriteReadyMaxBuffers = 0;
+    std::uint64_t WriteReadyMaxBytes = 0;
+    std::uint64_t WorkerWriteLoopIterations = 0;
+    std::uint64_t WorkerWriteLoopMaxIterations = 0;
+    std::uint64_t WorkerPublishCurrentCalls = 0;
+    std::uint64_t WorkerPublishCurrentSuccess = 0;
+    std::uint64_t WorkerBreaks = 0;
+#endif
+
+#if FILE_ENABLE_FLUSH_SOURCE_COUNTERS
+    std::uint64_t PublishFromFlushCalls = 0;
+    std::uint64_t PublishFromFlushSuccess = 0;
+    std::uint64_t PublishFromWorkerImmediateCalls = 0;
+    std::uint64_t PublishFromWorkerImmediateSuccess = 0;
+    std::uint64_t PublishFromWorkerShutdownCalls = 0;
+    std::uint64_t PublishFromWorkerShutdownSuccess = 0;
+    std::uint64_t PublishFromOnShutdownCalls = 0;
+    std::uint64_t PublishFromOnShutdownSuccess = 0;
+    std::uint64_t RequestRightNowFromFlush = 0;
+    std::uint64_t RequestRightNowFromFreeze = 0;
+    std::uint64_t RequestRightNowFromPressureBuffers = 0;
+    std::uint64_t RequestRightNowFromPressureBytes = 0;
+    std::uint64_t RequestRightNowFromPressureBoth = 0;
+    std::uint64_t RequestScheduledFromFirstData = 0;
+    std::uint64_t PressureByBuffers = 0;
+    std::uint64_t PressureByBytes = 0;
+    std::uint64_t PressureByBoth = 0;
+    std::uint64_t PublishCurrentQueuedBytes = 0;
+    std::uint64_t PublishCurrentMaxQueuedBytes = 0;
+    std::uint64_t PublishCurrentAgeMs = 0;
+    std::uint64_t PublishCurrentMaxAgeMs = 0;
+#endif
     std::uint64_t CreateLogCalls = 0;
     std::uint64_t CreateLogFailures = 0;
     std::uint64_t ChangePartCalls = 0;
@@ -181,7 +223,33 @@ namespace Logme
     void Truncate();
     void AppendObfuscated(const char* text, size_t add);
     void AppendOutputData(const char* text, size_t add);
-    void RequestFlush(uint64_t when = RIGHT_NOW);
+    enum class FlushRequestSource
+    {
+      UNKNOWN,
+      FLUSH,
+      FREEZE,
+      PRESSURE_BUFFERS,
+      PRESSURE_BYTES,
+      PRESSURE_BOTH,
+      FIRST_DATA,
+    };
+
+    enum class PublishCurrentSource
+    {
+      FLUSH,
+      WORKER_IMMEDIATE,
+      WORKER_SHUTDOWN,
+      ON_SHUTDOWN,
+    };
+
+    void RequestFlush(
+      uint64_t when = RIGHT_NOW
+      , FlushRequestSource source = FlushRequestSource::UNKNOWN
+    );
+    bool PublishCurrentCounted(
+      bool& needSignal
+      , PublishCurrentSource source
+    );
     bool WriteReadyData(std::vector<DataBufferPtr>& data);
     void UpdateFlushTimeAfterWork();
 

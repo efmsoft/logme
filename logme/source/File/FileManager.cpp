@@ -61,7 +61,7 @@ FileManager::~FileManager()
     backend->OnShutdown();
   }
 
-#if FILE_ENABLE_COUNTERS
+#if FILE_ENABLE_COUNTERS || FILE_ENABLE_WRITE_READY_COUNTERS || FILE_ENABLE_FLUSH_SOURCE_COUNTERS
   {
     const FileManagerCounters mc = GetCounters();
     const FileBackendCounters bc = FileBackend::GetCounters();
@@ -175,6 +175,82 @@ FileManager::~FileManager()
       , (unsigned long long)bc.Queue.WriteErrors
       , (unsigned long long)bc.Queue.SignalsSent
     );
+
+#if FILE_ENABLE_WRITE_READY_COUNTERS
+    printf(
+      "[FileBackend.WriteReadyData] "
+      "EmptyCalls=%llu "
+      "RawCalls=%llu "
+      "RawBytes=%llu "
+      "RawMaxBytes=%llu "
+      "MaxBuffers=%llu "
+      "MaxBytes=%llu "
+      "WorkerWriteLoopIterations=%llu "
+      "WorkerWriteLoopMaxIterations=%llu "
+      "WorkerPublishCurrentCalls=%llu "
+      "WorkerPublishCurrentSuccess=%llu "
+      "WorkerBreaks=%llu\n"
+      , (unsigned long long)bc.WriteReadyEmptyCalls
+      , (unsigned long long)bc.WriteReadyRawCalls
+      , (unsigned long long)bc.WriteReadyRawBytes
+      , (unsigned long long)bc.WriteReadyRawMaxBytes
+      , (unsigned long long)bc.WriteReadyMaxBuffers
+      , (unsigned long long)bc.WriteReadyMaxBytes
+      , (unsigned long long)bc.WorkerWriteLoopIterations
+      , (unsigned long long)bc.WorkerWriteLoopMaxIterations
+      , (unsigned long long)bc.WorkerPublishCurrentCalls
+      , (unsigned long long)bc.WorkerPublishCurrentSuccess
+      , (unsigned long long)bc.WorkerBreaks
+    );
+#endif
+
+#if FILE_ENABLE_FLUSH_SOURCE_COUNTERS
+    printf(
+      "[FileBackend.FlushSource] "
+      "PublishFromFlushCalls=%llu "
+      "PublishFromFlushSuccess=%llu "
+      "PublishFromWorkerImmediateCalls=%llu "
+      "PublishFromWorkerImmediateSuccess=%llu "
+      "PublishFromWorkerShutdownCalls=%llu "
+      "PublishFromWorkerShutdownSuccess=%llu "
+      "PublishFromOnShutdownCalls=%llu "
+      "PublishFromOnShutdownSuccess=%llu "
+      "RequestRightNowFromFlush=%llu "
+      "RequestRightNowFromFreeze=%llu "
+      "RequestRightNowFromPressureBuffers=%llu "
+      "RequestRightNowFromPressureBytes=%llu "
+      "RequestRightNowFromPressureBoth=%llu "
+      "RequestScheduledFromFirstData=%llu "
+      "PressureByBuffers=%llu "
+      "PressureByBytes=%llu "
+      "PressureByBoth=%llu "
+      "PublishCurrentQueuedBytes=%llu "
+      "PublishCurrentMaxQueuedBytes=%llu "
+      "PublishCurrentAgeMs=%llu "
+      "PublishCurrentMaxAgeMs=%llu\n"
+      , (unsigned long long)bc.PublishFromFlushCalls
+      , (unsigned long long)bc.PublishFromFlushSuccess
+      , (unsigned long long)bc.PublishFromWorkerImmediateCalls
+      , (unsigned long long)bc.PublishFromWorkerImmediateSuccess
+      , (unsigned long long)bc.PublishFromWorkerShutdownCalls
+      , (unsigned long long)bc.PublishFromWorkerShutdownSuccess
+      , (unsigned long long)bc.PublishFromOnShutdownCalls
+      , (unsigned long long)bc.PublishFromOnShutdownSuccess
+      , (unsigned long long)bc.RequestRightNowFromFlush
+      , (unsigned long long)bc.RequestRightNowFromFreeze
+      , (unsigned long long)bc.RequestRightNowFromPressureBuffers
+      , (unsigned long long)bc.RequestRightNowFromPressureBytes
+      , (unsigned long long)bc.RequestRightNowFromPressureBoth
+      , (unsigned long long)bc.RequestScheduledFromFirstData
+      , (unsigned long long)bc.PressureByBuffers
+      , (unsigned long long)bc.PressureByBytes
+      , (unsigned long long)bc.PressureByBoth
+      , (unsigned long long)bc.PublishCurrentQueuedBytes
+      , (unsigned long long)bc.PublishCurrentMaxQueuedBytes
+      , (unsigned long long)bc.PublishCurrentAgeMs
+      , (unsigned long long)bc.PublishCurrentMaxAgeMs
+    );
+#endif
   }
 #endif
 }

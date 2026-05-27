@@ -107,6 +107,7 @@ FileBackend::FileBackend(ChannelPtr owner)
   , BufferedIo(std::make_unique<BufferedFileIo>(this))
 {
   SetAsync(true);
+  ReadyData.reserve(MAX_TOTAL_BUFFERS);
   NonceGenInit(&Nonce);
 }
 
@@ -672,10 +673,9 @@ FileManagerFactory& FileBackend::GetFactory() const
   return logger->GetFileManagerFactory();
 }
 
-bool FileBackend::WriteReadyData()
+bool FileBackend::WriteReadyData(std::vector<DataBufferPtr>& data)
 {
   FILE_CNT(GlobalWriteReadyCalls.fetch_add(1, std::memory_order_relaxed));
-  std::vector<DataBufferPtr> data;
   if (!Queue.TakeReady(data))
   {
     if (QueuedBytes.load(std::memory_order_relaxed) == 0)
@@ -797,7 +797,7 @@ bool FileBackend::WorkerFunc()
 
   for (int i = 0; i < maxWriteLoops; i++)
   {
-    if (WriteReadyData())
+    if (WriteReadyData(ReadyData))
     {
       forceFlush = false;
       continue;
@@ -835,7 +835,7 @@ void FileBackend::OnShutdown()
   FILE_CNT(GlobalShutdownCalls.fetch_add(1, std::memory_order_relaxed));
   while (QueuedBytes.load(std::memory_order_relaxed) != 0)
   {
-    if (!WriteReadyData())
+    if (!WriteReadyData(ReadyData))
     {
       bool needSignal = false;
       if (!Queue.PublishCurrent(needSignal))

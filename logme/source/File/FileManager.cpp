@@ -1,8 +1,10 @@
+#include <algorithm>
+#include <cstdio>
+
 #include <Logme/Backend/FileBackend.h>
 #include <Logme/File/FileManager.h>
 #include <Logme/Time/datetime.h> 
 #include <Logme/Utils.h> 
-#include <cstdio>
 
 using namespace Logme;
 
@@ -181,7 +183,8 @@ void FileManager::AddBackend(const FileBackendPtr& backend)
 {
   FILE_CNT(GlobalAddBackendCalls.fetch_add(1, std::memory_order_relaxed));
   std::lock_guard lock(Lock);
-  Backends.insert(backend);
+  if (std::find(Backends.begin(), Backends.end(), backend) == Backends.end())
+    Backends.push_back(backend);
   
   if (!ManagerThread.joinable())
     ManagerThread = std::thread(&FileManager::ManagementThread, this);
@@ -287,30 +290,21 @@ void FileManager::ManagementThread()
 
     for (const auto& backend : Backends)
     {
-      if (backend->HasEvents() == false)
+      uint64_t flushTime = backend->GetFlushTime();
+      if (flushTime == 0)
         continue;
 
-      if (backend->GetFlushTime() != FileBackend::RIGHT_NOW)
-        continue;
-
-      nextToRun = backend;
-      earliest = 0;
-      break;
-    }
-
-    if (nextToRun == nullptr)
-    {
-      for (const auto& backend : Backends)
+      if (flushTime == FileBackend::RIGHT_NOW)
       {
-        if (backend->HasEvents() == false)
-          continue;
+        nextToRun = backend;
+        earliest = 0;
+        break;
+      }
 
-        uint64_t flushTime = backend->GetFlushTime();
-        if (flushTime > 0 && flushTime < earliest)
-        {
-          earliest = flushTime;
-          nextToRun = backend;
-        }
+      if (flushTime < earliest)
+      {
+        earliest = flushTime;
+        nextToRun = backend;
       }
     }
 
@@ -357,7 +351,9 @@ void FileManager::ManagementThread()
       nextToRun->OnShutdown();
       
       lock.lock();
-      Backends.erase(nextToRun);
+      auto backendPos = std::find(Backends.begin(), Backends.end(), nextToRun);
+      if (backendPos != Backends.end())
+        Backends.erase(backendPos);
       FILE_CNT(GlobalBackendRemovals.fetch_add(1, std::memory_order_relaxed));
       
       if (Backends.empty())

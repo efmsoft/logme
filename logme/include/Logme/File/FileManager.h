@@ -2,7 +2,7 @@
 
 #include <condition_variable>
 #include <mutex>
-#include <set>
+#include <vector>
 #include <stdint.h>
 #include <thread>
 
@@ -33,7 +33,7 @@ namespace Logme
 
     std::mutex Lock;
     std::condition_variable CV;
-    std::set<FileBackendPtr> Backends;
+    std::vector<FileBackendPtr> Backends;
 
     uint64_t CurrentEarliestTime;
 

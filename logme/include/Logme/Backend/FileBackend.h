@@ -109,6 +109,7 @@ namespace Logme
 
     NonceGen Nonce;
     std::unique_ptr<BufferedFileIo> BufferedIo;
+    std::vector<DataBufferPtr> ReadyData;
   
   public:
     enum 
@@ -181,7 +182,7 @@ namespace Logme
     void AppendObfuscated(const char* text, size_t add);
     void AppendOutputData(const char* text, size_t add);
     void RequestFlush(uint64_t when = RIGHT_NOW);
-    bool WriteReadyData();
+    bool WriteReadyData(std::vector<DataBufferPtr>& data);
     void UpdateFlushTimeAfterWork();
 
     void WaitForShutdown();

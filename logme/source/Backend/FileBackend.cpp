@@ -1027,14 +1027,14 @@ bool FileBackend::WorkerFunc()
   else
     FILE_CNT(GlobalWorkerTimedRuns.fetch_add(1, std::memory_order_relaxed));
 
-  int writeLoops = 0;
+  FILE_WRCNT(int writeLoops = 0);
   for (int i = 0; i < maxWriteLoops; i++)
   {
     FILE_WRCNT(GlobalWorkerWriteLoopIterations.fetch_add(
       1
       , std::memory_order_relaxed
     ));
-    writeLoops++;
+    FILE_WRCNT(writeLoops++);
 
     if (WriteReadyData(ReadyData))
     {

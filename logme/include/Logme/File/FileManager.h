@@ -23,6 +23,21 @@ namespace Logme
     std::uint64_t WorkerRuns = 0;
     std::uint64_t BackendShutdowns = 0;
     std::uint64_t BackendRemovals = 0;
+    std::uint64_t BackendScanPasses = 0;
+    std::uint64_t BackendScanItems = 0;
+    std::uint64_t BackendScanIdleItems = 0;
+    std::uint64_t BackendScanRightNowItems = 0;
+    std::uint64_t BackendScanScheduledItems = 0;
+    std::uint64_t BackendScanNoWork = 0;
+    std::uint64_t BackendScanSelectedRightNow = 0;
+    std::uint64_t BackendScanSelectedScheduled = 0;
+    std::uint64_t TimedWaitCalls = 0;
+    std::uint64_t IdleWaitCalls = 0;
+    std::uint64_t DueScheduledRuns = 0;
+    std::uint64_t PastDueScheduledRuns = 0;
+    std::uint64_t NotifyRightNowCalls = 0;
+    std::uint64_t NotifyEarlierCalls = 0;
+    std::uint64_t NotifyIgnoredCalls = 0;
   };
 
   class FileManager
@@ -34,6 +49,8 @@ namespace Logme
     std::mutex Lock;
     std::condition_variable CV;
     std::vector<FileBackendPtr> Backends;
+    FileBackend* ActiveBackendsNext;
+    FileBackend* ActiveBackendsPrev;
 
     uint64_t CurrentEarliestTime;
 
@@ -55,6 +72,9 @@ namespace Logme
     static FileManagerCounters GetCounters();
 
   private:
+    void ActivateBackend(FileBackend* backend);
+    void DeactivateBackend(FileBackend* backend);
+    bool RemoveBackendLocked(const FileBackendPtr& backend);
     void ManagementThread();
   };
 }

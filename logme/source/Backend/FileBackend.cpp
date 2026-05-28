@@ -148,6 +148,9 @@ FileBackend::FileBackend(ChannelPtr owner)
   , ShutdownFlag(false)
   , ShutdownCalled(owner == nullptr)
   , FlushTime(0)
+  , ActiveNext(nullptr)
+  , ActivePrev(nullptr)
+  , ActiveLinked(false)
   , Queue(
     Owner.get()
     , []

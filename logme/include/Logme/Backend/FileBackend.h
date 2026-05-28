@@ -133,6 +133,10 @@ namespace Logme
     std::atomic<bool> ShutdownCalled;
     std::atomic<uint64_t> FlushTime;
 
+    FileBackend* ActiveNext;
+    FileBackend* ActivePrev;
+    bool ActiveLinked;
+
     std::mutex BufferLock;
 
     BufferQueue Queue;

@@ -14,6 +14,7 @@
 
 #include <Logme/File/exe_path.h>
 
+#include <Logme/File/FileManager.h>
 #include <Logme/File/FileManagerFactory.h>
 #include <Logme/Logger.h>
 #include <Logme/Logme.h>
@@ -162,6 +163,7 @@ FileBackend::FileBackend(ChannelPtr owner)
       o.CacheContext = owner.get();
       o.TakeCachedBuffer = &FileBackend::TakeCachedDataBuffer;
       o.ReturnCachedBuffer = &FileBackend::ReturnCachedDataBuffer;
+      o.CountDataBufferAllocation = &FileBackend::CountDataBufferAllocation;
       return o;
     }()
     , GetMemoryUsageTracker()
@@ -375,6 +377,12 @@ bool FileBackend::ReturnCachedDataBuffer(void* context, DataBufferPtr buffer)
     std::move(buffer)
     , GetDataBufferCacheLimit()
   );
+}
+
+void FileBackend::CountDataBufferAllocation(void* context)
+{
+  (void)context;
+  FileManager::CountDataBufferAllocation();
 }
 
 std::string FileBackend::FormatDetails()

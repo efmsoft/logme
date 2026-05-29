@@ -84,8 +84,11 @@ namespace
     return Logme::FileManager::GetCounters().CurrentActiveDepth == 0;
   }
 
-  bool WaitForDataBufferCacheReturns(
-    std::uint64_t value
+  template <typename Getter>
+  bool WaitForCounterIncrease(
+    Getter getter
+    , uint64_t before
+    , uint64_t delta
     , std::chrono::milliseconds timeout
   )
   {
@@ -93,33 +96,13 @@ namespace
 
     while (std::chrono::steady_clock::now() < deadline)
     {
-      auto counters = Logme::FileManager::GetCounters();
-      if (counters.DataBufferCacheReturns >= value)
+      if (getter() >= before + delta)
         return true;
 
       std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
-    return Logme::FileManager::GetCounters().DataBufferCacheReturns >= value;
-  }
-
-  bool WaitForDataBufferCacheHits(
-    std::uint64_t value
-    , std::chrono::milliseconds timeout
-  )
-  {
-    auto deadline = std::chrono::steady_clock::now() + timeout;
-
-    while (std::chrono::steady_clock::now() < deadline)
-    {
-      auto counters = Logme::FileManager::GetCounters();
-      if (counters.DataBufferCacheHits >= value)
-        return true;
-
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-
-    return Logme::FileManager::GetCounters().DataBufferCacheHits >= value;
+    return getter() >= before + delta;
   }
 
   class FlushAfterGuard
@@ -147,6 +130,9 @@ namespace
     explicit DataBufferCacheLimitGuard(size_t value)
       : OldValue(Logme::FileBackend::GetDataBufferCacheLimit())
     {
+      if (value != 0)
+        Logme::FileBackend::SetDataBufferCacheLimit(0);
+
       Logme::FileBackend::SetDataBufferCacheLimit(value);
     }
 
@@ -235,6 +221,10 @@ namespace
       << " MaxScheduledDelayMs=" << after.MaxScheduledDelayMs
       << " CurrentActiveDepth=" << after.CurrentActiveDepth
       << " MaxActiveDepth=" << after.MaxActiveDepth
+      << " DataBufferAllocations=" << Diff(before.DataBufferAllocations, after.DataBufferAllocations)
+      << " DataBufferReuses=" << Diff(before.DataBufferReuses, after.DataBufferReuses)
+      << " DataBufferCacheHits=" << Diff(before.DataBufferCacheHits, after.DataBufferCacheHits)
+      << " DataBufferCacheReturns=" << Diff(before.DataBufferCacheReturns, after.DataBufferCacheReturns)
       << std::endl;
   }
 }
@@ -445,8 +435,6 @@ TEST(FileManagerCounters, DataBufferCacheReusesInitialBuffer)
   ASSERT_TRUE(WaitForManagerIdle(std::chrono::milliseconds(1000)));
 
   DataBufferCacheLimitGuard cacheLimit(2);
-  Logme::FileBackend::SetDataBufferCacheLimit(0);
-  Logme::FileBackend::SetDataBufferCacheLimit(2);
 
   auto before = Logme::FileManager::GetCounters();
 
@@ -461,21 +449,34 @@ TEST(FileManagerCounters, DataBufferCacheReusesInitialBuffer)
     file.reset();
   }
 
-  ASSERT_TRUE(WaitForManagerIdle(std::chrono::milliseconds(1000)));
-  ASSERT_TRUE(WaitForDataBufferCacheReturns(
-    before.DataBufferCacheReturns + 1
-    , std::chrono::milliseconds(1000)
+  ASSERT_TRUE(WaitForCounterIncrease(
+    []
+    {
+      return Logme::FileManager::GetCounters().DataBufferCacheReturns;
+    }
+    , before.DataBufferCacheReturns
+    , 1
+    , std::chrono::milliseconds(2000)
   ));
 
   auto afterFirst = Logme::FileManager::GetCounters();
-  EXPECT_GE(
-    Diff(before.DataBufferCacheReturns, afterFirst.DataBufferCacheReturns)
-    , 1u
-  );
+  EXPECT_GE(Diff(before.DataBufferAllocations, afterFirst.DataBufferAllocations), 1u);
+  EXPECT_EQ(0u, Diff(before.DataBufferReuses, afterFirst.DataBufferReuses));
   EXPECT_LE(afterFirst.DataBufferCacheDepth, 2u);
 
   {
     auto file = std::make_unique<FileFixture>("data-buffer-cache-second");
+
+    ASSERT_TRUE(WaitForCounterIncrease(
+      []
+      {
+        return Logme::FileManager::GetCounters().DataBufferReuses;
+      }
+      , afterFirst.DataBufferReuses
+      , 1
+      , std::chrono::milliseconds(2000)
+    ));
+
     LogmeI(file->ChannelId, "data-buffer-cache-second-message");
     ASSERT_TRUE(WaitForText(
       file->Path
@@ -485,17 +486,21 @@ TEST(FileManagerCounters, DataBufferCacheReusesInitialBuffer)
     file.reset();
   }
 
-  ASSERT_TRUE(WaitForManagerIdle(std::chrono::milliseconds(1000)));
-  ASSERT_TRUE(WaitForDataBufferCacheHits(
-    afterFirst.DataBufferCacheHits + 1
-    , std::chrono::milliseconds(1000)
+  ASSERT_TRUE(WaitForCounterIncrease(
+    []
+    {
+      return Logme::FileManager::GetCounters().DataBufferCacheReturns;
+    }
+    , afterFirst.DataBufferCacheReturns
+    , 1
+    , std::chrono::milliseconds(2000)
   ));
 
   auto afterSecond = Logme::FileManager::GetCounters();
-  EXPECT_GE(
+  EXPECT_GE(Diff(afterFirst.DataBufferReuses, afterSecond.DataBufferReuses), 1u);
+  EXPECT_EQ(
     Diff(afterFirst.DataBufferCacheHits, afterSecond.DataBufferCacheHits)
-    , 1u
+    , Diff(afterFirst.DataBufferReuses, afterSecond.DataBufferReuses)
   );
   EXPECT_LE(afterSecond.DataBufferCacheDepth, 2u);
-
 }

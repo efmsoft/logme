@@ -225,6 +225,7 @@ namespace Logme
       , std::size_t capacity
     );
     static bool ReturnCachedDataBuffer(void* context, DataBufferPtr buffer);
+    static void CountDataBufferAllocation(void* context);
   
   public:
   

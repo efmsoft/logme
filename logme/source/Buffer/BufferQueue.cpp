@@ -1,5 +1,6 @@
 #include <Logme/Buffer/BufferQueue.h>
 #include <Logme/Channel.h>
+#include <Logme/File/FileManager.h>
 
 using namespace Logme;
 
@@ -49,6 +50,7 @@ BufferQueue::BufferQueue(
   {
     Current.reset(new DataBuffer(options.BufferSize, MemoryTracker));
     CountAllocated();
+    FileManager::CountDataBufferAllocation();
   }
 
   TotalBuffers = 1;
@@ -491,7 +493,10 @@ DataBufferPtr BufferQueue::TryCreateBuffer()
   }
 
   if (allocated)
+  {
     CountAllocated();
+    FileManager::CountDataBufferAllocation();
+  }
 
   return buffer;
 }

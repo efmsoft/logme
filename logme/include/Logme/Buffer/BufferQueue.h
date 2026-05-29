@@ -32,6 +32,7 @@ namespace Logme
       void* context
       , DataBufferPtr buffer
     );
+    typedef void (*DataBufferCounterFunc)(void* context);
 
   private:
 
@@ -52,6 +53,7 @@ namespace Logme
       void* CacheContext = nullptr;
       TakeCachedBufferFunc TakeCachedBuffer = nullptr;
       ReturnCachedBufferFunc ReturnCachedBuffer = nullptr;
+      DataBufferCounterFunc CountDataBufferAllocation = nullptr;
     };
 
     Options OptionsValue;

@@ -54,6 +54,8 @@ namespace
   std::atomic<std::uint64_t> GlobalDataBufferCacheDrops(0);
   std::atomic<std::uint64_t> GlobalDataBufferCacheDepth(0);
   std::atomic<std::uint64_t> GlobalDataBufferCacheMaxDepth(0);
+  std::atomic<std::uint64_t> GlobalDataBufferAllocations(0);
+  std::atomic<std::uint64_t> GlobalDataBufferReuses(0);
 
   constexpr std::uint64_t SCHEDULED_RUN_GAP_MS = 20;
 
@@ -159,9 +161,20 @@ FileManagerCounters FileManager::GetCounters()
     GlobalDataBufferCacheDepth.load(std::memory_order_relaxed);
   out.DataBufferCacheMaxDepth =
     GlobalDataBufferCacheMaxDepth.load(std::memory_order_relaxed);
+  out.DataBufferAllocations =
+    GlobalDataBufferAllocations.load(std::memory_order_relaxed);
+  out.DataBufferReuses =
+    GlobalDataBufferReuses.load(std::memory_order_relaxed);
   return out;
 }
 
+void FileManager::CountDataBufferAllocation()
+{
+  FILE_CNT(GlobalDataBufferAllocations.fetch_add(
+    1
+    , std::memory_order_relaxed
+  ));
+}
 
 DataBufferPtr FileManager::TakeDataBuffer(
   MemoryUsageTracker* memoryTracker
@@ -199,6 +212,10 @@ DataBufferPtr FileManager::TakeDataBuffer(
   buffer->Reset();
 
   FILE_CNT(GlobalDataBufferCacheHits.fetch_add(
+    1
+    , std::memory_order_relaxed
+  ));
+  FILE_CNT(GlobalDataBufferReuses.fetch_add(
     1
     , std::memory_order_relaxed
   ));
@@ -292,6 +309,18 @@ FileManager::~FileManager()
     backend->OnShutdown();
   }
 
+  Backends.clear();
+
+  if (!DataBufferCache.empty())
+  {
+    std::size_t count = DataBufferCache.size();
+    DataBufferCache.clear();
+    FILE_CNT(GlobalDataBufferCacheDepth.fetch_sub(
+      count
+      , std::memory_order_relaxed
+    ));
+  }
+
 #if FILE_ENABLE_COUNTERS || FILE_ENABLE_WRITE_READY_COUNTERS || FILE_ENABLE_FLUSH_SOURCE_COUNTERS
   {
     const FileManagerCounters mc = GetCounters();
@@ -341,7 +370,9 @@ FileManager::~FileManager()
       "DataBufferCacheReturns=%llu "
       "DataBufferCacheDrops=%llu "
       "DataBufferCacheDepth=%llu "
-      "DataBufferCacheMaxDepth=%llu\n"
+      "DataBufferCacheMaxDepth=%llu "
+      "DataBufferAllocations=%llu "
+      "DataBufferReuses=%llu\n"
       , (unsigned long long)mc.AddBackendCalls
       , (unsigned long long)mc.NotifyCalls
       , (unsigned long long)mc.RescheduleSignals
@@ -385,6 +416,8 @@ FileManager::~FileManager()
       , (unsigned long long)mc.DataBufferCacheDrops
       , (unsigned long long)mc.DataBufferCacheDepth
       , (unsigned long long)mc.DataBufferCacheMaxDepth
+      , (unsigned long long)mc.DataBufferAllocations
+      , (unsigned long long)mc.DataBufferReuses
     );
 
     printf(

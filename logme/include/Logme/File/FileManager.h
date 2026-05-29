@@ -56,6 +56,8 @@ namespace Logme
     std::uint64_t DataBufferCacheDrops = 0;
     std::uint64_t DataBufferCacheDepth = 0;
     std::uint64_t DataBufferCacheMaxDepth = 0;
+    std::uint64_t DataBufferAllocations = 0;
+    std::uint64_t DataBufferReuses = 0;
   };
 
   class FileManager
@@ -89,6 +91,7 @@ namespace Logme
 
     bool TestFileInUse(const std::string& file);
     static FileManagerCounters GetCounters();
+    static void CountDataBufferAllocation();
 
     DataBufferPtr TakeDataBuffer(
       MemoryUsageTracker* memoryTracker

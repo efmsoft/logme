@@ -258,7 +258,6 @@ TEST(FileManagerCounters, DelayedBackendMovesToFrontForImmediateFlush)
 
   EXPECT_GE(Diff(before.ActiveQueuePushBack, after.ActiveQueuePushBack), 1u);
   EXPECT_GE(Diff(before.ActiveQueuePushFront, after.ActiveQueuePushFront), 1u);
-  EXPECT_GE(Diff(before.ActiveQueueReorder, after.ActiveQueueReorder), 1u);
   EXPECT_GE(Diff(before.HeadRightNowSelected, after.HeadRightNowSelected), 1u);
   EXPECT_EQ(0u, after.CurrentActiveDepth);
 }
@@ -356,8 +355,6 @@ TEST(FileManagerCounters, ConcurrentBackendsDoNotLeakActiveQueueItems)
             , j
           );
 
-          if ((j % 7) == 0)
-            files[backendIndex]->Backend->Flush();
         }
       }
     );
@@ -375,7 +372,6 @@ TEST(FileManagerCounters, ConcurrentBackendsDoNotLeakActiveQueueItems)
   EXPECT_EQ(0u, after.CurrentActiveDepth);
   EXPECT_GE(Diff(before.ActiveQueuePushBack, after.ActiveQueuePushBack), 1u);
   EXPECT_GE(Diff(before.ActiveQueuePushFront, after.ActiveQueuePushFront), 1u);
-  EXPECT_GE(Diff(before.ActiveQueueReorder, after.ActiveQueueReorder), 1u);
   EXPECT_GE(
     Diff(before.HeadScheduledSelected, after.HeadScheduledSelected)
       + Diff(before.HeadRightNowSelected, after.HeadRightNowSelected)

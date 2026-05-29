@@ -292,15 +292,30 @@ TEST(FileManagerCounters, ScheduledHeadWithinGapRunsWithoutSleep)
     ));
   }
 
+  ASSERT_TRUE(WaitForManagerIdle(std::chrono::milliseconds(1000)));
+
   auto after = Logme::FileManager::GetCounters();
   CounterDelta delta{before, after};
   PrintCounters("ScheduledHeadWithinGapRunsWithoutSleep", delta);
 
+  uint64_t selected = Diff(
+    before.HeadScheduledSelected
+    , after.HeadScheduledSelected
+  );
+  uint64_t early = Diff(
+    before.ScheduledEarlyRuns
+    , after.ScheduledEarlyRuns
+  );
+  uint64_t late = Diff(
+    before.ScheduledLateRuns
+    , after.ScheduledLateRuns
+  );
+
   EXPECT_GE(Diff(before.ActiveQueuePushBack, after.ActiveQueuePushBack), 2u);
-  EXPECT_GE(Diff(before.HeadScheduledSelected, after.HeadScheduledSelected), 2u);
-  EXPECT_LE(Diff(before.HeadScheduledSelected, after.HeadScheduledSelected), 4u);
-  EXPECT_GE(Diff(before.ScheduledEarlyRuns, after.ScheduledEarlyRuns), 1u);
-  EXPECT_LE(Diff(before.ScheduledEarlyRuns, after.ScheduledEarlyRuns), 2u);
+  EXPECT_GE(selected, 2u);
+  EXPECT_LE(selected, 4u);
+  EXPECT_EQ(selected, early + late);
+  EXPECT_LE(early, 2u);
   EXPECT_EQ(0u, after.CurrentActiveDepth);
 }
 

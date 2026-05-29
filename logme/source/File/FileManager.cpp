@@ -260,6 +260,8 @@ bool FileManager::ReturnDataBuffer(
     , std::memory_order_relaxed
   ));
   FILE_CNT(UpdateMaxCounter(GlobalDataBufferCacheMaxDepth, depth));
+  
+  (void)depth;
   return true;
 }
 
@@ -319,6 +321,8 @@ FileManager::~FileManager()
       count
       , std::memory_order_relaxed
     ));
+
+    (void)count;
   }
 
 #if FILE_ENABLE_COUNTERS || FILE_ENABLE_WRITE_READY_COUNTERS || FILE_ENABLE_FLUSH_SOURCE_COUNTERS

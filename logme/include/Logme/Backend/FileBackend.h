@@ -9,8 +9,8 @@
 #include <Logme/Backend/MemoryTrackedBackend.h>
 #include <Logme/Buffer/BufferQueue.h>
 #include <Logme/DayChangeDetector.h>
-#include <Logme/File/file_io.h>
 #include <Logme/File/buffered_file_io.h>
+#include <Logme/File/file_io.h>
 #include <Logme/Obfuscate.h>
 #include <Logme/Types.h>
 

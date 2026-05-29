@@ -2,9 +2,9 @@
 
 #include <condition_variable>
 #include <mutex>
-#include <vector>
 #include <stdint.h>
 #include <thread>
+#include <vector>
 
 #include <Logme/Backend/FileBackend.h>
 #include <Logme/Buffer/BufferCounters.h>
@@ -23,14 +23,9 @@ namespace Logme
     std::uint64_t WorkerRuns = 0;
     std::uint64_t BackendShutdowns = 0;
     std::uint64_t BackendRemovals = 0;
-    std::uint64_t BackendScanPasses = 0;
-    std::uint64_t BackendScanItems = 0;
-    std::uint64_t BackendScanIdleItems = 0;
-    std::uint64_t BackendScanRightNowItems = 0;
-    std::uint64_t BackendScanScheduledItems = 0;
-    std::uint64_t BackendScanNoWork = 0;
-    std::uint64_t BackendScanSelectedRightNow = 0;
-    std::uint64_t BackendScanSelectedScheduled = 0;
+    std::uint64_t ActiveQueueStaleItems = 0;
+    std::uint64_t HeadRightNowChecks = 0;
+    std::uint64_t HeadScheduledChecks = 0;
     std::uint64_t TimedWaitCalls = 0;
     std::uint64_t IdleWaitCalls = 0;
     std::uint64_t DueScheduledRuns = 0;
@@ -38,6 +33,23 @@ namespace Logme
     std::uint64_t NotifyRightNowCalls = 0;
     std::uint64_t NotifyEarlierCalls = 0;
     std::uint64_t NotifyIgnoredCalls = 0;
+    std::uint64_t ActiveQueuePushFront = 0;
+    std::uint64_t ActiveQueuePushBack = 0;
+    std::uint64_t ActiveQueueSortedInsert = 0;
+    std::uint64_t ActiveQueueRemove = 0;
+    std::uint64_t ActiveQueueReorder = 0;
+    std::uint64_t ActiveQueueEmpty = 0;
+    std::uint64_t CurrentActiveDepth = 0;
+    std::uint64_t MaxActiveDepth = 0;
+    std::uint64_t HeadRightNowSelected = 0;
+    std::uint64_t HeadScheduledSelected = 0;
+    std::uint64_t TimedWaitTimeouts = 0;
+    std::uint64_t TimedWaitReschedules = 0;
+    std::uint64_t IdleWaitReschedules = 0;
+    std::uint64_t ScheduledEarlyRuns = 0;
+    std::uint64_t ScheduledLateRuns = 0;
+    std::uint64_t TotalScheduledDelayMs = 0;
+    std::uint64_t MaxScheduledDelayMs = 0;
   };
 
   class FileManager
@@ -72,7 +84,10 @@ namespace Logme
     static FileManagerCounters GetCounters();
 
   private:
-    void ActivateBackend(FileBackend* backend);
+    void LinkBackendFront(FileBackend* backend);
+    void LinkBackendBack(FileBackend* backend);
+    void LinkBackendBefore(FileBackend* backend, FileBackend* before);
+    void ActivateBackend(FileBackend* backend, uint64_t when);
     void DeactivateBackend(FileBackend* backend);
     bool RemoveBackendLocked(const FileBackendPtr& backend);
     void ManagementThread();

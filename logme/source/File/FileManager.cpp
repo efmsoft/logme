@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <atomic>
 #include <cstdio>
 
 #include <Logme/Backend/FileBackend.h>
@@ -20,14 +21,9 @@ namespace
   std::atomic<std::uint64_t> GlobalWorkerRuns(0);
   std::atomic<std::uint64_t> GlobalBackendShutdowns(0);
   std::atomic<std::uint64_t> GlobalBackendRemovals(0);
-  std::atomic<std::uint64_t> GlobalBackendScanPasses(0);
-  std::atomic<std::uint64_t> GlobalBackendScanItems(0);
-  std::atomic<std::uint64_t> GlobalBackendScanIdleItems(0);
-  std::atomic<std::uint64_t> GlobalBackendScanRightNowItems(0);
-  std::atomic<std::uint64_t> GlobalBackendScanScheduledItems(0);
-  std::atomic<std::uint64_t> GlobalBackendScanNoWork(0);
-  std::atomic<std::uint64_t> GlobalBackendScanSelectedRightNow(0);
-  std::atomic<std::uint64_t> GlobalBackendScanSelectedScheduled(0);
+  std::atomic<std::uint64_t> GlobalActiveQueueStaleItems(0);
+  std::atomic<std::uint64_t> GlobalHeadRightNowChecks(0);
+  std::atomic<std::uint64_t> GlobalHeadScheduledChecks(0);
   std::atomic<std::uint64_t> GlobalTimedWaitCalls(0);
   std::atomic<std::uint64_t> GlobalIdleWaitCalls(0);
   std::atomic<std::uint64_t> GlobalDueScheduledRuns(0);
@@ -35,6 +31,58 @@ namespace
   std::atomic<std::uint64_t> GlobalNotifyRightNowCalls(0);
   std::atomic<std::uint64_t> GlobalNotifyEarlierCalls(0);
   std::atomic<std::uint64_t> GlobalNotifyIgnoredCalls(0);
+  std::atomic<std::uint64_t> GlobalActiveQueuePushFront(0);
+  std::atomic<std::uint64_t> GlobalActiveQueuePushBack(0);
+  std::atomic<std::uint64_t> GlobalActiveQueueSortedInsert(0);
+  std::atomic<std::uint64_t> GlobalActiveQueueRemove(0);
+  std::atomic<std::uint64_t> GlobalActiveQueueReorder(0);
+  std::atomic<std::uint64_t> GlobalActiveQueueEmpty(0);
+  std::atomic<std::uint64_t> GlobalCurrentActiveDepth(0);
+  std::atomic<std::uint64_t> GlobalMaxActiveDepth(0);
+  std::atomic<std::uint64_t> GlobalHeadRightNowSelected(0);
+  std::atomic<std::uint64_t> GlobalHeadScheduledSelected(0);
+  std::atomic<std::uint64_t> GlobalTimedWaitTimeouts(0);
+  std::atomic<std::uint64_t> GlobalTimedWaitReschedules(0);
+  std::atomic<std::uint64_t> GlobalIdleWaitReschedules(0);
+  std::atomic<std::uint64_t> GlobalScheduledEarlyRuns(0);
+  std::atomic<std::uint64_t> GlobalScheduledLateRuns(0);
+  std::atomic<std::uint64_t> GlobalTotalScheduledDelayMs(0);
+  std::atomic<std::uint64_t> GlobalMaxScheduledDelayMs(0);
+
+  constexpr std::uint64_t SCHEDULED_RUN_GAP_MS = 20;
+
+#if FILE_ENABLE_COUNTERS
+  void UpdateMaxCounter(
+    std::atomic<std::uint64_t>& counter
+    , std::uint64_t value
+  )
+  {
+    std::uint64_t current = counter.load(std::memory_order_relaxed);
+    while (current < value &&
+      !counter.compare_exchange_weak(
+        current
+        , value
+        , std::memory_order_relaxed
+        , std::memory_order_relaxed
+      ))
+    {
+    }
+  }
+
+  void IncrementActiveDepth()
+  {
+    std::uint64_t depth = GlobalCurrentActiveDepth.fetch_add(
+      1
+      , std::memory_order_relaxed
+    ) + 1;
+    UpdateMaxCounter(GlobalMaxActiveDepth, depth);
+  }
+
+  void DecrementActiveDepth()
+  {
+    GlobalCurrentActiveDepth.fetch_sub(1, std::memory_order_relaxed);
+  }
+#endif
 }
 
 FileManagerCounters FileManager::GetCounters()
@@ -50,18 +98,11 @@ FileManagerCounters FileManager::GetCounters()
   out.WorkerRuns = GlobalWorkerRuns.load(std::memory_order_relaxed);
   out.BackendShutdowns = GlobalBackendShutdowns.load(std::memory_order_relaxed);
   out.BackendRemovals = GlobalBackendRemovals.load(std::memory_order_relaxed);
-  out.BackendScanPasses = GlobalBackendScanPasses.load(std::memory_order_relaxed);
-  out.BackendScanItems = GlobalBackendScanItems.load(std::memory_order_relaxed);
-  out.BackendScanIdleItems = GlobalBackendScanIdleItems.load(std::memory_order_relaxed);
-  out.BackendScanRightNowItems =
-    GlobalBackendScanRightNowItems.load(std::memory_order_relaxed);
-  out.BackendScanScheduledItems =
-    GlobalBackendScanScheduledItems.load(std::memory_order_relaxed);
-  out.BackendScanNoWork = GlobalBackendScanNoWork.load(std::memory_order_relaxed);
-  out.BackendScanSelectedRightNow =
-    GlobalBackendScanSelectedRightNow.load(std::memory_order_relaxed);
-  out.BackendScanSelectedScheduled =
-    GlobalBackendScanSelectedScheduled.load(std::memory_order_relaxed);
+  out.ActiveQueueStaleItems = GlobalActiveQueueStaleItems.load(std::memory_order_relaxed);
+  out.HeadRightNowChecks =
+    GlobalHeadRightNowChecks.load(std::memory_order_relaxed);
+  out.HeadScheduledChecks =
+    GlobalHeadScheduledChecks.load(std::memory_order_relaxed);
   out.TimedWaitCalls = GlobalTimedWaitCalls.load(std::memory_order_relaxed);
   out.IdleWaitCalls = GlobalIdleWaitCalls.load(std::memory_order_relaxed);
   out.DueScheduledRuns = GlobalDueScheduledRuns.load(std::memory_order_relaxed);
@@ -70,6 +111,36 @@ FileManagerCounters FileManager::GetCounters()
   out.NotifyRightNowCalls = GlobalNotifyRightNowCalls.load(std::memory_order_relaxed);
   out.NotifyEarlierCalls = GlobalNotifyEarlierCalls.load(std::memory_order_relaxed);
   out.NotifyIgnoredCalls = GlobalNotifyIgnoredCalls.load(std::memory_order_relaxed);
+  out.ActiveQueuePushFront =
+    GlobalActiveQueuePushFront.load(std::memory_order_relaxed);
+  out.ActiveQueuePushBack =
+    GlobalActiveQueuePushBack.load(std::memory_order_relaxed);
+  out.ActiveQueueSortedInsert =
+    GlobalActiveQueueSortedInsert.load(std::memory_order_relaxed);
+  out.ActiveQueueRemove =
+    GlobalActiveQueueRemove.load(std::memory_order_relaxed);
+  out.ActiveQueueReorder =
+    GlobalActiveQueueReorder.load(std::memory_order_relaxed);
+  out.ActiveQueueEmpty =
+    GlobalActiveQueueEmpty.load(std::memory_order_relaxed);
+  out.CurrentActiveDepth =
+    GlobalCurrentActiveDepth.load(std::memory_order_relaxed);
+  out.MaxActiveDepth = GlobalMaxActiveDepth.load(std::memory_order_relaxed);
+  out.HeadRightNowSelected =
+    GlobalHeadRightNowSelected.load(std::memory_order_relaxed);
+  out.HeadScheduledSelected =
+    GlobalHeadScheduledSelected.load(std::memory_order_relaxed);
+  out.TimedWaitTimeouts = GlobalTimedWaitTimeouts.load(std::memory_order_relaxed);
+  out.TimedWaitReschedules =
+    GlobalTimedWaitReschedules.load(std::memory_order_relaxed);
+  out.IdleWaitReschedules =
+    GlobalIdleWaitReschedules.load(std::memory_order_relaxed);
+  out.ScheduledEarlyRuns = GlobalScheduledEarlyRuns.load(std::memory_order_relaxed);
+  out.ScheduledLateRuns = GlobalScheduledLateRuns.load(std::memory_order_relaxed);
+  out.TotalScheduledDelayMs =
+    GlobalTotalScheduledDelayMs.load(std::memory_order_relaxed);
+  out.MaxScheduledDelayMs =
+    GlobalMaxScheduledDelayMs.load(std::memory_order_relaxed);
   return out;
 }
 
@@ -118,21 +189,33 @@ FileManager::~FileManager()
       "WorkerRuns=%llu "
       "BackendShutdowns=%llu "
       "BackendRemovals=%llu "
-      "BackendScanPasses=%llu "
-      "BackendScanItems=%llu "
-      "BackendScanIdleItems=%llu "
-      "BackendScanRightNowItems=%llu "
-      "BackendScanScheduledItems=%llu "
-      "BackendScanNoWork=%llu "
-      "BackendScanSelectedRightNow=%llu "
-      "BackendScanSelectedScheduled=%llu "
+      "ActiveQueueStaleItems=%llu "
+      "HeadRightNowChecks=%llu "
+      "HeadScheduledChecks=%llu "
       "TimedWaitCalls=%llu "
       "IdleWaitCalls=%llu "
       "DueScheduledRuns=%llu "
       "PastDueScheduledRuns=%llu "
       "NotifyRightNowCalls=%llu "
       "NotifyEarlierCalls=%llu "
-      "NotifyIgnoredCalls=%llu\n"
+      "NotifyIgnoredCalls=%llu "
+      "ActiveQueuePushFront=%llu "
+      "ActiveQueuePushBack=%llu "
+      "ActiveQueueSortedInsert=%llu "
+      "ActiveQueueRemove=%llu "
+      "ActiveQueueReorder=%llu "
+      "ActiveQueueEmpty=%llu "
+      "CurrentActiveDepth=%llu "
+      "MaxActiveDepth=%llu "
+      "HeadRightNowSelected=%llu "
+      "HeadScheduledSelected=%llu "
+      "TimedWaitTimeouts=%llu "
+      "TimedWaitReschedules=%llu "
+      "IdleWaitReschedules=%llu "
+      "ScheduledEarlyRuns=%llu "
+      "ScheduledLateRuns=%llu "
+      "TotalScheduledDelayMs=%llu "
+      "MaxScheduledDelayMs=%llu\n"
       , (unsigned long long)mc.AddBackendCalls
       , (unsigned long long)mc.NotifyCalls
       , (unsigned long long)mc.RescheduleSignals
@@ -143,14 +226,9 @@ FileManager::~FileManager()
       , (unsigned long long)mc.WorkerRuns
       , (unsigned long long)mc.BackendShutdowns
       , (unsigned long long)mc.BackendRemovals
-      , (unsigned long long)mc.BackendScanPasses
-      , (unsigned long long)mc.BackendScanItems
-      , (unsigned long long)mc.BackendScanIdleItems
-      , (unsigned long long)mc.BackendScanRightNowItems
-      , (unsigned long long)mc.BackendScanScheduledItems
-      , (unsigned long long)mc.BackendScanNoWork
-      , (unsigned long long)mc.BackendScanSelectedRightNow
-      , (unsigned long long)mc.BackendScanSelectedScheduled
+      , (unsigned long long)mc.ActiveQueueStaleItems
+      , (unsigned long long)mc.HeadRightNowChecks
+      , (unsigned long long)mc.HeadScheduledChecks
       , (unsigned long long)mc.TimedWaitCalls
       , (unsigned long long)mc.IdleWaitCalls
       , (unsigned long long)mc.DueScheduledRuns
@@ -158,6 +236,23 @@ FileManager::~FileManager()
       , (unsigned long long)mc.NotifyRightNowCalls
       , (unsigned long long)mc.NotifyEarlierCalls
       , (unsigned long long)mc.NotifyIgnoredCalls
+      , (unsigned long long)mc.ActiveQueuePushFront
+      , (unsigned long long)mc.ActiveQueuePushBack
+      , (unsigned long long)mc.ActiveQueueSortedInsert
+      , (unsigned long long)mc.ActiveQueueRemove
+      , (unsigned long long)mc.ActiveQueueReorder
+      , (unsigned long long)mc.ActiveQueueEmpty
+      , (unsigned long long)mc.CurrentActiveDepth
+      , (unsigned long long)mc.MaxActiveDepth
+      , (unsigned long long)mc.HeadRightNowSelected
+      , (unsigned long long)mc.HeadScheduledSelected
+      , (unsigned long long)mc.TimedWaitTimeouts
+      , (unsigned long long)mc.TimedWaitReschedules
+      , (unsigned long long)mc.IdleWaitReschedules
+      , (unsigned long long)mc.ScheduledEarlyRuns
+      , (unsigned long long)mc.ScheduledLateRuns
+      , (unsigned long long)mc.TotalScheduledDelayMs
+      , (unsigned long long)mc.MaxScheduledDelayMs
     );
 
     printf(
@@ -407,11 +502,8 @@ void FileManager::SetStopping()
 #endif
 }
 
-void FileManager::ActivateBackend(FileBackend* backend)
+void FileManager::LinkBackendFront(FileBackend* backend)
 {
-  if (backend == nullptr || backend->ActiveLinked)
-    return;
-
   backend->ActivePrev = nullptr;
   backend->ActiveNext = ActiveBackendsNext;
 
@@ -422,6 +514,88 @@ void FileManager::ActivateBackend(FileBackend* backend)
 
   ActiveBackendsNext = backend;
   backend->ActiveLinked = true;
+  FILE_CNT(GlobalActiveQueuePushFront.fetch_add(1, std::memory_order_relaxed));
+  FILE_CNT(IncrementActiveDepth());
+}
+
+void FileManager::LinkBackendBack(FileBackend* backend)
+{
+  backend->ActiveNext = nullptr;
+  backend->ActivePrev = ActiveBackendsPrev;
+
+  if (ActiveBackendsPrev != nullptr)
+    ActiveBackendsPrev->ActiveNext = backend;
+  else
+    ActiveBackendsNext = backend;
+
+  ActiveBackendsPrev = backend;
+  backend->ActiveLinked = true;
+  FILE_CNT(GlobalActiveQueuePushBack.fetch_add(1, std::memory_order_relaxed));
+  FILE_CNT(IncrementActiveDepth());
+}
+
+void FileManager::LinkBackendBefore(FileBackend* backend, FileBackend* before)
+{
+  if (before == nullptr)
+  {
+    LinkBackendBack(backend);
+    return;
+  }
+
+  backend->ActivePrev = before->ActivePrev;
+  backend->ActiveNext = before;
+
+  if (before->ActivePrev != nullptr)
+    before->ActivePrev->ActiveNext = backend;
+  else
+    ActiveBackendsNext = backend;
+
+  before->ActivePrev = backend;
+  backend->ActiveLinked = true;
+  FILE_CNT(GlobalActiveQueueSortedInsert.fetch_add(1, std::memory_order_relaxed));
+  FILE_CNT(IncrementActiveDepth());
+}
+
+void FileManager::ActivateBackend(FileBackend* backend, uint64_t when)
+{
+  if (backend == nullptr || when == 0)
+    return;
+
+  if (backend->ActiveLinked)
+    FILE_CNT(GlobalActiveQueueReorder.fetch_add(1, std::memory_order_relaxed));
+
+  DeactivateBackend(backend);
+
+  if (when == FileBackend::RIGHT_NOW)
+  {
+    LinkBackendFront(backend);
+    return;
+  }
+
+  if (ActiveBackendsPrev == nullptr)
+  {
+    LinkBackendBack(backend);
+    return;
+  }
+
+  uint64_t lastTime = ActiveBackendsPrev->GetFlushTime();
+  if (lastTime != FileBackend::RIGHT_NOW && lastTime <= when)
+  {
+    LinkBackendBack(backend);
+    return;
+  }
+
+  for (FileBackend* item = ActiveBackendsNext; item != nullptr; item = item->ActiveNext)
+  {
+    uint64_t itemTime = item->GetFlushTime();
+    if (itemTime != FileBackend::RIGHT_NOW && itemTime > when)
+    {
+      LinkBackendBefore(backend, item);
+      return;
+    }
+  }
+
+  LinkBackendBack(backend);
 }
 
 void FileManager::DeactivateBackend(FileBackend* backend)
@@ -442,6 +616,8 @@ void FileManager::DeactivateBackend(FileBackend* backend)
   backend->ActiveNext = nullptr;
   backend->ActivePrev = nullptr;
   backend->ActiveLinked = false;
+  FILE_CNT(GlobalActiveQueueRemove.fetch_add(1, std::memory_order_relaxed));
+  FILE_CNT(DecrementActiveDepth());
 }
 
 bool FileManager::RemoveBackendLocked(const FileBackendPtr& backend)
@@ -473,9 +649,9 @@ void FileManager::Notify(FileBackend* backend, uint64_t when)
     return;
   }
 
-  ActivateBackend(backend);
+  ActivateBackend(backend, when);
   
-  if (when == FileBackend::RIGHT_NOW || when < CurrentEarliestTime)
+  if (ActiveBackendsNext == backend || when == FileBackend::RIGHT_NOW || when < CurrentEarliestTime)
   {
     if (when == FileBackend::RIGHT_NOW)
       FILE_CNT(GlobalNotifyRightNowCalls.fetch_add(1, std::memory_order_relaxed));
@@ -515,91 +691,93 @@ void FileManager::ManagementThread()
   while (StopRequested == false)
   {
     FILE_CNT(GlobalManagementLoops.fetch_add(1, std::memory_order_relaxed));
-    FileBackend* nextToRunRaw = nullptr;
+
     FileBackendPtr nextToRun;
-    uint64_t earliest = UINT64_MAX;
-    FILE_CNT(GlobalBackendScanPasses.fetch_add(1, std::memory_order_relaxed));
+    FileBackend* nextToRunRaw = ActiveBackendsNext;
 
-    for (FileBackend* backend = ActiveBackendsNext; backend != nullptr;)
+    while (nextToRunRaw != nullptr && nextToRunRaw->GetFlushTime() == 0)
     {
-      FileBackend* next = backend->ActiveNext;
-      FILE_CNT(GlobalBackendScanItems.fetch_add(1, std::memory_order_relaxed));
-      uint64_t flushTime = backend->GetFlushTime();
-      if (flushTime == 0)
-      {
-        FILE_CNT(GlobalBackendScanIdleItems.fetch_add(1, std::memory_order_relaxed));
-        DeactivateBackend(backend);
-        backend = next;
-        continue;
-      }
-
-      if (flushTime == FileBackend::RIGHT_NOW)
-      {
-        FILE_CNT(GlobalBackendScanRightNowItems.fetch_add(1, std::memory_order_relaxed));
-        nextToRunRaw = backend;
-        earliest = 0;
-        break;
-      }
-
-      FILE_CNT(GlobalBackendScanScheduledItems.fetch_add(1, std::memory_order_relaxed));
-      if (flushTime < earliest)
-      {
-        earliest = flushTime;
-        nextToRunRaw = backend;
-      }
-
-      backend = next;
+      FILE_CNT(GlobalActiveQueueStaleItems.fetch_add(1, std::memory_order_relaxed));
+      DeactivateBackend(nextToRunRaw);
+      nextToRunRaw = ActiveBackendsNext;
     }
 
     if (nextToRunRaw == nullptr)
     {
-      FILE_CNT(GlobalBackendScanNoWork.fetch_add(1, std::memory_order_relaxed));
+      FILE_CNT(GlobalActiveQueueEmpty.fetch_add(1, std::memory_order_relaxed));
       CurrentEarliestTime = UINT64_MAX;
+
       FILE_CNT(GlobalWaitCalls.fetch_add(1, std::memory_order_relaxed));
       FILE_CNT(GlobalIdleWaitCalls.fetch_add(1, std::memory_order_relaxed));
+      
       CV.wait(lock, [&] { return StopRequested || Reschedule; });
+      
       FILE_CNT(GlobalWaitWakeups.fetch_add(1, std::memory_order_relaxed));
+      if (Reschedule)
+        FILE_CNT(GlobalIdleWaitReschedules.fetch_add(1, std::memory_order_relaxed));
       Reschedule = false;
       continue;
     }
 
-    if (earliest == 0)
-      FILE_CNT(GlobalBackendScanSelectedRightNow.fetch_add(
-        1
-        , std::memory_order_relaxed
-      ));
+    uint64_t earliest = nextToRunRaw->GetFlushTime();
+    if (earliest == FileBackend::RIGHT_NOW)
+    {
+      FILE_CNT(GlobalHeadRightNowChecks.fetch_add(1, std::memory_order_relaxed));
+      FILE_CNT(GlobalHeadRightNowSelected.fetch_add(1, std::memory_order_relaxed));
+    }
     else
     {
-      FILE_CNT(GlobalBackendScanSelectedScheduled.fetch_add(
-        1
-        , std::memory_order_relaxed
-      ));
+      FILE_CNT(GlobalHeadScheduledChecks.fetch_add(1, std::memory_order_relaxed));
       uint64_t now = GetTimeInMillisec64();
       
-      // To avoid frequent sleeping and rapid wake-ups, it's better to
-      // handle the request slightly earlier than the requested time.
-      const uint64_t MIN_WAIT = 10;
-      if (now + MIN_WAIT < earliest)
+      if (now < earliest)
       {
-        CurrentEarliestTime = earliest;
-        FILE_CNT(GlobalWaitCalls.fetch_add(1, std::memory_order_relaxed));
-        FILE_CNT(GlobalTimedWaitCalls.fetch_add(1, std::memory_order_relaxed));
-        CV.wait_for(
-          lock
-          , std::chrono::milliseconds(earliest - now), [&] { 
-            return StopRequested || Reschedule; 
-          }
-        );
-        FILE_CNT(GlobalWaitWakeups.fetch_add(1, std::memory_order_relaxed));
+        uint64_t remaining = earliest - now;
 
-        Reschedule = false;
-        CurrentEarliestTime = UINT64_MAX;
-        continue;
+        if (remaining > SCHEDULED_RUN_GAP_MS)
+        {
+          CurrentEarliestTime = earliest;
+          FILE_CNT(GlobalWaitCalls.fetch_add(1, std::memory_order_relaxed));
+          FILE_CNT(GlobalTimedWaitCalls.fetch_add(1, std::memory_order_relaxed));
+          CV.wait_for(
+            lock
+            , std::chrono::milliseconds(remaining), [&] {
+              return StopRequested || Reschedule;
+            }
+          );
+          FILE_CNT(GlobalWaitWakeups.fetch_add(1, std::memory_order_relaxed));
+          if (Reschedule)
+            FILE_CNT(GlobalTimedWaitReschedules.fetch_add(1, std::memory_order_relaxed));
+          else if (StopRequested == false)
+            FILE_CNT(GlobalTimedWaitTimeouts.fetch_add(1, std::memory_order_relaxed));
+
+          Reschedule = false;
+          CurrentEarliestTime = UINT64_MAX;
+          continue;
+        }
+
+        nextToRunRaw->FlushTime.store(
+          FileBackend::RIGHT_NOW
+          , std::memory_order_relaxed
+        );
+        FILE_CNT(GlobalScheduledEarlyRuns.fetch_add(1, std::memory_order_relaxed));
       }
 
+      FILE_CNT(GlobalHeadScheduledSelected.fetch_add(1, std::memory_order_relaxed));
       FILE_CNT(GlobalDueScheduledRuns.fetch_add(1, std::memory_order_relaxed));
-      if (now >= earliest)
-        FILE_CNT(GlobalPastDueScheduledRuns.fetch_add(1, std::memory_order_relaxed));
+#if FILE_ENABLE_COUNTERS
+      if (now > earliest)
+      {
+        uint64_t delay = now - earliest;
+        GlobalPastDueScheduledRuns.fetch_add(1, std::memory_order_relaxed);
+        GlobalScheduledLateRuns.fetch_add(1, std::memory_order_relaxed);
+        GlobalTotalScheduledDelayMs.fetch_add(
+          delay
+          , std::memory_order_relaxed
+        );
+        UpdateMaxCounter(GlobalMaxScheduledDelayMs, delay);
+      }
+#endif
     }
 
     auto backendPos = std::find_if(
@@ -618,6 +796,7 @@ void FileManager::ManagementThread()
     }
 
     nextToRun = *backendPos;
+    DeactivateBackend(nextToRunRaw);
 
     lock.unlock();
     
@@ -637,10 +816,11 @@ void FileManager::ManagementThread()
     else
     {
       lock.lock();
-      if (nextToRun->GetFlushTime() == 0)
+      uint64_t flushTime = nextToRun->GetFlushTime();
+      if (flushTime == 0)
         DeactivateBackend(nextToRun.get());
       else
-        ActivateBackend(nextToRun.get());
+        ActivateBackend(nextToRun.get(), flushTime);
     }
   }
 }

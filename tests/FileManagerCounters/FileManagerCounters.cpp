@@ -84,6 +84,44 @@ namespace
     return Logme::FileManager::GetCounters().CurrentActiveDepth == 0;
   }
 
+  bool WaitForDataBufferCacheReturns(
+    std::uint64_t value
+    , std::chrono::milliseconds timeout
+  )
+  {
+    auto deadline = std::chrono::steady_clock::now() + timeout;
+
+    while (std::chrono::steady_clock::now() < deadline)
+    {
+      auto counters = Logme::FileManager::GetCounters();
+      if (counters.DataBufferCacheReturns >= value)
+        return true;
+
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+    return Logme::FileManager::GetCounters().DataBufferCacheReturns >= value;
+  }
+
+  bool WaitForDataBufferCacheHits(
+    std::uint64_t value
+    , std::chrono::milliseconds timeout
+  )
+  {
+    auto deadline = std::chrono::steady_clock::now() + timeout;
+
+    while (std::chrono::steady_clock::now() < deadline)
+    {
+      auto counters = Logme::FileManager::GetCounters();
+      if (counters.DataBufferCacheHits >= value)
+        return true;
+
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+    return Logme::FileManager::GetCounters().DataBufferCacheHits >= value;
+  }
+
   class FlushAfterGuard
   {
     uint64_t OldValue;
@@ -407,6 +445,8 @@ TEST(FileManagerCounters, DataBufferCacheReusesInitialBuffer)
   ASSERT_TRUE(WaitForManagerIdle(std::chrono::milliseconds(1000)));
 
   DataBufferCacheLimitGuard cacheLimit(2);
+  Logme::FileBackend::SetDataBufferCacheLimit(0);
+  Logme::FileBackend::SetDataBufferCacheLimit(2);
 
   auto before = Logme::FileManager::GetCounters();
 
@@ -422,6 +462,10 @@ TEST(FileManagerCounters, DataBufferCacheReusesInitialBuffer)
   }
 
   ASSERT_TRUE(WaitForManagerIdle(std::chrono::milliseconds(1000)));
+  ASSERT_TRUE(WaitForDataBufferCacheReturns(
+    before.DataBufferCacheReturns + 1
+    , std::chrono::milliseconds(1000)
+  ));
 
   auto afterFirst = Logme::FileManager::GetCounters();
   EXPECT_GE(
@@ -442,6 +486,10 @@ TEST(FileManagerCounters, DataBufferCacheReusesInitialBuffer)
   }
 
   ASSERT_TRUE(WaitForManagerIdle(std::chrono::milliseconds(1000)));
+  ASSERT_TRUE(WaitForDataBufferCacheHits(
+    afterFirst.DataBufferCacheHits + 1
+    , std::chrono::milliseconds(1000)
+  ));
 
   auto afterSecond = Logme::FileManager::GetCounters();
   EXPECT_GE(

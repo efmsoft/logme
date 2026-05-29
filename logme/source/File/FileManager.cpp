@@ -942,6 +942,7 @@ void FileManager::ManagementThread()
       lock.unlock();
 
       nextToRun->OnShutdown();
+      nextToRun.reset();
 
       lock.lock();
     }

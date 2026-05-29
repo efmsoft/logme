@@ -136,7 +136,7 @@ namespace
 size_t FileBackend::MaxSizeDefault = FileBackend::MAX_SIZE_DEFAULT;
 size_t FileBackend::QueueSizeLimitDefault = FileBackend::QUEUE_SIZE_LIMIT;
 uint64_t FileBackend::FlushAfterDefault = FileBackend::FLUSH_AFTER_DEFAULT;
-std::atomic<size_t> FileBackend::DataBufferCacheLimit(8);
+std::atomic<size_t> FileBackend::DataBufferCacheLimit(16);
 
 FileBackend::FileBackend(ChannelPtr owner)
   : MemoryTrackedBackend(owner, TYPE_ID)

@@ -23,6 +23,19 @@ namespace Logme
     MemoryUsageTracker* MemoryTracker;
 
   public:
+    typedef DataBufferPtr (*TakeCachedBufferFunc)(
+      void* context
+      , MemoryUsageTracker* memoryTracker
+      , std::size_t capacity
+    );
+    typedef bool (*ReturnCachedBufferFunc)(
+      void* context
+      , DataBufferPtr buffer
+    );
+
+  private:
+
+  public:
     enum class SoftFlushState
     {
       EMPTY,
@@ -36,6 +49,9 @@ namespace Logme
       std::size_t BaseFreeLimit = 6;
       std::size_t MaxTotalBuffers = 0;
       std::size_t MaxAdaptiveFreeLimit = 0;
+      void* CacheContext = nullptr;
+      TakeCachedBufferFunc TakeCachedBuffer = nullptr;
+      ReturnCachedBufferFunc ReturnCachedBuffer = nullptr;
     };
 
     Options OptionsValue;
@@ -75,6 +91,7 @@ namespace Logme
       , const Options& options
       , MemoryUsageTracker* memoryTracker
     );
+    ~BufferQueue();
 
     bool Append(
       const char* p
@@ -103,7 +120,9 @@ namespace Logme
 
   private:
     DataBufferPtr TryTakeFreeBuffer();
+    DataBufferPtr TryTakeCachedBuffer();
     DataBufferPtr TryCreateBuffer();
+    bool TryReturnCachedBuffer(DataBufferPtr buffer);
     void ReleaseBuffer(DataBufferPtr buffer);
     void EnqueueReady(DataBufferPtr buffer, bool& needSignal);
 

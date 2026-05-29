@@ -60,3 +60,42 @@ void FileManagerFactory::SetStopping()
   if (instance)
     instance->SetStopping();
 }
+DataBufferPtr FileManagerFactory::TakeDataBuffer(
+  MemoryUsageTracker* memoryTracker
+  , std::size_t capacity
+)
+{
+  std::unique_lock guard(Lock);
+  std::shared_ptr<FileManager> instance = Instance;
+  guard.unlock();
+
+  if (!instance)
+    return nullptr;
+
+  return instance->TakeDataBuffer(memoryTracker, capacity);
+}
+
+bool FileManagerFactory::ReturnDataBuffer(
+  DataBufferPtr buffer
+  , std::size_t cacheLimit
+)
+{
+  std::unique_lock guard(Lock);
+  std::shared_ptr<FileManager> instance = Instance;
+  guard.unlock();
+
+  if (!instance)
+    return false;
+
+  return instance->ReturnDataBuffer(std::move(buffer), cacheLimit);
+}
+
+void FileManagerFactory::TrimDataBufferCache(std::size_t cacheLimit)
+{
+  std::unique_lock guard(Lock);
+  std::shared_ptr<FileManager> instance = Instance;
+  guard.unlock();
+
+  if (instance)
+    instance->TrimDataBufferCache(cacheLimit);
+}

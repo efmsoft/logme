@@ -50,6 +50,12 @@ namespace Logme
     std::uint64_t ScheduledLateRuns = 0;
     std::uint64_t TotalScheduledDelayMs = 0;
     std::uint64_t MaxScheduledDelayMs = 0;
+    std::uint64_t DataBufferCacheHits = 0;
+    std::uint64_t DataBufferCacheMisses = 0;
+    std::uint64_t DataBufferCacheReturns = 0;
+    std::uint64_t DataBufferCacheDrops = 0;
+    std::uint64_t DataBufferCacheDepth = 0;
+    std::uint64_t DataBufferCacheMaxDepth = 0;
   };
 
   class FileManager
@@ -65,6 +71,7 @@ namespace Logme
     FileBackend* ActiveBackendsPrev;
 
     uint64_t CurrentEarliestTime;
+    std::vector<DataBufferPtr> DataBufferCache;
 
 #ifdef _WIN32
     unsigned ThreadID;
@@ -82,6 +89,13 @@ namespace Logme
 
     bool TestFileInUse(const std::string& file);
     static FileManagerCounters GetCounters();
+
+    DataBufferPtr TakeDataBuffer(
+      MemoryUsageTracker* memoryTracker
+      , std::size_t capacity
+    );
+    bool ReturnDataBuffer(DataBufferPtr buffer, std::size_t cacheLimit);
+    void TrimDataBufferCache(std::size_t cacheLimit);
 
   private:
     void LinkBackendFront(FileBackend* backend);

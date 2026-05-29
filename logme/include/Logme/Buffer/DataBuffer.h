@@ -32,6 +32,8 @@ namespace Logme
     char* Data();
 
     void Reset();
+    void AttachMemoryTracker(MemoryUsageTracker* memoryTracker);
+    void DetachMemoryTracker();
 
     bool CanAppend(std::size_t cb) const;
     void Append(const char* p, std::size_t cb);

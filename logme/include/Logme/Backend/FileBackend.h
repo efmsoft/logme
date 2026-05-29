@@ -152,6 +152,7 @@ namespace Logme
     static size_t MaxSizeDefault;
     static size_t QueueSizeLimitDefault;
     static uint64_t FlushAfterDefault;
+    static std::atomic<size_t> DataBufferCacheLimit;
 
     NonceGen Nonce;
     std::unique_ptr<BufferedFileIo> BufferedIo;
@@ -203,6 +204,9 @@ namespace Logme
     LOGMELNK static uint64_t GetFlushAfterDefault();
     LOGMELNK static void SetFlushAfterDefault(uint64_t ms);
 
+    LOGMELNK static size_t GetDataBufferCacheLimit();
+    LOGMELNK static void SetDataBufferCacheLimit(size_t count);
+
     using FileIo::Truncate;
 
     LOGMELNK bool TestFileInUse(const std::string& file) const;
@@ -213,6 +217,16 @@ namespace Logme
     LOGMELNK void AppendString(const char* text, size_t len);
     LOGMELNK void RegisterAsync();
     LOGMELNK static FileBackendCounters GetCounters();
+
+  private:
+    static DataBufferPtr TakeCachedDataBuffer(
+      void* context
+      , MemoryUsageTracker* memoryTracker
+      , std::size_t capacity
+    );
+    static bool ReturnCachedDataBuffer(void* context, DataBufferPtr buffer);
+  
+  public:
   
   protected:
     LOGMELNK void Display(Context& context) override;

@@ -101,6 +101,23 @@ namespace
     }
   };
 
+  class DataBufferCacheLimitGuard
+  {
+    size_t OldValue;
+
+  public:
+    explicit DataBufferCacheLimitGuard(size_t value)
+      : OldValue(Logme::FileBackend::GetDataBufferCacheLimit())
+    {
+      Logme::FileBackend::SetDataBufferCacheLimit(value);
+    }
+
+    ~DataBufferCacheLimitGuard()
+    {
+      Logme::FileBackend::SetDataBufferCacheLimit(OldValue);
+    }
+  };
+
   struct FileFixture
   {
     std::string ChannelName;
@@ -383,4 +400,54 @@ TEST(FileManagerCounters, ConcurrentBackendsDoNotLeakActiveQueueItems)
     , "concurrent-thread-0-message-0"
     , std::chrono::milliseconds(1000)
   ));
+}
+
+TEST(FileManagerCounters, DataBufferCacheReusesInitialBuffer)
+{
+  ASSERT_TRUE(WaitForManagerIdle(std::chrono::milliseconds(1000)));
+
+  DataBufferCacheLimitGuard cacheLimit(2);
+
+  auto before = Logme::FileManager::GetCounters();
+
+  {
+    auto file = std::make_unique<FileFixture>("data-buffer-cache-first");
+    LogmeI(file->ChannelId, "data-buffer-cache-first-message");
+    ASSERT_TRUE(WaitForText(
+      file->Path
+      , "data-buffer-cache-first-message"
+      , std::chrono::milliseconds(1000)
+    ));
+    file.reset();
+  }
+
+  ASSERT_TRUE(WaitForManagerIdle(std::chrono::milliseconds(1000)));
+
+  auto afterFirst = Logme::FileManager::GetCounters();
+  EXPECT_GE(
+    Diff(before.DataBufferCacheReturns, afterFirst.DataBufferCacheReturns)
+    , 1u
+  );
+  EXPECT_LE(afterFirst.DataBufferCacheDepth, 2u);
+
+  {
+    auto file = std::make_unique<FileFixture>("data-buffer-cache-second");
+    LogmeI(file->ChannelId, "data-buffer-cache-second-message");
+    ASSERT_TRUE(WaitForText(
+      file->Path
+      , "data-buffer-cache-second-message"
+      , std::chrono::milliseconds(1000)
+    ));
+    file.reset();
+  }
+
+  ASSERT_TRUE(WaitForManagerIdle(std::chrono::milliseconds(1000)));
+
+  auto afterSecond = Logme::FileManager::GetCounters();
+  EXPECT_GE(
+    Diff(afterFirst.DataBufferCacheHits, afterSecond.DataBufferCacheHits)
+    , 1u
+  );
+  EXPECT_LE(afterSecond.DataBufferCacheDepth, 2u);
+
 }

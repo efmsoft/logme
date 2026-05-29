@@ -48,6 +48,12 @@ namespace
   std::atomic<std::uint64_t> GlobalScheduledLateRuns(0);
   std::atomic<std::uint64_t> GlobalTotalScheduledDelayMs(0);
   std::atomic<std::uint64_t> GlobalMaxScheduledDelayMs(0);
+  std::atomic<std::uint64_t> GlobalDataBufferCacheHits(0);
+  std::atomic<std::uint64_t> GlobalDataBufferCacheMisses(0);
+  std::atomic<std::uint64_t> GlobalDataBufferCacheReturns(0);
+  std::atomic<std::uint64_t> GlobalDataBufferCacheDrops(0);
+  std::atomic<std::uint64_t> GlobalDataBufferCacheDepth(0);
+  std::atomic<std::uint64_t> GlobalDataBufferCacheMaxDepth(0);
 
   constexpr std::uint64_t SCHEDULED_RUN_GAP_MS = 20;
 
@@ -141,7 +147,121 @@ FileManagerCounters FileManager::GetCounters()
     GlobalTotalScheduledDelayMs.load(std::memory_order_relaxed);
   out.MaxScheduledDelayMs =
     GlobalMaxScheduledDelayMs.load(std::memory_order_relaxed);
+  out.DataBufferCacheHits =
+    GlobalDataBufferCacheHits.load(std::memory_order_relaxed);
+  out.DataBufferCacheMisses =
+    GlobalDataBufferCacheMisses.load(std::memory_order_relaxed);
+  out.DataBufferCacheReturns =
+    GlobalDataBufferCacheReturns.load(std::memory_order_relaxed);
+  out.DataBufferCacheDrops =
+    GlobalDataBufferCacheDrops.load(std::memory_order_relaxed);
+  out.DataBufferCacheDepth =
+    GlobalDataBufferCacheDepth.load(std::memory_order_relaxed);
+  out.DataBufferCacheMaxDepth =
+    GlobalDataBufferCacheMaxDepth.load(std::memory_order_relaxed);
   return out;
+}
+
+
+DataBufferPtr FileManager::TakeDataBuffer(
+  MemoryUsageTracker* memoryTracker
+  , std::size_t capacity
+)
+{
+  std::lock_guard guard(Lock);
+
+  if (DataBufferCache.empty())
+  {
+    FILE_CNT(GlobalDataBufferCacheMisses.fetch_add(
+      1
+      , std::memory_order_relaxed
+    ));
+    return nullptr;
+  }
+
+  DataBufferPtr buffer = std::move(DataBufferCache.back());
+  DataBufferCache.pop_back();
+  FILE_CNT(GlobalDataBufferCacheDepth.fetch_sub(
+    1
+    , std::memory_order_relaxed
+  ));
+
+  if (!buffer || buffer->Capacity() != capacity)
+  {
+    FILE_CNT(GlobalDataBufferCacheMisses.fetch_add(
+      1
+      , std::memory_order_relaxed
+    ));
+    return nullptr;
+  }
+
+  buffer->AttachMemoryTracker(memoryTracker);
+  buffer->Reset();
+
+  FILE_CNT(GlobalDataBufferCacheHits.fetch_add(
+    1
+    , std::memory_order_relaxed
+  ));
+  return buffer;
+}
+
+bool FileManager::ReturnDataBuffer(
+  DataBufferPtr buffer
+  , std::size_t cacheLimit
+)
+{
+  if (!buffer || cacheLimit == 0)
+  {
+    FILE_CNT(GlobalDataBufferCacheDrops.fetch_add(
+      1
+      , std::memory_order_relaxed
+    ));
+    return false;
+  }
+
+  std::lock_guard guard(Lock);
+
+  if (DataBufferCache.size() >= cacheLimit)
+  {
+    FILE_CNT(GlobalDataBufferCacheDrops.fetch_add(
+      1
+      , std::memory_order_relaxed
+    ));
+    return false;
+  }
+
+  buffer->Reset();
+  buffer->DetachMemoryTracker();
+  DataBufferCache.push_back(std::move(buffer));
+  std::uint64_t depth = GlobalDataBufferCacheDepth.fetch_add(
+    1
+    , std::memory_order_relaxed
+  ) + 1;
+
+  FILE_CNT(GlobalDataBufferCacheReturns.fetch_add(
+    1
+    , std::memory_order_relaxed
+  ));
+  FILE_CNT(UpdateMaxCounter(GlobalDataBufferCacheMaxDepth, depth));
+  return true;
+}
+
+void FileManager::TrimDataBufferCache(std::size_t cacheLimit)
+{
+  std::lock_guard guard(Lock);
+
+  while (DataBufferCache.size() > cacheLimit)
+  {
+    DataBufferCache.pop_back();
+    FILE_CNT(GlobalDataBufferCacheDrops.fetch_add(
+      1
+      , std::memory_order_relaxed
+    ));
+    FILE_CNT(GlobalDataBufferCacheDepth.fetch_sub(
+      1
+      , std::memory_order_relaxed
+    ));
+  }
 }
 
 FileManager::FileManager()
@@ -215,7 +335,13 @@ FileManager::~FileManager()
       "ScheduledEarlyRuns=%llu "
       "ScheduledLateRuns=%llu "
       "TotalScheduledDelayMs=%llu "
-      "MaxScheduledDelayMs=%llu\n"
+      "MaxScheduledDelayMs=%llu "
+      "DataBufferCacheHits=%llu "
+      "DataBufferCacheMisses=%llu "
+      "DataBufferCacheReturns=%llu "
+      "DataBufferCacheDrops=%llu "
+      "DataBufferCacheDepth=%llu "
+      "DataBufferCacheMaxDepth=%llu\n"
       , (unsigned long long)mc.AddBackendCalls
       , (unsigned long long)mc.NotifyCalls
       , (unsigned long long)mc.RescheduleSignals
@@ -253,6 +379,12 @@ FileManager::~FileManager()
       , (unsigned long long)mc.ScheduledLateRuns
       , (unsigned long long)mc.TotalScheduledDelayMs
       , (unsigned long long)mc.MaxScheduledDelayMs
+      , (unsigned long long)mc.DataBufferCacheHits
+      , (unsigned long long)mc.DataBufferCacheMisses
+      , (unsigned long long)mc.DataBufferCacheReturns
+      , (unsigned long long)mc.DataBufferCacheDrops
+      , (unsigned long long)mc.DataBufferCacheDepth
+      , (unsigned long long)mc.DataBufferCacheMaxDepth
     );
 
     printf(

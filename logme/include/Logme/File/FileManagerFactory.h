@@ -1,13 +1,16 @@
 #pragma once 
 
+#include <memory>
 #include <string>
 
 #include <Logme/CritSection.h>
+#include <Logme/Buffer/DataBuffer.h>
 
 namespace Logme
 {
   class FileBackend;
   class FileManager;
+  class MemoryUsageTracker;
 
   typedef std::shared_ptr<FileBackend> FileBackendPtr;
 
@@ -25,5 +28,12 @@ namespace Logme
 
     bool TestFileInUse(const std::string& file);
     void SetStopping();
+
+    DataBufferPtr TakeDataBuffer(
+      MemoryUsageTracker* memoryTracker
+      , std::size_t capacity
+    );
+    bool ReturnDataBuffer(DataBufferPtr buffer, std::size_t cacheLimit);
+    void TrimDataBufferCache(std::size_t cacheLimit);
   };
 }

@@ -43,9 +43,51 @@ BufferQueue::BufferQueue(
   , WriteErrors(0)
   , SignalsSent(0)
 {
-  Current.reset(new DataBuffer(options.BufferSize, MemoryTracker));
+  Current = TryTakeCachedBuffer();
+
+  if (!Current)
+  {
+    Current.reset(new DataBuffer(options.BufferSize, MemoryTracker));
+    CountAllocated();
+  }
+
   TotalBuffers = 1;
-  CountAllocated();
+}
+
+BufferQueue::~BufferQueue()
+{
+  if (Current)
+  {
+    if (!TryReturnCachedBuffer(std::move(Current)))
+      CountDeleted();
+
+    if (TotalBuffers > 0)
+      TotalBuffers -= 1;
+  }
+
+  while (!FreeList.empty())
+  {
+    DataBufferPtr buffer = std::move(FreeList.front());
+    FreeList.pop_front();
+
+    if (!TryReturnCachedBuffer(std::move(buffer)))
+      CountDeleted();
+
+    if (TotalBuffers > 0)
+      TotalBuffers -= 1;
+  }
+
+  while (!ReadyList.empty())
+  {
+    DataBufferPtr buffer = std::move(ReadyList.front());
+    ReadyList.pop_front();
+
+    if (!TryReturnCachedBuffer(std::move(buffer)))
+      CountDeleted();
+
+    if (TotalBuffers > 0)
+      TotalBuffers -= 1;
+  }
 }
 
 bool BufferQueue::Append(
@@ -394,6 +436,24 @@ DataBufferPtr BufferQueue::TryTakeFreeBuffer()
   return buffer;
 }
 
+DataBufferPtr BufferQueue::TryTakeCachedBuffer()
+{
+  if (!OptionsValue.TakeCachedBuffer)
+    return nullptr;
+
+  DataBufferPtr buffer = OptionsValue.TakeCachedBuffer(
+    OptionsValue.CacheContext
+    , MemoryTracker
+    , OptionsValue.BufferSize
+  );
+
+  if (!buffer)
+    return nullptr;
+
+  buffer->Reset();
+  return buffer;
+}
+
 DataBufferPtr BufferQueue::TryCreateBuffer()
 {
   std::lock_guard createGuard(CreateLock);
@@ -408,7 +468,14 @@ DataBufferPtr BufferQueue::TryCreateBuffer()
     }
   }
 
-  DataBufferPtr buffer(new DataBuffer(OptionsValue.BufferSize, MemoryTracker));
+  DataBufferPtr buffer = TryTakeCachedBuffer();
+  bool allocated = false;
+
+  if (!buffer)
+  {
+    buffer.reset(new DataBuffer(OptionsValue.BufferSize, MemoryTracker));
+    allocated = true;
+  }
 
   {
     std::lock_guard freeGuard(FreeLock);
@@ -423,8 +490,25 @@ DataBufferPtr BufferQueue::TryCreateBuffer()
     UsedBuffersCount.fetch_add(1, std::memory_order_relaxed);
   }
 
-  CountAllocated();
+  if (allocated)
+    CountAllocated();
+
   return buffer;
+}
+
+bool BufferQueue::TryReturnCachedBuffer(DataBufferPtr buffer)
+{
+  if (!buffer)
+    return true;
+
+  if (!OptionsValue.ReturnCachedBuffer)
+    return false;
+
+  buffer->Reset();
+  return OptionsValue.ReturnCachedBuffer(
+    OptionsValue.CacheContext
+    , std::move(buffer)
+  );
 }
 
 void BufferQueue::ReleaseBuffer(DataBufferPtr buffer)
@@ -499,9 +583,12 @@ void BufferQueue::DecayFreeLocked()
 
   while (FreeList.size() > AdaptiveFreeLimit)
   {
+    DataBufferPtr buffer = std::move(FreeList.front());
     FreeList.pop_front();
     TotalBuffers -= 1;
-    CountDeleted();
+
+    if (!TryReturnCachedBuffer(std::move(buffer)))
+      CountDeleted();
   }
 }
 

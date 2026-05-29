@@ -50,6 +50,28 @@ void DataBuffer::Reset()
   SeenOnSoftFlushValue = false;
 }
 
+void DataBuffer::AttachMemoryTracker(MemoryUsageTracker* memoryTracker)
+{
+  if (MemoryTracker == memoryTracker)
+    return;
+
+  if (MemoryTracker)
+    MemoryTracker->RemoveMemoryUsage(CapacityValue);
+
+  MemoryTracker = memoryTracker;
+
+  if (MemoryTracker)
+    MemoryTracker->AddMemoryUsage(CapacityValue);
+}
+
+void DataBuffer::DetachMemoryTracker()
+{
+  if (MemoryTracker)
+    MemoryTracker->RemoveMemoryUsage(CapacityValue);
+
+  MemoryTracker = nullptr;
+}
+
 bool DataBuffer::CanAppend(std::size_t cb) const
 {
   return cb <= (CapacityValue - SizeValue);

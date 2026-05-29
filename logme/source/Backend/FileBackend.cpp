@@ -136,6 +136,7 @@ namespace
 size_t FileBackend::MaxSizeDefault = FileBackend::MAX_SIZE_DEFAULT;
 size_t FileBackend::QueueSizeLimitDefault = FileBackend::QUEUE_SIZE_LIMIT;
 uint64_t FileBackend::FlushAfterDefault = FileBackend::FLUSH_AFTER_DEFAULT;
+std::atomic<size_t> FileBackend::DataBufferCacheLimit(8);
 
 FileBackend::FileBackend(ChannelPtr owner)
   : MemoryTrackedBackend(owner, TYPE_ID)
@@ -153,11 +154,14 @@ FileBackend::FileBackend(ChannelPtr owner)
   , ActiveLinked(false)
   , Queue(
     Owner.get()
-    , []
+    , [owner]
     {
       BufferQueue::Options o;
       o.BufferSize = QUEUE_BUFFER_SIZE;
       o.MaxTotalBuffers = MAX_TOTAL_BUFFERS;
+      o.CacheContext = owner.get();
+      o.TakeCachedBuffer = &FileBackend::TakeCachedDataBuffer;
+      o.ReturnCachedBuffer = &FileBackend::ReturnCachedDataBuffer;
       return o;
     }()
     , GetMemoryUsageTracker()
@@ -200,6 +204,19 @@ void FileBackend::SetFlushAfterDefault(uint64_t ms)
 uint64_t FileBackend::GetFlushAfterDefault()
 {
   return FlushAfterDefault;
+}
+
+size_t FileBackend::GetDataBufferCacheLimit()
+{
+  return DataBufferCacheLimit.load(std::memory_order_relaxed);
+}
+
+void FileBackend::SetDataBufferCacheLimit(size_t count)
+{
+  DataBufferCacheLimit.store(count, std::memory_order_relaxed);
+
+  if (Logme::Instance)
+    Logme::Instance->GetFileManagerFactory().TrimDataBufferCache(count);
 }
 
 size_t FileBackend::GetQueueSizeLimitDefault()
@@ -319,6 +336,45 @@ void FileBackend::SetQueueSizeLimitDefault(size_t size)
     size = 2ULL * QUEUE_BUFFER_SIZE;
 
   QueueSizeLimitDefault = size;
+}
+
+
+DataBufferPtr FileBackend::TakeCachedDataBuffer(
+  void* context
+  , MemoryUsageTracker* memoryTracker
+  , std::size_t capacity
+)
+{
+  if (GetDataBufferCacheLimit() == 0 || !context)
+    return nullptr;
+
+  Channel* channel = static_cast<Channel*>(context);
+  Logger* logger = channel->GetOwner();
+
+  if (!logger)
+    return nullptr;
+
+  return logger->GetFileManagerFactory().TakeDataBuffer(
+    memoryTracker
+    , capacity
+  );
+}
+
+bool FileBackend::ReturnCachedDataBuffer(void* context, DataBufferPtr buffer)
+{
+  if (GetDataBufferCacheLimit() == 0 || !context || !buffer)
+    return false;
+
+  Channel* channel = static_cast<Channel*>(context);
+  Logger* logger = channel->GetOwner();
+
+  if (!logger)
+    return false;
+
+  return logger->GetFileManagerFactory().ReturnDataBuffer(
+    std::move(buffer)
+    , GetDataBufferCacheLimit()
+  );
 }
 
 std::string FileBackend::FormatDetails()

@@ -11,6 +11,7 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <thread>
 #include <vector>
@@ -18,6 +19,7 @@
 namespace
 {
   std::atomic<unsigned> FileIndex(0);
+  std::mutex FileManagerCountersMutex;
 
   std::filesystem::path MakePath(const char* name)
   {
@@ -288,6 +290,8 @@ namespace
 
 TEST(FileManagerCounters, MassiveDelayedBackendsUseTailFastPath)
 {
+  std::lock_guard<std::mutex> lock(FileManagerCountersMutex);
+
   ASSERT_TRUE(WaitForManagerIdle(std::chrono::milliseconds(1000)));
   FlushAfterGuard flushAfter(80);
 
@@ -333,6 +337,8 @@ TEST(FileManagerCounters, MassiveDelayedBackendsUseTailFastPath)
 
 TEST(FileManagerCounters, DelayedBackendMovesToFrontForImmediateFlush)
 {
+  std::lock_guard<std::mutex> lock(FileManagerCountersMutex);
+
   ASSERT_TRUE(WaitForManagerIdle(std::chrono::milliseconds(1000)));
   FlushAfterGuard flushAfter(500);
 
@@ -366,6 +372,8 @@ TEST(FileManagerCounters, DelayedBackendMovesToFrontForImmediateFlush)
 
 TEST(FileManagerCounters, ScheduledHeadWithinGapRunsWithoutSleep)
 {
+  std::lock_guard<std::mutex> lock(FileManagerCountersMutex);
+
   ASSERT_TRUE(WaitForManagerIdle(std::chrono::milliseconds(1000)));
   FlushAfterGuard flushAfter(200);
 
@@ -422,6 +430,8 @@ TEST(FileManagerCounters, ScheduledHeadWithinGapRunsWithoutSleep)
 
 TEST(FileManagerCounters, ConcurrentBackendsDoNotLeakActiveQueueItems)
 {
+  std::lock_guard<std::mutex> lock(FileManagerCountersMutex);
+
   ASSERT_TRUE(WaitForManagerIdle(std::chrono::milliseconds(1000)));
   FlushAfterGuard flushAfter(60);
 
@@ -489,6 +499,8 @@ TEST(FileManagerCounters, ConcurrentBackendsDoNotLeakActiveQueueItems)
 
 TEST(FileManagerCounters, DataBufferCacheReusesInitialBuffer)
 {
+  std::lock_guard<std::mutex> lock(FileManagerCountersMutex);
+
   ASSERT_TRUE(WaitForManagerIdle(std::chrono::milliseconds(1000)));
 
   DataBufferCacheLimitGuard cacheLimit(2);
@@ -564,12 +576,26 @@ TEST(FileManagerCounters, DataBufferCacheReusesInitialBuffer)
 
 TEST(FileManagerCounters, DataBufferCacheRetainsOverLimitAndReusesBurst)
 {
+  std::lock_guard<std::mutex> lock(FileManagerCountersMutex);
+
   ASSERT_TRUE(WaitForManagerIdle(std::chrono::milliseconds(1000)));
 
+  constexpr size_t CACHE_LIMIT = 4;
+  constexpr size_t CACHE_MAX_LIMIT = 64;
+  constexpr uint64_t RETAIN_OVER_LIMIT_MS = 5000;
+
   DataBufferCacheClearGuard cacheClear;
-  DataBufferCacheLimitGuard cacheLimit(4);
-  DataBufferCacheMaxLimitGuard cacheMaxLimit(64);
-  DataBufferCacheRetainGuard retainOverLimit(5000);
+  DataBufferCacheLimitGuard cacheLimit(CACHE_LIMIT);
+  DataBufferCacheMaxLimitGuard cacheMaxLimit(CACHE_MAX_LIMIT);
+  DataBufferCacheRetainGuard retainOverLimit(RETAIN_OVER_LIMIT_MS);
+
+  FileFixture manager("data-buffer-cache-retain-manager");
+  LogmeI(
+    manager.ChannelId
+    , "data-buffer-cache-retain-manager-message"
+  );
+  ASSERT_TRUE(WaitForManagerIdle(std::chrono::milliseconds(1000)));
+  Logme::FileBackend::ClearDataBufferCache();
 
   constexpr int BUFFERS = 24;
   auto& factory = Logme::Instance->GetFileManagerFactory();
@@ -580,9 +606,9 @@ TEST(FileManagerCounters, DataBufferCacheRetainsOverLimitAndReusesBurst)
     auto buffer = std::make_unique<Logme::DataBuffer>(1024, nullptr);
     ASSERT_TRUE(factory.ReturnDataBuffer(
       std::move(buffer)
-      , Logme::FileBackend::GetDataBufferCacheLimit()
-      , Logme::FileBackend::GetDataBufferCacheMaxLimit()
-      , Logme::FileBackend::GetDataBufferCacheRetainOverLimitMs()
+      , CACHE_LIMIT
+      , CACHE_MAX_LIMIT
+      , RETAIN_OVER_LIMIT_MS
     ));
   }
 
@@ -607,9 +633,9 @@ TEST(FileManagerCounters, DataBufferCacheRetainsOverLimitAndReusesBurst)
     auto buffer = factory.TakeDataBuffer(
       nullptr
       , 1024
-      , Logme::FileBackend::GetDataBufferCacheLimit()
-      , Logme::FileBackend::GetDataBufferCacheMaxLimit()
-      , Logme::FileBackend::GetDataBufferCacheRetainOverLimitMs()
+      , CACHE_LIMIT
+      , CACHE_MAX_LIMIT
+      , RETAIN_OVER_LIMIT_MS
     );
 
     ASSERT_TRUE(buffer);
@@ -634,6 +660,8 @@ TEST(FileManagerCounters, DataBufferCacheRetainsOverLimitAndReusesBurst)
 
 TEST(FileManagerCounters, DataBufferCacheHardLimitAndClear)
 {
+  std::lock_guard<std::mutex> lock(FileManagerCountersMutex);
+
   ASSERT_TRUE(WaitForManagerIdle(std::chrono::milliseconds(1000)));
 
   DataBufferCacheClearGuard cacheClear;

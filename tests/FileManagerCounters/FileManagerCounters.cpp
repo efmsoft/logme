@@ -142,6 +142,54 @@ namespace
     }
   };
 
+  class DataBufferCacheClearGuard
+  {
+  public:
+    DataBufferCacheClearGuard()
+    {
+      Logme::FileBackend::ClearDataBufferCache();
+    }
+
+    ~DataBufferCacheClearGuard()
+    {
+      Logme::FileBackend::ClearDataBufferCache();
+    }
+  };
+
+  class DataBufferCacheMaxLimitGuard
+  {
+    size_t OldValue;
+
+  public:
+    explicit DataBufferCacheMaxLimitGuard(size_t value)
+      : OldValue(Logme::FileBackend::GetDataBufferCacheMaxLimit())
+    {
+      Logme::FileBackend::SetDataBufferCacheMaxLimit(value);
+    }
+
+    ~DataBufferCacheMaxLimitGuard()
+    {
+      Logme::FileBackend::SetDataBufferCacheMaxLimit(OldValue);
+    }
+  };
+
+  class DataBufferCacheRetainGuard
+  {
+    uint64_t OldValue;
+
+  public:
+    explicit DataBufferCacheRetainGuard(uint64_t value)
+      : OldValue(Logme::FileBackend::GetDataBufferCacheRetainOverLimitMs())
+    {
+      Logme::FileBackend::SetDataBufferCacheRetainOverLimitMs(value);
+    }
+
+    ~DataBufferCacheRetainGuard()
+    {
+      Logme::FileBackend::SetDataBufferCacheRetainOverLimitMs(OldValue);
+    }
+  };
+
   struct FileFixture
   {
     std::string ChannelName;
@@ -225,6 +273,15 @@ namespace
       << " DataBufferReuses=" << Diff(before.DataBufferReuses, after.DataBufferReuses)
       << " DataBufferCacheHits=" << Diff(before.DataBufferCacheHits, after.DataBufferCacheHits)
       << " DataBufferCacheReturns=" << Diff(before.DataBufferCacheReturns, after.DataBufferCacheReturns)
+      << " DataBufferCacheDrops=" << Diff(before.DataBufferCacheDrops, after.DataBufferCacheDrops)
+      << " DataBufferCacheOverLimitEvents=" << Diff(before.DataBufferCacheOverLimitEvents, after.DataBufferCacheOverLimitEvents)
+      << " DataBufferCacheOverLimitTrims=" << Diff(before.DataBufferCacheOverLimitTrims, after.DataBufferCacheOverLimitTrims)
+      << " DataBufferCacheOverLimitDrops=" << Diff(before.DataBufferCacheOverLimitDrops, after.DataBufferCacheOverLimitDrops)
+      << " DataBufferCacheHardLimitTrims=" << Diff(before.DataBufferCacheHardLimitTrims, after.DataBufferCacheHardLimitTrims)
+      << " DataBufferCacheHardLimitDrops=" << Diff(before.DataBufferCacheHardLimitDrops, after.DataBufferCacheHardLimitDrops)
+      << " DataBufferCacheClearCalls=" << Diff(before.DataBufferCacheClearCalls, after.DataBufferCacheClearCalls)
+      << " DataBufferCacheDepth=" << after.DataBufferCacheDepth
+      << " DataBufferCacheMaxDepth=" << after.DataBufferCacheMaxDepth
       << std::endl;
   }
 }
@@ -503,4 +560,156 @@ TEST(FileManagerCounters, DataBufferCacheReusesInitialBuffer)
     , Diff(afterFirst.DataBufferReuses, afterSecond.DataBufferReuses)
   );
   EXPECT_LE(afterSecond.DataBufferCacheDepth, 2u);
+}
+
+TEST(FileManagerCounters, DataBufferCacheRetainsOverLimitAndReusesBurst)
+{
+  ASSERT_TRUE(WaitForManagerIdle(std::chrono::milliseconds(1000)));
+
+  DataBufferCacheClearGuard cacheClear;
+  DataBufferCacheLimitGuard cacheLimit(4);
+  DataBufferCacheMaxLimitGuard cacheMaxLimit(64);
+  DataBufferCacheRetainGuard retainOverLimit(5000);
+  FlushAfterGuard flushAfter(20);
+
+  constexpr int BACKENDS = 24;
+  auto before = Logme::FileManager::GetCounters();
+
+  {
+    std::vector<std::unique_ptr<FileFixture>> files;
+    files.reserve(BACKENDS);
+
+    for (int i = 0; i < BACKENDS; ++i)
+    {
+      auto name = std::string("cache-retain-first-") + std::to_string(i);
+      files.push_back(std::make_unique<FileFixture>(name.c_str()));
+      LogmeI(
+        files.back()->ChannelId
+        , "cache-retain-first-message-%d"
+        , i
+      );
+    }
+
+    ASSERT_TRUE(WaitForManagerIdle(std::chrono::milliseconds(5000)));
+  }
+
+  ASSERT_TRUE(WaitForCounterIncrease(
+    []
+    {
+      return Logme::FileManager::GetCounters().DataBufferCacheDepth;
+    }
+    , 0
+    , BACKENDS
+    , std::chrono::milliseconds(2000)
+  ));
+
+  auto afterFirst = Logme::FileManager::GetCounters();
+  EXPECT_GT(afterFirst.DataBufferCacheDepth, 4u);
+  EXPECT_GT(afterFirst.DataBufferCacheMaxDepth, 4u);
+  EXPECT_GT(
+    Diff(before.DataBufferCacheOverLimitEvents, afterFirst.DataBufferCacheOverLimitEvents)
+    , 0u
+  );
+  EXPECT_EQ(
+    0u
+    , Diff(before.DataBufferCacheOverLimitDrops, afterFirst.DataBufferCacheOverLimitDrops)
+  );
+
+  {
+    std::vector<std::unique_ptr<FileFixture>> files;
+    files.reserve(BACKENDS);
+
+    for (int i = 0; i < BACKENDS; ++i)
+    {
+      auto name = std::string("cache-retain-second-") + std::to_string(i);
+      files.push_back(std::make_unique<FileFixture>(name.c_str()));
+      LogmeI(
+        files.back()->ChannelId
+        , "cache-retain-second-message-%d"
+        , i
+      );
+    }
+
+    ASSERT_TRUE(WaitForManagerIdle(std::chrono::milliseconds(5000)));
+  }
+
+  auto afterSecond = Logme::FileManager::GetCounters();
+  EXPECT_GT(
+    Diff(afterFirst.DataBufferCacheHits, afterSecond.DataBufferCacheHits)
+    , 0u
+  );
+  EXPECT_GT(
+    Diff(afterFirst.DataBufferReuses, afterSecond.DataBufferReuses)
+    , 0u
+  );
+
+  CounterDelta delta{before, afterSecond};
+  PrintCounters("DataBufferCacheRetainsOverLimitAndReusesBurst", delta);
+  Logme::FileBackend::ClearDataBufferCache();
+}
+
+TEST(FileManagerCounters, DataBufferCacheHardLimitAndClear)
+{
+  ASSERT_TRUE(WaitForManagerIdle(std::chrono::milliseconds(1000)));
+
+  DataBufferCacheClearGuard cacheClear;
+  DataBufferCacheLimitGuard cacheLimit(4);
+  DataBufferCacheMaxLimitGuard cacheMaxLimit(8);
+  DataBufferCacheRetainGuard retainOverLimit(5000);
+  FlushAfterGuard flushAfter(20);
+
+  constexpr int BACKENDS = 24;
+  auto before = Logme::FileManager::GetCounters();
+
+  {
+    std::vector<std::unique_ptr<FileFixture>> files;
+    files.reserve(BACKENDS);
+
+    for (int i = 0; i < BACKENDS; ++i)
+    {
+      auto name = std::string("cache-hard-limit-") + std::to_string(i);
+      files.push_back(std::make_unique<FileFixture>(name.c_str()));
+      LogmeI(
+        files.back()->ChannelId
+        , "cache-hard-limit-message-%d"
+        , i
+      );
+    }
+
+    ASSERT_TRUE(WaitForManagerIdle(std::chrono::milliseconds(5000)));
+  }
+
+  ASSERT_TRUE(WaitForCounterIncrease(
+    []
+    {
+      return Logme::FileManager::GetCounters().DataBufferCacheHardLimitDrops;
+    }
+    , before.DataBufferCacheHardLimitDrops
+    , 1
+    , std::chrono::milliseconds(2000)
+  ));
+
+  auto afterFill = Logme::FileManager::GetCounters();
+  EXPECT_LE(afterFill.DataBufferCacheDepth, 8u);
+  EXPECT_GT(afterFill.DataBufferCacheDepth, 0u);
+  EXPECT_GT(
+    Diff(before.DataBufferCacheHardLimitTrims, afterFill.DataBufferCacheHardLimitTrims)
+    , 0u
+  );
+  EXPECT_GT(
+    Diff(before.DataBufferCacheHardLimitDrops, afterFill.DataBufferCacheHardLimitDrops)
+    , 0u
+  );
+
+  Logme::FileBackend::ClearDataBufferCache();
+
+  auto afterClear = Logme::FileManager::GetCounters();
+  EXPECT_EQ(0u, afterClear.DataBufferCacheDepth);
+  EXPECT_GT(
+    Diff(afterFill.DataBufferCacheClearCalls, afterClear.DataBufferCacheClearCalls)
+    , 0u
+  );
+
+  CounterDelta delta{before, afterClear};
+  PrintCounters("DataBufferCacheHardLimitAndClear", delta);
 }

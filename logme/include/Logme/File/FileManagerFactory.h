@@ -32,8 +32,18 @@ namespace Logme
     DataBufferPtr TakeDataBuffer(
       MemoryUsageTracker* memoryTracker
       , std::size_t capacity
+      , std::size_t cacheLimit
+      , std::size_t cacheMaxLimit
+      , std::uint64_t retainOverLimitMs
     );
-    bool ReturnDataBuffer(DataBufferPtr buffer, std::size_t cacheLimit);
+    bool ReturnDataBuffer(
+      DataBufferPtr buffer
+      , std::size_t cacheLimit
+      , std::size_t cacheMaxLimit
+      , std::uint64_t retainOverLimitMs
+    );
     void TrimDataBufferCache(std::size_t cacheLimit);
+    void TrimDataBufferCacheMaxLimit(std::size_t cacheMaxLimit);
+    void ClearDataBufferCache();
   };
 }

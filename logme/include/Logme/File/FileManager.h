@@ -54,6 +54,12 @@ namespace Logme
     std::uint64_t DataBufferCacheMisses = 0;
     std::uint64_t DataBufferCacheReturns = 0;
     std::uint64_t DataBufferCacheDrops = 0;
+    std::uint64_t DataBufferCacheOverLimitEvents = 0;
+    std::uint64_t DataBufferCacheOverLimitTrims = 0;
+    std::uint64_t DataBufferCacheOverLimitDrops = 0;
+    std::uint64_t DataBufferCacheHardLimitTrims = 0;
+    std::uint64_t DataBufferCacheHardLimitDrops = 0;
+    std::uint64_t DataBufferCacheClearCalls = 0;
     std::uint64_t DataBufferCacheDepth = 0;
     std::uint64_t DataBufferCacheMaxDepth = 0;
     std::uint64_t DataBufferAllocations = 0;
@@ -74,6 +80,7 @@ namespace Logme
 
     uint64_t CurrentEarliestTime;
     std::vector<DataBufferPtr> DataBufferCache;
+    uint64_t DataBufferCacheOverLimitSince;
 
 #ifdef _WIN32
     unsigned ThreadID;
@@ -96,9 +103,19 @@ namespace Logme
     DataBufferPtr TakeDataBuffer(
       MemoryUsageTracker* memoryTracker
       , std::size_t capacity
+      , std::size_t cacheLimit
+      , std::size_t cacheMaxLimit
+      , std::uint64_t retainOverLimitMs
     );
-    bool ReturnDataBuffer(DataBufferPtr buffer, std::size_t cacheLimit);
+    bool ReturnDataBuffer(
+      DataBufferPtr buffer
+      , std::size_t cacheLimit
+      , std::size_t cacheMaxLimit
+      , std::uint64_t retainOverLimitMs
+    );
     void TrimDataBufferCache(std::size_t cacheLimit);
+    void TrimDataBufferCacheMaxLimit(std::size_t cacheMaxLimit);
+    void ClearDataBufferCache();
 
   private:
     void LinkBackendFront(FileBackend* backend);
@@ -107,6 +124,14 @@ namespace Logme
     void ActivateBackend(FileBackend* backend, uint64_t when);
     void DeactivateBackend(FileBackend* backend);
     bool RemoveBackendLocked(const FileBackendPtr& backend);
+    void TrimDataBufferCacheOverLimitLocked(
+      std::size_t cacheLimit
+      , std::uint64_t now
+      , std::uint64_t retainOverLimitMs
+    );
+    void TrimDataBufferCacheMaxLimitLocked(
+      std::size_t cacheMaxLimit
+    );
     void ManagementThread();
   };
 }

@@ -52,6 +52,12 @@ namespace
   std::atomic<std::uint64_t> GlobalDataBufferCacheMisses(0);
   std::atomic<std::uint64_t> GlobalDataBufferCacheReturns(0);
   std::atomic<std::uint64_t> GlobalDataBufferCacheDrops(0);
+  std::atomic<std::uint64_t> GlobalDataBufferCacheOverLimitEvents(0);
+  std::atomic<std::uint64_t> GlobalDataBufferCacheOverLimitTrims(0);
+  std::atomic<std::uint64_t> GlobalDataBufferCacheOverLimitDrops(0);
+  std::atomic<std::uint64_t> GlobalDataBufferCacheHardLimitTrims(0);
+  std::atomic<std::uint64_t> GlobalDataBufferCacheHardLimitDrops(0);
+  std::atomic<std::uint64_t> GlobalDataBufferCacheClearCalls(0);
   std::atomic<std::uint64_t> GlobalDataBufferCacheDepth(0);
   std::atomic<std::uint64_t> GlobalDataBufferCacheMaxDepth(0);
   std::atomic<std::uint64_t> GlobalDataBufferAllocations(0);
@@ -157,6 +163,18 @@ FileManagerCounters FileManager::GetCounters()
     GlobalDataBufferCacheReturns.load(std::memory_order_relaxed);
   out.DataBufferCacheDrops =
     GlobalDataBufferCacheDrops.load(std::memory_order_relaxed);
+  out.DataBufferCacheOverLimitEvents =
+    GlobalDataBufferCacheOverLimitEvents.load(std::memory_order_relaxed);
+  out.DataBufferCacheOverLimitTrims =
+    GlobalDataBufferCacheOverLimitTrims.load(std::memory_order_relaxed);
+  out.DataBufferCacheOverLimitDrops =
+    GlobalDataBufferCacheOverLimitDrops.load(std::memory_order_relaxed);
+  out.DataBufferCacheHardLimitTrims =
+    GlobalDataBufferCacheHardLimitTrims.load(std::memory_order_relaxed);
+  out.DataBufferCacheHardLimitDrops =
+    GlobalDataBufferCacheHardLimitDrops.load(std::memory_order_relaxed);
+  out.DataBufferCacheClearCalls =
+    GlobalDataBufferCacheClearCalls.load(std::memory_order_relaxed);
   out.DataBufferCacheDepth =
     GlobalDataBufferCacheDepth.load(std::memory_order_relaxed);
   out.DataBufferCacheMaxDepth =
@@ -179,8 +197,13 @@ void FileManager::CountDataBufferAllocation()
 DataBufferPtr FileManager::TakeDataBuffer(
   MemoryUsageTracker* memoryTracker
   , std::size_t capacity
+  , std::size_t cacheLimit
+  , std::size_t cacheMaxLimit
+  , std::uint64_t retainOverLimitMs
 )
 {
+  (void)capacity;
+
   std::lock_guard guard(Lock);
 
   if (DataBufferCache.empty())
@@ -199,13 +222,29 @@ DataBufferPtr FileManager::TakeDataBuffer(
     , std::memory_order_relaxed
   ));
 
-  if (!buffer || buffer->Capacity() != capacity)
+  if (!buffer)
   {
     FILE_CNT(GlobalDataBufferCacheMisses.fetch_add(
       1
       , std::memory_order_relaxed
     ));
     return nullptr;
+  }
+
+  if (cacheMaxLimit != 0 && DataBufferCache.size() > cacheMaxLimit)
+    TrimDataBufferCacheMaxLimitLocked(cacheMaxLimit);
+
+  if (DataBufferCache.size() > cacheLimit)
+  {
+    TrimDataBufferCacheOverLimitLocked(
+      cacheLimit
+      , GetTimeInMillisec64()
+      , retainOverLimitMs
+    );
+  }
+  else
+  {
+    DataBufferCacheOverLimitSince = 0;
   }
 
   buffer->AttachMemoryTracker(memoryTracker);
@@ -225,6 +264,8 @@ DataBufferPtr FileManager::TakeDataBuffer(
 bool FileManager::ReturnDataBuffer(
   DataBufferPtr buffer
   , std::size_t cacheLimit
+  , std::size_t cacheMaxLimit
+  , std::uint64_t retainOverLimitMs
 )
 {
   if (!buffer || cacheLimit == 0)
@@ -237,8 +278,30 @@ bool FileManager::ReturnDataBuffer(
   }
 
   std::lock_guard guard(Lock);
+  const std::uint64_t now = GetTimeInMillisec64();
 
-  if (DataBufferCache.size() >= cacheLimit)
+  if (DataBufferCache.size() > cacheLimit)
+  {
+    TrimDataBufferCacheOverLimitLocked(
+      cacheLimit
+      , now
+      , retainOverLimitMs
+    );
+  }
+
+  if (cacheMaxLimit != 0 && DataBufferCache.size() >= cacheMaxLimit)
+    TrimDataBufferCacheMaxLimitLocked(cacheMaxLimit - 1);
+
+  if (cacheMaxLimit != 0 && DataBufferCache.size() >= cacheMaxLimit)
+  {
+    FILE_CNT(GlobalDataBufferCacheDrops.fetch_add(
+      1
+      , std::memory_order_relaxed
+    ));
+    return false;
+  }
+
+  if (retainOverLimitMs == 0 && DataBufferCache.size() >= cacheLimit)
   {
     FILE_CNT(GlobalDataBufferCacheDrops.fetch_add(
       1
@@ -254,6 +317,22 @@ bool FileManager::ReturnDataBuffer(
     1
     , std::memory_order_relaxed
   ) + 1;
+
+  if (DataBufferCache.size() > cacheLimit)
+  {
+    if (DataBufferCacheOverLimitSince == 0)
+    {
+      DataBufferCacheOverLimitSince = now;
+      FILE_CNT(GlobalDataBufferCacheOverLimitEvents.fetch_add(
+        1
+        , std::memory_order_relaxed
+      ));
+    }
+  }
+  else
+  {
+    DataBufferCacheOverLimitSince = 0;
+  }
 
   FILE_CNT(GlobalDataBufferCacheReturns.fetch_add(
     1
@@ -271,7 +350,7 @@ void FileManager::TrimDataBufferCache(std::size_t cacheLimit)
 
   while (DataBufferCache.size() > cacheLimit)
   {
-    DataBufferCache.pop_back();
+    DataBufferCache.erase(DataBufferCache.begin());
     FILE_CNT(GlobalDataBufferCacheDrops.fetch_add(
       1
       , std::memory_order_relaxed
@@ -281,6 +360,139 @@ void FileManager::TrimDataBufferCache(std::size_t cacheLimit)
       , std::memory_order_relaxed
     ));
   }
+
+  if (DataBufferCache.size() <= cacheLimit)
+    DataBufferCacheOverLimitSince = 0;
+}
+
+void FileManager::TrimDataBufferCacheMaxLimit(std::size_t cacheMaxLimit)
+{
+  std::lock_guard guard(Lock);
+
+  TrimDataBufferCacheMaxLimitLocked(cacheMaxLimit);
+}
+
+void FileManager::ClearDataBufferCache()
+{
+  std::lock_guard guard(Lock);
+
+  if (DataBufferCache.empty())
+    return;
+
+  std::size_t count = DataBufferCache.size();
+  DataBufferCache.clear();
+  DataBufferCacheOverLimitSince = 0;
+
+  FILE_CNT(GlobalDataBufferCacheClearCalls.fetch_add(
+    1
+    , std::memory_order_relaxed
+  ));
+  FILE_CNT(GlobalDataBufferCacheDrops.fetch_add(
+    count
+    , std::memory_order_relaxed
+  ));
+  FILE_CNT(GlobalDataBufferCacheDepth.fetch_sub(
+    count
+    , std::memory_order_relaxed
+  ));
+
+  (void)count;
+}
+
+void FileManager::TrimDataBufferCacheMaxLimitLocked(
+  std::size_t cacheMaxLimit
+)
+{
+  if (cacheMaxLimit == 0 || DataBufferCache.size() <= cacheMaxLimit)
+    return;
+
+  std::uint64_t dropped = 0;
+
+  while (DataBufferCache.size() > cacheMaxLimit)
+  {
+    DataBufferCache.erase(DataBufferCache.begin());
+    dropped += 1;
+  }
+
+  if (dropped != 0)
+  {
+    FILE_CNT(GlobalDataBufferCacheDrops.fetch_add(
+      dropped
+      , std::memory_order_relaxed
+    ));
+    FILE_CNT(GlobalDataBufferCacheHardLimitTrims.fetch_add(
+      1
+      , std::memory_order_relaxed
+    ));
+    FILE_CNT(GlobalDataBufferCacheHardLimitDrops.fetch_add(
+      dropped
+      , std::memory_order_relaxed
+    ));
+    FILE_CNT(GlobalDataBufferCacheDepth.fetch_sub(
+      dropped
+      , std::memory_order_relaxed
+    ));
+  }
+
+}
+
+void FileManager::TrimDataBufferCacheOverLimitLocked(
+  std::size_t cacheLimit
+  , std::uint64_t now
+  , std::uint64_t retainOverLimitMs
+)
+{
+  if (DataBufferCache.size() <= cacheLimit)
+  {
+    DataBufferCacheOverLimitSince = 0;
+    return;
+  }
+
+  if (DataBufferCacheOverLimitSince == 0)
+  {
+    DataBufferCacheOverLimitSince = now;
+    FILE_CNT(GlobalDataBufferCacheOverLimitEvents.fetch_add(
+      1
+      , std::memory_order_relaxed
+    ));
+    return;
+  }
+
+  if (retainOverLimitMs != 0
+      && now - DataBufferCacheOverLimitSince < retainOverLimitMs)
+  {
+    return;
+  }
+
+  std::uint64_t dropped = 0;
+
+  while (DataBufferCache.size() > cacheLimit)
+  {
+    DataBufferCache.erase(DataBufferCache.begin());
+    dropped += 1;
+  }
+
+  if (dropped != 0)
+  {
+    FILE_CNT(GlobalDataBufferCacheDrops.fetch_add(
+      dropped
+      , std::memory_order_relaxed
+    ));
+    FILE_CNT(GlobalDataBufferCacheOverLimitTrims.fetch_add(
+      1
+      , std::memory_order_relaxed
+    ));
+    FILE_CNT(GlobalDataBufferCacheOverLimitDrops.fetch_add(
+      dropped
+      , std::memory_order_relaxed
+    ));
+    FILE_CNT(GlobalDataBufferCacheDepth.fetch_sub(
+      dropped
+      , std::memory_order_relaxed
+    ));
+  }
+
+  DataBufferCacheOverLimitSince = 0;
 }
 
 FileManager::FileManager()
@@ -289,6 +501,7 @@ FileManager::FileManager()
   , ActiveBackendsNext(nullptr)
   , ActiveBackendsPrev(nullptr)
   , CurrentEarliestTime(0)
+  , DataBufferCacheOverLimitSince(0)
 #ifdef _WIN32
   , ThreadID(0)
 #endif
@@ -373,6 +586,12 @@ FileManager::~FileManager()
       "DataBufferCacheMisses=%llu "
       "DataBufferCacheReturns=%llu "
       "DataBufferCacheDrops=%llu "
+      "DataBufferCacheOverLimitEvents=%llu "
+      "DataBufferCacheOverLimitTrims=%llu "
+      "DataBufferCacheOverLimitDrops=%llu "
+      "DataBufferCacheHardLimitTrims=%llu "
+      "DataBufferCacheHardLimitDrops=%llu "
+      "DataBufferCacheClearCalls=%llu "
       "DataBufferCacheDepth=%llu "
       "DataBufferCacheMaxDepth=%llu "
       "DataBufferAllocations=%llu "
@@ -418,6 +637,12 @@ FileManager::~FileManager()
       , (unsigned long long)mc.DataBufferCacheMisses
       , (unsigned long long)mc.DataBufferCacheReturns
       , (unsigned long long)mc.DataBufferCacheDrops
+      , (unsigned long long)mc.DataBufferCacheOverLimitEvents
+      , (unsigned long long)mc.DataBufferCacheOverLimitTrims
+      , (unsigned long long)mc.DataBufferCacheOverLimitDrops
+      , (unsigned long long)mc.DataBufferCacheHardLimitTrims
+      , (unsigned long long)mc.DataBufferCacheHardLimitDrops
+      , (unsigned long long)mc.DataBufferCacheClearCalls
       , (unsigned long long)mc.DataBufferCacheDepth
       , (unsigned long long)mc.DataBufferCacheMaxDepth
       , (unsigned long long)mc.DataBufferAllocations

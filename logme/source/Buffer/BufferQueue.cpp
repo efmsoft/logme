@@ -107,12 +107,6 @@ bool BufferQueue::Append(
   if (cb == 0)
     return true;
 
-  if (cb > OptionsValue.BufferSize)
-  {
-    CountDropped(cb);
-    return false;
-  }
-
   if (Current->CanAppend(cb))
   {
     firstData = Current->Size() == 0;
@@ -159,6 +153,14 @@ bool BufferQueue::Append(
 
   replacement->Reset();
   replacement->SetSeenOnSoftFlush(false);
+
+  if (!replacement->CanAppend(cb))
+  {
+    ReleaseBuffer(std::move(replacement));
+    CountDropped(cb);
+    return false;
+  }
+
   readyBuffer = std::move(Current);
 
   Current = std::move(replacement);

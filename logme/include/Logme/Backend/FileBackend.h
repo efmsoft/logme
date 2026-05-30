@@ -152,7 +152,10 @@ namespace Logme
     static size_t MaxSizeDefault;
     static size_t QueueSizeLimitDefault;
     static uint64_t FlushAfterDefault;
+    static size_t DataBufferSizeDefault;
     static std::atomic<size_t> DataBufferCacheLimit;
+    static std::atomic<size_t> DataBufferCacheMaxLimit;
+    static std::atomic<uint64_t> DataBufferCacheRetainOverLimitMs;
 
     NonceGen Nonce;
     std::unique_ptr<BufferedFileIo> BufferedIo;
@@ -164,6 +167,8 @@ namespace Logme
       MAX_SIZE_DEFAULT = 8 * 1024 * 1024,
       
       QUEUE_BUFFER_SIZE = 256 * 1024,       // buffer size
+      DATA_BUFFER_CACHE_RETAIN_OVER_LIMIT_MS_DEFAULT = 0,
+      DATA_BUFFER_CACHE_MAX_LIMIT_DEFAULT = 0,
       MAX_TOTAL_BUFFERS = 128,              // hard limit for queue buffers
       FLUSH_PRESSURE_BUFFERS = 96,          // force processing if used buffers >= limit
       QUEUE_SIZE_LIMIT = QUEUE_BUFFER_SIZE * FLUSH_PRESSURE_BUFFERS,
@@ -204,8 +209,19 @@ namespace Logme
     LOGMELNK static uint64_t GetFlushAfterDefault();
     LOGMELNK static void SetFlushAfterDefault(uint64_t ms);
 
+    LOGMELNK static size_t GetDataBufferSizeDefault();
+    LOGMELNK static void SetDataBufferSizeDefault(size_t size);
+
     LOGMELNK static size_t GetDataBufferCacheLimit();
     LOGMELNK static void SetDataBufferCacheLimit(size_t count);
+
+    LOGMELNK static size_t GetDataBufferCacheMaxLimit();
+    LOGMELNK static void SetDataBufferCacheMaxLimit(size_t count);
+
+    LOGMELNK static uint64_t GetDataBufferCacheRetainOverLimitMs();
+    LOGMELNK static void SetDataBufferCacheRetainOverLimitMs(uint64_t ms);
+
+    LOGMELNK static void ClearDataBufferCache();
 
     using FileIo::Truncate;
 

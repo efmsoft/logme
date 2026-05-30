@@ -63,6 +63,9 @@ void FileManagerFactory::SetStopping()
 DataBufferPtr FileManagerFactory::TakeDataBuffer(
   MemoryUsageTracker* memoryTracker
   , std::size_t capacity
+  , std::size_t cacheLimit
+  , std::size_t cacheMaxLimit
+  , std::uint64_t retainOverLimitMs
 )
 {
   std::unique_lock guard(Lock);
@@ -72,12 +75,20 @@ DataBufferPtr FileManagerFactory::TakeDataBuffer(
   if (!instance)
     return nullptr;
 
-  return instance->TakeDataBuffer(memoryTracker, capacity);
+  return instance->TakeDataBuffer(
+    memoryTracker
+    , capacity
+    , cacheLimit
+    , cacheMaxLimit
+    , retainOverLimitMs
+  );
 }
 
 bool FileManagerFactory::ReturnDataBuffer(
   DataBufferPtr buffer
   , std::size_t cacheLimit
+  , std::size_t cacheMaxLimit
+  , std::uint64_t retainOverLimitMs
 )
 {
   std::unique_lock guard(Lock);
@@ -87,7 +98,12 @@ bool FileManagerFactory::ReturnDataBuffer(
   if (!instance)
     return false;
 
-  return instance->ReturnDataBuffer(std::move(buffer), cacheLimit);
+  return instance->ReturnDataBuffer(
+    std::move(buffer)
+    , cacheLimit
+    , cacheMaxLimit
+    , retainOverLimitMs
+  );
 }
 
 void FileManagerFactory::TrimDataBufferCache(std::size_t cacheLimit)
@@ -98,4 +114,24 @@ void FileManagerFactory::TrimDataBufferCache(std::size_t cacheLimit)
 
   if (instance)
     instance->TrimDataBufferCache(cacheLimit);
+}
+
+void FileManagerFactory::TrimDataBufferCacheMaxLimit(std::size_t cacheMaxLimit)
+{
+  std::unique_lock guard(Lock);
+  std::shared_ptr<FileManager> instance = Instance;
+  guard.unlock();
+
+  if (instance)
+    instance->TrimDataBufferCacheMaxLimit(cacheMaxLimit);
+}
+
+void FileManagerFactory::ClearDataBufferCache()
+{
+  std::unique_lock guard(Lock);
+  std::shared_ptr<FileManager> instance = Instance;
+  guard.unlock();
+
+  if (instance)
+    instance->ClearDataBufferCache();
 }

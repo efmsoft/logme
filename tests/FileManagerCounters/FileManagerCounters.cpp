@@ -357,8 +357,9 @@ TEST(FileManagerCounters, DelayedBackendMovesToFrontForImmediateFlush)
       , "delayed-to-immediate-message"
       , std::chrono::milliseconds(1000)
     ));
-    ASSERT_TRUE(WaitForManagerIdle(std::chrono::milliseconds(1000)));
   }
+
+  ASSERT_TRUE(WaitForManagerIdle(std::chrono::milliseconds(1000)));
 
   auto after = Logme::FileManager::GetCounters();
   CounterDelta delta{before, after};

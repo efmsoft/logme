@@ -570,40 +570,24 @@ TEST(FileManagerCounters, DataBufferCacheRetainsOverLimitAndReusesBurst)
   DataBufferCacheLimitGuard cacheLimit(4);
   DataBufferCacheMaxLimitGuard cacheMaxLimit(64);
   DataBufferCacheRetainGuard retainOverLimit(5000);
-  FlushAfterGuard flushAfter(20);
 
-  constexpr int BACKENDS = 24;
+  constexpr int BUFFERS = 24;
+  auto& factory = Logme::Instance->GetFileManagerFactory();
   auto before = Logme::FileManager::GetCounters();
 
+  for (int i = 0; i < BUFFERS; ++i)
   {
-    std::vector<std::unique_ptr<FileFixture>> files;
-    files.reserve(BACKENDS);
-
-    for (int i = 0; i < BACKENDS; ++i)
-    {
-      auto name = std::string("cache-retain-first-") + std::to_string(i);
-      files.push_back(std::make_unique<FileFixture>(name.c_str()));
-      LogmeI(
-        files.back()->ChannelId
-        , "cache-retain-first-message-%d"
-        , i
-      );
-    }
-
-    ASSERT_TRUE(WaitForManagerIdle(std::chrono::milliseconds(5000)));
+    auto buffer = std::make_unique<Logme::DataBuffer>(1024, nullptr);
+    ASSERT_TRUE(factory.ReturnDataBuffer(
+      std::move(buffer)
+      , Logme::FileBackend::GetDataBufferCacheLimit()
+      , Logme::FileBackend::GetDataBufferCacheMaxLimit()
+      , Logme::FileBackend::GetDataBufferCacheRetainOverLimitMs()
+    ));
   }
 
-  ASSERT_TRUE(WaitForCounterIncrease(
-    []
-    {
-      return Logme::FileManager::GetCounters().DataBufferCacheDepth;
-    }
-    , 0
-    , BACKENDS
-    , std::chrono::milliseconds(2000)
-  ));
-
   auto afterFirst = Logme::FileManager::GetCounters();
+  EXPECT_EQ(afterFirst.DataBufferCacheDepth, (uint64_t)BUFFERS);
   EXPECT_GT(afterFirst.DataBufferCacheDepth, 4u);
   EXPECT_GT(afterFirst.DataBufferCacheMaxDepth, 4u);
   EXPECT_GT(
@@ -615,32 +599,32 @@ TEST(FileManagerCounters, DataBufferCacheRetainsOverLimitAndReusesBurst)
     , Diff(before.DataBufferCacheOverLimitDrops, afterFirst.DataBufferCacheOverLimitDrops)
   );
 
+  std::vector<Logme::DataBufferPtr> buffers;
+  buffers.reserve(BUFFERS);
+
+  for (int i = 0; i < BUFFERS; ++i)
   {
-    std::vector<std::unique_ptr<FileFixture>> files;
-    files.reserve(BACKENDS);
+    auto buffer = factory.TakeDataBuffer(
+      nullptr
+      , 1024
+      , Logme::FileBackend::GetDataBufferCacheLimit()
+      , Logme::FileBackend::GetDataBufferCacheMaxLimit()
+      , Logme::FileBackend::GetDataBufferCacheRetainOverLimitMs()
+    );
 
-    for (int i = 0; i < BACKENDS; ++i)
-    {
-      auto name = std::string("cache-retain-second-") + std::to_string(i);
-      files.push_back(std::make_unique<FileFixture>(name.c_str()));
-      LogmeI(
-        files.back()->ChannelId
-        , "cache-retain-second-message-%d"
-        , i
-      );
-    }
-
-    ASSERT_TRUE(WaitForManagerIdle(std::chrono::milliseconds(5000)));
+    ASSERT_TRUE(buffer);
+    buffers.push_back(std::move(buffer));
   }
 
   auto afterSecond = Logme::FileManager::GetCounters();
-  EXPECT_GT(
+  EXPECT_EQ(afterSecond.DataBufferCacheDepth, 0u);
+  EXPECT_EQ(
     Diff(afterFirst.DataBufferCacheHits, afterSecond.DataBufferCacheHits)
-    , 0u
+    , (uint64_t)BUFFERS
   );
-  EXPECT_GT(
+  EXPECT_EQ(
     Diff(afterFirst.DataBufferReuses, afterSecond.DataBufferReuses)
-    , 0u
+    , (uint64_t)BUFFERS
   );
 
   CounterDelta delta{before, afterSecond};

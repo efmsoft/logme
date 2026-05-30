@@ -136,6 +136,7 @@ namespace
 
 size_t FileBackend::MaxSizeDefault = FileBackend::MAX_SIZE_DEFAULT;
 size_t FileBackend::QueueSizeLimitDefault = FileBackend::QUEUE_SIZE_LIMIT;
+size_t FileBackend::QueueBufferLimitDefault = FileBackend::MAX_TOTAL_BUFFERS;
 uint64_t FileBackend::FlushAfterDefault = FileBackend::FLUSH_AFTER_DEFAULT;
 size_t FileBackend::DataBufferSizeDefault = FileBackend::QUEUE_BUFFER_SIZE;
 std::atomic<size_t> FileBackend::DataBufferCacheLimit(16);
@@ -166,7 +167,7 @@ FileBackend::FileBackend(ChannelPtr owner)
     {
       BufferQueue::Options o;
       o.BufferSize = DataBufferSizeDefault;
-      o.MaxTotalBuffers = MAX_TOTAL_BUFFERS;
+      o.MaxTotalBuffers = QueueBufferLimitDefault;
       o.CacheContext = owner.get();
       o.TakeCachedBuffer = &FileBackend::TakeCachedDataBuffer;
       o.ReturnCachedBuffer = &FileBackend::ReturnCachedDataBuffer;
@@ -181,7 +182,7 @@ FileBackend::FileBackend(ChannelPtr owner)
   , BufferedIo(std::make_unique<BufferedFileIo>(this))
 {
   SetAsync(true);
-  ReadyData.reserve(MAX_TOTAL_BUFFERS);
+  ReadyData.reserve(QueueBufferLimitDefault);
   NonceGenInit(&Nonce);
 }
 
@@ -273,6 +274,16 @@ void FileBackend::ClearDataBufferCache()
 size_t FileBackend::GetQueueSizeLimitDefault()
 {
   return QueueSizeLimitDefault;
+}
+
+void FileBackend::SetQueueBufferLimitDefault(size_t count)
+{
+  QueueBufferLimitDefault = count;
+}
+
+size_t FileBackend::GetQueueBufferLimitDefault()
+{
+  return QueueBufferLimitDefault;
 }
 
 FileBackendCounters FileBackend::GetCounters()

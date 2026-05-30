@@ -151,6 +151,7 @@ namespace Logme
 
     static size_t MaxSizeDefault;
     static size_t QueueSizeLimitDefault;
+    static size_t QueueBufferLimitDefault;
     static uint64_t FlushAfterDefault;
     static size_t DataBufferSizeDefault;
     static std::atomic<size_t> DataBufferCacheLimit;
@@ -205,6 +206,9 @@ namespace Logme
 
     LOGMELNK static size_t GetQueueSizeLimitDefault();
     LOGMELNK static void SetQueueSizeLimitDefault(size_t size);
+
+    LOGMELNK static size_t GetQueueBufferLimitDefault();
+    LOGMELNK static void SetQueueBufferLimitDefault(size_t count);
 
     LOGMELNK static uint64_t GetFlushAfterDefault();
     LOGMELNK static void SetFlushAfterDefault(uint64_t ms);

@@ -179,10 +179,8 @@ FileBackend::FileBackend(ChannelPtr owner)
   , QueuedBytes(0)
   , DailyRotation(false)
   , MaxParts(2)
-  , BufferedIo(std::make_unique<BufferedFileIo>(this))
 {
   SetAsync(true);
-  ReadyData.reserve(QueueBufferLimitDefault);
   NonceGenInit(&Nonce);
 }
 
@@ -953,8 +951,13 @@ bool FileBackend::HasEvents() const
 
 FileIo& FileBackend::GetActiveIo()
 {
-  if (!GetAsync() && BufferedIo)
+  if (!GetAsync())
+  {
+    if (!BufferedIo)
+      BufferedIo = std::make_unique<BufferedFileIo>(this);
+
     return *BufferedIo;
+  }
 
   return *this;
 }

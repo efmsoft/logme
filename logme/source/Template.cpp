@@ -69,6 +69,100 @@ static int GetModuleFileNameA(int, char* buff, size_t maxLen)
 }
 #endif
 
+namespace
+{
+  class TemplateBuffer
+  {
+  public:
+    TemplateBuffer()
+      : Pos(0)
+      , Text(nullptr)
+    {
+      Buffer[0] = '\0';
+    }
+
+    ~TemplateBuffer()
+    {
+      delete Text;
+    }
+
+    TemplateBuffer(const TemplateBuffer&) = delete;
+    TemplateBuffer& operator=(const TemplateBuffer&) = delete;
+
+    void Append(char ch)
+    {
+      if (Text)
+      {
+        *Text += ch;
+        return;
+      }
+
+      if (Pos < sizeof(Buffer))
+      {
+        Buffer[Pos++] = ch;
+        return;
+      }
+
+      CreateText();
+      *Text += ch;
+    }
+
+    void Append(const char* str)
+    {
+      if (!str)
+        return;
+
+      Append(str, strlen(str));
+    }
+
+    void Append(const std::string& str)
+    {
+      Append(str.c_str(), str.size());
+    }
+
+    void Append(const char* str, size_t len)
+    {
+      if (!str || len == 0)
+        return;
+
+      if (Text)
+      {
+        Text->append(str, len);
+        return;
+      }
+
+      if (Pos + len <= sizeof(Buffer))
+      {
+        memcpy(Buffer + Pos, str, len);
+        Pos += len;
+        return;
+      }
+
+      CreateText();
+      Text->append(str, len);
+    }
+
+    std::string ToString() const
+    {
+      if (Text)
+        return *Text;
+
+      return std::string(Buffer, Pos);
+    }
+
+  private:
+    void CreateText()
+    {
+      Text = new std::string(Buffer, Pos);
+    }
+
+  private:
+    char Buffer[512];
+    size_t Pos;
+    std::string* Text;
+  };
+}
+
 static std::string GetExeName()
 {
   char buff[MAX_PATH + 1];
@@ -112,8 +206,14 @@ std::string Logme::ProcessTemplate(
   if (notProcessed)
     *notProcessed = 0;
 
-  std::string name;
-  while (p && *p)
+  if (!p)
+    return std::string();
+
+  if (!strchr(p, '{'))
+    return std::string(p);
+
+  TemplateBuffer name;
+  while (*p)
   {
     if (*p == '{')
     {
@@ -125,9 +225,9 @@ std::string Logme::ProcessTemplate(
         std::string var(p, e - p);
         if (var.find('%') != std::string::npos)
         {
-          name += "{%";
-          name += var;
-          name += "}";
+          name.Append("{%");
+          name.Append(var);
+          name.Append("}");
         }
         else
         {
@@ -139,7 +239,7 @@ std::string Logme::ProcessTemplate(
           v = ProcessTemplate(v.c_str(), param, &m);
 
           ftemplate = true;
-          name += v;
+          name.Append(v);
         }
           
         p = e + 1;                          // next char after }
@@ -150,7 +250,7 @@ std::string Logme::ProcessTemplate(
         if (param.Flags & TEMPLATE_PID)
         {
           p += TPID_L;
-          name += dword2str(GetCurrentProcessId());
+          name.Append(dword2str(GetCurrentProcessId()));
           continue;
         }
 
@@ -166,7 +266,7 @@ std::string Logme::ProcessTemplate(
           p += TPNAME_L;
 
           std::string exe = GetExeName();
-          name += exe.substr(0, exe.find_last_of('.'));
+          name.Append(exe.substr(0, exe.find_last_of('.')));
           continue;
         }
 
@@ -193,7 +293,7 @@ std::string Logme::ProcessTemplate(
           char buffer[32];
           strftime(buffer, sizeof(buffer), "%Y-%m-%d-%H-%M-%S", t);
 
-          name += buffer;
+          name.Append(buffer);
           continue;
         }
 
@@ -220,7 +320,7 @@ std::string Logme::ProcessTemplate(
           char buffer[32];
           strftime(buffer, sizeof(buffer), "%Y-%m-%d", t);
 
-          name += buffer;
+          name.Append(buffer);
           continue;
         }
 
@@ -234,9 +334,9 @@ std::string Logme::ProcessTemplate(
           p += TTARGET_L;
 
           if (!param.TargetChannel)
-            name += "0";
+            name.Append("0");
           else
-            name += param.TargetChannel;
+            name.Append(param.TargetChannel);
 
           continue;
         }
@@ -252,7 +352,7 @@ std::string Logme::ProcessTemplate(
         {
           p += TEXEPATH_L;
 
-          name += GetExecutablePath();
+          name.Append(GetExecutablePath());
           continue;
         }
 
@@ -263,13 +363,14 @@ std::string Logme::ProcessTemplate(
       }
     }
 
-    name += *p++;
+    name.Append(*p++);
   }
 
   (void)tstr;
   (void)ftemplate;
-  LogmeI_If(ftemplate, CHINT, "ProcessTemplate: %s -> %s", tstr, name.c_str());
+  std::string result = name.ToString();
+  LogmeI_If(ftemplate, CHINT, "ProcessTemplate: %s -> %s", tstr, result.c_str());
 
-  return name;
+  return result;
 }
  

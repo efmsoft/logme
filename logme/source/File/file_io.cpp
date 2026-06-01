@@ -11,6 +11,7 @@
 
 #ifndef _WIN32
 #include <sys/file.h>
+#include <sys/uio.h>
 #include <unistd.h>
 
 #define _lseek lseek
@@ -309,6 +310,20 @@ int FileIo::WriteRaw(const void* p, size_t size)
 
   return rc;
 }
+
+#if !defined(_WIN32) && !defined(__sun__)
+int FileIo::WriteRawVector(const struct iovec* iov, int iovcnt)
+{
+  std::lock_guard guard(IoLock);
+  assert(File != -1);
+
+  int rc = (int)writev(File, iov, iovcnt);
+  if (rc < 0)
+    IO_ERROR(writev());
+
+  return rc;
+}
+#endif
 
 int FileIo::Read(void* p, size_t size)
 {

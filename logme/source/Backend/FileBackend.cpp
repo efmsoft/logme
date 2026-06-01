@@ -28,6 +28,7 @@ using namespace std::chrono_literals;
 
 #ifndef _WIN32
 #include <sys/file.h>
+#include <sys/uio.h>
 #include <unistd.h>
 
 #define _lseek lseek
@@ -1026,6 +1027,57 @@ bool FileBackend::WriteReadyData(std::vector<DataBufferPtr>& data)
 
     Truncate();
 
+#if !defined(_WIN32) && !defined(__sun__)
+    constexpr size_t WRITEV_CHUNK = 256;
+    iovec iov[WRITEV_CHUNK];
+    size_t iovcnt = 0;
+
+    auto writeVector = [&]()
+    {
+      if (iovcnt == 0)
+        return;
+
+      int rc = iovcnt == 1
+        ? FileIo::WriteRaw(iov[0].iov_base, iov[0].iov_len)
+        : FileIo::WriteRawVector(iov, (int)iovcnt);
+
+      if (rc < 0)
+      {
+        ok = false;
+      }
+      else
+      {
+        CurrentSize += (size_t)rc;
+      }
+
+      iovcnt = 0;
+    };
+
+    for (auto& b : data)
+    {
+      if (!b)
+        continue;
+
+      FILE_WRCNT(GlobalWriteReadyRawCalls.fetch_add(
+        1
+        , std::memory_order_relaxed
+      ));
+      FILE_WRCNT(GlobalWriteReadyRawBytes.fetch_add(
+        b->Size()
+        , std::memory_order_relaxed
+      ));
+      FILE_WRCNT(UpdateMaxCounter(GlobalWriteReadyRawMaxBytes, b->Size()));
+
+      iov[iovcnt].iov_base = b->Data();
+      iov[iovcnt].iov_len = b->Size();
+      ++iovcnt;
+
+      if (iovcnt == WRITEV_CHUNK)
+        writeVector();
+    }
+
+    writeVector();
+#else
     for (auto& b : data)
     {
       if (!b)
@@ -1051,6 +1103,7 @@ bool FileBackend::WriteReadyData(std::vector<DataBufferPtr>& data)
         CurrentSize += (size_t)rc;
       }
     }
+#endif
   }
 
   Queue.ReportWrite(data.size(), bytes, ok);

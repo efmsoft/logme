@@ -1,9 +1,3 @@
-#include <Logme/Channel.h>
-#include <Logme/Context.h>
-#include <Logme/Time/datetime.h>
-#include <Logme/Utils.h>
-#include "StringHelpers.h"
-
 #include <cassert>
 #include <string>
 #include <string.h>
@@ -13,6 +7,13 @@
 #else
 #include <unistd.h>
 #endif
+
+#include <Logme/Channel.h>
+#include <Logme/Context.h>
+#include <Logme/Time/datetime.h>
+#include <Logme/Utils.h>
+
+#include "StringHelpers.h"
 
 #ifdef _WIN32
 #pragma warning(disable : 26812)
@@ -25,7 +26,6 @@
 
 using namespace Logme;
 
-
 namespace
 {
   const char* CountLoggedBytesAndReturn(Context& context, const ChannelPtr& ch, int nc, const char* data)
@@ -37,6 +37,18 @@ namespace
     }
 
     return data;
+  }
+
+  uint64_t GetRepeatCount(const Context& context)
+  {
+    return context.CollapseRepeatCount;
+  }
+
+  std::string MakeRepeatedText(uint64_t count, const char* text, size_t len)
+  {
+    std::string repeated = "repeated " + std::to_string(count) + " times: ";
+    repeated.append(text, len);
+    return repeated;
   }
 
   const char* GetStructuredLevelName(Level level)
@@ -199,6 +211,8 @@ Context::Context(ContextCache& cache, Level level, const ID* ch, const SID* sid)
   , AppendProc(nullptr)
   , AppendContext(nullptr)
   , Ovr(nullptr)
+  , CollapseCache(nullptr)
+  , CollapseRepeatCount(0)
   , Signature(0)
   , ExtBufferSize(0)
   , TempBuffer(nullptr)
@@ -230,6 +244,8 @@ Context::Context(
   , AppendProc(nullptr)
   , AppendContext(nullptr)
   , Ovr(nullptr)
+  , CollapseCache(nullptr)
+  , CollapseRepeatCount(0)
   , Signature(0)
   , ExtBufferSize(0)
   , TempBuffer(nullptr)
@@ -257,6 +273,7 @@ void Context::InitContext()
   TempBufferSize = 0;
   TempBufferCapacity = 0;
   LoggedBytesCounted = false;
+  CollapseRepeatCount = 0;
   Applied.None = true;
 }
 
@@ -295,6 +312,48 @@ void Context::SetBuffer(const char* buffer, size_t size, size_t capacity)
   TempBuffer = buffer;
   TempBufferSize = size;
   TempBufferCapacity = capacity;
+}
+
+bool Context::ApplyCollapse()
+{
+  CollapseRepeatCount = 0;
+
+  CollapseContextCache* collapseCache = CollapseCache;
+  if (collapseCache == nullptr || collapseCache->Limit == 0)
+    return true;
+
+  const char* text = TempBuffer;
+  if (text == nullptr)
+    text = "";
+
+  const char* key = text;
+  std::string normalizedText;
+  if (collapseCache->IgnoreRegexEnabled)
+  {
+    normalizedText = std::regex_replace(
+      std::string(text)
+      , collapseCache->IgnoreRegex
+      , ""
+    );
+    key = normalizedText.c_str();
+  }
+
+  std::lock_guard guard(collapseCache->Lock);
+
+  if (collapseCache->LastKey != key)
+  {
+    collapseCache->LastKey = key;
+    collapseCache->RepeatCount = 0;
+    return true;
+  }
+
+  ++collapseCache->RepeatCount;
+  if (collapseCache->RepeatCount < collapseCache->Limit)
+    return false;
+
+  CollapseRepeatCount = collapseCache->RepeatCount;
+  collapseCache->RepeatCount = 0;
+  return true;
 }
 
 const char* Context::GetText() const
@@ -480,6 +539,7 @@ void Context::InitThreadProcessID(const ChannelPtr& ch, OutputFlags flags)
             }
             else
             {
+              // NOLINTNEXTLINE(clang-analyzer-security.insecureAPI.strcpy)
               strcpy(p, t.c_str());
               p += t.size();
               remaining -= t.size();
@@ -487,6 +547,7 @@ void Context::InitThreadProcessID(const ChannelPtr& ch, OutputFlags flags)
 
             if (remaining >= 4)
             {
+              // NOLINTNEXTLINE(clang-analyzer-security.insecureAPI.strcpy)
               strcpy(p, " -> ");
               p += 4;
               remaining -= 4;
@@ -505,6 +566,7 @@ void Context::InitThreadProcessID(const ChannelPtr& ch, OutputFlags flags)
           }
           else
           {
+            // NOLINTNEXTLINE(clang-analyzer-security.insecureAPI.strcpy)
             strcpy(p, name);
             p += n;
           }
@@ -613,7 +675,14 @@ const char* Context::ApplyJson(const ChannelPtr& ch, OutputFlags flags, int& nc)
   if (flags.Method && Method && !flags.ProcPrint)
     AppendJsonStringField(output, first, OUTPUT_FIELD_METHOD, Method);
 
-  AppendJsonStringField(output, first, OUTPUT_FIELD_MESSAGE, TempBuffer, TempBufferSize);
+  uint64_t repeatCount = GetRepeatCount(*this);
+  if (repeatCount)
+  {
+    std::string repeated = MakeRepeatedText(repeatCount, TempBuffer, TempBufferSize);
+    AppendJsonStringField(output, first, OUTPUT_FIELD_MESSAGE, repeated.c_str(), repeated.size());
+  }
+  else
+    AppendJsonStringField(output, first, OUTPUT_FIELD_MESSAGE, TempBuffer, TempBufferSize);
 
   if (appendText)
     AppendJsonStringField(output, first, OUTPUT_FIELD_DURATION, appendText);
@@ -712,7 +781,14 @@ const char* Context::ApplyXml(const ChannelPtr& ch, OutputFlags flags, int& nc)
   if (flags.Method && Method && !flags.ProcPrint)
     AppendXmlElement(output, OUTPUT_FIELD_METHOD, Method);
 
-  AppendXmlElement(output, OUTPUT_FIELD_MESSAGE, TempBuffer, TempBufferSize);
+  uint64_t repeatCount = GetRepeatCount(*this);
+  if (repeatCount)
+  {
+    std::string repeated = MakeRepeatedText(repeatCount, TempBuffer, TempBufferSize);
+    AppendXmlElement(output, OUTPUT_FIELD_MESSAGE, repeated.c_str(), repeated.size());
+  }
+  else
+    AppendXmlElement(output, OUTPUT_FIELD_MESSAGE, TempBuffer, TempBufferSize);
 
   if (appendText)
     AppendXmlElement(output, OUTPUT_FIELD_DURATION, appendText);
@@ -857,6 +933,20 @@ const char* Context::Apply(const ChannelPtr& ch, OutputFlags flags, int& nc)
     nMethod = (int)strlen(Method) + 4; // "Method(): "
   }
 
+  int nRepeatPrefix = 0;
+  char repeatPrefix[64] = {0};
+  uint64_t repeatCount = GetRepeatCount(*this);
+  if (repeatCount)
+  {
+    snprintf(
+      repeatPrefix
+      , sizeof(repeatPrefix)
+      , "repeated %llu times: "
+      , (unsigned long long)repeatCount
+    );
+    nRepeatPrefix = (int)strlen(repeatPrefix);
+  }
+
   int nEol = 0;
   if (flags.Eol)
     nEol = 1;
@@ -884,6 +974,7 @@ const char* Context::Apply(const ChannelPtr& ch, OutputFlags flags, int& nc)
     && nFile == 0
     && nError == 0
     && nMethod == 0
+    && nRepeatPrefix == 0
   ;
 
   if (canReuseTempBuffer)
@@ -914,7 +1005,7 @@ const char* Context::Apply(const ChannelPtr& ch, OutputFlags flags, int& nc)
   }
 
   char* buffer = Buffer;
-  int n = nTimestamp + nSignature + nID + nChannel + nSubsystem + nFile + nError + nMethod + nLine + nAppend + nEol + 1;
+  int n = nTimestamp + nSignature + nID + nChannel + nSubsystem + nFile + nError + nMethod + nRepeatPrefix + nLine + nAppend + nEol + 1;
   if (n > (int)sizeof(Buffer))
   {
     if (ExtBufferSize < size_t(n))
@@ -958,6 +1049,7 @@ const char* Context::Apply(const ChannelPtr& ch, OutputFlags flags, int& nc)
 
   if (nSubsystem)
   {
+    // NOLINTNEXTLINE(clang-analyzer-security.insecureAPI.strcpy)
     strcpy(p, subsystem);
     p += nSubsystem;
   }
@@ -981,9 +1073,17 @@ const char* Context::Apply(const ChannelPtr& ch, OutputFlags flags, int& nc)
 
   if (nMethod)
   {
-    strcpy(p, Method);    
+    // NOLINTNEXTLINE(clang-analyzer-security.insecureAPI.strcpy)
+    strcpy(p, Method);
+    // NOLINTNEXTLINE(clang-analyzer-security.insecureAPI.strcpy)
     strcpy(p + nMethod - 4, "(): ");
     p += nMethod;
+  }
+
+  if (nRepeatPrefix)
+  {
+    strcpy_s(p, n - (p - buffer), repeatPrefix);
+    p += nRepeatPrefix;
   }
 
   strcpy_s(p, n - (p - buffer), text);

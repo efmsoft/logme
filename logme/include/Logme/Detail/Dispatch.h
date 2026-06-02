@@ -66,6 +66,36 @@ namespace Logme
       return logger->Log(context, std::forward<Args>(args)...);
     }
 
+
+    template<typename LoggerType, typename... Args>
+    inline decltype(auto) DispatchCollapse(
+      LoggerType&& logger
+      , CollapseContextCache& cache
+      , Level level
+      , const ID* ch
+      , const SID* sid
+      , const char* method
+      , const char* file
+      , int line
+      , Args&&... args
+    )
+    {
+      Context context(
+        cache
+        , level
+        , ch
+        , sid
+        , method
+        , file
+        , line
+        , MakeParams(args...)
+      );
+
+      context.CollapseCache = &cache;
+
+      return logger->Log(context, std::forward<Args>(args)...);
+    }
+
     template<typename LoggerType, typename StdFormatType, typename... Args>
     inline void DispatchStdFormat(
       LoggerType&& logger

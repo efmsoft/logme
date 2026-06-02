@@ -2,6 +2,8 @@
 
 #include <atomic>
 #include <memory>
+#include <mutex>
+#include <regex>
 #include <string>
 
 #include <Logme/FastFormat.h>
@@ -37,6 +39,43 @@ namespace Logme
       , Ffe{}
     {
     }  
+  };
+
+  struct CollapseContextCache : public ContextCache
+  {
+    std::mutex Lock;
+    std::string IgnoreRegexText;
+    std::regex IgnoreRegex;
+    std::string LastKey;
+    uint64_t Limit;
+    uint64_t RepeatCount;
+    bool IgnoreRegexEnabled;
+
+    CollapseContextCache(uint64_t limit)
+      : Limit(limit)
+      , RepeatCount(0)
+      , IgnoreRegexEnabled(false)
+    {
+    }
+
+    CollapseContextCache(const char* ignoreRegex, uint64_t limit)
+      : IgnoreRegexText(ignoreRegex ? ignoreRegex : "")
+      , Limit(limit)
+      , RepeatCount(0)
+      , IgnoreRegexEnabled(false)
+    {
+      if (!IgnoreRegexText.empty())
+      {
+        try
+        {
+          IgnoreRegex = std::regex(IgnoreRegexText);
+          IgnoreRegexEnabled = true;
+        }
+        catch (const std::regex_error&)
+        {
+        }
+      }
+    }
   };
 
   struct ShortenerContext
@@ -87,6 +126,8 @@ namespace Logme
 
     Override* Ovr;
     StringPtr Output;
+    CollapseContextCache* CollapseCache;
+    uint64_t CollapseRepeatCount;
 
     char Timestamp[TIMESTAMP_BUFFER_SIZE];
     char ThreadProcessID[TID_BUFFER_SIZE + PID_BUFFER_SIZE + 1];
@@ -141,6 +182,7 @@ namespace Logme
     LOGMELNK void CreateTZD(char* tzd);
     LOGMELNK void SetText(const char* text);
     LOGMELNK void SetBuffer(const char* buffer, size_t size, size_t capacity);
+    LOGMELNK bool ApplyCollapse();
 
     LOGMELNK const char* Apply(const ChannelPtr& ch, OutputFlags flags, int& nc);
     LOGMELNK const char* ApplyJson(const ChannelPtr& ch, OutputFlags flags, int& nc);

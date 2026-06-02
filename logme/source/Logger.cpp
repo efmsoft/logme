@@ -1201,6 +1201,12 @@ void Logger::DoLog(Context& context, const char* format, va_list args)
       context.SetBuffer(buffer, bufferLen, size);
     }
 
+    if (context.CollapseCache)
+    {
+      if (context.ApplyCollapse() == false)
+        return;
+    }
+
     ch->Display(context);
 
     if (context.ErrorLevel >= Level::LEVEL_ERROR)

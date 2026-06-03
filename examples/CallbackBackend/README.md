@@ -1,5 +1,7 @@
 # CallbackBackend example
 
+## CallbackBackend
+
 This example shows how to route log records to a user callback.
 
 `CallbackBackend` is useful when an application wants to collect records in memory, forward them to an existing telemetry pipeline, or integrate logme with a custom diagnostics system.

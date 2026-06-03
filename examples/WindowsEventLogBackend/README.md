@@ -1,5 +1,7 @@
 # WindowsEventLogBackend example
 
+## WindowsEventLogBackend
+
 This Windows-only example writes logme records to Windows Event Log.
 
 The example creates a separate channel, attaches `WindowsEventLogBackend`, sets the event source, event id, category, and enables asynchronous delivery.

@@ -116,6 +116,52 @@ namespace Logme
   /// <returns>Joined string.</returns>
   LOGMELNK std::string Join(const StringArray& arr, const std::string separator);
 
+  /// <summary>
+  /// Parses byte size string.
+  /// </summary>
+  /// <param name="input">Size string, optionally using b, Kb, Mb or Gb suffix.</param>
+  /// <param name="value">Output variable receiving parsed byte size.</param>
+  /// <returns>True if input was parsed.</returns>
+  LOGMELNK bool ParseByteSize(const std::string& input, uint64_t& value);
+
+  /// <summary>
+  /// Parses byte size string.
+  /// </summary>
+  /// <param name="input">Size string, optionally using b, Kb, Mb or Gb suffix.</param>
+  /// <param name="def">Default value returned when input is invalid.</param>
+  /// <returns>Size in bytes.</returns>
+  LOGMELNK uint64_t GetByteSize(const std::string& input, uint64_t def);
+
+  /// <summary>
+  /// Formats byte size using the largest exact suffix.
+  /// </summary>
+  /// <param name="value">Size in bytes.</param>
+  /// <returns>Formatted byte size.</returns>
+  LOGMELNK std::string FormatByteSize(uint64_t value);
+
+  /// <summary>
+  /// Parses time interval string.
+  /// </summary>
+  /// <param name="input">Interval string, optionally using ms, seconds, minutes, hours, days or weeks suffix.</param>
+  /// <param name="value">Output variable receiving parsed interval in milliseconds.</param>
+  /// <returns>True if input was parsed.</returns>
+  LOGMELNK bool ParseInterval(const std::string& input, uint64_t& value);
+
+  /// <summary>
+  /// Parses time interval string.
+  /// </summary>
+  /// <param name="input">Interval string, optionally using ms, seconds, minutes, hours, days or weeks suffix.</param>
+  /// <param name="def">Default value returned when input is invalid.</param>
+  /// <returns>Interval in milliseconds.</returns>
+  LOGMELNK uint64_t GetInterval(const std::string& input, uint64_t def);
+
+  /// <summary>
+  /// Formats time interval using the largest exact suffix.
+  /// </summary>
+  /// <param name="value">Interval in milliseconds.</param>
+  /// <returns>Formatted time interval.</returns>
+  LOGMELNK std::string FormatInterval(uint64_t value);
+
 #ifdef USE_JSONCPP
   /// <summary>
   /// Reads byte size option from JSON value.

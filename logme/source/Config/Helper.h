@@ -8,6 +8,35 @@
 
 #include <Logme/Logme.h>
 
+struct Suffix
+{
+  const char* Name;
+  uint64_t Multiplier;
+  const char* FormatName;
+
+  Suffix(const char* name, uint64_t multiplier, const char* formatName = nullptr);
+};
+
+bool ParseSmartValue(
+  const std::string& input
+  , uint64_t& value
+  , const Suffix* suffixes
+  , size_t n
+);
+
+uint64_t SmartValue(
+  const std::string& input
+  , uint64_t def
+  , const Suffix* suffixes
+  , size_t n
+);
+
+std::string FormatSmartValue(
+  uint64_t value
+  , const Suffix* suffixes
+  , size_t n
+);
+
 #ifdef USE_JSONCPP
 
 #include <json/json.h>
@@ -25,17 +54,11 @@ bool ParseSubsystems(
   , std::list<std::string>& allowed
 );
 
-struct Suffix
-{
-  const char* Name;
-  int Multiplier;
-};
-
 uint64_t SmartValue(
   const Json::Value& root
   , const char* option
   , uint64_t def
-  , Suffix* suffixes
+  , const Suffix* suffixes
   , size_t n
 );
 

@@ -66,114 +66,6 @@ static std::string NormalizeBackendType(const std::string& input)
 }
 
 
-static bool ParseSizeValue(const std::string& input, size_t& value)
-{
-  if (input.empty())
-    return false;
-
-  size_t numberEnd = 0;
-  while (numberEnd < input.size() && std::isdigit(static_cast<unsigned char>(input[numberEnd])))
-    ++numberEnd;
-
-  if (numberEnd == 0)
-    return false;
-
-  unsigned long long number = 0;
-  try
-  {
-    number = std::stoull(input.substr(0, numberEnd));
-  }
-  catch (...)
-  {
-    return false;
-  }
-
-  std::string suffix = input.substr(numberEnd);
-  ToLowerAsciiInplace(suffix);
-
-  unsigned long long multiplier = 1;
-  if (suffix.empty() || suffix == "b")
-  {
-    multiplier = 1;
-  }
-  else if (suffix == "k" || suffix == "kb" || suffix == "kib")
-  {
-    multiplier = 1024ULL;
-  }
-  else if (suffix == "m" || suffix == "mb" || suffix == "mib")
-  {
-    multiplier = 1024ULL * 1024ULL;
-  }
-  else if (suffix == "g" || suffix == "gb" || suffix == "gib")
-  {
-    multiplier = 1024ULL * 1024ULL * 1024ULL;
-  }
-  else
-  {
-    return false;
-  }
-
-  if (number > std::numeric_limits<size_t>::max() / multiplier)
-    return false;
-
-  value = static_cast<size_t>(number * multiplier);
-  return true;
-}
-
-
-static bool ParseIntervalValue(const std::string& input, size_t& value)
-{
-  if (input.empty())
-    return false;
-
-  size_t numberEnd = 0;
-  while (numberEnd < input.size() && std::isdigit(static_cast<unsigned char>(input[numberEnd])))
-    ++numberEnd;
-
-  if (numberEnd == 0)
-    return false;
-
-  unsigned long long number = 0;
-  try
-  {
-    number = std::stoull(input.substr(0, numberEnd));
-  }
-  catch (...)
-  {
-    return false;
-  }
-
-  std::string suffix = input.substr(numberEnd);
-  ToLowerAsciiInplace(suffix);
-
-  unsigned long long multiplier = 1;
-  if (suffix.empty() || suffix == "ms" || suffix == "millisecond" || suffix == "milliseconds")
-  {
-    multiplier = 1;
-  }
-  else if (suffix == "s" || suffix == "sec" || suffix == "second" || suffix == "seconds")
-  {
-    multiplier = 1000ULL;
-  }
-  else if (suffix == "m" || suffix == "min" || suffix == "minute" || suffix == "minutes")
-  {
-    multiplier = 60ULL * 1000ULL;
-  }
-  else if (suffix == "h" || suffix == "hour" || suffix == "hours")
-  {
-    multiplier = 60ULL * 60ULL * 1000ULL;
-  }
-  else
-  {
-    return false;
-  }
-
-  if (number > std::numeric_limits<size_t>::max() / multiplier)
-    return false;
-
-  value = static_cast<size_t>(number * multiplier);
-  return true;
-}
 
 static bool ParseIntValue(const std::string& input, int& value)
 {
@@ -380,8 +272,9 @@ bool Logger::CommandBackend(Logme::StringArray& arr, std::string& response)
           return true;
         }
 
-        size_t value = 0;
-        if (!ParseSizeValue(arr[++i], value))
+        uint64_t value = 0;
+        if (ParseByteSize(arr[++i], value) == false
+          || value > std::numeric_limits<size_t>::max())
         {
           response = "error: invalid max size";
           return true;
@@ -393,19 +286,19 @@ bool Logger::CommandBackend(Logme::StringArray& arr, std::string& response)
 
         if (fileConfig)
         {
-          fileConfig->MaxSize = value;
+          fileConfig->MaxSize = static_cast<size_t>(value);
           continue;
         }
 
         if (sharedFileConfig)
         {
-          sharedFileConfig->MaxSize = value;
+          sharedFileConfig->MaxSize = static_cast<size_t>(value);
           continue;
         }
 
         if (bufferConfig)
         {
-          bufferConfig->MaxSize = value;
+          bufferConfig->MaxSize = static_cast<size_t>(value);
           continue;
         }
 
@@ -460,8 +353,9 @@ bool Logger::CommandBackend(Logme::StringArray& arr, std::string& response)
           return true;
         }
 
-        size_t value = 0;
-        if (!ParseIntervalValue(arr[++i], value))
+        uint64_t value = 0;
+        if (ParseInterval(arr[++i], value) == false
+          || value > std::numeric_limits<size_t>::max())
         {
           response = "error: invalid timeout";
           return true;
@@ -470,7 +364,7 @@ bool Logger::CommandBackend(Logme::StringArray& arr, std::string& response)
         auto sharedFileConfig = std::dynamic_pointer_cast<SharedFileBackendConfig>(config);
         if (sharedFileConfig)
         {
-          sharedFileConfig->Timeout = value;
+          sharedFileConfig->Timeout = static_cast<size_t>(value);
           continue;
         }
 

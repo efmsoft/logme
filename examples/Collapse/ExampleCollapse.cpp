@@ -5,6 +5,7 @@ static void SameText()
   for (int i = 0; i < 4; i++)
   {
     LogmeW_Collapse(3, "network error: connection refused");
+    LogmeI("retry loop is still active, attempt %d", i);
   }
 }
 

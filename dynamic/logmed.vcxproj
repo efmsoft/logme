@@ -115,6 +115,8 @@
     <ClCompile Include="..\logme\source\WindowsEventLog\WindowsEventLogManagerFactory.cpp" />
     <ClCompile Include="..\logme\source\Backend\CallbackBackend.cpp" />
     <ClCompile Include="..\logme\source\Backend\CallbackBackendConfig.cpp" />
+    <ClCompile Include="..\logme\source\Control\ControlPolicy.cpp" />
+    <ClCompile Include="..\logme\source\Control\EnvironmentControl.cpp" />
 </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\logme\source\Config\Helper.h" />

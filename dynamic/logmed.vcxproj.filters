@@ -330,6 +330,12 @@
     <ClCompile Include="..\logme\source\Backend\CallbackBackendConfig.cpp">
       <Filter>Backend</Filter>
     </ClCompile>
+    <ClCompile Include="..\logme\source\Control\ControlPolicy.cpp">
+      <Filter>Control</Filter>
+    </ClCompile>
+    <ClCompile Include="..\logme\source\Control\EnvironmentControl.cpp">
+      <Filter>Control</Filter>
+    </ClCompile>
 </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\logme\source\Time\utils.h">
@@ -557,6 +563,12 @@
     </ClInclude>
     <ClInclude Include="..\logme\include\Logme\Backend\CallbackBackend.h">
       <Filter>..\logme\include\Logme\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\ControlPolicy.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\EnvironmentControl.h">
+      <Filter>..\logme\include\Logme</Filter>
     </ClInclude>
 </ItemGroup>
 </Project>

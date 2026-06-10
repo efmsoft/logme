@@ -176,6 +176,8 @@
     <ClInclude Include="include\Logme\Colorizer.h" />
     <ClInclude Include="include\Logme\Context.h" />
     <ClInclude Include="include\Logme\Convert.h" />
+    <ClInclude Include="include\Logme\ControlPolicy.h" />
+    <ClInclude Include="include\Logme\EnvironmentControl.h" />
     <ClInclude Include="include\Logme\File\exe_path.h" />
     <ClInclude Include="include\Logme\File\file_io.h" />
     <ClInclude Include="include\Logme\ID.h" />
@@ -245,6 +247,8 @@
     <ClCompile Include="source\Control\Command\CmdSubsystem.cpp" />
     <ClCompile Include="source\Control\Command\CmdTrace.cpp" />
     <ClCompile Include="source\Control\Control.cpp" />
+    <ClCompile Include="source\Control\ControlPolicy.cpp" />
+    <ClCompile Include="source\Control\EnvironmentControl.cpp" />
     <ClCompile Include="source\Control\Json.cpp" />
     <ClCompile Include="source\Convert.cpp" />
     <ClCompile Include="source\DayChangeDetector.cpp" />

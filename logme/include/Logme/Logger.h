@@ -47,6 +47,10 @@ namespace Logme
   class ControlDiscovery;
   LOGMELNK extern bool ShutdownCalled;
 
+
+  class ControlPolicy;
+  struct EnvironmentControlOptions;
+
   class Logger : public std::enable_shared_from_this<Logger>
   {
     CS DataLock;
@@ -617,6 +621,24 @@ namespace Logme
     LOGMELNK std::string Control(const std::string& command);
 
     /// <summary>
+    /// Executes runtime control command under the specified command policy.
+    /// </summary>
+    /// <param name="command">Control command text.</param>
+    /// <param name="policy">Policy limiting allowed command operations.</param>
+    /// <returns>Command response text.</returns>
+    LOGMELNK std::string Control(
+      const std::string& command
+      , const ControlPolicy& policy
+    );
+
+    /// <summary>
+    /// Reads startup control commands from process environment and applies them.
+    /// </summary>
+    /// <param name="options">Environment control options and command policy.</param>
+    /// <returns>true if all selected commands were accepted and executed successfully.</returns>
+    LOGMELNK bool ApplyEnvironmentControl(const EnvironmentControlOptions& options);
+
+    /// <summary>
     /// Sets custom handler for runtime control commands not handled by logger.
     /// </summary>
     /// <param name="handler">Handler that receives command text and writes response text.</param>
@@ -687,6 +709,10 @@ namespace Logme
     void FreeControlSsl();
 
   public:
+    static bool CommandHelp(StringArray& arr, std::string& response);
+
+    static bool CommandVersion(StringArray& arr, std::string& response);
+
     static bool CommandList(StringArray& arr, std::string& response);
 
     static bool CommandChannel(StringArray& arr, std::string& response);

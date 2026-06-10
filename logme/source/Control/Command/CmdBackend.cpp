@@ -8,6 +8,7 @@
 #include <Logme/Backend/BufferBackend.h>
 #include <Logme/Backend/ConsoleBackend.h>
 #include <Logme/Backend/FileBackend.h>
+#include <Logme/Backend/RingBufferBackend.h>
 #include <Logme/Backend/SharedFileBackend.h>
 #include <Logme/Logger.h>
 #include <Logme/Utils.h>
@@ -50,6 +51,9 @@ static std::string NormalizeBackendType(const std::string& input)
   if (s == "buffer" || s == "buf")
     return "BufferBackend";
 
+  if (s == "ringbuffer" || s == "ring" || s == "rbuf")
+    return "RingBufferBackend";
+
   // If caller already passed exact canonical name with case variants, map it too.
   if (s == "consolebackend")
     return "ConsoleBackend";
@@ -61,6 +65,8 @@ static std::string NormalizeBackendType(const std::string& input)
     return "SharedFileBackend";
   if (s == "bufferbackend")
     return "BufferBackend";
+  if (s == "ringbufferbackend")
+    return "RingBufferBackend";
 
   return std::string();
 }
@@ -395,6 +401,32 @@ bool Logger::CommandBackend(Logme::StringArray& arr, std::string& response)
         }
 
         response = "error: --policy is only supported by BufferBackend";
+        return true;
+      }
+
+      if (arg == "--max-items")
+      {
+        if (i + 1 >= arr.size())
+        {
+          response = "error: missing max items";
+          return true;
+        }
+
+        int value = 0;
+        if (!ParseIntValue(arr[++i], value) || value <= 0)
+        {
+          response = "error: invalid max items";
+          return true;
+        }
+
+        auto ringBufferConfig = std::dynamic_pointer_cast<RingBufferBackendConfig>(config);
+        if (ringBufferConfig)
+        {
+          ringBufferConfig->MaxItems = static_cast<size_t>(value);
+          continue;
+        }
+
+        response = "error: --max-items is only supported by RingBufferBackend";
         return true;
       }
 

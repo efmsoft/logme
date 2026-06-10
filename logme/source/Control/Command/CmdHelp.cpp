@@ -1,15 +1,13 @@
 #include "../CommandRegistrar.h"
 
 #include <Logme/version.h>
+#include <Logme/Logger.h>
 
 using namespace Logme;
 
-static bool CommandHelp(Logme::StringArray& arr, std::string& response);
-static bool CommandVersion(Logme::StringArray& arr, std::string& response);
-
-static Logme::CommandDescriptor HelpDescriptor("help", CommandHelp);
+static Logme::CommandDescriptor HelpDescriptor("help", Logger::CommandHelp);
 static Logme::CommandRegistrar HelpRegistrar(&HelpDescriptor);
-static Logme::CommandDescriptor VersionDescriptor("version", CommandVersion);
+static Logme::CommandDescriptor VersionDescriptor("version", Logger::CommandVersion);
 static Logme::CommandRegistrar VersionRegistrar(&VersionDescriptor);
 
 static size_t FindHelpSplit(const std::string& line)
@@ -104,7 +102,7 @@ static void AlignHelpColumns(std::string& s)
   s.swap(out);
 }
 
-static bool CommandVersion(Logme::StringArray& arr, std::string& response)
+bool Logger::CommandVersion(Logme::StringArray& arr, std::string& response)
 {
   (void)arr;
 
@@ -115,7 +113,7 @@ static bool CommandVersion(Logme::StringArray& arr, std::string& response)
   return true;
 }
 
-static bool CommandHelp(Logme::StringArray& arr, std::string& response)
+bool Logger::CommandHelp(Logme::StringArray& arr, std::string& response)
 {
   (void)arr;
 
@@ -132,6 +130,7 @@ static bool CommandHelp(Logme::StringArray& arr, std::string& response)
     "backend option --max-parts count             FileBackend only: keep rotated file parts\n"
     "backend option --timeout interval            SharedFileBackend only: lock timeout\n"
     "backend option --policy policy               BufferBackend only: stop-appending or delete-oldest\n"
+    "backend option --max-items count             RingBufferBackend only: keep last record count\n"
     "channel [name]                                Display channel information\n"
     "channel --create name                         Create a channel\n"
     "channel --delete name                         Delete a channel (not default)\n"

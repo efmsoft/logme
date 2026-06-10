@@ -9,6 +9,8 @@
 #include <Logme/ArgumentList.h>
 #include <Logme/Channel.h>
 #include <Logme/Convert.h>
+#include <Logme/ControlPolicy.h>
+#include <Logme/EnvironmentControl.h>
 #include <Logme/Logger.h>
 #include <Logme/ObfString.h>
 #include <Logme/Procedure.h>

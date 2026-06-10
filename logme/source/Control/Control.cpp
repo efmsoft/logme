@@ -42,6 +42,7 @@
 #endif
 
 #include <Logme/Logme.h>
+#include <Logme/ControlPolicy.h>
 #include "ControlDiscovery.h"
 #include <Logme/Utils.h>
 
@@ -96,6 +97,211 @@ namespace
     if (handle)
       dlclose(handle);
 #endif
+  }
+
+  bool ControlTypeEquals(const std::string& type, const char* name)
+  {
+    return type == name;
+  }
+
+  std::string NormalizeControlBackendType(const std::string& input)
+  {
+    std::string s = input;
+    ToLowerAsciiInplace(s);
+
+    if (s.size() >= 7 && s.rfind("backend") == s.size() - 7)
+      s.resize(s.size() - 7);
+
+    if (s == "console" || s == "con")
+      return "console";
+
+    if (s == "debug" || s == "dbg")
+      return "debug";
+
+    if (s == "file")
+      return "file";
+
+    if (s == "sharedfile" || s == "shared" || s == "sfile")
+      return "sharedfile";
+
+    if (s == "buffer" || s == "buf")
+      return "buffer";
+
+    if (s == "ringbuffer" || s == "ring" || s == "rbuf")
+      return "ringbuffer";
+
+    return s;
+  }
+
+  bool IsDiagnosticBackendType(const std::string& type)
+  {
+    return ControlTypeEquals(type, "console")
+      || ControlTypeEquals(type, "debug")
+      || ControlTypeEquals(type, "buffer")
+      || ControlTypeEquals(type, "ringbuffer");
+  }
+
+  bool IsControlOption(const std::string& s)
+  {
+    return s.rfind("--", 0) == 0;
+  }
+
+  bool CheckBackendControlPolicy(
+    const Logme::StringArray& items
+    , const Logme::ControlPolicy& policy
+    , std::string& reason
+  )
+  {
+    if (!policy.AllowBackendChanges)
+    {
+      reason = "backend command is disabled";
+      return false;
+    }
+
+    if (policy.AllowFileBackends)
+      return true;
+
+    size_t index = 1;
+    if (index + 1 < items.size() && items[index] == "--channel")
+      index += 2;
+
+    if (index + 1 >= items.size())
+      return true;
+
+    const std::string& op = items[index];
+    if (op != "--add" && op != "--delete")
+      return true;
+
+    std::string type = NormalizeControlBackendType(items[index + 1]);
+    if (IsDiagnosticBackendType(type))
+      return true;
+
+    reason = "backend type is not allowed by control policy: " + items[index + 1];
+    return false;
+  }
+
+  bool CheckChannelControlPolicy(
+    const Logme::StringArray& items
+    , const Logme::ControlPolicy& policy
+    , std::string& reason
+  )
+  {
+    if (items.size() < 2 || !IsControlOption(items[1]))
+      return true;
+
+    const std::string& opt = items[1];
+    if (opt == "--enable" || opt == "--disable")
+      return true;
+
+    if (opt == "--create" || opt == "--delete")
+    {
+      if (policy.AllowChannelCreateDelete)
+        return true;
+
+      reason = "channel create/delete commands are disabled";
+      return false;
+    }
+
+    if (opt == "--bind" || opt == "--unbind")
+    {
+      if (policy.AllowChannelRouting)
+        return true;
+
+      reason = "channel routing commands are disabled";
+      return false;
+    }
+
+    if (opt == "--error" || opt == "--clear-error")
+    {
+      if (policy.AllowChannelError)
+        return true;
+
+      reason = "channel error routing commands are disabled";
+      return false;
+    }
+
+    return true;
+  }
+
+  bool CheckControlPolicy(
+    const Logme::StringArray& items
+    , const Logme::ControlPolicy& policy
+    , std::string& reason
+  )
+  {
+    if (items.empty())
+      return true;
+
+    const std::string& c = items[0];
+
+    if (c == "help" || c == "version" || c == "overview" || c == "list")
+      return true;
+
+    if (c == "level")
+    {
+      if (policy.AllowLevelChanges)
+        return true;
+
+      reason = "level command is disabled";
+      return false;
+    }
+
+    if (c == "flags")
+    {
+      if (policy.AllowFlagChanges)
+        return true;
+
+      reason = "flags command is disabled";
+      return false;
+    }
+
+    if (c == "trace")
+    {
+      if (policy.AllowTraceChanges)
+        return true;
+
+      reason = "trace command is disabled";
+      return false;
+    }
+
+    if (c == "subsystem")
+    {
+      if (policy.AllowSubsystemChanges)
+        return true;
+
+      reason = "subsystem command is disabled";
+      return false;
+    }
+
+    if (c == "channel")
+      return CheckChannelControlPolicy(items, policy, reason);
+
+    if (c == "backend")
+      return CheckBackendControlPolicy(items, policy, reason);
+
+    if (c == "logs")
+    {
+      if (policy.AllowLogsCommand)
+        return true;
+
+      reason = "logs command is disabled";
+      return false;
+    }
+
+    if (c == "format")
+    {
+      if (policy.AllowFormatCommand)
+        return true;
+
+      reason = "format command is disabled";
+      return false;
+    }
+
+    if (policy.AllowExtensions)
+      return true;
+
+    reason = "extension commands are disabled";
+    return false;
   }
 
 #ifndef _WIN32
@@ -901,6 +1107,14 @@ void Logger::SetControlExtension(Logme::TControlHandler handler)
 
 std::string Logger::Control(const std::string& command)
 {
+  return Control(command, ControlPolicy::Full());
+}
+
+std::string Logger::Control(
+  const std::string& command
+  , const ControlPolicy& policy
+)
+{
   auto SplitRemainderAfterWords = [](const std::string& s, int words) -> std::string
   {
     int w = 0;
@@ -975,8 +1189,12 @@ std::string Logger::Control(const std::string& command)
     if (n >= 2 && items[0] == "trace")
       ToLowerAsciiInplace(items[1]);
 
+    std::string reason;
+    if (!CheckControlPolicy(items, policy, reason))
+      return std::string("error: command rejected by control policy: ") + reason;
+
     std::string response;
-    if (ControlExtension)
+    if (policy.AllowExtensions && ControlExtension)
     {
       if (ControlExtension(cmd, response))
       {
@@ -989,9 +1207,69 @@ std::string Logger::Control(const std::string& command)
     {
       const std::string& c = items[0];
 
+      if (c == "help")
+      {
+        if (Logger::CommandHelp(items, response))
+          return response;
+      }
+
+      if (c == "version")
+      {
+        if (Logger::CommandVersion(items, response))
+          return response;
+      }
+
+      if (c == "list")
+      {
+        if (Logger::CommandList(items, response))
+          return response;
+      }
+
+      if (c == "channel")
+      {
+        if (Logger::CommandChannel(items, response))
+          return response;
+      }
+
+      if (c == "subsystem")
+      {
+        if (Logger::CommandSubsystem(items, response))
+          return response;
+      }
+
+      if (c == "backend")
+      {
+        if (Logger::CommandBackend(items, response))
+          return response;
+      }
+
+      if (c == "flags")
+      {
+        if (Logger::CommandFlags(items, response))
+          return response;
+      }
+
+      if (c == "level")
+      {
+        if (Logger::CommandLevel(items, response))
+          return response;
+      }
+
       if (c == "trace")
       {
         if (Logger::CommandTrace(items, response))
+          return response;
+      }
+
+      if (c == "overview")
+      {
+        if (Logger::CommandOverview(items, response))
+          return response;
+      }
+
+      if (c == "logs")
+      {
+        if (Logger::CommandLogs(items, response))
           return response;
       }
 
@@ -1016,6 +1294,9 @@ std::string Logger::Control(const std::string& command)
 
   if (n >= 2 && items[0] == "format")
   {
+    if (!policy.AllowFormatCommand)
+      return "error: command rejected by control policy: format command is disabled";
+
     if (items[1] == "json")
     {
       std::string remainder = SplitRemainderAfterWords(command, 2);

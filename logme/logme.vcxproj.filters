@@ -131,6 +131,12 @@
     <ClInclude Include="include\Logme\Convert.h">
       <Filter>include\Logme</Filter>
     </ClInclude>
+    <ClInclude Include="include\Logme\ControlPolicy.h">
+      <Filter>include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\EnvironmentControl.h">
+      <Filter>include\Logme</Filter>
+    </ClInclude>
     <ClInclude Include="include\Logme\ID.h">
       <Filter>include\Logme</Filter>
     </ClInclude>
@@ -392,6 +398,12 @@
       <Filter>source\Control</Filter>
     </ClCompile>
     <ClCompile Include="source\Control\Control.cpp">
+      <Filter>source\Control</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Control\ControlPolicy.cpp">
+      <Filter>source\Control</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Control\EnvironmentControl.cpp">
       <Filter>source\Control</Filter>
     </ClCompile>
     <ClCompile Include="source\Backend\SharedFileBackend.cpp">

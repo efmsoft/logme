@@ -2,6 +2,29 @@
 
 This document describes the **logme control interface** used by `logmectl` and the embedded control server.
 
+
+## Control policies
+
+The programmatic control API supports policy-aware execution:
+
+```cpp
+logger.Control(command, Logme::ControlPolicy::Safe());
+logger.ApplyEnvironmentControl(options);
+logger.StartControlServer(config, Logme::ControlPolicy::Safe());
+logger.SetControlServerPolicy(Logme::ControlPolicy::Diagnostic());
+```
+
+The legacy overloads keep the old behavior and use full control:
+
+```cpp
+logger.Control(command);
+logger.StartControlServer(config);
+```
+
+This keeps existing applications compatible, while allowing applications that expose
+the control server to restrict dangerous commands such as backend changes, log-file
+access, or extension commands.
+
 The API supports two output formats:
 
 - `text` (default): human-readable text, printed as-is.

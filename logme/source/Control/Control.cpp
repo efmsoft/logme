@@ -304,6 +304,32 @@ namespace
     return false;
   }
 
+  void WakeControlListener(
+    uint32_t interfaceAddress
+    , int port
+  )
+  {
+    if (port <= 0)
+      return;
+
+    int wakeSocket = (int)socket(AF_INET, SOCK_STREAM, 0);
+    if (wakeSocket == -1)
+      return;
+
+    sockaddr_in addr{};
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = htonl(interfaceAddress ? interfaceAddress : INADDR_LOOPBACK);
+    addr.sin_port = htons((unsigned short)port);
+
+    (void)connect(
+      wakeSocket
+      , reinterpret_cast<sockaddr*>(&addr)
+      , sizeof(addr)
+    );
+
+    closesocket(wakeSocket);
+  }
+
 #ifndef _WIN32
   void ControlBlockSigPipeForThread()
   {
@@ -585,6 +611,10 @@ namespace Logme
 void Logger::StopControlServer()
 {
   ThreadPtr thread;
+  bool wakeListener = false;
+  int socketToClose = -1;
+  int controlPort = 0;
+  uint32_t controlInterface = 0;
 
   if (ControlDiscoveryServer)
   {
@@ -598,13 +628,25 @@ void Logger::StopControlServer()
 
     if (ControlSocket != -1)
     {
-      shutdown(ControlSocket, SD_RECEIVE);
-
-      closesocket(ControlSocket);
+      socketToClose = ControlSocket;
+      controlPort = ControlCfg.Port;
+      controlInterface = ControlCfg.Interface;
+      wakeListener = true;
       ControlSocket = -1;
     }
 
     std::swap(thread, ListenerThread);
+  }
+
+  if (wakeListener)
+  {
+    WakeControlListener(
+      controlInterface
+      , controlPort
+    );
+
+    shutdown(socketToClose, SD_RECEIVE);
+    closesocket(socketToClose);
   }
 
   if (thread)
@@ -637,11 +679,13 @@ Result Logger::SetControlCertificate(
 
   bool running = false;
   ControlConfig cfg{};
+  ControlPolicy policy;
 
   {
     std::lock_guard guard(DataLock);
     running = (ControlSocket != -1);
     cfg = ControlCfg;
+    policy = ControlServerPolicy;
   }
 
   std::unique_ptr<ControlSslContext> ctx(new ControlSslContext());
@@ -693,7 +737,7 @@ Result Logger::SetControlCertificate(
   if (!cfg.Enable)
     return RC_NOERROR;
 
-  if (!StartControlServer(cfg))
+  if (!StartControlServer(cfg, policy))
   {
     LogmeE(CHINT, "Unable to restart control server with SSL");
     return RC_NO_ACCESS;
@@ -706,6 +750,14 @@ Result Logger::SetControlCertificate(
 
 bool Logger::StartControlServer(const ControlConfig& c)
 {
+  return StartControlServer(c, ControlPolicy::Full());
+}
+
+bool Logger::StartControlServer(
+  const ControlConfig& c
+  , const ControlPolicy& policy
+)
+{
   StopControlServer();
 
   if (!c.Enable)
@@ -714,6 +766,7 @@ bool Logger::StartControlServer(const ControlConfig& c)
   std::lock_guard guard(DataLock);
 
   ControlCfg = c;
+  ControlServerPolicy = policy;
   ControlPassword = c.Password ? c.Password : "";
   ControlDiscoveryNamePrefix = c.DiscoveryNamePrefix ? c.DiscoveryNamePrefix : "";
   ControlCfg.Password = ControlPassword.empty() ? nullptr : ControlPassword.c_str();
@@ -799,6 +852,12 @@ bool Logger::StartControlServer(const ControlConfig& c)
   return true;
 }
 
+void Logger::SetControlServerPolicy(const ControlPolicy& policy)
+{
+  std::lock_guard guard(DataLock);
+  ControlServerPolicy = policy;
+}
+
 void Logger::ControlListener()
 {
   RenameThread(uint64_t(-1), "LogCtrlListener");
@@ -813,6 +872,15 @@ void Logger::ControlListener()
     int accept_sock = (int)accept(ControlSocket, nullptr, nullptr);
     if (accept_sock == -1)
       break;
+
+    {
+      std::lock_guard guard(DataLock);
+      if (ControlSocket == -1)
+      {
+        closesocket(accept_sock);
+        break;
+      }
+    }
 
     // Start ControlHandler to handle new connection
     if (true)
@@ -1011,12 +1079,16 @@ void Logger::ControlHandler(int socket)
 
     bool hasPassword = false;
     std::string password;
+    ControlPolicy policy;
 
     {
       std::lock_guard guard(DataLock);
       hasPassword = (ControlCfg.Password && *ControlCfg.Password);
+      policy = ControlServerPolicy;
       if (hasPassword)
+      {
         password = ControlCfg.Password;
+      }
     }
 
     if (cmdName == "auth")
@@ -1051,14 +1123,16 @@ void Logger::ControlHandler(int socket)
     }
     else if (cmdName == "help")
     {
-      response = Control(command);
+      response = Control(command, policy);
     }
     else
     {
       if (hasPassword && !authorized)
+      {
         response = "error: unauthorized";
+      }
       else
-        response = Control(command);
+        response = Control(command, policy);
     }
 
     if (!response.empty() && response.back() != '\n')

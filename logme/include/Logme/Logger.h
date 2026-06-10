@@ -21,6 +21,7 @@
 #include <cstdint>
 
 #include <Logme/Channel.h>
+#include <Logme/ControlPolicy.h>
 #include <Logme/Console/ConsoleManagerFactory.h>
 #include <Logme/CritSection.h>
 #include <Logme/Debug/DebugManagerFactory.h>
@@ -48,7 +49,6 @@ namespace Logme
   LOGMELNK extern bool ShutdownCalled;
 
 
-  class ControlPolicy;
   struct EnvironmentControlOptions;
 
   class Logger : public std::enable_shared_from_this<Logger>
@@ -80,6 +80,7 @@ namespace Logme
 
     int ControlSocket;
     ControlConfig ControlCfg;
+    ControlPolicy ControlServerPolicy;
     std::string ControlPassword;
     TControlHandler ControlExtension;
     ControlSslContext* ControlSsl;
@@ -599,6 +600,23 @@ namespace Logme
     /// <param name="c">Control server configuration.</param>
     /// <returns>true if server was started.</returns>
     LOGMELNK bool StartControlServer(const ControlConfig& c);
+
+    /// <summary>
+    /// Starts runtime control server using the specified command policy.
+    /// </summary>
+    /// <param name="c">Control server configuration.</param>
+    /// <param name="policy">Policy limiting allowed control commands.</param>
+    /// <returns>true if server was started.</returns>
+    LOGMELNK bool StartControlServer(
+      const ControlConfig& c
+      , const ControlPolicy& policy
+    );
+
+    /// <summary>
+    /// Changes command policy used by runtime control server.
+    /// </summary>
+    /// <param name="policy">Policy limiting allowed control commands.</param>
+    LOGMELNK void SetControlServerPolicy(const ControlPolicy& policy);
 
     LOGMELNK void StopControlServer();
 

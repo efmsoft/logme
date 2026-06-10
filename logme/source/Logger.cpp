@@ -43,6 +43,7 @@ Logger::Logger()
   , IDGenerator(1)
   , ControlSocket(-1)
   , ControlCfg{}
+  , ControlServerPolicy(ControlPolicy::Full())
   , ControlSsl(nullptr)
   , LastDoAutodelete(0)
   , NumDeleting(0)

@@ -29,7 +29,7 @@ It is designed for both high-load servers and simple applications, providing sel
 
 **logme** is designed as a logging infrastructure layer, not just a set of formatting macros. Its core model is built around runtime control: channels, subsystems, links, backends, output flags, and configuration can be changed while the application is running. This makes it useful for production systems where detailed diagnostics must be enabled only when needed and only for the affected component.
 
-The project also includes companion tools and operational features: `logmectl` for runtime control, `logmefmt` for converting readable logme output to JSON/XML, `logmeobf` for log obfuscation, file rotation and retention, structured output, function tracing/profiling macros, and early/boot logging support.
+The project also includes companion tools and operational features: `logmectl` and `logmeweb` for runtime control, policy-aware control commands, optional startup control from environment variables, `logmefmt` for converting readable logme output to JSON/XML, `logmeobf` for log obfuscation, file rotation and retention, structured output, recent-history capture with `RingBufferBackend`, function tracing/profiling macros, and early/boot logging support.
 
 For the design background, see the logging articles at [tips.efmsoft.com](https://tips.efmsoft.com/ru/logging-ru/).
 
@@ -57,11 +57,13 @@ See the wiki pages [Performance](https://github.com/efmsoft/logme/wiki/Performan
 ## Key features
 
 - **Runtime control** via a built-in control server: enable, disable, and reconfigure logging dynamically without restarting or recompiling the application.
+- **Policy-aware control API**: execute control commands with full, safe, diagnostic, or custom permissions when commands come from less-trusted sources.
+- **Startup environment control**: explicitly opt in to `LOGME_CONTROL` / `LOGME_CONTROL_N` commands for startup diagnostics without making environment variables active by default.
 - **Channels and subsystems**: logically separate log output by component, module, or functional area.
-- **Hierarchical channels**: build structured logging trees and control groups of components together.
-- **Flexible verbosity control**: fine-grained filtering using log levels (Debug / Info / Warn / Error), subsystems, and channel hierarchy.
-- **Multiple backends per channel**: console, debugger, files, and other output destinations.
-- **Channel links**: redirect or fan-out log messages between channels without duplicating backend configuration.
+- **Channel links and routing chains**: redirect or fan-out log messages between channels without treating channels as inherited parent/child configuration trees.
+- **Flexible verbosity control**: fine-grained filtering using log levels (Debug / Info / Warn / Error), subsystems, trace points, and channel state.
+- **Multiple backends per channel**: console, debugger, file, shared file, buffer, ring buffer, callback, and Windows Event Log destinations.
+- **Recent-history capture**: keep the last N formatted records in memory with `RingBufferBackend` and dump them only when needed.
 - **Retention rules**: limit the size of individual log files and the total disk usage across all logs.
 - **Log file obfuscation**: optional obfuscation of log data written to files.
 - **Multiple APIs**: C-style macros, C++ stream-style logging, and optional `format`-based formatting.
@@ -132,7 +134,7 @@ int main()
 
 ---
 
-## Runtime control (built-in control server)
+## Runtime control and startup control
 
 Applications using **logme** can optionally enable a **built-in control server** that allows logging behavior to be **fully managed at runtime**.
 
@@ -143,7 +145,13 @@ The control server exposes a management interface for:
 - enabling, disabling, or blocking channels,
 - controlling subsystems, levels, and routing.
 
-A command-line utility is provided with the library to send control commands to a running process, but the **specific tool is not important** — the key point is that logging can be **reconfigured dynamically while the application is running**.
+A command-line utility is provided with the library to send control commands to a running process, and `logmeweb` can provide browser-based runtime control. The **specific tool is not important** — the key point is that logging can be **reconfigured dynamically while the application is running**.
+
+The same command language can also be used at startup from environment variables, but only when the application explicitly calls `ApplyEnvironmentControl()`. This keeps environment variables inactive by default and lets the application pass a `ControlPolicy` that limits which commands are accepted. For example:
+
+```bash
+LOGME_CONTROL="level --channel raw debug; trace enable Raw:*:*"
+```
 
 ### Why this matters
 
@@ -284,6 +292,9 @@ ctest --test-dir build
 - `LOGME_BUILD_TESTS` (ON/OFF)
 - `LOGME_BUILD_STATIC` (ON/OFF)
 - `LOGME_BUILD_DYNAMIC` (ON/OFF)
+- `LOGME_BUILD_TOOLS` (ON/OFF)
+- `LOGME_ENABLE_INSTALL` (ON/OFF)
+- `USE_JSONCPP` (`AUTO`, `ON`, `OFF`)
 - `LOGME_FMT_FORMAT` (`AUTO`, `ON`, `OFF`)
 - `LOGME_STD_FORMAT` (`AUTO`, `ON`, `OFF`)
 
@@ -305,8 +316,10 @@ ctest --test-dir build
 
 ## Roadmap
 
-- More backends and routing presets
-- Improved documentation and more integration examples
+- More production backends, especially syslog and systemd-journal integration
+- Richer file lifecycle policies such as compression and additional rotation/retention modes
+- Backend-level filtering options for selected advanced routing scenarios
+- More documentation, articles, and integration examples
 
 ---
 

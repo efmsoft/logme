@@ -907,45 +907,65 @@ void Logger::ControlListener()
     }
 
     // Remove items for closed connections
-    std::lock_guard guard(DataLock);
-    for (auto it = ControlThreads.begin(); it != ControlThreads.end();)
+    std::vector<ThreadPtr> threadsToJoin;
+
     {
-      if (!it->second.Stopped)
+      std::lock_guard guard(DataLock);
+      for (auto it = ControlThreads.begin(); it != ControlThreads.end();)
       {
-        it++;
-        continue;
+        if (!it->second.Stopped)
+        {
+          it++;
+          continue;
+        }
+
+        closesocket(it->first);
+
+        if (it->second.Thread)
+        {
+          threadsToJoin.push_back(it->second.Thread);
+        }
+
+        it->second.Thread.reset();
+        it = ControlThreads.erase(it);
       }
+    }
 
-      closesocket(it->first);
-      
-      if (it->second.Thread->joinable())
-        it->second.Thread->join();
-
-      it->second.Thread.reset();
-      it = ControlThreads.erase(it);
+    for (auto& thread : threadsToJoin)
+    {
+      if (thread && thread->joinable())
+      {
+        thread->join();
+      }
     }
   }
 
+  std::vector<ThreadPtr> threadsToJoin;
+
   // Shutdown action connections
-  if (true)
   {
     std::lock_guard guard(DataLock);
     for (auto& t : ControlThreads)
     {
       shutdown(t.first, SD_RECEIVE);
       closesocket(t.first);
+
+      if (t.second.Thread)
+      {
+        threadsToJoin.push_back(t.second.Thread);
+      }
     }
+
+    ControlThreads.clear();
   }
 
-  // Join connection threads
-  std::lock_guard guard(DataLock);
-  for (auto it = ControlThreads.begin(); it != ControlThreads.end();)
+  // Join connection threads outside DataLock.
+  for (auto& thread : threadsToJoin)
   {
-    if (it->second.Thread->joinable())
-      it->second.Thread->join();
-
-    it->second.Thread.reset();
-    it = ControlThreads.erase(it);
+    if (thread && thread->joinable())
+    {
+      thread->join();
+    }
   }
 }
 

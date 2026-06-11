@@ -88,6 +88,9 @@
     <Filter Include="TracePoint.cpp">
       <UniqueIdentifier>{6506254b-b968-5760-bbbe-1e53ac483479}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ThreadField.cpp">
+      <UniqueIdentifier>{5ea2e23f-2a6d-54ff-bf3e-0dda948b6d43}</UniqueIdentifier>
+    </Filter>
 </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\logme\source\Backend\Backend.cpp">
@@ -336,6 +339,9 @@
     <ClCompile Include="..\logme\source\Control\EnvironmentControl.cpp">
       <Filter>Control</Filter>
     </ClCompile>
+    <ClCompile Include="..\logme\source\ThreadField.cpp">
+      <Filter>ThreadField.cpp</Filter>
+    </ClCompile>
 </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\logme\source\Time\utils.h">
@@ -568,6 +574,9 @@
       <Filter>..\logme\include\Logme</Filter>
     </ClInclude>
     <ClInclude Include="..\logme\include\Logme\EnvironmentControl.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\ThreadField.h">
       <Filter>..\logme\include\Logme</Filter>
     </ClInclude>
 </ItemGroup>

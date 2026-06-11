@@ -117,6 +117,7 @@
     <ClCompile Include="..\logme\source\Backend\CallbackBackendConfig.cpp" />
     <ClCompile Include="..\logme\source\Control\ControlPolicy.cpp" />
     <ClCompile Include="..\logme\source\Control\EnvironmentControl.cpp" />
+    <ClCompile Include="..\logme\source\ThreadField.cpp" />
 </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\logme\source\Config\Helper.h" />

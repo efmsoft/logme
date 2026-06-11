@@ -31,7 +31,7 @@ It is designed for both high-load servers and simple applications, providing sel
 
 The project also includes companion tools and operational features: `logmectl` and `logmeweb` for runtime control, policy-aware control commands, optional startup control from environment variables, `logmefmt` for converting readable logme output to JSON/XML, `logmeobf` for log obfuscation, file rotation and retention, structured output, recent-history capture with `RingBufferBackend`, function tracing/profiling macros, and early/boot logging support.
 
-For the design background, see the logging articles at [tips.efmsoft.com](https://tips.efmsoft.com/ru/logging-ru/).
+For the design background, see the logging articles at [tips.efmsoft.com](https://tips.efmsoft.com/tag/logme-en/).
 
 ---
 

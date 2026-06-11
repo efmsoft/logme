@@ -10,6 +10,7 @@
 
 #include <Logme/Channel.h>
 #include <Logme/Context.h>
+#include <Logme/ThreadField.h>
 #include <Logme/Time/datetime.h>
 #include <Logme/Utils.h>
 
@@ -161,6 +162,17 @@ namespace
     output += tmp;
   }
 
+  void AppendJsonCustomStringField(std::string& output, bool& first, const char* name, const char* value)
+  {
+    if (!first)
+      output.push_back(',');
+
+    first = false;
+    AppendJsonEscaped(output, name);
+    output.push_back(':');
+    AppendJsonEscaped(output, value);
+  }
+
   void AppendXmlElement(std::string& output, OutputField field, const char* value)
   {
     const char* name = GetOutputFieldName(field);
@@ -190,6 +202,18 @@ namespace
     char tmp[32];
     snprintf(tmp, sizeof(tmp), "%llu", (unsigned long long)value);
     AppendXmlElement(output, field, tmp);
+  }
+
+
+  void AppendXmlCustomElement(std::string& output, const char* name, const char* value)
+  {
+    output.push_back('<');
+    output += name;
+    output.push_back('>');
+    AppendXmlEscaped(output, value);
+    output += "</";
+    output += name;
+    output.push_back('>');
   }
 }
 
@@ -764,6 +788,10 @@ const char* Context::ApplyJson(const ChannelPtr& ch, OutputFlags flags, int& nc)
   if (flags.Method && Method && !flags.ProcPrint)
     AppendJsonStringField(output, first, OUTPUT_FIELD_METHOD, Method);
 
+  ThreadFieldArray threadFields = GetThreadFieldsSnapshot();
+  for (const auto& field : threadFields)
+    AppendJsonCustomStringField(output, first, field.Name.c_str(), field.Value.c_str());
+
   uint64_t repeatCount = GetRepeatCount(*this);
   if (repeatCount)
   {
@@ -869,6 +897,10 @@ const char* Context::ApplyXml(const ChannelPtr& ch, OutputFlags flags, int& nc)
 
   if (flags.Method && Method && !flags.ProcPrint)
     AppendXmlElement(output, OUTPUT_FIELD_METHOD, Method);
+
+  ThreadFieldArray threadFields = GetThreadFieldsSnapshot();
+  for (const auto& field : threadFields)
+    AppendXmlCustomElement(output, field.Name.c_str(), field.Value.c_str());
 
   uint64_t repeatCount = GetRepeatCount(*this);
   if (repeatCount)

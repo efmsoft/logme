@@ -30,6 +30,7 @@
 #include <Logme/File/FileManagerFactory.h>
 #include <Logme/Obfuscate.h>
 #include <Logme/Stream.h>
+#include <Logme/ThreadField.h>
 #include <Logme/Utils.h>
 
 namespace Logme
@@ -189,6 +190,41 @@ namespace Logme
     /// </summary>
     /// <returns>Thread-local subsystem id when set; otherwise global SUBSID.</returns>
     LOGMELNK SID GetDefaultSubsystem();
+
+    /// <summary>
+    /// Sets or clears structured fields for current thread.
+    /// </summary>
+    /// <param name="fields">Fields copied into thread-local context, or nullptr to clear them.</param>
+    LOGMELNK void SetThreadFields(const ThreadFields* fields);
+
+    /// <summary>
+    /// Returns structured fields assigned to current thread.
+    /// </summary>
+    /// <returns>Thread-local structured fields, or an empty set when none is set.</returns>
+    LOGMELNK ThreadFields GetThreadFields();
+
+    /// <summary>
+    /// Sets one structured field in current thread context. Empty field name is ignored.
+    /// </summary>
+    LOGMELNK void SetThreadField(const char* name, const char* value);
+    LOGMELNK void SetThreadField(const std::string& name, const std::string& value);
+
+    /// <summary>
+    /// Reads one structured field from current thread context.
+    /// </summary>
+    LOGMELNK bool GetThreadField(const char* name, std::string& value);
+    LOGMELNK bool GetThreadField(const std::string& name, std::string& value);
+
+    /// <summary>
+    /// Removes one structured field from current thread context.
+    /// </summary>
+    LOGMELNK void RemoveThreadField(const char* name);
+    LOGMELNK void RemoveThreadField(const std::string& name);
+
+    /// <summary>
+    /// Clears all structured fields from current thread context.
+    /// </summary>
+    LOGMELNK void ClearThreadFields();
 
     /// <summary>
     /// Adds subsystem id to the blocked subsystem list. Empty SID is ignored.

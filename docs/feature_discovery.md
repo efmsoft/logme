@@ -19,6 +19,7 @@ This page maps common logging-library terms to the actual logme mechanisms and s
 | Callback sink / function appender | `CallbackBackend` calls an application function for each accepted record | `logme/include/Logme/Backend/CallbackBackend.h`, `logme/source/Backend/CallbackBackend.cpp` | Useful for embedding, tests, UI bridges, telemetry bridges, or application-owned forwarding without deriving a full backend class. |
 | Windows Event Log sink | `WindowsEventLogBackend` writes records through the Windows Event Log API and supports async delivery | `logme/include/Logme/Backend/WindowsEventLogBackend.h`, `logme/source/Backend/WindowsEventLogBackend.cpp`, `logme/source/WindowsEventLog` | Intended for Windows services and enterprise deployments. On non-Windows platforms the backend is a build-compatible no-op path. |
 | Structured output | `OutputFlags::Format`, text/JSON/XML conversion paths, structured-output example | `logme/include/Logme/OutputFlags.h`, `logme/source/OutputFlags.cpp`, `examples/StructuredOutput`, `tools/logmefmt` | logme can emit or convert structured log records depending on configuration and build options. |
+| Thread structured fields | `ThreadFields`, `LogmeThreadFields`, `Logger::SetThreadField()` | `logme/include/Logme/ThreadField.h`, `logme/source/ThreadField.cpp`, `logme/source/Context.cpp`, `examples/StructuredOutput`, `tests/ThreadField` | Thread-local custom fields are emitted as JSON/XML properties and are ignored by plain text output. |
 | Trace points / dormant diagnostics | Trace point macros and runtime trace control | `logme/include/Logme/TracePoint.h`, `logme/source/TracePoint.cpp`, `logme/source/Control/Command/CmdTrace.cpp`, `examples/TracePoints` | Disabled trace points keep lightweight counters and can be enabled dynamically. |
 
 ## Backend inventory
@@ -55,6 +56,5 @@ These items are useful when comparing logme with libraries that expose a very br
 - File compression after rotation or backend close is not implemented yet.
 - Age-based retention and additional rotation schedules are not implemented yet.
 - First-class backend-level filtering is not implemented yet.
-- Scoped structured key/value context is not implemented yet.
 - C API wrappers for `ControlPolicy` and environment control are not implemented yet.
 

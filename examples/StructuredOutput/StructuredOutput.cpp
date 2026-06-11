@@ -15,7 +15,15 @@ int main()
   flags.Channel = true;
   flags.Method = true;
   Logme::Instance->GetDefaultChannelPtr()->SetFlags(flags);
-  PrintMessage("json format");
+
+  Logme::ThreadFields fields;
+  fields.Set("request_id", "request-42");
+  fields.Set("tenant", "demo");
+
+  {
+    LogmeThreadFields(fields);
+    PrintMessage("json with thread fields");
+  }
 
   Logme::SetOutputFieldName(Logme::OUTPUT_FIELD_MESSAGE, "msg");
   Logme::SetOutputFieldName(Logme::OUTPUT_FIELD_LEVEL, "lvl");
@@ -24,11 +32,16 @@ int main()
   Logme::ResetOutputFieldNames();
   flags.Format = Logme::OUTPUT_XML;
   Logme::Instance->GetDefaultChannelPtr()->SetFlags(flags);
-  PrintMessage("xml format");
+
+  Logme::Instance->SetThreadField("request_id", "request-43");
+  Logme::Instance->SetThreadField("tenant", "demo");
+  PrintMessage("xml with thread fields");
 
   flags.Format = Logme::OUTPUT_TEXT;
   Logme::Instance->GetDefaultChannelPtr()->SetFlags(flags);
-  PrintMessage("text format again");
+  PrintMessage("text format ignores thread fields");
+
+  Logme::Instance->ClearThreadFields();
 
   return 0;
 }

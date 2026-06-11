@@ -3,13 +3,16 @@
 ## StructuredOutput
 
 This example shows how to switch logme output between plain text, JSON and XML at runtime.
-It also demonstrates structured field name customization.
+It also demonstrates structured field name customization and thread-local custom fields.
 
 ## What it demonstrates
 
 - Keeping the default text formatter unchanged.
 - Switching `OutputFlags::Format` to JSON.
 - Switching `OutputFlags::Format` to XML.
+- Adding custom structured fields with `LogmeThreadFields()`.
+- Setting long-lived thread fields with `Logger::SetThreadField()`.
+- Ignoring custom fields in plain text output.
 - Renaming structured fields with `SetOutputFieldName()`.
 - Restoring default field names with `ResetOutputFieldNames()`.
 
@@ -17,5 +20,6 @@ It also demonstrates structured field name customization.
 
 JSON output is emitted as one JSON object per log record.
 XML output is emitted as one `<event>` element per log record.
+Custom thread fields are emitted as JSON/XML fields and are ignored by plain text output.
 
 Use `logmefmt --finalize` when the stream must be converted into a complete JSON or XML document.

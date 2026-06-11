@@ -191,6 +191,7 @@
     <ClInclude Include="include\Logme\Procedure.h" />
     <ClInclude Include="include\Logme\Stream.h" />
     <ClInclude Include="include\Logme\Template.h" />
+    <ClInclude Include="include\Logme\ThreadField.h" />
     <ClInclude Include="include\Logme\Time\datetime.h" />
     <ClInclude Include="include\Logme\Time\reentrant.h" />
     <ClInclude Include="include\Logme\Time\types.h" />
@@ -274,6 +275,7 @@
     <ClCompile Include="source\Stream.cpp" />
     <ClCompile Include="source\Template.cpp" />
     <ClCompile Include="source\ThreadChannel.cpp" />
+    <ClCompile Include="source\ThreadField.cpp" />
     <ClCompile Include="source\ThreadName.cpp" />
     <ClCompile Include="source\ThreadOverride.cpp" />
     <ClCompile Include="source\ThreadSubsystem.cpp" />

@@ -248,6 +248,9 @@
     <ClInclude Include="include\Logme\ThreadChannel.h">
       <Filter>include\Logme</Filter>
     </ClInclude>
+    <ClInclude Include="include\Logme\ThreadField.h">
+      <Filter>include\Logme</Filter>
+    </ClInclude>
     <ClInclude Include="include\Logme\ThreadName.h">
       <Filter>include\Logme</Filter>
     </ClInclude>
@@ -470,6 +473,9 @@
       <Filter>source</Filter>
     </ClCompile>
     <ClCompile Include="source\ThreadChannel.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\ThreadField.cpp">
       <Filter>source</Filter>
     </ClCompile>
     <ClCompile Include="source\ThreadName.cpp">

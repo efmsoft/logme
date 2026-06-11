@@ -19,6 +19,7 @@
 #include <Logme/ThreadChannel.h>
 #include <Logme/ThreadName.h>
 #include <Logme/ThreadOverride.h>
+#include <Logme/ThreadField.h>
 #include <Logme/ThreadSubsystem.h>
 #include <Logme/TracePoint.h>
 #include <utility>
@@ -1414,6 +1415,13 @@
 /// <param name="ovr">Override object used by log records from this scope.</param>
 #define LogmeThreadOverride(ovr) \
   Logme::ThreadOverride _logme_thread_override(Logme::Instance, ovr)
+
+// Thread fields
+
+/// <summary>Sets the current thread structured fields for the current scope.</summary>
+/// <param name="fields">ThreadFields object used by structured log records from this scope.</param>
+#define LogmeThreadFields(fields) \
+  Logme::ThreadFieldsOverride _logme_thread_fields(Logme::Instance, fields)
 
 // Thread subsystem
 

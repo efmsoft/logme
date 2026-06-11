@@ -6,12 +6,21 @@
 #include <gtest/gtest.h>
 
 #include <Logme/Logme.h>
+#include <Logme/Time/datetime.h>
 
 std::shared_ptr<TestBackend> Be;
 
 static bool Contains(const std::string& str, const char* text)
 {
   return str.find(text) != std::string::npos;
+}
+
+static void WaitForLogmeClockAdvance(std::uint64_t deltaMs)
+{
+  std::uint64_t start = Logme::GetTimeInMillisec64();
+
+  while (Logme::GetTimeInMillisec64() - start < deltaMs)
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }
 
 static void LogSameMessage()
@@ -154,7 +163,7 @@ TEST(Collapse, AllLevelsAreAvailable)
   Be->Clear();
 
   LogAllLevels(1);
-  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  WaitForLogmeClockAdvance(2);
   LogAllLevels(2);
 
   ASSERT_EQ(Be->History.size(), 40u);

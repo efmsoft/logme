@@ -222,6 +222,73 @@ Context::Context(ContextCache& cache, Level level, const ID* ch, const SID* sid)
   InitContext();
 }
 
+
+CollapseContextCache::CollapseContextCache(uint64_t limit)
+  : Mode(CollapseMode::COUNT)
+  , Limit(limit)
+  , IntervalMs(0)
+  , LastOutputTime(0)
+  , RepeatCount(0)
+  , IgnoreRegexEnabled(false)
+{
+}
+
+CollapseContextCache::CollapseContextCache(
+  CollapseEveryTag
+  , uint64_t intervalMs
+)
+  : Mode(CollapseMode::TIME)
+  , Limit(0)
+  , IntervalMs(intervalMs)
+  , LastOutputTime(0)
+  , RepeatCount(0)
+  , IgnoreRegexEnabled(false)
+{
+}
+
+CollapseContextCache::CollapseContextCache(const char* ignoreRegex, uint64_t limit)
+  : IgnoreRegexText(ignoreRegex ? ignoreRegex : "")
+  , Mode(CollapseMode::COUNT)
+  , Limit(limit)
+  , IntervalMs(0)
+  , LastOutputTime(0)
+  , RepeatCount(0)
+  , IgnoreRegexEnabled(false)
+{
+  CompileIgnoreRegex();
+}
+
+CollapseContextCache::CollapseContextCache(
+  const char* ignoreRegex
+  , CollapseEveryTag
+  , uint64_t intervalMs
+)
+  : IgnoreRegexText(ignoreRegex ? ignoreRegex : "")
+  , Mode(CollapseMode::TIME)
+  , Limit(0)
+  , IntervalMs(intervalMs)
+  , LastOutputTime(0)
+  , RepeatCount(0)
+  , IgnoreRegexEnabled(false)
+{
+  CompileIgnoreRegex();
+}
+
+void CollapseContextCache::CompileIgnoreRegex()
+{
+  if (IgnoreRegexText.empty())
+    return;
+
+  try
+  {
+    IgnoreRegex = std::regex(IgnoreRegexText);
+    IgnoreRegexEnabled = true;
+  }
+  catch (const std::regex_error&)
+  {
+  }
+}
+
 Context::Context(
   ContextCache& cache
   , Level level
@@ -319,7 +386,13 @@ bool Context::ApplyCollapse()
   CollapseRepeatCount = 0;
 
   CollapseContextCache* collapseCache = CollapseCache;
-  if (collapseCache == nullptr || collapseCache->Limit == 0)
+  if (collapseCache == nullptr)
+    return true;
+
+  if (collapseCache->Mode == CollapseMode::COUNT && collapseCache->Limit == 0)
+    return true;
+
+  if (collapseCache->Mode == CollapseMode::TIME && collapseCache->IntervalMs == 0)
     return true;
 
   const char* text = TempBuffer;
@@ -343,16 +416,32 @@ bool Context::ApplyCollapse()
   if (collapseCache->LastKey != key)
   {
     collapseCache->LastKey = key;
+    collapseCache->LastOutputTime = GetTimeInMillisec64();
     collapseCache->RepeatCount = 0;
     return true;
   }
 
-  ++collapseCache->RepeatCount;
-  if (collapseCache->RepeatCount < collapseCache->Limit)
+  if (collapseCache->Mode == CollapseMode::COUNT)
+  {
+    ++collapseCache->RepeatCount;
+    if (collapseCache->RepeatCount < collapseCache->Limit)
+      return false;
+
+    CollapseRepeatCount = collapseCache->RepeatCount;
+    collapseCache->RepeatCount = 0;
+    return true;
+  }
+
+  uint64_t now = GetTimeInMillisec64();
+  if (now - collapseCache->LastOutputTime < collapseCache->IntervalMs)
+  {
+    ++collapseCache->RepeatCount;
     return false;
+  }
 
   CollapseRepeatCount = collapseCache->RepeatCount;
   collapseCache->RepeatCount = 0;
+  collapseCache->LastOutputTime = now;
   return true;
 }
 

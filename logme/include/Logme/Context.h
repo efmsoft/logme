@@ -41,41 +41,45 @@ namespace Logme
     }  
   };
 
+  enum class CollapseMode : uint8_t
+  {
+    COUNT,
+    TIME
+  };
+
+  struct CollapseEveryTag
+  {
+  };
+
   struct CollapseContextCache : public ContextCache
   {
     std::mutex Lock;
     std::string IgnoreRegexText;
     std::regex IgnoreRegex;
     std::string LastKey;
+    CollapseMode Mode;
     uint64_t Limit;
+    uint64_t IntervalMs;
+    uint64_t LastOutputTime;
     uint64_t RepeatCount;
     bool IgnoreRegexEnabled;
 
-    CollapseContextCache(uint64_t limit)
-      : Limit(limit)
-      , RepeatCount(0)
-      , IgnoreRegexEnabled(false)
-    {
-    }
+    LOGMELNK CollapseContextCache(uint64_t limit);
 
-    CollapseContextCache(const char* ignoreRegex, uint64_t limit)
-      : IgnoreRegexText(ignoreRegex ? ignoreRegex : "")
-      , Limit(limit)
-      , RepeatCount(0)
-      , IgnoreRegexEnabled(false)
-    {
-      if (!IgnoreRegexText.empty())
-      {
-        try
-        {
-          IgnoreRegex = std::regex(IgnoreRegexText);
-          IgnoreRegexEnabled = true;
-        }
-        catch (const std::regex_error&)
-        {
-        }
-      }
-    }
+    LOGMELNK CollapseContextCache(
+      CollapseEveryTag tag
+      , uint64_t intervalMs
+    );
+
+    LOGMELNK CollapseContextCache(const char* ignoreRegex, uint64_t limit);
+
+    LOGMELNK CollapseContextCache(
+      const char* ignoreRegex
+      , CollapseEveryTag tag
+      , uint64_t intervalMs
+    );
+
+    LOGMELNK void CompileIgnoreRegex();
   };
 
   struct ShortenerContext

@@ -188,6 +188,32 @@
         , __LINE__ \
         , ## __VA_ARGS__ \
       )
+  #define Logme_CollapseEveryAt(level, intervalMs, ...) \
+    if (static Logme::CollapseContextCache LOGME_JOIN(_logme_ctx_, __LINE__)(Logme::CollapseEveryTag(), intervalMs); Logme::Instance->Condition() && LOGME_WOULD_LOG_FIRST(Logme::Instance.get(), level, ## __VA_ARGS__)) \
+      Logme::Detail::DispatchCollapse( \
+        Logme::Instance \
+        , LOGME_JOIN(_logme_ctx_, __LINE__) \
+        , level \
+        , &CH \
+        , &SUBSID \
+        , __FUNCTION__ \
+        , __FILE__ \
+        , __LINE__ \
+        , ## __VA_ARGS__ \
+      )
+  #define Logme_CollapseIgnoreEveryAt(level, ignoreRegex, intervalMs, ...) \
+    if (static Logme::CollapseContextCache LOGME_JOIN(_logme_ctx_, __LINE__)(ignoreRegex, Logme::CollapseEveryTag(), intervalMs); Logme::Instance->Condition() && LOGME_WOULD_LOG_FIRST(Logme::Instance.get(), level, ## __VA_ARGS__)) \
+      Logme::Detail::DispatchCollapse( \
+        Logme::Instance \
+        , LOGME_JOIN(_logme_ctx_, __LINE__) \
+        , level \
+        , &CH \
+        , &SUBSID \
+        , __FUNCTION__ \
+        , __FILE__ \
+        , __LINE__ \
+        , ## __VA_ARGS__ \
+      )
 #else
   #define Logme_CollapseAt(level, limit, ...) \
     if (static Logme::CollapseContextCache LOGME_JOIN(_logme_ctx_, __LINE__)(limit); Logme::Instance->Condition() && LOGME_WOULD_LOG_FIRST(Logme::Instance.get(), level, __VA_ARGS__)) \
@@ -204,6 +230,32 @@
       )
   #define Logme_CollapseIgnoreAt(level, ignoreRegex, limit, ...) \
     if (static Logme::CollapseContextCache LOGME_JOIN(_logme_ctx_, __LINE__)(ignoreRegex, limit); Logme::Instance->Condition() && LOGME_WOULD_LOG_FIRST(Logme::Instance.get(), level, __VA_ARGS__)) \
+      Logme::Detail::DispatchCollapse( \
+        Logme::Instance \
+        , LOGME_JOIN(_logme_ctx_, __LINE__) \
+        , level \
+        , &CH \
+        , &SUBSID \
+        , __FUNCTION__ \
+        , __FILE__ \
+        , __LINE__ \
+        , __VA_ARGS__ \
+      )
+  #define Logme_CollapseEveryAt(level, intervalMs, ...) \
+    if (static Logme::CollapseContextCache LOGME_JOIN(_logme_ctx_, __LINE__)(Logme::CollapseEveryTag(), intervalMs); Logme::Instance->Condition() && LOGME_WOULD_LOG_FIRST(Logme::Instance.get(), level, __VA_ARGS__)) \
+      Logme::Detail::DispatchCollapse( \
+        Logme::Instance \
+        , LOGME_JOIN(_logme_ctx_, __LINE__) \
+        , level \
+        , &CH \
+        , &SUBSID \
+        , __FUNCTION__ \
+        , __FILE__ \
+        , __LINE__ \
+        , __VA_ARGS__ \
+      )
+  #define Logme_CollapseIgnoreEveryAt(level, ignoreRegex, intervalMs, ...) \
+    if (static Logme::CollapseContextCache LOGME_JOIN(_logme_ctx_, __LINE__)(ignoreRegex, Logme::CollapseEveryTag(), intervalMs); Logme::Instance->Condition() && LOGME_WOULD_LOG_FIRST(Logme::Instance.get(), level, __VA_ARGS__)) \
       Logme::Detail::DispatchCollapse( \
         Logme::Instance \
         , LOGME_JOIN(_logme_ctx_, __LINE__) \
@@ -235,6 +287,23 @@
   Logme_CollapseIgnoreAt(Logme::Level::LEVEL_DEBUG, ignoreRegex, limit, ## __VA_ARGS__)
 
 /// <summary>
+/// Writes DEBUG log message and collapses repeated messages using a time interval.
+/// </summary>
+/// <param name="intervalMs">Minimum interval between repeated messages in milliseconds.</param>
+/// <param name="...">Optional arguments: channel/id, override, subsystem id, format, args, etc.</param>
+#define LogmeD_CollapseEvery(intervalMs, ...) \
+  Logme_CollapseEveryAt(Logme::Level::LEVEL_DEBUG, intervalMs, ## __VA_ARGS__)
+
+/// <summary>
+/// Writes DEBUG log message and collapses repeated messages using a time interval while ignoring substrings matched by a regular expression.
+/// </summary>
+/// <param name="ignoreRegex">Regular expression used to remove ignored substrings before comparing messages.</param>
+/// <param name="intervalMs">Minimum interval between repeated messages in milliseconds.</param>
+/// <param name="...">Optional arguments: channel/id, override, subsystem id, format, args, etc.</param>
+#define LogmeD_CollapseIgnoreEvery(ignoreRegex, intervalMs, ...) \
+  Logme_CollapseIgnoreEveryAt(Logme::Level::LEVEL_DEBUG, ignoreRegex, intervalMs, ## __VA_ARGS__)
+
+/// <summary>
 /// Writes INFO log message and collapses repeated messages using the formatted message text as the repeat key.
 /// </summary>
 /// <param name="limit">Number of repeated messages to skip before writing the collapsed summary.</param>
@@ -250,6 +319,23 @@
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, format, args, etc.</param>
 #define LogmeI_CollapseIgnore(ignoreRegex, limit, ...) \
   Logme_CollapseIgnoreAt(Logme::Level::LEVEL_INFO, ignoreRegex, limit, ## __VA_ARGS__)
+
+/// <summary>
+/// Writes INFO log message and collapses repeated messages using a time interval.
+/// </summary>
+/// <param name="intervalMs">Minimum interval between repeated messages in milliseconds.</param>
+/// <param name="...">Optional arguments: channel/id, override, subsystem id, format, args, etc.</param>
+#define LogmeI_CollapseEvery(intervalMs, ...) \
+  Logme_CollapseEveryAt(Logme::Level::LEVEL_INFO, intervalMs, ## __VA_ARGS__)
+
+/// <summary>
+/// Writes INFO log message and collapses repeated messages using a time interval while ignoring substrings matched by a regular expression.
+/// </summary>
+/// <param name="ignoreRegex">Regular expression used to remove ignored substrings before comparing messages.</param>
+/// <param name="intervalMs">Minimum interval between repeated messages in milliseconds.</param>
+/// <param name="...">Optional arguments: channel/id, override, subsystem id, format, args, etc.</param>
+#define LogmeI_CollapseIgnoreEvery(ignoreRegex, intervalMs, ...) \
+  Logme_CollapseIgnoreEveryAt(Logme::Level::LEVEL_INFO, ignoreRegex, intervalMs, ## __VA_ARGS__)
 
 /// <summary>
 /// Writes WARN log message and collapses repeated messages using the formatted message text as the repeat key.
@@ -269,6 +355,23 @@
   Logme_CollapseIgnoreAt(Logme::Level::LEVEL_WARN, ignoreRegex, limit, ## __VA_ARGS__)
 
 /// <summary>
+/// Writes WARN log message and collapses repeated messages using a time interval.
+/// </summary>
+/// <param name="intervalMs">Minimum interval between repeated messages in milliseconds.</param>
+/// <param name="...">Optional arguments: channel/id, override, subsystem id, format, args, etc.</param>
+#define LogmeW_CollapseEvery(intervalMs, ...) \
+  Logme_CollapseEveryAt(Logme::Level::LEVEL_WARN, intervalMs, ## __VA_ARGS__)
+
+/// <summary>
+/// Writes WARN log message and collapses repeated messages using a time interval while ignoring substrings matched by a regular expression.
+/// </summary>
+/// <param name="ignoreRegex">Regular expression used to remove ignored substrings before comparing messages.</param>
+/// <param name="intervalMs">Minimum interval between repeated messages in milliseconds.</param>
+/// <param name="...">Optional arguments: channel/id, override, subsystem id, format, args, etc.</param>
+#define LogmeW_CollapseIgnoreEvery(ignoreRegex, intervalMs, ...) \
+  Logme_CollapseIgnoreEveryAt(Logme::Level::LEVEL_WARN, ignoreRegex, intervalMs, ## __VA_ARGS__)
+
+/// <summary>
 /// Writes ERROR log message and collapses repeated messages using the formatted message text as the repeat key.
 /// </summary>
 /// <param name="limit">Number of repeated messages to skip before writing the collapsed summary.</param>
@@ -286,6 +389,23 @@
   Logme_CollapseIgnoreAt(Logme::Level::LEVEL_ERROR, ignoreRegex, limit, ## __VA_ARGS__)
 
 /// <summary>
+/// Writes ERROR log message and collapses repeated messages using a time interval.
+/// </summary>
+/// <param name="intervalMs">Minimum interval between repeated messages in milliseconds.</param>
+/// <param name="...">Optional arguments: channel/id, override, subsystem id, format, args, etc.</param>
+#define LogmeE_CollapseEvery(intervalMs, ...) \
+  Logme_CollapseEveryAt(Logme::Level::LEVEL_ERROR, intervalMs, ## __VA_ARGS__)
+
+/// <summary>
+/// Writes ERROR log message and collapses repeated messages using a time interval while ignoring substrings matched by a regular expression.
+/// </summary>
+/// <param name="ignoreRegex">Regular expression used to remove ignored substrings before comparing messages.</param>
+/// <param name="intervalMs">Minimum interval between repeated messages in milliseconds.</param>
+/// <param name="...">Optional arguments: channel/id, override, subsystem id, format, args, etc.</param>
+#define LogmeE_CollapseIgnoreEvery(ignoreRegex, intervalMs, ...) \
+  Logme_CollapseIgnoreEveryAt(Logme::Level::LEVEL_ERROR, ignoreRegex, intervalMs, ## __VA_ARGS__)
+
+/// <summary>
 /// Writes CRITICAL log message and collapses repeated messages using the formatted message text as the repeat key.
 /// </summary>
 /// <param name="limit">Number of repeated messages to skip before writing the collapsed summary.</param>
@@ -301,6 +421,23 @@
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, format, args, etc.</param>
 #define LogmeC_CollapseIgnore(ignoreRegex, limit, ...) \
   Logme_CollapseIgnoreAt(Logme::Level::LEVEL_CRITICAL, ignoreRegex, limit, ## __VA_ARGS__)
+
+/// <summary>
+/// Writes CRITICAL log message and collapses repeated messages using a time interval.
+/// </summary>
+/// <param name="intervalMs">Minimum interval between repeated messages in milliseconds.</param>
+/// <param name="...">Optional arguments: channel/id, override, subsystem id, format, args, etc.</param>
+#define LogmeC_CollapseEvery(intervalMs, ...) \
+  Logme_CollapseEveryAt(Logme::Level::LEVEL_CRITICAL, intervalMs, ## __VA_ARGS__)
+
+/// <summary>
+/// Writes CRITICAL log message and collapses repeated messages using a time interval while ignoring substrings matched by a regular expression.
+/// </summary>
+/// <param name="ignoreRegex">Regular expression used to remove ignored substrings before comparing messages.</param>
+/// <param name="intervalMs">Minimum interval between repeated messages in milliseconds.</param>
+/// <param name="...">Optional arguments: channel/id, override, subsystem id, format, args, etc.</param>
+#define LogmeC_CollapseIgnoreEvery(ignoreRegex, intervalMs, ...) \
+  Logme_CollapseIgnoreEveryAt(Logme::Level::LEVEL_CRITICAL, ignoreRegex, intervalMs, ## __VA_ARGS__)
 
 /// <summary>
 /// Writes ERROR log message when condition is true (printf-style when called with a format string) or returns a stream (C++ style of output).

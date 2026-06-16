@@ -16,13 +16,13 @@
 
 #include <Logme/File/FileManager.h>
 #include <Logme/File/FileManagerFactory.h>
+#include <Logme/File/RetentionCleaner.h>
 #include <Logme/Logger.h>
 #include <Logme/Logme.h>
 #include <Logme/Template.h>
 #include <Logme/Time/datetime.h> 
 #include <Logme/Types.h>
 
-#include "../File/CleanOldest.h"
 
 using namespace std::chrono_literals;
 
@@ -180,6 +180,8 @@ FileBackend::FileBackend(ChannelPtr owner)
   , QueuedBytes(0)
   , DailyRotation(false)
   , MaxParts(2)
+  , RetentionMaxAge(0)
+  , RetentionMaxTotalSize(0)
   , GzipCompression(false)
 {
   SetAsync(true);
@@ -462,6 +464,10 @@ std::string FileBackend::FormatDetails()
   os << " MaxSize=" << MaxSize;
   os << " DailyRotation=" << (DailyRotation ? "YES" : "NO");
   os << " MaxParts=" << MaxParts;
+  if (RetentionMaxAge != 0)
+    os << " RetentionMaxAge=" << RetentionMaxAge;
+  if (RetentionMaxTotalSize != 0)
+    os << " RetentionMaxTotalSize=" << RetentionMaxTotalSize;
   os << " GzipCompression=" << (GzipCompression ? "YES" : "NO");
   os << " Async=" << (GetAsync() ? "YES" : "NO");
 
@@ -536,6 +542,8 @@ bool FileBackend::ApplyConfig(BackendConfigPtr c)
 
   DailyRotation = p->DailyRotation;
   MaxParts = p->MaxParts;
+  RetentionMaxAge = p->RetentionMaxAge;
+  RetentionMaxTotalSize = p->RetentionMaxTotalSize;
   GzipCompression = p->GzipCompression;
 
   if (GzipCompression)
@@ -673,7 +681,12 @@ bool FileBackend::ChangePart()
   if (!oldName.empty() && oldName != Name)
     SubmitCompletedFile(oldName);
 
-  CleanFiles(BuildCleanPattern(), Name, MaxParts);
+  RetentionOptions retention;
+  retention.MaxFiles = static_cast<std::size_t>(MaxParts);
+  retention.MaxAgeMs = RetentionMaxAge;
+  retention.MaxTotalSize = RetentionMaxTotalSize;
+
+  CleanFiles(BuildCleanPattern(), Name, retention);
 
   return true;
 }

@@ -62,7 +62,6 @@
     <ClCompile Include="..\logme\source\Convert.cpp" />
     <ClCompile Include="..\logme\source\DayChangeDetector.cpp" />
     <ClCompile Include="..\logme\source\Environment.cpp" />
-    <ClCompile Include="..\logme\source\File\CleanOldest.cpp" />
     <ClCompile Include="..\logme\source\File\DirectorySizeWatchdog.cpp" />
     <ClCompile Include="..\logme\source\File\exe_path.cpp" />
     <ClCompile Include="..\logme\source\File\FileManager.cpp" />
@@ -119,6 +118,7 @@
     <ClCompile Include="..\logme\source\Control\EnvironmentControl.cpp" />
     <ClCompile Include="..\logme\source\ThreadField.cpp" />
     <ClCompile Include="..\logme\source\File\CompressionManager.cpp" />
+    <ClCompile Include="..\logme\source\File\RetentionCleaner.cpp" />
 </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\logme\source\Config\Helper.h" />
@@ -128,7 +128,6 @@
     <ClInclude Include="..\logme\source\Control\CommandDescriptor.h" />
     <ClInclude Include="..\logme\source\Control\CommandRegistrar.h" />
     <ClInclude Include="..\logme\source\Control\Json.h" />
-    <ClInclude Include="..\logme\source\File\CleanOldest.h" />
     <ClInclude Include="..\logme\source\StringHelpers.h" />
     <ClInclude Include="..\logme\source\Time\utils.h" />
   </ItemGroup>

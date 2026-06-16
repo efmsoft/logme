@@ -1,5 +1,6 @@
 #include <Logme/Backend/FileBackend.h>
 #include <Logme/Logme.h>
+#include <Logme/Utils.h>
 
 #ifdef USE_JSONCPP
 #include <json/json.h>
@@ -9,12 +10,109 @@
 
 using namespace Logme;
 
+namespace
+{
+#ifdef USE_JSONCPP
+  bool ParseRetentionInteger(
+    const Json::Value& value
+    , const char* name
+    , int& result
+  )
+  {
+    if (!value.isInt())
+    {
+      LogmeE(CHINT, "\"%s\" is not an integer", name);
+      return false;
+    }
+
+    result = value.asInt();
+    if (result < 0)
+    {
+      LogmeE(CHINT, "\"%s\" must not be negative", name);
+      return false;
+    }
+
+    return true;
+  }
+
+  bool ParseRetentionInterval(
+    const Json::Value& value
+    , const char* name
+    , std::uint64_t& result
+  )
+  {
+    if (value.isInt())
+    {
+      int v = value.asInt();
+      if (v < 0)
+      {
+        LogmeE(CHINT, "\"%s\" must not be negative", name);
+        return false;
+      }
+
+      result = static_cast<std::uint64_t>(v);
+      return true;
+    }
+
+    if (!value.isString())
+    {
+      LogmeE(CHINT, "\"%s\" is not an integer or a string value", name);
+      return false;
+    }
+
+    if (!ParseInterval(value.asString(), result))
+    {
+      LogmeE(CHINT, "unsupported value of \"%s\": %s", name, value.asString().c_str());
+      return false;
+    }
+
+    return true;
+  }
+
+  bool ParseRetentionByteSize(
+    const Json::Value& value
+    , const char* name
+    , std::uint64_t& result
+  )
+  {
+    if (value.isInt())
+    {
+      int v = value.asInt();
+      if (v < 0)
+      {
+        LogmeE(CHINT, "\"%s\" must not be negative", name);
+        return false;
+      }
+
+      result = static_cast<std::uint64_t>(v);
+      return true;
+    }
+
+    if (!value.isString())
+    {
+      LogmeE(CHINT, "\"%s\" is not an integer or a string value", name);
+      return false;
+    }
+
+    if (!ParseByteSize(value.asString(), result))
+    {
+      LogmeE(CHINT, "unsupported value of \"%s\": %s", name, value.asString().c_str());
+      return false;
+    }
+
+    return true;
+  }
+#endif
+}
+
 FileBackendConfig::FileBackendConfig()
   : BackendConfig(FileBackend::TYPE_ID)
   , Append(true)
   , MaxSize(FileBackend::GetMaxSizeDefault())
   , DailyRotation(false)
   , MaxParts(2)
+  , RetentionMaxAge(0)
+  , RetentionMaxTotalSize(0)
   , GzipCompression(false)
 {
   Async = true;
@@ -78,19 +176,51 @@ bool FileBackendConfig::Parse(const Json::Value* po)
     }
   }
 
+  bool hasMaxParts = false;
+
   if (o.isMember("max-parts"))
   {
-    if (!o["max-parts"].isInt())
+    if (!ParseRetentionInteger(o["max-parts"], "max-parts", MaxParts))
+      return false;
+
+    hasMaxParts = true;
+  }
+
+  if (o.isMember("retention"))
+  {
+    if (!o["retention"].isObject())
     {
-      LogmeE(CHINT, "\"max-parts\" is not an integer");
+      LogmeE(CHINT, "\"retention\" is not an object");
       return false;
     }
 
-    MaxParts = o["max-parts"].asInt();
-    if (MaxParts < 0)
+    const Json::Value& retention = o["retention"];
+
+    if (retention.isMember("max-files"))
     {
-      LogmeE(CHINT, "\"max-parts\" must not be negative");
-      return false;
+      int maxFiles = 0;
+      if (!ParseRetentionInteger(retention["max-files"], "retention.max-files", maxFiles))
+        return false;
+
+      if (hasMaxParts && maxFiles != MaxParts)
+      {
+        LogmeE(CHINT, "\"max-parts\" and \"retention.max-files\" specify different values");
+        return false;
+      }
+
+      MaxParts = maxFiles;
+    }
+
+    if (retention.isMember("max-age"))
+    {
+      if (!ParseRetentionInterval(retention["max-age"], "retention.max-age", RetentionMaxAge))
+        return false;
+    }
+
+    if (retention.isMember("max-total-size"))
+    {
+      if (!ParseRetentionByteSize(retention["max-total-size"], "retention.max-total-size", RetentionMaxTotalSize))
+        return false;
     }
   }
 

@@ -201,7 +201,6 @@
     <ClInclude Include="source\Control\CommandDescriptor.h" />
     <ClInclude Include="source\Control\CommandRegistrar.h" />
     <ClInclude Include="source\Control\Json.h" />
-    <ClInclude Include="source\File\CleanOldest.h" />
     <ClInclude Include="source\StringHelpers.h" />
     <ClInclude Include="source\Time\utils.h" />
   </ItemGroup>
@@ -254,7 +253,6 @@
     <ClCompile Include="source\Convert.cpp" />
     <ClCompile Include="source\DayChangeDetector.cpp" />
     <ClCompile Include="source\Environment.cpp" />
-    <ClCompile Include="source\File\CleanOldest.cpp" />
     <ClCompile Include="source\File\DirectorySizeWatchdog.cpp" />
     <ClCompile Include="source\File\exe_path.cpp" />
     <ClCompile Include="source\File\FileManager.cpp" />
@@ -306,6 +304,7 @@
     <ClCompile Include="source\Control\Command\CmdLogs.cpp" />
     <ClCompile Include="source\File\buffered_file_io.cpp" />
     <ClCompile Include="source\File\CompressionManager.cpp" />
+    <ClCompile Include="source\File\RetentionCleaner.cpp" />
 </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

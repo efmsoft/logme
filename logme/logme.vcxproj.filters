@@ -194,9 +194,6 @@
     <ClInclude Include="source\Control\Json.h">
       <Filter>source\Control</Filter>
     </ClInclude>
-    <ClInclude Include="source\File\CleanOldest.h">
-      <Filter>source\File</Filter>
-    </ClInclude>
       <ClInclude Include="include\Logme\AllStatI.h">
       <Filter>include\Logme</Filter>
     </ClInclude>
@@ -318,6 +315,9 @@
       <Filter>include\Logme\File</Filter>
     </ClInclude>
     <ClInclude Include="include\Logme\File\CompressionManager.h">
+      <Filter>include\Logme\File</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\File\RetentionCleaner.h">
       <Filter>include\Logme\File</Filter>
     </ClInclude>
 </ItemGroup>
@@ -517,9 +517,6 @@
     <ClCompile Include="source\Json\Loader.cpp">
       <Filter>source\Json</Filter>
     </ClCompile>
-    <ClCompile Include="source\File\CleanOldest.cpp">
-      <Filter>source\File</Filter>
-    </ClCompile>
     <ClCompile Include="source\File\DirectorySizeWatchdog.cpp">
       <Filter>source\File</Filter>
     </ClCompile>
@@ -620,6 +617,9 @@
       <Filter>source\File</Filter>
     </ClCompile>
     <ClCompile Include="source\File\CompressionManager.cpp">
+      <Filter>source\File</Filter>
+    </ClCompile>
+    <ClCompile Include="source\File\RetentionCleaner.cpp">
       <Filter>source\File</Filter>
     </ClCompile>
 </ItemGroup>

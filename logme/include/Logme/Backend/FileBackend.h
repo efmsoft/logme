@@ -30,6 +30,8 @@ namespace Logme
     
     bool DailyRotation;
     int MaxParts;
+    uint64_t RetentionMaxAge;
+    uint64_t RetentionMaxTotalSize;
     bool GzipCompression;
 
     LOGMELNK FileBackendConfig();
@@ -151,6 +153,8 @@ namespace Logme
     DayChangeDetector Day;
     bool DailyRotation;
     int MaxParts;
+    uint64_t RetentionMaxAge;
+    uint64_t RetentionMaxTotalSize;
     bool GzipCompression;
     CompressionRegistrationPtr Compression;
 

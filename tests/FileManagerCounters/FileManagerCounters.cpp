@@ -424,7 +424,11 @@ TEST(FileManagerCounters, ScheduledHeadWithinGapRunsWithoutSleep)
   EXPECT_GE(Diff(before.ActiveQueuePushBack, after.ActiveQueuePushBack), 2u);
   EXPECT_GE(selected, 2u);
   EXPECT_LE(selected, 4u);
-  EXPECT_EQ(selected, early + late);
+
+  // A scheduled backend can be selected exactly at its deadline. In that case
+  // it is neither early nor late, but it is still a valid scheduled run.
+  EXPECT_LE(early + late, selected);
+
   EXPECT_LE(early, 2u);
   EXPECT_EQ(0u, after.CurrentActiveDepth);
 }

@@ -342,6 +342,9 @@
     <ClCompile Include="..\logme\source\ThreadField.cpp">
       <Filter>ThreadField.cpp</Filter>
     </ClCompile>
+    <ClCompile Include="..\logme\source\File\CompressionManager.cpp">
+      <Filter>File</Filter>
+    </ClCompile>
 </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\logme\source\Time\utils.h">
@@ -578,6 +581,9 @@
     </ClInclude>
     <ClInclude Include="..\logme\include\Logme\ThreadField.h">
       <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\File\CompressionManager.h">
+      <Filter>..\logme\include\Logme\File</Filter>
     </ClInclude>
 </ItemGroup>
 </Project>

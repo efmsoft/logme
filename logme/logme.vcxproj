@@ -305,6 +305,7 @@
     <ClCompile Include="source\Control\Discovery.cpp" />
     <ClCompile Include="source\Control\Command\CmdLogs.cpp" />
     <ClCompile Include="source\File\buffered_file_io.cpp" />
+    <ClCompile Include="source\File\CompressionManager.cpp" />
 </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

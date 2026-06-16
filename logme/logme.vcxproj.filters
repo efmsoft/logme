@@ -317,6 +317,9 @@
     <ClInclude Include="include\Logme\File\buffered_file_io.h">
       <Filter>include\Logme\File</Filter>
     </ClInclude>
+    <ClInclude Include="include\Logme\File\CompressionManager.h">
+      <Filter>include\Logme\File</Filter>
+    </ClInclude>
 </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Time\datetime_common.cpp">
@@ -614,6 +617,9 @@
       <Filter>source\Control\Command</Filter>
     </ClCompile>
     <ClCompile Include="source\File\buffered_file_io.cpp">
+      <Filter>source\File</Filter>
+    </ClCompile>
+    <ClCompile Include="source\File\CompressionManager.cpp">
       <Filter>source\File</Filter>
     </ClCompile>
 </ItemGroup>

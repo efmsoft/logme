@@ -304,6 +304,8 @@ void CompressionManager::CompressFile(const std::string& file)
   if (input.bad())
     ok = false;
 
+  input.close();
+
   int closeResult = gzclose(output);
   if (closeResult != Z_OK)
     ok = false;

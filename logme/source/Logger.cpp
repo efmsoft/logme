@@ -39,9 +39,9 @@ namespace
 
 Logger::Logger()
   : HomeDirectoryWatchDog(HomeDirectory, std::bind(&Logger::TestFileInUse, this, std::placeholders::_1))
-  , CompressionFactory(std::bind(&Logger::TestFileInUse, this, std::placeholders::_1))
   , BlockReportedSubsystems(true)
   , IDGenerator(1)
+  , CompressionFactory(std::bind(&Logger::TestFileInUse, this, std::placeholders::_1))
   , ControlSocket(-1)
   , ControlCfg{}
   , ControlServerPolicy(ControlPolicy::Full())

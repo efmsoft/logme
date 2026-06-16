@@ -28,6 +28,10 @@ if(USE_JSONCPP)
   target_compile_definitions(logmed PUBLIC USE_JSONCPP)
 endif()
 
+if(USE_ZLIB)
+  target_compile_definitions(logmed PRIVATE USE_ZLIB)
+endif()
+
 target_include_directories(logmed PUBLIC
   $<BUILD_INTERFACE:${SRCROOT}/include>
   $<INSTALL_INTERFACE:include>
@@ -58,6 +62,10 @@ if (LOGME_USE_FMT_FORMAT)
   target_link_libraries(logmed PUBLIC fmt::fmt)
 endif()
 target_link_libraries(logmed LINK_PUBLIC ${ALLSTAT_LIBRARIES} ${JSONCPP_LIBRARIES})
+
+if(USE_ZLIB)
+  target_link_libraries(logmed PUBLIC ZLIB::ZLIB)
+endif()
 
 if(NOT WIN32)
   target_compile_options(logmed PRIVATE -fPIC -fvisibility=default)

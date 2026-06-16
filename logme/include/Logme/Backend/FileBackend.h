@@ -4,11 +4,13 @@
 #include <condition_variable>
 #include <memory>
 #include <mutex>
+#include <regex>
 #include <vector>
 
 #include <Logme/Backend/MemoryTrackedBackend.h>
 #include <Logme/Buffer/BufferQueue.h>
 #include <Logme/DayChangeDetector.h>
+#include <Logme/File/CompressionManager.h>
 #include <Logme/File/buffered_file_io.h>
 #include <Logme/File/file_io.h>
 #include <Logme/Obfuscate.h>
@@ -28,6 +30,7 @@ namespace Logme
     
     bool DailyRotation;
     int MaxParts;
+    bool GzipCompression;
 
     LOGMELNK FileBackendConfig();
     LOGMELNK ~FileBackendConfig();
@@ -148,6 +151,8 @@ namespace Logme
     DayChangeDetector Day;
     bool DailyRotation;
     int MaxParts;
+    bool GzipCompression;
+    CompressionRegistrationPtr Compression;
 
     static size_t MaxSizeDefault;
     static size_t QueueSizeLimitDefault;
@@ -255,10 +260,13 @@ namespace Logme
 
   private:
     class FileManagerFactory& GetFactory() const;
+    class CompressionManagerFactory& GetCompressionFactory() const;
     FileIo& GetActiveIo();
     const FileIo& GetActiveIo() const;
     bool IsLogOpen() const;
 
+    void SubmitCompletedFile(const std::string& file);
+    std::regex BuildCleanPattern() const;
     void Truncate();
     void AppendObfuscated(const char* text, size_t add);
     void AppendOutputData(const char* text, size_t add);

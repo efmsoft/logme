@@ -46,6 +46,9 @@ option(LOGME_BUILD_TOOLS "Build logme tools" ON)
 set(USE_JSONCPP "AUTO" CACHE STRING "JsonCpp support: AUTO, ON, or OFF")
 set_property(CACHE USE_JSONCPP PROPERTY STRINGS AUTO ON OFF)
 
+set(USE_ZLIB "AUTO" CACHE STRING "zlib gzip compression support: AUTO, ON, or OFF")
+set_property(CACHE USE_ZLIB PROPERTY STRINGS AUTO ON OFF)
+
 set(LOGME_FMT_FORMAT "AUTO" CACHE STRING "fmt formatting logging API: AUTO, ON, or OFF")
 set_property(CACHE LOGME_FMT_FORMAT PROPERTY STRINGS AUTO ON OFF)
 set(LOGME_STD_FORMAT "AUTO" CACHE STRING "std::format logging API: AUTO, ON, or OFF")
@@ -103,6 +106,7 @@ int main()
 string(TOUPPER "${LOGME_FMT_FORMAT}" _LOGME_FMT_FORMAT_MODE)
 string(TOUPPER "${LOGME_STD_FORMAT}" _LOGME_STD_FORMAT_MODE)
 string(TOUPPER "${USE_JSONCPP}" _LOGME_JSONCPP_MODE)
+string(TOUPPER "${USE_ZLIB}" _LOGME_ZLIB_MODE)
 
 foreach(_LOGME_FORMAT_MODE_NAME _LOGME_FMT_FORMAT_MODE _LOGME_STD_FORMAT_MODE)
   if(NOT "${${_LOGME_FORMAT_MODE_NAME}}" STREQUAL "AUTO"
@@ -122,6 +126,14 @@ if(NOT "${_LOGME_JSONCPP_MODE}" STREQUAL "AUTO"
 endif()
 
 set(USE_JSONCPP "${_LOGME_JSONCPP_MODE}" CACHE STRING "JsonCpp support: AUTO, ON, or OFF" FORCE)
+
+if(NOT "${_LOGME_ZLIB_MODE}" STREQUAL "AUTO"
+  AND NOT "${_LOGME_ZLIB_MODE}" STREQUAL "ON"
+  AND NOT "${_LOGME_ZLIB_MODE}" STREQUAL "OFF")
+  message(FATAL_ERROR "USE_ZLIB must be AUTO, ON, or OFF")
+endif()
+
+set(USE_ZLIB "${_LOGME_ZLIB_MODE}" CACHE STRING "zlib gzip compression support: AUTO, ON, or OFF" FORCE)
 
 if(_LOGME_FMT_FORMAT_MODE STREQUAL "ON" AND _LOGME_STD_FORMAT_MODE STREQUAL "ON")
   message(FATAL_ERROR "LOGME_FMT_FORMAT=ON and LOGME_STD_FORMAT=ON are mutually exclusive")
@@ -183,6 +195,8 @@ endif()
 
 set(LOGME_USE_JSONCPP 0)
 set(JSONCPP_LIBRARIES "")
+set(LOGME_USE_ZLIB 0)
+set(ZLIB_LIBRARIES "")
 
 if(NOT _LOGME_JSONCPP_MODE STREQUAL "OFF")
   if(_LOGME_JSONCPP_MODE STREQUAL "ON")
@@ -209,6 +223,32 @@ endif()
 set(LOGME_USE_JSONCPP ${LOGME_USE_JSONCPP} CACHE INTERNAL "Resolved JsonCpp usage" FORCE)
 # Keep legacy subdirectory checks like if(USE_JSONCPP) safe when AUTO resolves to disabled.
 set(USE_JSONCPP ${LOGME_USE_JSONCPP})
+
+if(NOT _LOGME_ZLIB_MODE STREQUAL "OFF")
+  if(_LOGME_ZLIB_MODE STREQUAL "ON")
+    find_package(ZLIB REQUIRED)
+  else()
+    find_package(ZLIB QUIET)
+  endif()
+
+  if(TARGET ZLIB::ZLIB)
+    set(LOGME_USE_ZLIB 1)
+    set(ZLIB_LIBRARIES ZLIB::ZLIB)
+  elseif(_LOGME_ZLIB_MODE STREQUAL "ON")
+    message(FATAL_ERROR "USE_ZLIB=ON but ZLIB::ZLIB is not available")
+  endif()
+endif()
+
+message(STATUS "USE_ZLIB = ${USE_ZLIB}")
+if(LOGME_USE_ZLIB)
+  message(STATUS "Logme zlib gzip compression support: enabled")
+else()
+  message(STATUS "Logme zlib gzip compression support: disabled")
+endif()
+
+set(LOGME_USE_ZLIB ${LOGME_USE_ZLIB} CACHE INTERNAL "Resolved zlib usage" FORCE)
+# Keep legacy subdirectory checks like if(USE_ZLIB) safe when AUTO resolves to disabled.
+set(USE_ZLIB ${LOGME_USE_ZLIB})
 
 if(LOGME_BUILD_STATIC)
  add_subdirectory(logme out/Static)

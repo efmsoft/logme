@@ -26,6 +26,7 @@
 #include <Logme/CritSection.h>
 #include <Logme/Debug/DebugManagerFactory.h>
 #include <Logme/WindowsEventLog/WindowsEventLogManagerFactory.h>
+#include <Logme/File/CompressionManager.h>
 #include <Logme/File/DirectorySizeWatchdog.h>
 #include <Logme/File/FileManagerFactory.h>
 #include <Logme/Obfuscate.h>
@@ -72,6 +73,7 @@ namespace Logme
     int IDGenerator;
 
     FileManagerFactory Factory;
+    CompressionManagerFactory CompressionFactory;
     ConsoleManagerFactory ConsoleFactory;
     DebugManagerFactory DebugFactory;
     WindowsEventLogManagerFactory WindowsEventLogFactory;
@@ -718,6 +720,11 @@ namespace Logme
     /// <param name="file">Path to file to test.</param>
     /// <returns>true if file is in use by logger file manager.</returns>
     LOGMELNK bool TestFileInUse(const std::string& file);
+
+    /// <summary>
+    /// Returns lazy manager factory used by file backends to compress completed files.
+    /// </summary>
+    LOGMELNK CompressionManagerFactory& GetCompressionManagerFactory();
 
     /// <summary>
     /// Enables or disables virtual terminal mode support.

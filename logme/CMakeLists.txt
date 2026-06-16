@@ -21,6 +21,11 @@ if(USE_JSONCPP)
   target_link_libraries(logme PUBLIC JsonCpp::JsonCpp)
 endif()
 
+if(USE_ZLIB)
+  target_compile_definitions(logme PRIVATE USE_ZLIB)
+  target_link_libraries(logme PUBLIC ZLIB::ZLIB)
+endif()
+
 target_include_directories(logme PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>

@@ -39,6 +39,7 @@ namespace
 
 Logger::Logger()
   : HomeDirectoryWatchDog(HomeDirectory, std::bind(&Logger::TestFileInUse, this, std::placeholders::_1))
+  , CompressionFactory(std::bind(&Logger::TestFileInUse, this, std::placeholders::_1))
   , BlockReportedSubsystems(true)
   , IDGenerator(1)
   , ControlSocket(-1)
@@ -65,6 +66,7 @@ Logger::~Logger()
   StopControlServer();
   FreeControlSsl();
   DeleteAllChannels();
+  CompressionFactory.SetStopping();
 }
 
 void Logger::Shutdown()
@@ -180,6 +182,11 @@ bool Logger::TestFileInUse(const std::string& file)
 FileManagerFactory& Logger::GetFileManagerFactory()
 {
   return Factory;
+}
+
+CompressionManagerFactory& Logger::GetCompressionManagerFactory()
+{
+  return CompressionFactory;
 }
 
 ConsoleManagerFactory& Logger::GetConsoleManagerFactory()

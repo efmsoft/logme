@@ -1,8 +1,13 @@
 #include <Logme/Backend/FileBackend.h>
 #include <Logme/Logme.h>
 
+#include <assert.h>
 #include <string.h>
 #include <thread>
+
+#ifdef USE_JSONCPP
+#include <json/json.h>
+#endif
 
 #if defined(_MSC_VER)
 #pragma warning(disable: 4459)
@@ -69,6 +74,55 @@ static int OutputToNamespaceChannel(int arg1, const char* argv, const std::strin
   LogmeW("data written to \"%s\" channel", CH.Name);
   return rc;
 }
+
+
+#ifdef USE_JSONCPP
+static void TestFileBackendConfigValidation()
+{
+  using namespace Logme;
+
+  {
+    Json::Value config;
+    config["file"] = "invalid-rotation.log";
+    config["rotation"] = "hourly";
+
+    FileBackendConfig backendConfig;
+    assert(!backendConfig.Parse(&config));
+  }
+
+  {
+    Json::Value config;
+    config["file"] = "invalid-max-parts.log";
+    config["max-parts"] = -1;
+
+    FileBackendConfig backendConfig;
+    assert(!backendConfig.Parse(&config));
+  }
+
+  {
+    Json::Value config;
+    config["file"] = "invalid-compression.log";
+    config["compression"] = "zip";
+
+    FileBackendConfig backendConfig;
+    assert(!backendConfig.Parse(&config));
+  }
+
+  {
+    Json::Value config;
+    config["file"] = "valid-compression.log";
+    config["rotation"] = "daily";
+    config["compression"] = "gz";
+    config["max-parts"] = 0;
+
+    FileBackendConfig backendConfig;
+    assert(backendConfig.Parse(&config));
+    assert(backendConfig.DailyRotation);
+    assert(backendConfig.GzipCompression);
+    assert(backendConfig.MaxParts == 0);
+  }
+}
+#endif
 
 static void TestRetention()
 {
@@ -169,6 +223,9 @@ static void FormattedOutput()
 
 int main()
 {
+#ifdef USE_JSONCPP
+  TestFileBackendConfigValidation();
+#endif
   OutputToDefaultChannel();
   OutputToChannel1();
   OutputToNamespaceChannel(128, "hello world", std::string("std::string"));

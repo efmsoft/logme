@@ -180,6 +180,7 @@ FileBackend::FileBackend(ChannelPtr owner)
   , QueuedBytes(0)
   , DailyRotation(false)
   , MaxParts(2)
+  , GzipCompression(false)
 {
   SetAsync(true);
   NonceGenInit(&Nonce);
@@ -461,6 +462,7 @@ std::string FileBackend::FormatDetails()
   os << " MaxSize=" << MaxSize;
   os << " DailyRotation=" << (DailyRotation ? "YES" : "NO");
   os << " MaxParts=" << MaxParts;
+  os << " GzipCompression=" << (GzipCompression ? "YES" : "NO");
   os << " Async=" << (GetAsync() ? "YES" : "NO");
 
   size_t memoryUsage = GetMemoryUsage();
@@ -534,7 +536,13 @@ bool FileBackend::ApplyConfig(BackendConfigPtr c)
 
   DailyRotation = p->DailyRotation;
   MaxParts = p->MaxParts;
-  
+  GzipCompression = p->GzipCompression;
+
+  if (GzipCompression)
+    Compression = Owner->GetOwner()->GetCompressionManagerFactory().RegisterUser();
+  else
+    Compression.reset();
+
   Day.UpdateDayBoundaries();
 
   NameTemplate = p->Filename;
@@ -652,6 +660,9 @@ size_t FileBackend::GetSize()
 bool FileBackend::ChangePart()
 {
   FILE_CNT(GlobalChangePartCalls.fetch_add(1, std::memory_order_relaxed));
+
+  const std::string oldName = Name;
+
   if (!CreateLog(NameTemplate.c_str()))
   {
     LogmeE(CHINT, "failed to create a new log");
@@ -659,11 +670,10 @@ bool FileBackend::ChangePart()
     return false;
   }
 
-  ProcessTemplateParam param(static_cast<uint32_t>(TEMPLATE_ALL) & ~static_cast<uint32_t>(TEMPLATE_DATE_AND_TIME));
-  std::string re = ProcessTemplate(NameTemplate.c_str(), param);
+  if (!oldName.empty() && oldName != Name)
+    SubmitCompletedFile(oldName);
 
-  re = ReplaceDatetimePlaceholders(re, ".+");
-  CleanFiles(std::regex(re), Name, MaxParts);
+  CleanFiles(BuildCleanPattern(), Name, MaxParts);
 
   return true;
 }
@@ -980,6 +990,39 @@ FileManagerFactory& FileBackend::GetFactory() const
 {
   auto logger = Owner->GetOwner();
   return logger->GetFileManagerFactory();
+}
+
+CompressionManagerFactory& FileBackend::GetCompressionFactory() const
+{
+  auto logger = Owner->GetOwner();
+  return logger->GetCompressionManagerFactory();
+}
+
+void FileBackend::SubmitCompletedFile(const std::string& file)
+{
+  if (!GzipCompression || !Compression)
+    return;
+
+  Compression->Submit(file);
+}
+
+std::regex FileBackend::BuildCleanPattern() const
+{
+  ProcessTemplateParam param(
+    static_cast<uint32_t>(TEMPLATE_ALL)
+    & ~static_cast<uint32_t>(TEMPLATE_DATE_AND_TIME)
+  );
+  std::string re = ProcessTemplate(NameTemplate.c_str(), param);
+
+  if (!IsAbsolutePath(re))
+    re = Owner->GetOwner()->GetHomeDirectory() + re;
+
+  re = ReplaceDatetimePlaceholders(re, ".+");
+
+  if (GzipCompression)
+    re += "(\\.gz)?";
+
+  return std::regex(re);
 }
 
 bool FileBackend::WriteReadyData(std::vector<DataBufferPtr>& data)

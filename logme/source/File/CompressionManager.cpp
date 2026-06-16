@@ -325,7 +325,9 @@ void CompressionManager::CompressFile(const std::string& file)
 
   std::filesystem::remove(file, ec);
   if (ec)
+  {
     LogmeE(CHINT, "failed to delete compressed source: %s", file.c_str());
+  }
 #endif
 }
 

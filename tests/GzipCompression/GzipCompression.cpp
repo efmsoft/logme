@@ -2,18 +2,29 @@
 
 #include <zlib.h>
 
-#include <assert.h>
-
 #include <chrono>
+#include <exception>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
+#include <stdexcept>
 #include <string>
-#include <thread>
+
+static void Check(
+  bool condition
+  , const std::string& message
+)
+{
+  if (!condition)
+  {
+    throw std::runtime_error(message);
+  }
+}
 
 static std::string ReadGzipFile(const std::filesystem::path& file)
 {
   gzFile input = gzopen(file.string().c_str(), "rb");
-  assert(input != nullptr);
+  Check(input != nullptr, "failed to open gzip file");
 
   std::string result;
   char buffer[256];
@@ -25,9 +36,17 @@ static std::string ReadGzipFile(const std::filesystem::path& file)
     if (read < 0)
     {
       int error = 0;
-      gzerror(input, &error);
-      (void)error;
-      assert(false);
+      const char* text = gzerror(input, &error);
+      std::string message = "failed to read gzip file";
+
+      if (text)
+      {
+        message += ": ";
+        message += text;
+      }
+
+      gzclose(input);
+      throw std::runtime_error(message);
     }
 
     if (read == 0)
@@ -37,7 +56,7 @@ static std::string ReadGzipFile(const std::filesystem::path& file)
   }
 
   int rc = gzclose(input);
-  assert(rc == Z_OK);
+  Check(rc == Z_OK, "failed to close gzip file");
 
   return result;
 }
@@ -51,7 +70,7 @@ static std::filesystem::path MakeTestDirectory()
   std::error_code ec;
   std::filesystem::remove_all(dir, ec);
   std::filesystem::create_directories(dir, ec);
-  assert(!ec);
+  Check(!ec, "failed to create test directory");
 
   return dir;
 }
@@ -62,10 +81,10 @@ static void WriteTextFile(
 )
 {
   std::ofstream output(file, std::ios::binary);
-  assert(output.good());
+  Check(output.good(), "failed to open source file");
 
   output.write(text.data(), static_cast<std::streamsize>(text.size()));
-  assert(output.good());
+  Check(output.good(), "failed to write source file");
 }
 
 static void TestGzipCompression()
@@ -90,15 +109,16 @@ static void TestGzipCompression()
   );
 
   auto registration = factory.RegisterUser();
-  assert(registration && registration->IsActive());
+  Check(registration != nullptr, "failed to register compression user");
+  Check(registration->IsActive(), "compression registration is inactive");
 
   registration->Submit(source.string());
   registration.reset();
   factory.SetStopping();
 
-  assert(!std::filesystem::exists(source));
-  assert(std::filesystem::exists(compressed));
-  assert(ReadGzipFile(compressed) == text);
+  Check(!std::filesystem::exists(source), "source file was not removed");
+  Check(std::filesystem::exists(compressed), "compressed file was not created");
+  Check(ReadGzipFile(compressed) == text, "compressed file content mismatch");
 
   std::error_code ec;
   std::filesystem::remove_all(dir, ec);
@@ -106,6 +126,14 @@ static void TestGzipCompression()
 
 int main()
 {
-  TestGzipCompression();
-  return 0;
+  try
+  {
+    TestGzipCompression();
+    return 0;
+  }
+  catch (const std::exception& e)
+  {
+    std::cerr << e.what() << std::endl;
+    return 1;
+  }
 }

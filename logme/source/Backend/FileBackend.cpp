@@ -152,6 +152,7 @@ FileBackend::FileBackend(ChannelPtr owner)
   : MemoryTrackedBackend(owner, TYPE_ID)
   , Append(true)
   , MaxSize(MaxSizeDefault)
+  , OnSizeLimit(SIZE_LIMIT_TRUNCATE)
   , CurrentSize(0)
   , QueueSizeLimit(QueueSizeLimitDefault)
   , FlushAfter(FlushAfterDefault)
@@ -159,6 +160,7 @@ FileBackend::FileBackend(ChannelPtr owner)
   , ShutdownFlag(false)
   , ShutdownCalled(owner == nullptr)
   , FlushTime(0)
+  , ArchiveIndex(0)
   , ActiveNext(nullptr)
   , ActivePrev(nullptr)
   , ActiveLinked(false)
@@ -462,6 +464,9 @@ std::string FileBackend::FormatDetails()
   os << NameTemplate;
   os << (Append ? " APPEND" : " OVERWRITE");
   os << " MaxSize=" << MaxSize;
+  os << " OnSizeLimit=" << (OnSizeLimit == SIZE_LIMIT_ROTATE ? "ROTATE" : "TRUNCATE");
+  if (!ArchiveTemplate.empty())
+    os << " Archive=" << ArchiveTemplate;
   os << " DailyRotation=" << (DailyRotation ? "YES" : "NO");
   os << " MaxParts=" << MaxParts;
   if (RetentionMaxAge != 0)
@@ -540,6 +545,8 @@ bool FileBackend::ApplyConfig(BackendConfigPtr c)
   SetAppend(p->DailyRotation ? true : p->Append);
   SetMaxSize(p->MaxSize);
 
+  OnSizeLimit = p->OnSizeLimit;
+  ArchiveTemplate = p->ArchiveFilename;
   DailyRotation = p->DailyRotation;
   MaxParts = p->MaxParts;
   RetentionMaxAge = p->RetentionMaxAge;
@@ -681,12 +688,7 @@ bool FileBackend::ChangePart()
   if (!oldName.empty() && oldName != Name)
     SubmitCompletedFile(oldName);
 
-  RetentionOptions retention;
-  retention.MaxFiles = static_cast<std::size_t>(MaxParts);
-  retention.MaxAgeMs = RetentionMaxAge;
-  retention.MaxTotalSize = RetentionMaxTotalSize;
-
-  CleanFiles(BuildCleanPattern(), Name, retention);
+  ApplyRetention();
 
   return true;
 }
@@ -723,6 +725,18 @@ void FileBackend::Display(Context& context)
   int nc;
   const char* buffer = context.Apply(Owner, Owner->GetFlags(), nc);
   AppendStringInternal(buffer, nc);
+}
+
+bool FileBackend::ApplySizeLimit(size_t add)
+{
+  if (MaxSize == 0)
+    return true;
+
+  if (OnSizeLimit == SIZE_LIMIT_ROTATE)
+    return RotateSizePart(add);
+
+  Truncate();
+  return true;
 }
 
 void FileBackend::Truncate()
@@ -815,7 +829,8 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
     FILE_CNT(GlobalInputBytes.fetch_add(add, std::memory_order_relaxed));
 
     std::lock_guard guard(IoLock);
-    Truncate();
+    if (!ApplySizeLimit(add))
+      return;
 
     int rc = GetActiveIo().WriteRaw(text, add);
     if (rc < 0)
@@ -1019,21 +1034,124 @@ void FileBackend::SubmitCompletedFile(const std::string& file)
   Compression->Submit(file);
 }
 
+std::string FileBackend::BuildArchiveName(uint64_t index) const
+{
+  std::string archive = ProcessTemplate(ArchiveTemplate.c_str(), ProcessTemplateParam());
+  archive = ReplaceAll(archive, "{index}", std::to_string(index));
+
+  if (!IsAbsolutePath(archive))
+    archive = Owner->GetOwner()->GetHomeDirectory() + archive;
+
+  return archive;
+}
+
+std::string FileBackend::TakeArchiveName()
+{
+  for (uint64_t i = ArchiveIndex + 1;; ++i)
+  {
+    std::string archive = BuildArchiveName(i);
+    std::error_code ec;
+    bool exists = std::filesystem::exists(archive, ec);
+    if (!exists)
+    {
+      ArchiveIndex = i;
+      return archive;
+    }
+
+    std::string compressed = archive + ".gz";
+    ec.clear();
+    exists = std::filesystem::exists(compressed, ec);
+    if (!exists)
+    {
+      ArchiveIndex = i;
+      return archive;
+    }
+  }
+}
+
+void FileBackend::ApplyRetention()
+{
+  RetentionOptions retention;
+  retention.MaxFiles = static_cast<std::size_t>(MaxParts);
+  retention.MaxAgeMs = RetentionMaxAge;
+  retention.MaxTotalSize = RetentionMaxTotalSize;
+
+  CleanFiles(BuildCleanPattern(), Name, retention);
+}
+
+bool FileBackend::RotateSizePart(size_t add)
+{
+  if (MaxSize == 0 || CurrentSize + add <= MaxSize)
+    return true;
+
+  if (ArchiveTemplate.empty())
+  {
+    LogmeE(CHINT, "file size limit rotate requested without archive template");
+    return false;
+  }
+
+  const std::string oldName = Name;
+  const std::string archive = TakeArchiveName();
+
+  CloseLog();
+
+  std::error_code ec;
+  auto dir = std::filesystem::path(archive).parent_path();
+  if (!dir.empty())
+  {
+    std::filesystem::create_directories(dir, ec);
+    if (ec)
+    {
+      LogmeE(CHINT, "failed to create archive directory: %s", archive.c_str());
+      CreateLog(NameTemplate.c_str());
+      return false;
+    }
+  }
+
+  std::filesystem::rename(oldName, archive, ec);
+  if (ec)
+  {
+    LogmeE(CHINT, "failed to rename log file to archive: %s -> %s", oldName.c_str(), archive.c_str());
+    CreateLog(NameTemplate.c_str());
+    return false;
+  }
+
+  if (!CreateLog(NameTemplate.c_str()))
+  {
+    LogmeE(CHINT, "failed to create a new log after size rotation");
+    FILE_CNT(GlobalChangePartFailures.fetch_add(1, std::memory_order_relaxed));
+    return false;
+  }
+
+  SubmitCompletedFile(archive);
+  ApplyRetention();
+  return true;
+}
+
 std::regex FileBackend::BuildCleanPattern() const
 {
-  ProcessTemplateParam param(
-    static_cast<uint32_t>(TEMPLATE_ALL)
-    & ~static_cast<uint32_t>(TEMPLATE_DATE_AND_TIME)
-  );
-  std::string re = ProcessTemplate(NameTemplate.c_str(), param);
+  auto buildPattern = [this](const std::string& source)
+  {
+    ProcessTemplateParam param(
+      static_cast<uint32_t>(TEMPLATE_ALL)
+      & ~static_cast<uint32_t>(TEMPLATE_DATE_AND_TIME)
+    );
 
-  if (!IsAbsolutePath(re))
-    re = Owner->GetOwner()->GetHomeDirectory() + re;
+    std::string re = ProcessTemplate(source.c_str(), param);
+    re = ReplaceAll(re, "{index}", "{datetime}");
 
-  re = ReplaceDatetimePlaceholders(re, ".+");
+    if (!IsAbsolutePath(re))
+      re = Owner->GetOwner()->GetHomeDirectory() + re;
+
+    return ReplaceDatetimePlaceholders(re, ".+");
+  };
+
+  std::string re = buildPattern(NameTemplate);
+  if (!ArchiveTemplate.empty())
+    re = "(" + re + ")|(" + buildPattern(ArchiveTemplate) + ")";
 
   if (GzipCompression)
-    re += "(\\.gz)?";
+    re = "(" + re + ")(\\.gz)?";
 
   return std::regex(re);
 }
@@ -1081,7 +1199,12 @@ bool FileBackend::WriteReadyData(std::vector<DataBufferPtr>& data)
   {
     std::lock_guard guard(IoLock);
 
-    Truncate();
+    if (!ApplySizeLimit(bytes))
+    {
+      ok = false;
+    }
+    else
+    {
 
 #if !defined(_WIN32) && !defined(__sun__)
     constexpr size_t WRITEV_CHUNK = 256;
@@ -1160,6 +1283,7 @@ bool FileBackend::WriteReadyData(std::vector<DataBufferPtr>& data)
       }
     }
 #endif
+    }
   }
 
   Queue.ReportWrite(data.size(), bytes, ok);

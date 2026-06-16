@@ -109,6 +109,7 @@ FileBackendConfig::FileBackendConfig()
   : BackendConfig(FileBackend::TYPE_ID)
   , Append(true)
   , MaxSize(FileBackend::GetMaxSizeDefault())
+  , OnSizeLimit(SIZE_LIMIT_TRUNCATE)
   , DailyRotation(false)
   , MaxParts(2)
   , RetentionMaxAge(0)
@@ -152,6 +153,28 @@ bool FileBackendConfig::Parse(const Json::Value* po)
     }
 
     MaxSize = GetByteSize(o, "max-size", MaxSize);
+  }
+
+  if (o.isMember("on-size-limit"))
+  {
+    if (!o["on-size-limit"].isString())
+    {
+      LogmeE(CHINT, "\"on-size-limit\" is not a string value");
+      return false;
+    }
+
+    std::string v = TrimSpaces(o["on-size-limit"].asString());
+    ToLowerAsciiInplace(v);
+
+    if (v == "" || v == "truncate")
+      OnSizeLimit = SIZE_LIMIT_TRUNCATE;
+    else if (v == "rotate")
+      OnSizeLimit = SIZE_LIMIT_ROTATE;
+    else
+    {
+      LogmeE(CHINT, "unsupported value of \"on-size-limit\": %s", v.c_str());
+      return false;
+    }
   }
 
   if (o.isMember("rotation"))
@@ -242,6 +265,32 @@ bool FileBackendConfig::Parse(const Json::Value* po)
     else
     {
       LogmeE(CHINT, "unsupported value of \"compression\": %s", v.c_str());
+      return false;
+    }
+  }
+
+  if (o.isMember("archive"))
+  {
+    if (!o["archive"].isString())
+    {
+      LogmeE(CHINT, "\"archive\" is not a string");
+      return false;
+    }
+
+    ArchiveFilename = o["archive"].asString();
+  }
+
+  if (OnSizeLimit == SIZE_LIMIT_ROTATE)
+  {
+    if (ArchiveFilename.empty())
+    {
+      LogmeE(CHINT, "\"archive\" is required when \"on-size-limit\" is \"rotate\"");
+      return false;
+    }
+
+    if (ArchiveFilename.find("{index}") == std::string::npos)
+    {
+      LogmeE(CHINT, "\"archive\" must contain {index} when \"on-size-limit\" is \"rotate\"");
       return false;
     }
   }

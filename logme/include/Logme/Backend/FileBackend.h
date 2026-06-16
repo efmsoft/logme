@@ -22,11 +22,19 @@
 
 namespace Logme
 {
+  enum SizeLimitPolicy
+  {
+    SIZE_LIMIT_TRUNCATE,
+    SIZE_LIMIT_ROTATE,
+  };
+
   struct FileBackendConfig : public BackendConfig
   {
     bool Append;
     size_t MaxSize;
+    SizeLimitPolicy OnSizeLimit;
     std::string Filename;
+    std::string ArchiveFilename;
     
     bool DailyRotation;
     int MaxParts;
@@ -127,11 +135,14 @@ namespace Logme
   private:
     bool Append;
     size_t MaxSize;
+    SizeLimitPolicy OnSizeLimit;
     size_t CurrentSize;
     size_t QueueSizeLimit;
     uint64_t FlushAfter;
     std::string Name;
     std::string NameTemplate;
+    std::string ArchiveTemplate;
+    uint64_t ArchiveIndex;
 
     std::atomic<bool> Registered;
     std::atomic<bool> ShutdownFlag;
@@ -270,7 +281,12 @@ namespace Logme
     bool IsLogOpen() const;
 
     void SubmitCompletedFile(const std::string& file);
+    std::string BuildArchiveName(uint64_t index) const;
+    std::string TakeArchiveName();
     std::regex BuildCleanPattern() const;
+    void ApplyRetention();
+    bool RotateSizePart(size_t add);
+    bool ApplySizeLimit(size_t add);
     void Truncate();
     void AppendObfuscated(const char* text, size_t add);
     void AppendOutputData(const char* text, size_t add);

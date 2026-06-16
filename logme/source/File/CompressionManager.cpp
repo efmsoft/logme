@@ -15,6 +15,7 @@
 
 using namespace Logme;
 
+#ifdef USE_ZLIB
 namespace
 {
   std::atomic<std::uint64_t> TempFileCounter(0);
@@ -46,6 +47,7 @@ namespace
       + std::to_string(counter);
   }
 }
+#endif
 
 CompressionRegistration::CompressionRegistration()
   : Factory(nullptr)

@@ -303,16 +303,20 @@ TEST_F(FileBackendIntegrationTest, RetentionMaxFilesAppliesToArchiveDirectory)
   const std::string first(1500, 'A');
   const std::string second(1500, 'B');
   const std::string third(1500, 'C');
+  const std::string fourth(1500, 'D');
 
   Write(first);
   Write(second);
   Write(third);
+  Write(fourth);
 
   ASSERT_TRUE(fs::exists(Active));
   EXPECT_FALSE(fs::exists(Archive1));
   ASSERT_TRUE(fs::exists(Archive2));
+  ASSERT_TRUE(fs::exists(Archive3));
   EXPECT_EQ(ReadFile(Archive2), second);
-  EXPECT_EQ(ReadFile(Active), third);
+  EXPECT_EQ(ReadFile(Archive3), third);
+  EXPECT_EQ(ReadFile(Active), fourth);
 }
 
 TEST_F(FileBackendIntegrationTest, RetentionMaxAgeCleansOldArchivesOnStart)

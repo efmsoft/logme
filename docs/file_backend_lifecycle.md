@@ -124,6 +124,18 @@ Accepted enabled values are `gz` and `gzip`. Disabled values are `none`, `off`, 
 
 Compression is submitted only for completed archive files. The active file is not compressed.
 
+## Lifecycle counters
+
+When `FILE_ENABLE_COUNTERS` is enabled, `FileBackend::GetCounters()` and the `[FileBackend]` statistics dump include lifecycle counters in addition to the existing write/queue counters:
+
+- `SizeLimitCompletionCalls` — number of file completions triggered by `max-size` with `on-size-limit: "rotate"`;
+- `TimeLimitCompletionCalls` — number of file completions triggered by time rotation;
+- `ArchivedFiles` — number of completed files successfully moved to archive names;
+- `CompressionSubmitCalls` — number of completed archive files submitted to the compression manager;
+- `RetentionRuns` — number of retention cleanup passes started by startup cleanup or file completion.
+
+These counters are updated only on lifecycle/completion paths. Normal append operations do not run retention, compression, archive scanning, or filesystem cleanup.
+
 ## Full production-style example
 
 ```json

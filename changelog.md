@@ -1,3 +1,28 @@
+## 2.4.18
+
+### Added
+- Added `FileBackend` archive lifecycle policies: size-limit rotation with `on-size-limit: "rotate"`, explicit `archive` patterns, `{index}` archive parts, `{date}` / `{datetime}` archive names, and collision-safe archive-name selection.
+- Added time rotation policies for `FileBackend`: `hourly`, `daily`, `weekly`, `monthly`, plus `none` / `off` / `disabled`. The existing `daily` configuration path remains compatible.
+- Added archive retention policies for completed file archives: `retention.max-files`, `retention.max-age`, `retention.max-total-size`, and `retention.clean-on-start`. The legacy `max-parts` option remains supported as an alias for `retention.max-files`.
+- Added optional gzip compression for completed file archives through `compression: "gz"` / `"gzip"` and the `USE_ZLIB` CMake option. If zlib support is not compiled in, gzip compression configuration is accepted as a no-op.
+- Added startup archive-index recovery, including `.gz` archive-name awareness, so restarted processes do not overwrite existing archive files.
+- Added `FileArchivePolicy`, `FileTimeRotationPolicy`, `RetentionCleaner`, and `CompressionManager` building blocks behind the file backend lifecycle implementation.
+- Added lifecycle counters for `FileBackend` when `FILE_ENABLE_COUNTERS` is enabled: size-limit completions, time-limit completions, archived files, compression submissions, and retention runs.
+- Added dedicated tests for file archive policy, file backend configuration parsing, file backend integration scenarios, lifecycle edge cases, failure handling, and hot-path rotation behavior.
+
+### Improved
+- Unified the file-completion path used by size rotation and time rotation, so archive naming, retention, compression, and counters are handled consistently.
+- Kept the normal file write hot path focused on append and cheap checks. Archive scanning, regex matching, retention cleanup, and compression submission remain on startup or file-completion paths.
+- Improved `FileBackend` rotation failure behavior: if archive directory creation or active-file rename fails, the backend reopens the active log in append mode and keeps logging when possible instead of risking active-log truncation.
+- Improved async file flush scheduling by tracking first-write timestamps in `BufferQueue` and using ready/current-buffer timestamp snapshots to preserve flush deadlines without the previous expensive oldest-data path.
+- Improved file lifecycle documentation, examples, and wiki coverage for production rotation, retention, compression, counters, and failure behavior.
+
+### Fixed
+- Fixed Windows/MSVC warning-as-error issues found in the release matrix, including local variable shadowing in `FileBackend`.
+- Fixed cross-platform test issues around Windows path separators and wide/narrow path characters.
+- Fixed retention edge-case coverage around disabled retention limits, unrelated files, active-file protection, archive gaps, `.gz` collisions, and runtime archive collisions.
+- Fixed gzip-compression test coverage for both zlib-enabled and zlib-disabled builds.
+
 ## 2.4.17
 
 ### Added

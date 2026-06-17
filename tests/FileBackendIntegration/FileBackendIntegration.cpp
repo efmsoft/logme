@@ -518,6 +518,47 @@ TEST_F(FileBackendIntegrationTest, RuntimeArchiveCollisionIsSkipped)
   EXPECT_EQ(ReadFile(Active), second);
 }
 
+TEST_F(FileBackendIntegrationTest, RuntimeCompressedArchiveCollisionIsSkipped)
+{
+  auto config = MakeConfig(Logme::SIZE_LIMIT_ROTATE, 2048);
+  ApplyConfig(config);
+
+  WriteFile(Archive1Gz, "external-compressed-one");
+
+  const std::string first(1500, 'A');
+  const std::string second(1500, 'B');
+
+  Write(first);
+  Write(second);
+
+  EXPECT_TRUE(fs::exists(Archive1Gz));
+  EXPECT_EQ(ReadFile(Archive1Gz), "external-compressed-one");
+  EXPECT_FALSE(fs::exists(Archive1));
+  ASSERT_TRUE(fs::exists(Archive2));
+  EXPECT_EQ(ReadFile(Archive2), first);
+  EXPECT_EQ(ReadFile(Active), second);
+}
+
+TEST_F(FileBackendIntegrationTest, RuntimeArchiveDirectoryCollisionIsSkipped)
+{
+  ASSERT_TRUE(fs::create_directories(Archive1));
+
+  auto config = MakeConfig(Logme::SIZE_LIMIT_ROTATE, 2048);
+  ApplyConfig(config);
+
+  const std::string first(1500, 'A');
+  const std::string second(1500, 'B');
+
+  Write(first);
+  Write(second);
+
+  ASSERT_TRUE(fs::exists(Archive1));
+  EXPECT_TRUE(fs::is_directory(Archive1));
+  ASSERT_TRUE(fs::exists(Archive2));
+  EXPECT_EQ(ReadFile(Archive2), first);
+  EXPECT_EQ(ReadFile(Active), second);
+}
+
 TEST_F(FileBackendIntegrationTest, ArchiveDirectoryFailurePreservesActiveFileAndKeepsBackendWritable)
 {
   WriteFile(ArchiveDir, "not-a-directory");
@@ -545,6 +586,31 @@ TEST_F(FileBackendIntegrationTest, ArchiveDirectoryFailurePreservesActiveFileAnd
   EXPECT_FALSE(fs::exists(Archive1));
   EXPECT_EQ(ReadFile(Active), first + tail);
 }
+
+#ifndef LOGME_TEST_USE_ZLIB
+TEST_F(FileBackendIntegrationTest, GzipCompressionIsNoopWhenZlibIsDisabled)
+{
+  auto config = MakeConfig(Logme::SIZE_LIMIT_ROTATE, 2048);
+  config->GzipCompression = true;
+  ApplyConfig(config);
+
+  const std::string first(1500, 'A');
+  const std::string second(1500, 'B');
+  const Logme::FileBackendCounters before = Logme::FileBackend::GetCounters();
+
+  Write(first);
+  Write(second);
+
+  const Logme::FileBackendCounters after = Logme::FileBackend::GetCounters();
+
+  EXPECT_EQ(after.CompressionSubmitCalls - before.CompressionSubmitCalls, 1ULL);
+  ASSERT_TRUE(fs::exists(Archive1));
+  EXPECT_FALSE(fs::exists(Archive1Gz));
+  ASSERT_TRUE(fs::exists(Active));
+  EXPECT_EQ(ReadFile(Archive1), first);
+  EXPECT_EQ(ReadFile(Active), second);
+}
+#endif
 
 #ifdef LOGME_TEST_USE_ZLIB
 TEST_F(FileBackendIntegrationTest, GzipCompressionAppliesOnlyToCompletedArchive)

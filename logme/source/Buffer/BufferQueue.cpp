@@ -28,6 +28,7 @@ BufferQueue::BufferQueue(
   , MemoryTracker(memoryTracker)
   , OptionsValue(options)
   , HasCurrentDataFlag(false)
+  , CurrentFirstWriteTime(0)
   , UsedBuffersCount(1)
   , TotalBuffers(0)
   , AdaptiveFreeLimit(options.BaseFreeLimit)
@@ -95,6 +96,7 @@ BufferQueue::~BufferQueue()
 bool BufferQueue::Append(
   const char* p
   , std::size_t cb
+  , std::uint64_t firstWriteTime
   , bool& needSignal
   , bool& firstData
 )
@@ -112,6 +114,8 @@ bool BufferQueue::Append(
     firstData = Current->Size() == 0;
     if (firstData)
     {
+      Current->SetFirstWriteTime(firstWriteTime);
+      CurrentFirstWriteTime.store(firstWriteTime, std::memory_order_relaxed);
       HasCurrentDataFlag.store(true, std::memory_order_relaxed);
     }
 
@@ -142,6 +146,8 @@ bool BufferQueue::Append(
     firstData = Current->Size() == 0;
     if (firstData)
     {
+      Current->SetFirstWriteTime(firstWriteTime);
+      CurrentFirstWriteTime.store(firstWriteTime, std::memory_order_relaxed);
       HasCurrentDataFlag.store(true, std::memory_order_relaxed);
     }
 
@@ -164,6 +170,8 @@ bool BufferQueue::Append(
   readyBuffer = std::move(Current);
 
   Current = std::move(replacement);
+  Current->SetFirstWriteTime(firstWriteTime);
+  CurrentFirstWriteTime.store(firstWriteTime, std::memory_order_relaxed);
   Current->Append(p, cb);
   HasCurrentDataFlag.store(true, std::memory_order_relaxed);
   firstData = true;
@@ -179,10 +187,20 @@ void BufferQueue::SetCurrentFirstWriteTime(std::uint64_t value)
 {
   // Must be called with Owner->GetDataLock() already held!!!!!
 
-  if (!Current || Current->Size() == 0 || Current->FirstWriteTime() != 0)
+  if (!Current || Current->Size() == 0)
     return;
 
+  if (Current->FirstWriteTime() != 0)
+  {
+    CurrentFirstWriteTime.store(
+      Current->FirstWriteTime()
+      , std::memory_order_relaxed
+    );
+    return;
+  }
+
   Current->SetFirstWriteTime(value);
+  CurrentFirstWriteTime.store(value, std::memory_order_relaxed);
 }
 
 bool BufferQueue::TakeReady(std::vector<DataBufferPtr>& out)
@@ -276,6 +294,7 @@ bool BufferQueue::PublishCurrent(bool& needSignal)
     replacement->SetSeenOnSoftFlush(false);
     readyBuffer = std::move(Current);
     Current = std::move(replacement);
+    CurrentFirstWriteTime.store(0, std::memory_order_relaxed);
     HasCurrentDataFlag.store(false, std::memory_order_relaxed);
   }
 
@@ -320,6 +339,7 @@ bool BufferQueue::PublishCurrentIfMatches(DataBuffer* expected, bool& needSignal
     replacement->SetSeenOnSoftFlush(false);
     readyBuffer = std::move(Current);
     Current = std::move(replacement);
+    CurrentFirstWriteTime.store(0, std::memory_order_relaxed);
     HasCurrentDataFlag.store(false, std::memory_order_relaxed);
   }
 
@@ -352,6 +372,21 @@ bool BufferQueue::HasCurrentData() const
 bool BufferQueue::HasCurrentDataFlagged() const
 {
   return HasCurrentDataFlag.load(std::memory_order_relaxed);
+}
+
+std::uint64_t BufferQueue::GetCurrentFirstWriteTimeSnapshot() const
+{
+  return CurrentFirstWriteTime.load(std::memory_order_relaxed);
+}
+
+std::uint64_t BufferQueue::GetOldestReadyDataTime() const
+{
+  std::lock_guard guard(ReadyLock);
+
+  if (!ReadyList.empty() && ReadyList.front())
+    return ReadyList.front()->FirstWriteTime();
+
+  return 0;
 }
 
 std::size_t BufferQueue::GetUsedBuffers() const

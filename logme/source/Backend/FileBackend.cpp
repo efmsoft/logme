@@ -861,7 +861,15 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
   bool needSignal = false;
   bool firstData = false;
 
-  if (Queue.Append(text, add, needSignal, firstData) == false)
+  uint64_t flushTime = FlushTime.load(std::memory_order_relaxed);
+  uint64_t firstWriteTime = GetTimeInMillisec64();
+
+  if (flushTime != 0 && flushTime != RIGHT_NOW)
+    firstWriteTime = flushTime > FlushAfter
+      ? flushTime - FlushAfter
+      : firstWriteTime;
+
+  if (Queue.Append(text, add, firstWriteTime, needSignal, firstData) == false)
     return;
 
   (void)needSignal;
@@ -871,7 +879,7 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
 
   size_t queued = QueuedBytes.fetch_add(add, std::memory_order_relaxed) + add;
   size_t usedBuffers = Queue.GetUsedBuffers();
-  uint64_t flushTime = FlushTime.load(std::memory_order_relaxed);
+  flushTime = FlushTime.load(std::memory_order_relaxed);
 
   if (usedBuffers >= FLUSH_PRESSURE_BUFFERS || queued >= QueueSizeLimit)
   {
@@ -1397,21 +1405,75 @@ bool FileBackend::PublishCurrentCounted(
 
 void FileBackend::UpdateFlushTimeAfterWork()
 {
-  uint64_t oldest = Queue.GetOldestDataTime();
-
-  if (oldest == 0)
+  const auto updateFromOldest = [this](std::uint64_t oldest)
   {
-    FlushTime.store(0, std::memory_order_relaxed);
+    const std::uint64_t deadline = oldest + FlushAfter;
+    const std::uint64_t now = GetTimeInMillisec64();
+
+    if (deadline <= now)
+      FlushTime.store(RIGHT_NOW, std::memory_order_relaxed);
+    else
+      FlushTime.store(deadline, std::memory_order_relaxed);
+  };
+
+  std::uint64_t readyTime = Queue.GetOldestReadyDataTime();
+  std::uint64_t currentTime = Queue.GetCurrentFirstWriteTimeSnapshot();
+  std::uint64_t oldest = readyTime;
+
+  if (oldest == 0 || (currentTime != 0 && currentTime < oldest))
+    oldest = currentTime;
+
+  if (oldest != 0)
+  {
+    updateFromOldest(oldest);
     return;
   }
 
-  uint64_t deadline = oldest + FlushAfter;
-  uint64_t now = GetTimeInMillisec64();
+  if (Queue.HasCurrentDataFlagged())
+    return;
 
-  if (deadline <= now)
+  std::uint64_t expected = FlushTime.load(std::memory_order_relaxed);
+
+  while (expected != 0)
+  {
+    if (FlushTime.compare_exchange_weak(
+      expected
+      , 0
+      , std::memory_order_relaxed
+      , std::memory_order_relaxed
+    ))
+    {
+      break;
+    }
+  }
+
+  readyTime = Queue.GetOldestReadyDataTime();
+  currentTime = Queue.GetCurrentFirstWriteTimeSnapshot();
+  oldest = readyTime;
+
+  if (oldest == 0 || (currentTime != 0 && currentTime < oldest))
+    oldest = currentTime;
+
+  if (oldest != 0)
+  {
+    updateFromOldest(oldest);
+    return;
+  }
+
+  if (Queue.HasReady())
+  {
     FlushTime.store(RIGHT_NOW, std::memory_order_relaxed);
-  else
-    FlushTime.store(deadline, std::memory_order_relaxed);
+    return;
+  }
+
+  if (Queue.HasCurrentDataFlagged())
+  {
+    FlushTime.store(
+      GetTimeInMillisec64() + FlushAfter
+      , std::memory_order_relaxed
+    );
+    return;
+  }
 }
 
 bool FileBackend::WorkerFunc()

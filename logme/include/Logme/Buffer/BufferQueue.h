@@ -69,6 +69,7 @@ namespace Logme
     DataBufferPtr Current;
 
     std::atomic<bool> HasCurrentDataFlag;
+    std::atomic<std::uint64_t> CurrentFirstWriteTime;
     std::atomic<std::size_t> UsedBuffersCount;
     std::size_t TotalBuffers;
     std::size_t AdaptiveFreeLimit;
@@ -98,6 +99,7 @@ namespace Logme
     bool Append(
       const char* p
       , std::size_t cb
+      , std::uint64_t firstWriteTime
       , bool& needSignal
       , bool& firstData
     );
@@ -113,6 +115,8 @@ namespace Logme
     bool HasReady() const;
     bool HasCurrentData() const;
     bool HasCurrentDataFlagged() const;
+    std::uint64_t GetCurrentFirstWriteTimeSnapshot() const;
+    std::uint64_t GetOldestReadyDataTime() const;
     std::uint64_t GetOldestDataTime() const;
     std::size_t GetUsedBuffers() const;
     void TrimFreeBuffersIfIdle();

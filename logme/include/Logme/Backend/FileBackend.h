@@ -134,6 +134,12 @@ namespace Logme
     typedef std::vector<size_t> SizeArray;
 
   private:
+    enum FileCompletionReason
+    {
+      FILE_COMPLETION_DAILY,
+      FILE_COMPLETION_SIZE_LIMIT,
+    };
+
     bool Append;
     size_t MaxSize;
     SizeLimitPolicy OnSizeLimit;
@@ -291,7 +297,10 @@ namespace Logme
     std::string TakeArchiveName();
     std::regex BuildCleanPattern() const;
     void ApplyRetention();
-    bool RotateSizePart(size_t add);
+    bool CompleteCurrentFile(
+      FileCompletionReason reason
+      , bool applyRetention = true
+    );
     bool ApplySizeLimit(size_t add);
     void Truncate();
     void AppendObfuscated(const char* text, size_t add);

@@ -701,24 +701,7 @@ size_t FileBackend::GetSize()
 
 bool FileBackend::ChangePart(bool applyRetention)
 {
-  FILE_CNT(GlobalChangePartCalls.fetch_add(1, std::memory_order_relaxed));
-
-  const std::string oldName = Name;
-
-  if (!CreateLog(NameTemplate.c_str()))
-  {
-    LogmeE(CHINT, "failed to create a new log");
-    FILE_CNT(GlobalChangePartFailures.fetch_add(1, std::memory_order_relaxed));
-    return false;
-  }
-
-  if (!oldName.empty() && oldName != Name)
-    SubmitCompletedFile(oldName);
-
-  if (applyRetention)
-    ApplyRetention();
-
-  return true;
+  return CompleteCurrentFile(FILE_COMPLETION_DAILY, applyRetention);
 }
 
 void FileBackend::RegisterAsync()
@@ -761,7 +744,12 @@ bool FileBackend::ApplySizeLimit(size_t add)
     return true;
 
   if (OnSizeLimit == SIZE_LIMIT_ROTATE)
-    return RotateSizePart(add);
+  {
+    if (CurrentSize + add <= MaxSize)
+      return true;
+
+    return CompleteCurrentFile(FILE_COMPLETION_SIZE_LIMIT);
+  }
 
   Truncate();
   return true;
@@ -1199,52 +1187,74 @@ void FileBackend::ApplyRetention()
   CleanFiles(pattern, archiveProbe, retention);
 }
 
-bool FileBackend::RotateSizePart(size_t add)
+bool FileBackend::CompleteCurrentFile(
+  FileCompletionReason reason
+  , bool applyRetention
+)
 {
-  if (MaxSize == 0 || CurrentSize + add <= MaxSize)
-    return true;
-
-  if (ArchiveTemplate.empty())
-  {
-    LogmeE(CHINT, "file size limit rotate requested without archive template");
-    return false;
-  }
+  FILE_CNT(GlobalChangePartCalls.fetch_add(1, std::memory_order_relaxed));
 
   const std::string oldName = Name;
-  const std::string archive = TakeArchiveName();
+  std::string completedName;
 
-  CloseLog();
-
-  std::error_code ec;
-  auto dir = std::filesystem::path(archive).parent_path();
-  if (!dir.empty())
+  if (reason == FILE_COMPLETION_SIZE_LIMIT)
   {
-    std::filesystem::create_directories(dir, ec);
+    if (ArchiveTemplate.empty())
+    {
+      LogmeE(CHINT, "file size limit rotate requested without archive template");
+      FILE_CNT(GlobalChangePartFailures.fetch_add(1, std::memory_order_relaxed));
+      return false;
+    }
+
+    completedName = TakeArchiveName();
+
+    CloseLog();
+
+    std::error_code ec;
+    auto dir = std::filesystem::path(completedName).parent_path();
+    if (!dir.empty())
+    {
+      std::filesystem::create_directories(dir, ec);
+      if (ec)
+      {
+        LogmeE(CHINT, "failed to create archive directory: %s", completedName.c_str());
+        CreateLog(NameTemplate.c_str());
+        FILE_CNT(GlobalChangePartFailures.fetch_add(1, std::memory_order_relaxed));
+        return false;
+      }
+    }
+
+    std::filesystem::rename(oldName, completedName, ec);
     if (ec)
     {
-      LogmeE(CHINT, "failed to create archive directory: %s", archive.c_str());
+      LogmeE(
+        CHINT
+        , "failed to rename log file to archive: %s -> %s"
+        , oldName.c_str()
+        , completedName.c_str()
+      );
       CreateLog(NameTemplate.c_str());
+      FILE_CNT(GlobalChangePartFailures.fetch_add(1, std::memory_order_relaxed));
       return false;
     }
   }
 
-  std::filesystem::rename(oldName, archive, ec);
-  if (ec)
-  {
-    LogmeE(CHINT, "failed to rename log file to archive: %s -> %s", oldName.c_str(), archive.c_str());
-    CreateLog(NameTemplate.c_str());
-    return false;
-  }
-
   if (!CreateLog(NameTemplate.c_str()))
   {
-    LogmeE(CHINT, "failed to create a new log after size rotation");
+    LogmeE(CHINT, "failed to create a new log");
     FILE_CNT(GlobalChangePartFailures.fetch_add(1, std::memory_order_relaxed));
     return false;
   }
 
-  SubmitCompletedFile(archive);
-  ApplyRetention();
+  if (reason == FILE_COMPLETION_DAILY && !oldName.empty() && oldName != Name)
+    completedName = oldName;
+
+  if (!completedName.empty())
+    SubmitCompletedFile(completedName);
+
+  if (applyRetention)
+    ApplyRetention();
+
   return true;
 }
 

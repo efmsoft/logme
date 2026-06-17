@@ -345,6 +345,9 @@
     <ClCompile Include="..\logme\source\File\FileArchivePolicy.cpp">
       <Filter>File</Filter>
     </ClCompile>
+    <ClCompile Include="..\logme\source\File\FileTimeRotationPolicy.cpp">
+      <Filter>File</Filter>
+    </ClCompile>
     <ClCompile Include="..\logme\source\File\RetentionCleaner.cpp">
       <Filter>File</Filter>
     </ClCompile>
@@ -589,6 +592,9 @@
       <Filter>..\logme\include\Logme\File</Filter>
     </ClInclude>
     <ClInclude Include="..\logme\source\File\FileArchivePolicy.h">
+      <Filter>File</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\source\File\FileTimeRotationPolicy.h">
       <Filter>File</Filter>
     </ClInclude>
 </ItemGroup>

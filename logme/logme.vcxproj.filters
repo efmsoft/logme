@@ -323,6 +323,9 @@
     <ClInclude Include="source\File\FileArchivePolicy.h">
       <Filter>source\File</Filter>
     </ClInclude>
+    <ClInclude Include="source\File\FileTimeRotationPolicy.h">
+      <Filter>source\File</Filter>
+    </ClInclude>
 </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Time\datetime_common.cpp">
@@ -623,6 +626,9 @@
       <Filter>source\File</Filter>
     </ClCompile>
     <ClCompile Include="source\File\FileArchivePolicy.cpp">
+      <Filter>source\File</Filter>
+    </ClCompile>
+    <ClCompile Include="source\File\FileTimeRotationPolicy.cpp">
       <Filter>source\File</Filter>
     </ClCompile>
     <ClCompile Include="source\File\RetentionCleaner.cpp">

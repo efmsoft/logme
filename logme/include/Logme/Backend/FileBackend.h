@@ -10,7 +10,6 @@
 
 #include <Logme/Backend/MemoryTrackedBackend.h>
 #include <Logme/Buffer/BufferQueue.h>
-#include <Logme/DayChangeDetector.h>
 #include <Logme/File/CompressionManager.h>
 #include <Logme/File/buffered_file_io.h>
 #include <Logme/File/file_io.h>
@@ -29,6 +28,15 @@ namespace Logme
     SIZE_LIMIT_ROTATE,
   };
 
+  enum TimeRotationMode
+  {
+    TIME_ROTATION_NONE,
+    TIME_ROTATION_HOURLY,
+    TIME_ROTATION_DAILY,
+    TIME_ROTATION_WEEKLY,
+    TIME_ROTATION_MONTHLY,
+  };
+
   struct FileBackendConfig : public BackendConfig
   {
     bool Append;
@@ -38,6 +46,7 @@ namespace Logme
     std::string ArchiveFilename;
     
     bool DailyRotation;
+    TimeRotationMode TimeRotation;
     int MaxParts;
     uint64_t RetentionMaxAge;
     uint64_t RetentionMaxTotalSize;
@@ -128,6 +137,7 @@ namespace Logme
   // watchdog. In comparisons with other logging libraries this covers the
   // usual rotating-file-sink and retention use cases.
   class FileArchivePolicy;
+  class FileTimeRotationPolicy;
 
   class FileBackend 
     : public MemoryTrackedBackend
@@ -139,7 +149,7 @@ namespace Logme
   private:
     enum FileCompletionReason
     {
-      FILE_COMPLETION_DAILY,
+      FILE_COMPLETION_TIME_LIMIT,
       FILE_COMPLETION_SIZE_LIMIT,
     };
 
@@ -170,8 +180,7 @@ namespace Logme
     std::condition_variable Shutdown;
     std::condition_variable Done;
 
-    DayChangeDetector Day;
-    bool DailyRotation;
+    std::unique_ptr<FileTimeRotationPolicy> TimeRotationPolicy;
     int MaxParts;
     uint64_t RetentionMaxAge;
     uint64_t RetentionMaxTotalSize;
@@ -296,6 +305,7 @@ namespace Logme
     bool CompleteCurrentFile(
       FileCompletionReason reason
       , bool applyRetention = true
+      , std::time_t completedArchiveTime = 0
     );
     bool ApplySizeLimit(size_t add);
     void Truncate();

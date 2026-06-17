@@ -3,6 +3,8 @@
 #include <Logme/Backend/FileBackend.h>
 #include <Logme/Logme.h>
 
+#include "../../logme/source/File/FileTimeRotationPolicy.h"
+
 #include <atomic>
 #include <chrono>
 #include <ctime>
@@ -28,6 +30,28 @@ namespace
       + std::to_string(index);
 
     return std::filesystem::temp_directory_path() / file;
+  }
+
+
+  std::time_t MakeLocalTime(
+    int year
+    , int month
+    , int day
+    , int hour
+    , int minute = 0
+    , int second = 0
+  )
+  {
+    struct tm tmValue {};
+    tmValue.tm_year = year - 1900;
+    tmValue.tm_mon = month - 1;
+    tmValue.tm_mday = day;
+    tmValue.tm_hour = hour;
+    tmValue.tm_min = minute;
+    tmValue.tm_sec = second;
+    tmValue.tm_isdst = -1;
+
+    return mktime(&tmValue);
   }
 
   std::string CurrentDateString()
@@ -411,4 +435,61 @@ TEST(SizeLimitPolicy, DateArchiveStartupRecoveryIgnoresOtherDates)
   ASSERT_TRUE(std::filesystem::exists(fixture.DateArchive2));
   EXPECT_EQ(ReadFile(fixture.DateArchive2), first);
   EXPECT_EQ(ReadFile(fixture.Active), second);
+}
+
+
+TEST(SizeLimitPolicy, HourlyRotationPolicyUsesHourPeriodStart)
+{
+  Logme::FileTimeRotationPolicy policy;
+  const std::time_t start = MakeLocalTime(2026, 6, 17, 10, 15, 0);
+  const std::time_t nextHour = MakeLocalTime(2026, 6, 17, 11, 0, 0);
+
+  policy.Configure(Logme::TIME_ROTATION_HOURLY, start);
+
+  std::time_t completedArchiveTime = 0;
+  EXPECT_FALSE(policy.ShouldRotate(nextHour - 1, completedArchiveTime));
+  EXPECT_TRUE(policy.ShouldRotate(nextHour, completedArchiveTime));
+  EXPECT_EQ(completedArchiveTime, MakeLocalTime(2026, 6, 17, 10, 0, 0));
+}
+
+TEST(SizeLimitPolicy, DailyRotationPolicyUsesDayPeriodStart)
+{
+  Logme::FileTimeRotationPolicy policy;
+  const std::time_t start = MakeLocalTime(2026, 6, 17, 10, 15, 0);
+  const std::time_t nextDay = MakeLocalTime(2026, 6, 18, 0, 0, 0);
+
+  policy.Configure(Logme::TIME_ROTATION_DAILY, start);
+
+  std::time_t completedArchiveTime = 0;
+  EXPECT_FALSE(policy.ShouldRotate(nextDay - 1, completedArchiveTime));
+  EXPECT_TRUE(policy.ShouldRotate(nextDay, completedArchiveTime));
+  EXPECT_EQ(completedArchiveTime, MakeLocalTime(2026, 6, 17, 0, 0, 0));
+}
+
+TEST(SizeLimitPolicy, WeeklyRotationPolicyUsesMondayPeriodStart)
+{
+  Logme::FileTimeRotationPolicy policy;
+  const std::time_t start = MakeLocalTime(2026, 6, 17, 10, 15, 0);
+  const std::time_t nextWeek = MakeLocalTime(2026, 6, 22, 0, 0, 0);
+
+  policy.Configure(Logme::TIME_ROTATION_WEEKLY, start);
+
+  std::time_t completedArchiveTime = 0;
+  EXPECT_FALSE(policy.ShouldRotate(nextWeek - 1, completedArchiveTime));
+  EXPECT_TRUE(policy.ShouldRotate(nextWeek, completedArchiveTime));
+  EXPECT_EQ(completedArchiveTime, MakeLocalTime(2026, 6, 15, 0, 0, 0));
+}
+
+TEST(SizeLimitPolicy, MonthlyRotationPolicyUsesFirstDayPeriodStart)
+{
+  Logme::FileTimeRotationPolicy policy;
+  const std::time_t start = MakeLocalTime(2026, 6, 17, 10, 15, 0);
+  const std::time_t nextMonth = MakeLocalTime(2026, 7, 1, 0, 0, 0);
+
+  policy.Configure(Logme::TIME_ROTATION_MONTHLY, start);
+
+  std::time_t completedArchiveTime = 0;
+  EXPECT_FALSE(policy.ShouldRotate(nextMonth - 1, completedArchiveTime));
+  EXPECT_TRUE(policy.ShouldRotate(nextMonth, completedArchiveTime));
+  EXPECT_EQ(completedArchiveTime, MakeLocalTime(2026, 6, 1, 0, 0, 0));
 }

@@ -20,6 +20,7 @@
 #include <Logme/File/RetentionCleaner.h>
 
 #include "../File/FileArchivePolicy.h"
+#include "../File/FileTimeRotationPolicy.h"
 #include <Logme/Logger.h>
 #include <Logme/Logme.h>
 #include <Logme/Template.h>
@@ -160,6 +161,7 @@ FileBackend::FileBackend(ChannelPtr owner)
   , QueueSizeLimit(QueueSizeLimitDefault)
   , FlushAfter(FlushAfterDefault)
   , ArchivePolicy(new FileArchivePolicy())
+  , TimeRotationPolicy(new FileTimeRotationPolicy())
   , Registered(false)
   , ShutdownFlag(false)
   , ShutdownCalled(owner == nullptr)
@@ -183,7 +185,6 @@ FileBackend::FileBackend(ChannelPtr owner)
     , GetMemoryUsageTracker()
   )
   , QueuedBytes(0)
-  , DailyRotation(false)
   , MaxParts(2)
   , RetentionMaxAge(0)
   , RetentionMaxTotalSize(0)
@@ -471,7 +472,7 @@ std::string FileBackend::FormatDetails()
   os << " OnSizeLimit=" << (OnSizeLimit == SIZE_LIMIT_ROTATE ? "ROTATE" : "TRUNCATE");
   if (ArchivePolicy->IsEnabled())
     os << " Archive=" << ArchivePolicy->GetTemplate();
-  os << " DailyRotation=" << (DailyRotation ? "YES" : "NO");
+  os << " Rotation=" << TimeRotationPolicy->GetModeName();
   os << " MaxParts=" << MaxParts;
   if (RetentionMaxAge != 0)
     os << " RetentionMaxAge=" << RetentionMaxAge;
@@ -545,8 +546,12 @@ bool FileBackend::ApplyConfig(BackendConfigPtr c)
 
   FileBackendConfig* p = (FileBackendConfig*)c.get();
 
+  TimeRotationMode rotation = p->TimeRotation;
+  if (rotation == TIME_ROTATION_NONE && p->DailyRotation)
+    rotation = TIME_ROTATION_DAILY;
+
   SetAsync(p->Async);
-  SetAppend(p->DailyRotation ? true : p->Append);
+  SetAppend(rotation != TIME_ROTATION_NONE ? true : p->Append);
   SetMaxSize(p->MaxSize);
 
   OnSizeLimit = p->OnSizeLimit;
@@ -555,7 +560,7 @@ bool FileBackend::ApplyConfig(BackendConfigPtr c)
     , Owner->GetOwner()->GetHomeDirectory()
     , p->GzipCompression
   );
-  DailyRotation = p->DailyRotation;
+  TimeRotationPolicy->Configure(rotation);
   MaxParts = p->MaxParts;
   RetentionMaxAge = p->RetentionMaxAge;
   RetentionMaxTotalSize = p->RetentionMaxTotalSize;
@@ -567,10 +572,8 @@ bool FileBackend::ApplyConfig(BackendConfigPtr c)
   else
     Compression.reset();
 
-  Day.UpdateDayBoundaries();
-
   NameTemplate = p->Filename;
-  ArchivePolicy->SetTime(time(nullptr));
+  ArchivePolicy->SetTime(TimeRotationPolicy->GetArchiveTime());
   return ChangePart(RetentionCleanOnStart);
 }
 
@@ -684,7 +687,11 @@ size_t FileBackend::GetSize()
 
 bool FileBackend::ChangePart(bool applyRetention)
 {
-  return CompleteCurrentFile(FILE_COMPLETION_DAILY, applyRetention);
+  return CompleteCurrentFile(
+    FILE_COMPLETION_TIME_LIMIT
+    , applyRetention
+    , TimeRotationPolicy->GetArchiveTime()
+  );
 }
 
 void FileBackend::RegisterAsync()
@@ -710,10 +717,17 @@ void FileBackend::Display(Context& context)
   if (GetAsync())
     RegisterAsync();
 
-  if (DailyRotation && Day.IsSameDayCached() == false)
+  std::time_t completedArchiveTime = 0;
+  if (TimeRotationPolicy->ShouldRotate(completedArchiveTime))
   {
-    if (!ChangePart())
+    if (!CompleteCurrentFile(
+      FILE_COMPLETION_TIME_LIMIT
+      , true
+      , completedArchiveTime
+    ))
+    {
       return;
+    }
   }
 
   int nc;
@@ -1061,13 +1075,19 @@ void FileBackend::ApplyRetention()
 bool FileBackend::CompleteCurrentFile(
   FileCompletionReason reason
   , bool applyRetention
+  , std::time_t completedArchiveTime
 )
 {
   FILE_CNT(GlobalChangePartCalls.fetch_add(1, std::memory_order_relaxed));
 
   const std::string oldName = Name;
-  const std::time_t archiveTime = ArchivePolicy->GetTime();
-  const std::time_t completedArchiveTime = archiveTime ? archiveTime : time(nullptr);
+  if (completedArchiveTime == 0)
+  {
+    completedArchiveTime = ArchivePolicy->GetTime();
+    if (completedArchiveTime == 0)
+      completedArchiveTime = TimeRotationPolicy->GetArchiveTime();
+  }
+
   std::string completedName;
 
   if (!oldName.empty() && ArchivePolicy->IsEnabled())
@@ -1118,10 +1138,10 @@ bool FileBackend::CompleteCurrentFile(
     return false;
   }
 
-  if (!ArchivePolicy->IsEnabled() && reason == FILE_COMPLETION_DAILY && !oldName.empty() && oldName != Name)
+  if (!ArchivePolicy->IsEnabled() && reason == FILE_COMPLETION_TIME_LIMIT && !oldName.empty() && oldName != Name)
     completedName = oldName;
 
-  ArchivePolicy->SetTime(time(nullptr));
+  ArchivePolicy->SetTime(TimeRotationPolicy->GetArchiveTime());
 
   if (!completedName.empty())
     SubmitCompletedFile(completedName);

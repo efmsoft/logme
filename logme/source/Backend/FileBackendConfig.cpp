@@ -111,6 +111,7 @@ FileBackendConfig::FileBackendConfig()
   , MaxSize(FileBackend::GetMaxSizeDefault())
   , OnSizeLimit(SIZE_LIMIT_TRUNCATE)
   , DailyRotation(false)
+  , TimeRotation(TIME_ROTATION_NONE)
   , MaxParts(2)
   , RetentionMaxAge(0)
   , RetentionMaxTotalSize(0)
@@ -189,10 +190,31 @@ bool FileBackendConfig::Parse(const Json::Value* po)
     std::string v = TrimSpaces(o["rotation"].asString());
     ToLowerAsciiInplace(v);
 
-    if (v == "daily")
-      DailyRotation = true;
-    else if (v == "" || v == "none" || v == "off" || v == "disabled")
+    if (v == "hourly")
+    {
       DailyRotation = false;
+      TimeRotation = TIME_ROTATION_HOURLY;
+    }
+    else if (v == "daily")
+    {
+      DailyRotation = true;
+      TimeRotation = TIME_ROTATION_DAILY;
+    }
+    else if (v == "weekly")
+    {
+      DailyRotation = false;
+      TimeRotation = TIME_ROTATION_WEEKLY;
+    }
+    else if (v == "monthly")
+    {
+      DailyRotation = false;
+      TimeRotation = TIME_ROTATION_MONTHLY;
+    }
+    else if (v == "" || v == "none" || v == "off" || v == "disabled")
+    {
+      DailyRotation = false;
+      TimeRotation = TIME_ROTATION_NONE;
+    }
     else
     {
       LogmeE(CHINT, "unsupported value of \"rotation\": %s", v.c_str());

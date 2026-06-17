@@ -1090,6 +1090,15 @@ bool FileBackend::CompleteCurrentFile(
 
   std::string completedName;
 
+  auto reopenCurrentLog = [this]()
+  {
+    const bool append = Append;
+    Append = true;
+    bool result = CreateLog(NameTemplate.c_str());
+    Append = append;
+    return result;
+  };
+
   if (!oldName.empty() && ArchivePolicy->IsEnabled())
   {
     completedName = ArchivePolicy->TakeName(completedArchiveTime);
@@ -1104,7 +1113,7 @@ bool FileBackend::CompleteCurrentFile(
       if (ec)
       {
         LogmeE(CHINT, "failed to create archive directory: %s", completedName.c_str());
-        CreateLog(NameTemplate.c_str());
+        reopenCurrentLog();
         FILE_CNT(GlobalChangePartFailures.fetch_add(1, std::memory_order_relaxed));
         return false;
       }
@@ -1119,7 +1128,7 @@ bool FileBackend::CompleteCurrentFile(
         , oldName.c_str()
         , completedName.c_str()
       );
-      CreateLog(NameTemplate.c_str());
+      reopenCurrentLog();
       FILE_CNT(GlobalChangePartFailures.fetch_add(1, std::memory_order_relaxed));
       return false;
     }

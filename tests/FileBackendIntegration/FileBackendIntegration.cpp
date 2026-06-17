@@ -492,6 +492,34 @@ TEST_F(FileBackendIntegrationTest, RuntimeArchiveCollisionIsSkipped)
   EXPECT_EQ(ReadFile(Active), second);
 }
 
+TEST_F(FileBackendIntegrationTest, ArchiveDirectoryFailurePreservesActiveFileAndKeepsBackendWritable)
+{
+  WriteFile(ArchiveDir, "not-a-directory");
+
+  auto config = MakeConfig(Logme::SIZE_LIMIT_ROTATE, 2048);
+  ApplyConfig(config);
+
+  const std::string first(1500, 'A');
+  const std::string second(1500, 'B');
+  const std::string tail("tail-after-failure");
+
+  Write(first);
+
+  const Logme::FileBackendCounters before = Logme::FileBackend::GetCounters();
+  Write(second);
+  const Logme::FileBackendCounters after = Logme::FileBackend::GetCounters();
+
+  EXPECT_EQ(after.ChangePartFailures - before.ChangePartFailures, 1ULL);
+
+  Write(tail);
+
+  ASSERT_TRUE(fs::exists(Active));
+  ASSERT_TRUE(fs::exists(ArchiveDir));
+  EXPECT_FALSE(fs::is_directory(ArchiveDir));
+  EXPECT_FALSE(fs::exists(Archive1));
+  EXPECT_EQ(ReadFile(Active), first + tail);
+}
+
 #ifdef LOGME_TEST_USE_ZLIB
 TEST_F(FileBackendIntegrationTest, GzipCompressionAppliesOnlyToCompletedArchive)
 {

@@ -86,7 +86,7 @@ namespace Logme
 
   private:
     class ConsoleManagerFactory& GetFactory() const;
-    void RegisterIfNeeded();
+    void RegisterIfNeeded(bool startWorker);
     void OnShutdown();
 
     friend class ConsoleManager;

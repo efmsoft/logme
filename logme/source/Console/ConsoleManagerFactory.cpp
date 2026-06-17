@@ -11,7 +11,7 @@ ConsoleManagerFactory::~ConsoleManagerFactory()
   Instance.reset();
 }
 
-void ConsoleManagerFactory::Add(const ConsoleBackendPtr& backend)
+void ConsoleManagerFactory::Add(const ConsoleBackendPtr& backend, bool startWorker)
 {
   std::unique_lock guard(Lock);
 
@@ -24,7 +24,7 @@ void ConsoleManagerFactory::Add(const ConsoleBackendPtr& backend)
   if (Instance == nullptr)
     Instance = std::make_shared<ConsoleManager>();
 
-  Instance->AddBackend(backend);
+  Instance->AddBackend(backend, startWorker);
 }
 
 void ConsoleManagerFactory::Remove(ConsoleBackend* backend)
@@ -64,6 +64,7 @@ bool ConsoleManagerFactory::Push(
   if (!instance || instance->Stopping())
     return false;
 
+  instance->StartWorker();
   return instance->Push(target, level, highlight, text, len);
 }
 

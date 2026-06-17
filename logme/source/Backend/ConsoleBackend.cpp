@@ -322,13 +322,13 @@ ConsoleManagerFactory& ConsoleBackend::GetFactory() const
   return logger->GetConsoleManagerFactory();
 }
 
-void ConsoleBackend::RegisterIfNeeded()
+void ConsoleBackend::RegisterIfNeeded(bool startWorker)
 {
   if (Registered.load(std::memory_order_relaxed))
     return;
 
   ConsoleBackendPtr self = std::static_pointer_cast<ConsoleBackend>(shared_from_this());
-  GetFactory().Add(self);
+  GetFactory().Add(self, startWorker);
   Registered.store(true, std::memory_order_relaxed);
 }
 
@@ -350,38 +350,22 @@ void ConsoleBackend::Display(Context& context)
 
   FILE* stream = GetOutputStream(context);
   ConsoleTarget target = stream == stderr ? ConsoleTarget::STDERR : ConsoleTarget::STDOUT;
+
+  if (!GetAsync() || ShutdownFlag.load(std::memory_order_relaxed))
+  {
+    WriteText(stream, buffer, static_cast<size_t>(nc), escape);
+    return;
+  }
+
   const bool isTty = Colorizer::IsTTY(stream);
 
   if (!isTty && GetFactory().AppendRedirected(Owner, target, buffer, static_cast<size_t>(nc)))
   {
-    RegisterIfNeeded();
+    RegisterIfNeeded(false);
     return;
   }
 
-  if (!GetAsync() || ShutdownFlag.load(std::memory_order_relaxed))
-  {
-    bool flushed = false;
-
-    if (!ShutdownFlag.load(std::memory_order_relaxed))
-    {
-      RegisterIfNeeded();
-
-      flushed = GetFactory().PushAndFlush(
-        target
-        , context.ErrorLevel
-        , flags.Highlight
-        , buffer
-        , static_cast<size_t>(nc)
-      );
-    }
-
-    if (!flushed)
-      WriteText(stream, buffer, static_cast<size_t>(nc), escape);
-
-    return;
-  }
-
-  RegisterIfNeeded();
+  RegisterIfNeeded(true);
 
   GetFactory().Push(
     target

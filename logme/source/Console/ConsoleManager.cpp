@@ -99,10 +99,25 @@ void ConsoleManager::ShutdownRedirectBackends()
     stderrBackend->Freeze();
 }
 
-void ConsoleManager::AddBackend(const ConsoleBackendPtr& backend)
+void ConsoleManager::AddBackend(const ConsoleBackendPtr& backend, bool startWorker)
 {
   std::lock_guard lock(Lock);
   Backends.insert(backend.get());
+
+  if (startWorker)
+    StartWorkerLocked();
+}
+
+void ConsoleManager::StartWorker()
+{
+  std::lock_guard lock(Lock);
+  StartWorkerLocked();
+}
+
+void ConsoleManager::StartWorkerLocked()
+{
+  if (StopRequested.load(std::memory_order_relaxed))
+    return;
 
   if (!ManagerThread.joinable())
     ManagerThread = std::thread(&ConsoleManager::ManagementThread, this);

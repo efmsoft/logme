@@ -85,7 +85,8 @@ namespace Logme
     ConsoleManager();
     ~ConsoleManager();
 
-    void AddBackend(const ConsoleBackendPtr& backend);
+    void AddBackend(const ConsoleBackendPtr& backend, bool startWorker = true);
+    void StartWorker();
 
     bool RemoveBackend(ConsoleBackend* backend);
     bool Push(
@@ -138,6 +139,7 @@ namespace Logme
       const ChannelPtr& owner
       , ConsoleTarget target
     );
+    void StartWorkerLocked();
     void ManagementThread();
     void ProcessBuffer(std::vector<unsigned char>& buffer);
     void ShutdownRedirectBackends();

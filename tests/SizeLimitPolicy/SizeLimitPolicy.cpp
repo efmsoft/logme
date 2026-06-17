@@ -5,6 +5,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <ctime>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -27,6 +28,22 @@ namespace
       + std::to_string(index);
 
     return std::filesystem::temp_directory_path() / file;
+  }
+
+  std::string CurrentDateString()
+  {
+    const time_t now = time(nullptr);
+    struct tm tmNow {};
+#ifdef _WIN32
+    localtime_s(&tmNow, &now);
+    struct tm* localTime = &tmNow;
+#else
+    struct tm* localTime = localtime_r(&now, &tmNow);
+#endif
+
+    char buffer[32];
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d", localTime);
+    return buffer;
   }
 
   std::string ReadFile(const std::filesystem::path& path)
@@ -77,6 +94,9 @@ namespace
     std::filesystem::path Archive2;
     std::filesystem::path Archive3;
     std::filesystem::path Archive1Gz;
+    std::filesystem::path DateArchive1;
+    std::filesystem::path DateArchive2;
+    std::filesystem::path OldDateArchive99;
     std::string ArchivePattern;
 
     FileFixture(
@@ -94,6 +114,9 @@ namespace
       , Archive2(Base.string() + ".2.log")
       , Archive3(Base.string() + ".3.log")
       , Archive1Gz(Base.string() + ".1.log.gz")
+      , DateArchive1(Base.string() + "." + CurrentDateString() + ".1.log")
+      , DateArchive2(Base.string() + "." + CurrentDateString() + ".2.log")
+      , OldDateArchive99(Base.string() + ".1999-01-01.99.log")
       , ArchivePattern(Base.string() + ".{index}.log")
     {
       RemoveIfExists(Active);
@@ -101,6 +124,9 @@ namespace
       RemoveIfExists(Archive2);
       RemoveIfExists(Archive3);
       RemoveIfExists(Archive1Gz);
+      RemoveIfExists(DateArchive1);
+      RemoveIfExists(DateArchive2);
+      RemoveIfExists(OldDateArchive99);
 
       Logme::OutputFlags flags;
       flags.Value = 0;
@@ -133,12 +159,21 @@ namespace
       RemoveIfExists(Archive2);
       RemoveIfExists(Archive3);
       RemoveIfExists(Archive1Gz);
+      RemoveIfExists(DateArchive1);
+      RemoveIfExists(DateArchive2);
+      RemoveIfExists(OldDateArchive99);
+    }
+
+    void UseDateArchive()
+    {
+      ArchivePattern = Base.string() + ".{date}.{index}.log";
     }
 
     void ApplyConfig(
       Logme::SizeLimitPolicy policy
       , int maxParts
       , bool cleanOnStart = true
+      , bool dailyRotation = false
     )
     {
       auto config = std::make_shared<Logme::FileBackendConfig>();
@@ -147,6 +182,7 @@ namespace
       config->MaxSize = 2048;
       config->Filename = Active.string();
       config->OnSizeLimit = policy;
+      config->DailyRotation = dailyRotation;
       config->MaxParts = maxParts;
       config->RetentionCleanOnStart = cleanOnStart;
       if (policy == Logme::SIZE_LIMIT_ROTATE)
@@ -318,4 +354,61 @@ TEST(SizeLimitPolicy, CleanOnStartCanBeDisabled)
   EXPECT_TRUE(std::filesystem::exists(fixture.Archive1));
   EXPECT_TRUE(std::filesystem::exists(fixture.Archive2));
   EXPECT_TRUE(std::filesystem::exists(fixture.Active));
+}
+
+TEST(SizeLimitPolicy, DateArchivePatternIncrementsIndexWithinCurrentDate)
+{
+  FileFixture fixture(
+    "rotate-date-index"
+    , Logme::SIZE_LIMIT_ROTATE
+    , 0
+    , true
+    , false
+  );
+
+  fixture.UseDateArchive();
+  fixture.ApplyConfig(Logme::SIZE_LIMIT_ROTATE, 0, true, true);
+
+  const std::string first(1500, 'A');
+  const std::string second(1500, 'B');
+  const std::string third(1500, 'C');
+
+  fixture.Write(first);
+  fixture.Write(second);
+  fixture.Write(third);
+
+  ASSERT_TRUE(std::filesystem::exists(fixture.DateArchive1));
+  ASSERT_TRUE(std::filesystem::exists(fixture.DateArchive2));
+  EXPECT_EQ(ReadFile(fixture.DateArchive1), first);
+  EXPECT_EQ(ReadFile(fixture.DateArchive2), second);
+  EXPECT_EQ(ReadFile(fixture.Active), third);
+}
+
+TEST(SizeLimitPolicy, DateArchiveStartupRecoveryIgnoresOtherDates)
+{
+  FileFixture fixture(
+    "rotate-date-restart"
+    , Logme::SIZE_LIMIT_ROTATE
+    , 0
+    , true
+    , false
+  );
+
+  fixture.UseDateArchive();
+  WriteFile(fixture.OldDateArchive99, "old-date-high-index");
+  WriteFile(fixture.DateArchive1, "current-date-existing");
+
+  fixture.ApplyConfig(Logme::SIZE_LIMIT_ROTATE, 0, true, true);
+
+  const std::string first(1500, 'A');
+  const std::string second(1500, 'B');
+
+  fixture.Write(first);
+  fixture.Write(second);
+
+  EXPECT_EQ(ReadFile(fixture.OldDateArchive99), "old-date-high-index");
+  EXPECT_EQ(ReadFile(fixture.DateArchive1), "current-date-existing");
+  ASSERT_TRUE(std::filesystem::exists(fixture.DateArchive2));
+  EXPECT_EQ(ReadFile(fixture.DateArchive2), first);
+  EXPECT_EQ(ReadFile(fixture.Active), second);
 }

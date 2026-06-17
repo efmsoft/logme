@@ -1,6 +1,7 @@
 #include <cassert>
 #include <charconv>
 #include <chrono>
+#include <ctime>
 #include <filesystem>
 #include <regex>
 #include <sstream>
@@ -67,6 +68,45 @@ namespace
 
     value = result;
     return true;
+  }
+
+  std::string FormatArchiveTime(
+    std::time_t value
+    , const char* format
+  )
+  {
+    struct tm tmValue {};
+#ifdef _WIN32
+    localtime_s(&tmValue, &value);
+    struct tm* localTime = &tmValue;
+#else
+    struct tm* localTime = localtime_r(&value, &tmValue);
+#endif
+
+    if (!localTime)
+      return std::string();
+
+    char buffer[32];
+    strftime(buffer, sizeof(buffer), format, localTime);
+    return buffer;
+  }
+
+  std::string ApplyArchiveTime(
+    const std::string& text
+    , std::time_t archiveTime
+  )
+  {
+    std::string result = ReplaceAll(
+      text
+      , TDATETIME
+      , FormatArchiveTime(archiveTime, "%Y-%m-%d-%H-%M-%S")
+    );
+
+    return ReplaceAll(
+      result
+      , TDATE
+      , FormatArchiveTime(archiveTime, "%Y-%m-%d")
+    );
   }
 
   std::atomic<std::uint64_t> GlobalDisplayCalls(0);
@@ -181,6 +221,7 @@ FileBackend::FileBackend(ChannelPtr owner)
   , QueueSizeLimit(QueueSizeLimitDefault)
   , FlushAfter(FlushAfterDefault)
   , ArchiveIndex(0)
+  , ArchiveTime(0)
   , Registered(false)
   , ShutdownFlag(false)
   , ShutdownCalled(owner == nullptr)
@@ -587,7 +628,7 @@ bool FileBackend::ApplyConfig(BackendConfigPtr c)
   Day.UpdateDayBoundaries();
 
   NameTemplate = p->Filename;
-  RecoverArchiveIndex();
+  SetArchiveTime(time(nullptr));
   return ChangePart(RetentionCleanOnStart);
 }
 
@@ -1052,7 +1093,21 @@ void FileBackend::SubmitCompletedFile(const std::string& file)
 
 std::string FileBackend::BuildArchiveName(uint64_t index) const
 {
-  std::string archive = ProcessTemplate(ArchiveTemplate.c_str(), ProcessTemplateParam());
+  return BuildArchiveName(index, ArchiveTime);
+}
+
+std::string FileBackend::BuildArchiveName(
+  uint64_t index
+  , std::time_t archiveTime
+) const
+{
+  ProcessTemplateParam param(
+    static_cast<uint32_t>(TEMPLATE_ALL)
+    & ~static_cast<uint32_t>(TEMPLATE_DATE_AND_TIME)
+  );
+
+  std::string archive = ProcessTemplate(ArchiveTemplate.c_str(), param);
+  archive = ApplyArchiveTime(archive, archiveTime);
   archive = ReplaceAll(archive, "{index}", std::to_string(index));
 
   if (!IsAbsolutePath(archive))
@@ -1061,7 +1116,7 @@ std::string FileBackend::BuildArchiveName(uint64_t index) const
   return archive;
 }
 
-std::regex FileBackend::BuildArchiveIndexPattern() const
+std::regex FileBackend::BuildArchiveIndexPattern(std::time_t archiveTime) const
 {
   const std::string indexMarker = "\x01INDEX\x02";
 
@@ -1071,6 +1126,7 @@ std::regex FileBackend::BuildArchiveIndexPattern() const
   );
 
   std::string re = ProcessTemplate(ArchiveTemplate.c_str(), param);
+  re = ApplyArchiveTime(re, archiveTime);
   re = ReplaceAll(re, "{index}", indexMarker);
 
   if (!IsAbsolutePath(re))
@@ -1099,12 +1155,12 @@ bool FileBackend::ArchiveNameExists(const std::string& archive) const
   return static_cast<bool>(ec);
 }
 
-uint64_t FileBackend::FindLastArchiveIndex() const
+uint64_t FileBackend::FindLastArchiveIndex(std::time_t archiveTime) const
 {
   if (ArchiveTemplate.empty())
     return 0;
 
-  std::filesystem::path archiveSample(BuildArchiveName(0));
+  std::filesystem::path archiveSample(BuildArchiveName(0, archiveTime));
   std::filesystem::path dir = archiveSample.parent_path();
   if (dir.empty())
     return 0;
@@ -1117,7 +1173,7 @@ uint64_t FileBackend::FindLastArchiveIndex() const
   if (ec)
     return 0;
 
-  std::regex pattern = BuildArchiveIndexPattern();
+  std::regex pattern = BuildArchiveIndexPattern(archiveTime);
   uint64_t maxIndex = 0;
 
   for (const auto& entry : it)
@@ -1146,14 +1202,39 @@ uint64_t FileBackend::FindLastArchiveIndex() const
 
 void FileBackend::RecoverArchiveIndex()
 {
-  ArchiveIndex = FindLastArchiveIndex();
+  ArchiveIndex = FindLastArchiveIndex(ArchiveTime);
 }
 
-std::string FileBackend::TakeArchiveName()
+void FileBackend::SetArchiveTime(std::time_t archiveTime)
 {
+  if (archiveTime == 0)
+    archiveTime = time(nullptr);
+
+  if (ArchiveTemplate.empty())
+  {
+    ArchiveTime = archiveTime;
+    ArchiveIndex = 0;
+    return;
+  }
+
+  std::string oldProbe;
+  if (ArchiveTime != 0)
+    oldProbe = BuildArchiveName(0, ArchiveTime);
+
+  ArchiveTime = archiveTime;
+
+  std::string newProbe = BuildArchiveName(0, ArchiveTime);
+  if (oldProbe != newProbe)
+    RecoverArchiveIndex();
+}
+
+std::string FileBackend::TakeArchiveName(std::time_t archiveTime)
+{
+  SetArchiveTime(archiveTime);
+
   for (uint64_t i = ArchiveIndex + 1;; ++i)
   {
-    std::string archive = BuildArchiveName(i);
+    std::string archive = BuildArchiveName(i, ArchiveTime);
     if (!ArchiveNameExists(archive))
     {
       ArchiveIndex = i;
@@ -1195,18 +1276,12 @@ bool FileBackend::CompleteCurrentFile(
   FILE_CNT(GlobalChangePartCalls.fetch_add(1, std::memory_order_relaxed));
 
   const std::string oldName = Name;
+  const std::time_t completedArchiveTime = ArchiveTime ? ArchiveTime : time(nullptr);
   std::string completedName;
 
-  if (reason == FILE_COMPLETION_SIZE_LIMIT)
+  if (!oldName.empty() && !ArchiveTemplate.empty())
   {
-    if (ArchiveTemplate.empty())
-    {
-      LogmeE(CHINT, "file size limit rotate requested without archive template");
-      FILE_CNT(GlobalChangePartFailures.fetch_add(1, std::memory_order_relaxed));
-      return false;
-    }
-
-    completedName = TakeArchiveName();
+    completedName = TakeArchiveName(completedArchiveTime);
 
     CloseLog();
 
@@ -1238,6 +1313,12 @@ bool FileBackend::CompleteCurrentFile(
       return false;
     }
   }
+  else if (reason == FILE_COMPLETION_SIZE_LIMIT)
+  {
+    LogmeE(CHINT, "file size limit rotate requested without archive template");
+    FILE_CNT(GlobalChangePartFailures.fetch_add(1, std::memory_order_relaxed));
+    return false;
+  }
 
   if (!CreateLog(NameTemplate.c_str()))
   {
@@ -1246,8 +1327,10 @@ bool FileBackend::CompleteCurrentFile(
     return false;
   }
 
-  if (reason == FILE_COMPLETION_DAILY && !oldName.empty() && oldName != Name)
+  if (ArchiveTemplate.empty() && reason == FILE_COMPLETION_DAILY && !oldName.empty() && oldName != Name)
     completedName = oldName;
+
+  SetArchiveTime(time(nullptr));
 
   if (!completedName.empty())
     SubmitCompletedFile(completedName);

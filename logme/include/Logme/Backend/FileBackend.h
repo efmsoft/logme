@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <condition_variable>
+#include <ctime>
 #include <memory>
 #include <mutex>
 #include <regex>
@@ -150,6 +151,7 @@ namespace Logme
     std::string NameTemplate;
     std::string ArchiveTemplate;
     uint64_t ArchiveIndex;
+    std::time_t ArchiveTime;
 
     std::atomic<bool> Registered;
     std::atomic<bool> ShutdownFlag;
@@ -290,11 +292,16 @@ namespace Logme
 
     void SubmitCompletedFile(const std::string& file);
     std::string BuildArchiveName(uint64_t index) const;
-    std::regex BuildArchiveIndexPattern() const;
+    std::string BuildArchiveName(
+      uint64_t index
+      , std::time_t archiveTime
+    ) const;
+    std::regex BuildArchiveIndexPattern(std::time_t archiveTime) const;
     bool ArchiveNameExists(const std::string& archive) const;
-    uint64_t FindLastArchiveIndex() const;
+    uint64_t FindLastArchiveIndex(std::time_t archiveTime) const;
     void RecoverArchiveIndex();
-    std::string TakeArchiveName();
+    void SetArchiveTime(std::time_t archiveTime);
+    std::string TakeArchiveName(std::time_t archiveTime);
     std::regex BuildCleanPattern() const;
     void ApplyRetention();
     bool CompleteCurrentFile(

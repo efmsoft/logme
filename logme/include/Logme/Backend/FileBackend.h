@@ -128,6 +128,11 @@ namespace Logme
     std::uint64_t CreateLogFailures = 0;
     std::uint64_t ChangePartCalls = 0;
     std::uint64_t ChangePartFailures = 0;
+    std::uint64_t SizeLimitCompletionCalls = 0;
+    std::uint64_t TimeLimitCompletionCalls = 0;
+    std::uint64_t ArchivedFiles = 0;
+    std::uint64_t CompressionSubmitCalls = 0;
+    std::uint64_t RetentionRuns = 0;
     std::uint64_t ShutdownCalls = 0;
     BufferCounters Queue;
   };

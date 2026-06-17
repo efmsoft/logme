@@ -18,7 +18,11 @@ if(USE_ZLIB)
   target_compile_definitions(${PROJECT_NAME} PRIVATE LOGME_TEST_USE_ZLIB)
 endif()
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE LOGME_INRELEASE)
+target_compile_definitions(${PROJECT_NAME} PRIVATE LOGME_INRELEASE FILE_ENABLE_COUNTERS=1)
+
+if(TARGET ${LOGME_LINK_TARGET})
+  target_compile_definitions(${LOGME_LINK_TARGET} PRIVATE FILE_ENABLE_COUNTERS=1)
+endif()
 
 if(WIN32 AND CMAKE_VERSION VERSION_GREATER_EQUAL "3.21")
   add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD

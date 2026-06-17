@@ -680,6 +680,11 @@ FileManager::~FileManager()
       "CreateLogFailures=%llu "
       "ChangePartCalls=%llu "
       "ChangePartFailures=%llu "
+      "SizeLimitCompletionCalls=%llu "
+      "TimeLimitCompletionCalls=%llu "
+      "ArchivedFiles=%llu "
+      "CompressionSubmitCalls=%llu "
+      "RetentionRuns=%llu "
       "ShutdownCalls=%llu "
       "Queue.Appends=%llu "
       "Queue.AppendBytes=%llu "
@@ -721,6 +726,11 @@ FileManager::~FileManager()
       , (unsigned long long)bc.CreateLogFailures
       , (unsigned long long)bc.ChangePartCalls
       , (unsigned long long)bc.ChangePartFailures
+      , (unsigned long long)bc.SizeLimitCompletionCalls
+      , (unsigned long long)bc.TimeLimitCompletionCalls
+      , (unsigned long long)bc.ArchivedFiles
+      , (unsigned long long)bc.CompressionSubmitCalls
+      , (unsigned long long)bc.RetentionRuns
       , (unsigned long long)bc.ShutdownCalls
       , (unsigned long long)bc.Queue.Appends
       , (unsigned long long)bc.Queue.AppendBytes

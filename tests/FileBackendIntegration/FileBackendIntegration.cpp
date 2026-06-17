@@ -319,6 +319,32 @@ TEST_F(FileBackendIntegrationTest, RetentionMaxFilesAppliesToArchiveDirectory)
   EXPECT_EQ(ReadFile(Active), fourth);
 }
 
+TEST_F(FileBackendIntegrationTest, LifecycleCountersTrackSizeRotationAndRetention)
+{
+  auto config = MakeConfig(Logme::SIZE_LIMIT_ROTATE, 2048);
+  config->MaxParts = 2;
+  ApplyConfig(config);
+
+  const std::string first(1500, 'A');
+  const std::string second(1500, 'B');
+  const std::string third(1500, 'C');
+  const Logme::FileBackendCounters before = Logme::FileBackend::GetCounters();
+
+  Write(first);
+  Write(second);
+  Write(third);
+
+  const Logme::FileBackendCounters after = Logme::FileBackend::GetCounters();
+
+  EXPECT_EQ(after.ChangePartCalls - before.ChangePartCalls, 2ULL);
+  EXPECT_EQ(after.ChangePartFailures - before.ChangePartFailures, 0ULL);
+  EXPECT_EQ(after.SizeLimitCompletionCalls - before.SizeLimitCompletionCalls, 2ULL);
+  EXPECT_EQ(after.TimeLimitCompletionCalls - before.TimeLimitCompletionCalls, 0ULL);
+  EXPECT_EQ(after.ArchivedFiles - before.ArchivedFiles, 2ULL);
+  EXPECT_EQ(after.RetentionRuns - before.RetentionRuns, 2ULL);
+  EXPECT_EQ(after.CompressionSubmitCalls - before.CompressionSubmitCalls, 0ULL);
+}
+
 TEST_F(FileBackendIntegrationTest, RetentionMaxAgeCleansOldArchivesOnStart)
 {
   WriteFile(Archive1, "old", std::chrono::hours(72));
@@ -529,10 +555,14 @@ TEST_F(FileBackendIntegrationTest, GzipCompressionAppliesOnlyToCompletedArchive)
 
   const std::string first(1500, 'A');
   const std::string second(1500, 'B');
+  const Logme::FileBackendCounters before = Logme::FileBackend::GetCounters();
 
   Write(first);
   Write(second);
 
+  const Logme::FileBackendCounters after = Logme::FileBackend::GetCounters();
+
+  EXPECT_EQ(after.CompressionSubmitCalls - before.CompressionSubmitCalls, 1ULL);
   ASSERT_TRUE(WaitForCompressedFile(Archive1, Archive1Gz, std::chrono::seconds(5)));
   EXPECT_FALSE(fs::exists(Archive1));
   ASSERT_TRUE(fs::exists(Active));

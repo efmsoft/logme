@@ -29,6 +29,11 @@ namespace
     std::uint64_t InputBytes;
     std::uint64_t ChangePartCalls;
     std::uint64_t ChangePartFailures;
+    std::uint64_t SizeLimitCompletionCalls;
+    std::uint64_t TimeLimitCompletionCalls;
+    std::uint64_t ArchivedFiles;
+    std::uint64_t CompressionSubmitCalls;
+    std::uint64_t RetentionRuns;
     std::uint64_t WriteErrors;
   };
 
@@ -64,6 +69,13 @@ namespace
     delta.InputBytes = after.InputBytes - before.InputBytes;
     delta.ChangePartCalls = after.ChangePartCalls - before.ChangePartCalls;
     delta.ChangePartFailures = after.ChangePartFailures - before.ChangePartFailures;
+    delta.SizeLimitCompletionCalls =
+      after.SizeLimitCompletionCalls - before.SizeLimitCompletionCalls;
+    delta.TimeLimitCompletionCalls =
+      after.TimeLimitCompletionCalls - before.TimeLimitCompletionCalls;
+    delta.ArchivedFiles = after.ArchivedFiles - before.ArchivedFiles;
+    delta.CompressionSubmitCalls = after.CompressionSubmitCalls - before.CompressionSubmitCalls;
+    delta.RetentionRuns = after.RetentionRuns - before.RetentionRuns;
     delta.WriteErrors = after.WriteErrors - before.WriteErrors;
     return delta;
   }
@@ -110,6 +122,16 @@ namespace
       << delta.ChangePartCalls
       << ", completion_failures="
       << delta.ChangePartFailures
+      << ", size_completion="
+      << delta.SizeLimitCompletionCalls
+      << ", time_completion="
+      << delta.TimeLimitCompletionCalls
+      << ", archived="
+      << delta.ArchivedFiles
+      << ", compression_submits="
+      << delta.CompressionSubmitCalls
+      << ", retention_runs="
+      << delta.RetentionRuns
       << ", write_errors="
       << delta.WriteErrors
       << std::endl;
@@ -274,6 +296,11 @@ TEST_F(FileBackendHotPathTest, PlainAppendDoesNotCompleteFile)
   EXPECT_EQ(delta.InputBytes, HOT_PATH_ITERATIONS * payload.size());
   EXPECT_EQ(delta.ChangePartCalls, 0u);
   EXPECT_EQ(delta.ChangePartFailures, 0u);
+  EXPECT_EQ(delta.SizeLimitCompletionCalls, 0u);
+  EXPECT_EQ(delta.TimeLimitCompletionCalls, 0u);
+  EXPECT_EQ(delta.ArchivedFiles, 0u);
+  EXPECT_EQ(delta.CompressionSubmitCalls, 0u);
+  EXPECT_EQ(delta.RetentionRuns, 0u);
   EXPECT_EQ(delta.WriteErrors, 0u);
   EXPECT_FALSE(fs::exists(Archive1));
   EXPECT_TRUE(FileSize(Active) >= static_cast<std::uintmax_t>(HOT_PATH_ITERATIONS * payload.size()));
@@ -300,6 +327,11 @@ TEST_F(FileBackendHotPathTest, RotatePolicyBelowSizeLimitDoesNotCompleteFile)
   EXPECT_EQ(delta.InputBytes, HOT_PATH_ITERATIONS * payload.size());
   EXPECT_EQ(delta.ChangePartCalls, 0u);
   EXPECT_EQ(delta.ChangePartFailures, 0u);
+  EXPECT_EQ(delta.SizeLimitCompletionCalls, 0u);
+  EXPECT_EQ(delta.TimeLimitCompletionCalls, 0u);
+  EXPECT_EQ(delta.ArchivedFiles, 0u);
+  EXPECT_EQ(delta.CompressionSubmitCalls, 0u);
+  EXPECT_EQ(delta.RetentionRuns, 0u);
   EXPECT_EQ(delta.WriteErrors, 0u);
   EXPECT_FALSE(fs::exists(Archive1));
   EXPECT_FALSE(fs::exists(Archive2));
@@ -327,6 +359,11 @@ TEST_F(FileBackendHotPathTest, DailyRotationWithinCurrentPeriodDoesNotCompleteFi
   EXPECT_TRUE(delta.InputBytes >= HOT_PATH_ITERATIONS * payload.size());
   EXPECT_EQ(delta.ChangePartCalls, 0u);
   EXPECT_EQ(delta.ChangePartFailures, 0u);
+  EXPECT_EQ(delta.SizeLimitCompletionCalls, 0u);
+  EXPECT_EQ(delta.TimeLimitCompletionCalls, 0u);
+  EXPECT_EQ(delta.ArchivedFiles, 0u);
+  EXPECT_EQ(delta.CompressionSubmitCalls, 0u);
+  EXPECT_EQ(delta.RetentionRuns, 0u);
   EXPECT_EQ(delta.WriteErrors, 0u);
   EXPECT_FALSE(fs::exists(Archive1));
   EXPECT_FALSE(fs::exists(Archive2));
@@ -350,7 +387,12 @@ TEST_F(FileBackendHotPathTest, SizeLimitCompletionIsVisibleInCounters)
 
   EXPECT_EQ(delta.AppendCalls, 2u);
   EXPECT_EQ(delta.ChangePartCalls, 1u);
+  EXPECT_EQ(delta.SizeLimitCompletionCalls, 1u);
+  EXPECT_EQ(delta.TimeLimitCompletionCalls, 0u);
   EXPECT_EQ(delta.ChangePartFailures, 0u);
+  EXPECT_EQ(delta.ArchivedFiles, 1u);
+  EXPECT_EQ(delta.CompressionSubmitCalls, 0u);
+  EXPECT_EQ(delta.RetentionRuns, 0u);
   EXPECT_EQ(delta.WriteErrors, 0u);
   ASSERT_TRUE(fs::exists(Archive1));
   ASSERT_TRUE(fs::exists(Active));

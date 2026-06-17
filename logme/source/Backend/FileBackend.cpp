@@ -136,6 +136,11 @@ namespace
   std::atomic<std::uint64_t> GlobalCreateLogFailures(0);
   std::atomic<std::uint64_t> GlobalChangePartCalls(0);
   std::atomic<std::uint64_t> GlobalChangePartFailures(0);
+  std::atomic<std::uint64_t> GlobalSizeLimitCompletionCalls(0);
+  std::atomic<std::uint64_t> GlobalTimeLimitCompletionCalls(0);
+  std::atomic<std::uint64_t> GlobalArchivedFiles(0);
+  std::atomic<std::uint64_t> GlobalCompressionSubmitCalls(0);
+  std::atomic<std::uint64_t> GlobalRetentionRuns(0);
   std::atomic<std::uint64_t> GlobalShutdownCalls(0);
 }
 
@@ -396,6 +401,11 @@ FileBackendCounters FileBackend::GetCounters()
   out.CreateLogFailures = GlobalCreateLogFailures.load(std::memory_order_relaxed);
   out.ChangePartCalls = GlobalChangePartCalls.load(std::memory_order_relaxed);
   out.ChangePartFailures = GlobalChangePartFailures.load(std::memory_order_relaxed);
+  out.SizeLimitCompletionCalls = GlobalSizeLimitCompletionCalls.load(std::memory_order_relaxed);
+  out.TimeLimitCompletionCalls = GlobalTimeLimitCompletionCalls.load(std::memory_order_relaxed);
+  out.ArchivedFiles = GlobalArchivedFiles.load(std::memory_order_relaxed);
+  out.CompressionSubmitCalls = GlobalCompressionSubmitCalls.load(std::memory_order_relaxed);
+  out.RetentionRuns = GlobalRetentionRuns.load(std::memory_order_relaxed);
   out.ShutdownCalls = GlobalShutdownCalls.load(std::memory_order_relaxed);
   out.Queue = BufferQueue::GetGlobalCounters();
   return out;
@@ -1052,6 +1062,7 @@ void FileBackend::SubmitCompletedFile(const std::string& file)
   if (!GzipCompression || !Compression)
     return;
 
+  FILE_CNT(GlobalCompressionSubmitCalls.fetch_add(1, std::memory_order_relaxed));
   Compression->Submit(file);
 }
 
@@ -1065,6 +1076,7 @@ void FileBackend::ApplyRetention()
   if (retention.IsEmpty())
     return;
 
+  FILE_CNT(GlobalRetentionRuns.fetch_add(1, std::memory_order_relaxed));
   std::regex pattern = BuildCleanPattern();
   CleanFiles(pattern, Name, retention);
 
@@ -1087,6 +1099,10 @@ bool FileBackend::CompleteCurrentFile(
 )
 {
   FILE_CNT(GlobalChangePartCalls.fetch_add(1, std::memory_order_relaxed));
+  if (reason == FILE_COMPLETION_SIZE_LIMIT)
+    FILE_CNT(GlobalSizeLimitCompletionCalls.fetch_add(1, std::memory_order_relaxed));
+  else
+    FILE_CNT(GlobalTimeLimitCompletionCalls.fetch_add(1, std::memory_order_relaxed));
 
   const std::string oldName = Name;
   if (completedArchiveTime == 0)
@@ -1140,6 +1156,8 @@ bool FileBackend::CompleteCurrentFile(
       FILE_CNT(GlobalChangePartFailures.fetch_add(1, std::memory_order_relaxed));
       return false;
     }
+
+    FILE_CNT(GlobalArchivedFiles.fetch_add(1, std::memory_order_relaxed));
   }
   else if (reason == FILE_COMPLETION_SIZE_LIMIT)
   {

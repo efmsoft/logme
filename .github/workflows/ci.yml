@@ -192,6 +192,10 @@ jobs:
           brew update
           brew install fmt jsoncpp googletest pkg-config zlib
 
+      - name: Setup MSVC dev cmd
+        if: matrix.platform == 'windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
       - name: Install deps (Windows / vcpkg)
         if: matrix.platform == 'windows'
         shell: pwsh
@@ -200,10 +204,6 @@ jobs:
           if (-not $env:VCPKG_INSTALLATION_ROOT) { throw "VCPKG_INSTALLATION_ROOT is not set" }
           & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install fmt:x64-windows jsoncpp:x64-windows gtest:x64-windows zlib:x64-windows
           if ($LASTEXITCODE -ne 0) { throw "vcpkg install failed: $LASTEXITCODE" }
-
-      - name: Setup MSVC dev cmd
-        if: matrix.platform == 'windows'
-        uses: ilammy/msvc-dev-cmd@v1
 
       - name: Configure (Unix)
         if: matrix.platform != 'windows'

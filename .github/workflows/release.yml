@@ -104,6 +104,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup MSVC dev cmd
+        if: matrix.vcpkg_deps == 'ON'
+        uses: ilammy/msvc-dev-cmd@v1
+
       - name: Install deps (Windows / vcpkg static libs with dynamic CRT)
         if: matrix.vcpkg_deps == 'ON'
         shell: pwsh

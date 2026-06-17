@@ -9,8 +9,10 @@ This page maps common logging-library terms to the actual logme mechanisms and s
 | Duplicate suppression / log once | `_Once` macros, `LOGME_ONCE4THIS`, `LOGME_ONCE4CALL`, `Override::MaxRepetitions` | `logme/include/Logme/Logme.h`, `logme/include/Logme/Override.h`, `logme/source/Override.cpp`, `examples/OnceEvery` | Implemented at the call site/override layer instead of as a backend filter. This avoids generating repeated records before they reach formatting and backends. |
 | Rate limiting / throttled logging | `_Every(ms)` macros, `LOGME_EVERY4THIS(ms)`, `LOGME_EVERY4CALL(ms)`, `Override::MaxFrequency` | `logme/include/Logme/Logme.h`, `logme/include/Logme/Override.h`, `logme/source/Override.cpp`, `examples/OnceEvery` | The message can be suppressed before backend work is performed. |
 | Repeated-message aggregation | `_Collapse`, `_CollapseEvery`, `_CollapseIgnore`, `_CollapseIgnoreEvery` macros | `logme/include/Logme/Logme.h`, `logme/include/Logme/Context.h`, `logme/source/Context.cpp`, `examples/Collapse`, `tests/Collapse` | Count-based collapse summarizes after N repeated attempts. Time-based collapse summarizes after the interval elapses. Ignore variants normalize volatile substrings before comparing messages. |
-| Rotating file sink | `FileBackend::MaxSize`, `FileBackend::DailyRotation`, `FileBackend::MaxParts`, `DayChangeDetector` | `logme/include/Logme/Backend/FileBackend.h`, `logme/source/Backend/FileBackend.cpp`, `logme/include/Logme/DayChangeDetector.h` | File size control and daily log switching are part of `FileBackend`. |
-| Log retention / total log directory limit | `DirectorySizeWatchdog`, oldest-file cleanup, in-use file protection | `logme/include/Logme/File/DirectorySizeWatchdog.h`, `logme/source/File/DirectorySizeWatchdog.cpp`, `logme/source/File/CleanOldest.cpp` | Controls total log storage, not only the currently open file. |
+| Rotating file sink | `FileBackend`, `FileTimeRotationPolicy`, `FileArchivePolicy`, `on-size-limit`, `rotation`, `archive` | `logme/include/Logme/Backend/FileBackend.h`, `logme/source/Backend/FileBackend.cpp`, `logme/source/File/FileTimeRotationPolicy.*`, `logme/source/File/FileArchivePolicy.*` | Supports size-based rotation, hourly/daily/weekly/monthly time rotation, archive index recovery, and collision-safe archive naming. |
+| File archive retention | `RetentionCleaner`, `retention.max-files`, `retention.max-age`, `retention.max-total-size`, `retention.clean-on-start` | `logme/source/File/RetentionCleaner.*`, `logme/source/Backend/FileBackendConfig.cpp`, `docs/file_backend_lifecycle.md` | Applies to completed archive files and protects the active file from cleanup. `max-parts` remains a legacy alias for `retention.max-files`. |
+| Log directory size watchdog | `DirectorySizeWatchdog`, in-use file protection | `logme/include/Logme/File/DirectorySizeWatchdog.h`, `logme/source/File/DirectorySizeWatchdog.cpp` | Controls total log storage at directory level independently of per-FileBackend archive retention. |
+| Archive compression | `compression: "gz"`, `CompressionManager`, `USE_ZLIB` | `logme/include/Logme/File/CompressionManager.h`, `logme/source/File/CompressionManager.cpp`, `docs/file_backend_lifecycle.md` | Optional gzip compression is submitted for completed archives only; the active file is not compressed. |
 | Early disabled-path filtering | `LOGME_WOULD_LOG_FIRST`, `WouldLogFirst`, `WouldLog`, channel active/filter-level checks | `logme/include/Logme/Detail/Precheck.h`, `logme/include/Logme/Detail/Dispatch.h` | Used by macros that can avoid evaluating expensive arguments or preparation code when the selected channel would not log. |
 | Dynamic runtime control | Control server commands, `logmectl`, `logmeweb` | `logme/source/Control`, `tools/logmectl`, `tools/logmeweb` | Channels, backends, flags, levels, logs, subsystems, and trace points can be inspected or changed at runtime. |
 | Policy-aware control API | `ControlPolicy` and `Logger::Control(command, policy)` | `logme/include/Logme/ControlPolicy.h`, `logme/source/Control/ControlPolicy.cpp`, `logme/source/Control/Control.cpp` | Useful when control commands come from less-trusted sources. Existing `Logger::Control(command)` remains full-control for compatibility. |
@@ -44,7 +46,7 @@ Some features are intentionally not modeled as separate backends or sink filters
 - A null backend is represented by no backends on the channel plus early checks.
 - Backend-level level filtering is not the normal routing model; logme filters at the channel level to preserve the fast path. Advanced cases can usually be modeled with channels and links, but first-class per-backend filtering is not currently available.
 - Duplicate suppression and rate limiting are call-site features, not backend filters.
-- File rotation and retention are part of `FileBackend` and the log directory watchdog rather than separate sink types.
+- File rotation, archive naming, retention, and optional compression are part of `FileBackend` lifecycle policy rather than separate sink types.
 
 
 ## Known gaps and roadmap candidates
@@ -53,8 +55,6 @@ These items are useful when comparing logme with libraries that expose a very br
 
 - `SyslogBackend` is not implemented yet.
 - `SystemdJournalBackend` is not implemented yet.
-- File compression after rotation or backend close is not implemented yet.
-- Age-based retention and additional rotation schedules are not implemented yet.
 - First-class backend-level filtering is not implemented yet.
 - C API wrappers for `ControlPolicy` and environment control are not implemented yet.
 

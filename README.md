@@ -22,6 +22,7 @@ It is designed for both high-load servers and simple applications, providing sel
 - 📚 **Documentation (Wiki):** https://github.com/efmsoft/logme/wiki
 - 💬 **Support / feedback:** [GitHub issues](https://github.com/efmsoft/logme/issues) and [discussions](https://github.com/efmsoft/logme/discussions) are welcome.
 - 🧭 **Feature discovery map:** [docs/feature_discovery.md](docs/feature_discovery.md) maps common logging-library terms such as null sink, rate limiting, duplicate suppression, rotation, and retention to the corresponding logme mechanisms.
+- 🗂️ **File lifecycle policies:** [docs/file_backend_lifecycle.md](docs/file_backend_lifecycle.md) describes file rotation, archive naming, retention, and gzip compression.
 
 ---
 
@@ -64,7 +65,7 @@ See the wiki pages [Performance](https://github.com/efmsoft/logme/wiki/Performan
 - **Flexible verbosity control**: fine-grained filtering using log levels (Debug / Info / Warn / Error), subsystems, trace points, and channel state.
 - **Multiple backends per channel**: console, debugger, file, shared file, buffer, ring buffer, callback, and Windows Event Log destinations.
 - **Recent-history capture**: keep the last N formatted records in memory with `RingBufferBackend` and dump them only when needed.
-- **Retention rules**: limit the size of individual log files and the total disk usage across all logs.
+- **File lifecycle policies**: size-based and time-based rotation, archive naming, retention, startup cleanup, and optional gzip compression for completed archives.
 - **Log file obfuscation**: optional obfuscation of log data written to files.
 - **Multiple APIs**: C-style macros, C++ stream-style logging, and optional `format`-based formatting.
 - **Cross-platform**: Windows, Linux and macOS support.
@@ -109,7 +110,7 @@ For most applications, logme is configured via a JSON configuration file, which 
 
 This lets you adjust logging behavior at runtime or between runs without recompiling.
 
-For details and examples, see the project [Wiki](https://github.com/efmsoft/logme/wiki/Configuration-JSON).
+For details and examples, see the project [Wiki](https://github.com/efmsoft/logme/wiki/Configuration-JSON). File rotation, archive, retention, and compression options are summarized in [File backend lifecycle policies](docs/file_backend_lifecycle.md).
 
 ---
 
@@ -295,6 +296,7 @@ ctest --test-dir build
 - `LOGME_BUILD_TOOLS` (ON/OFF)
 - `LOGME_ENABLE_INSTALL` (ON/OFF)
 - `USE_JSONCPP` (`AUTO`, `ON`, `OFF`)
+- `USE_ZLIB` (`AUTO`, `ON`, `OFF`)
 - `LOGME_FMT_FORMAT` (`AUTO`, `ON`, `OFF`)
 - `LOGME_STD_FORMAT` (`AUTO`, `ON`, `OFF`)
 
@@ -317,7 +319,6 @@ ctest --test-dir build
 ## Roadmap
 
 - More production backends, especially syslog and systemd-journal integration
-- Richer file lifecycle policies such as compression and additional rotation/retention modes
 - Backend-level filtering options for selected advanced routing scenarios
 - More documentation, articles, and integration examples
 

@@ -49,8 +49,18 @@
         {
           "type": "FileBackend",
           "append": true,
-          "max-size": 1024,
-          "file": "log.txt"
+          "file": "logs/app.log",
+          "max-size": "100Mb",
+          "on-size-limit": "rotate", // "truncate" | "rotate". default: "truncate"
+          "rotation": "daily", // "none" | "hourly" | "daily" | "weekly" | "monthly"
+          "archive": "logs/archive/app.{date}.{index}.log", // required for on-size-limit="rotate"
+          "compression": "gz", // "none" | "gz". requires USE_ZLIB for actual gzip output
+          "retention": {
+            "max-files": 14, // legacy alias: "max-parts"
+            "max-age": "30d",
+            "max-total-size": "2Gb",
+            "clean-on-start": true
+          }
         }
       ]
     },

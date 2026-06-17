@@ -351,6 +351,147 @@ TEST_F(FileBackendIntegrationTest, RetentionMaxTotalSizeCleansOldestArchivesOnSt
   EXPECT_EQ(ReadFile(Archive3), std::string(512, 'C'));
 }
 
+TEST_F(FileBackendIntegrationTest, RetentionMaxFilesZeroKeepsAllArchives)
+{
+  auto config = MakeConfig(Logme::SIZE_LIMIT_ROTATE, 2048);
+  config->MaxParts = 0;
+  ApplyConfig(config);
+
+  const std::string first(1500, 'A');
+  const std::string second(1500, 'B');
+  const std::string third(1500, 'C');
+  const std::string fourth(1500, 'D');
+
+  Write(first);
+  Write(second);
+  Write(third);
+  Write(fourth);
+
+  ASSERT_TRUE(fs::exists(Archive1));
+  ASSERT_TRUE(fs::exists(Archive2));
+  ASSERT_TRUE(fs::exists(Archive3));
+  ASSERT_TRUE(fs::exists(Active));
+  EXPECT_EQ(ReadFile(Archive1), first);
+  EXPECT_EQ(ReadFile(Archive2), second);
+  EXPECT_EQ(ReadFile(Archive3), third);
+  EXPECT_EQ(ReadFile(Active), fourth);
+}
+
+TEST_F(FileBackendIntegrationTest, RetentionMaxAgeZeroKeepsOldArchivesOnStart)
+{
+  WriteFile(Archive1, "old-one", std::chrono::hours(72));
+  WriteFile(Archive2, "old-two", std::chrono::hours(48));
+
+  auto config = MakeConfig(Logme::SIZE_LIMIT_ROTATE, 2048);
+  config->RetentionMaxAge = 0;
+  ApplyConfig(config);
+
+  ASSERT_TRUE(fs::exists(Active));
+  ASSERT_TRUE(fs::exists(Archive1));
+  ASSERT_TRUE(fs::exists(Archive2));
+  EXPECT_EQ(ReadFile(Archive1), "old-one");
+  EXPECT_EQ(ReadFile(Archive2), "old-two");
+}
+
+TEST_F(FileBackendIntegrationTest, RetentionMaxTotalSizeZeroKeepsLargeArchivesOnStart)
+{
+  WriteFile(Archive1, std::string(4096, 'A'), std::chrono::hours(72));
+  WriteFile(Archive2, std::string(4096, 'B'), std::chrono::hours(48));
+
+  auto config = MakeConfig(Logme::SIZE_LIMIT_ROTATE, 2048);
+  config->RetentionMaxTotalSize = 0;
+  ApplyConfig(config);
+
+  ASSERT_TRUE(fs::exists(Active));
+  ASSERT_TRUE(fs::exists(Archive1));
+  ASSERT_TRUE(fs::exists(Archive2));
+  EXPECT_EQ(ReadFile(Archive1), std::string(4096, 'A'));
+  EXPECT_EQ(ReadFile(Archive2), std::string(4096, 'B'));
+}
+
+TEST_F(FileBackendIntegrationTest, RetentionIgnoresUnrelatedFilesInArchiveDirectory)
+{
+  const fs::path unrelated = ArchiveDir / "unrelated.log";
+
+  WriteFile(Archive1, "old-archive", std::chrono::hours(72));
+  WriteFile(unrelated, "must-stay", std::chrono::hours(72));
+
+  auto config = MakeConfig(Logme::SIZE_LIMIT_ROTATE, 2048);
+  config->RetentionMaxAge = 24ULL * 60ULL * 60ULL * 1000ULL;
+  ApplyConfig(config);
+
+  ASSERT_TRUE(fs::exists(Active));
+  EXPECT_FALSE(fs::exists(Archive1));
+  ASSERT_TRUE(fs::exists(unrelated));
+  EXPECT_EQ(ReadFile(unrelated), "must-stay");
+}
+
+TEST_F(FileBackendIntegrationTest, RetentionNeverDeletesActiveFileMatchingArchivePattern)
+{
+  Active = Dir / "app.0.log";
+  ArchivePattern = (Dir / "app.{index}.log").string();
+
+  const fs::path archiveOne = Dir / "app.1.log";
+  const fs::path archiveTwo = Dir / "app.2.log";
+
+  WriteFile(Active, "old-active", std::chrono::hours(72));
+  WriteFile(archiveOne, "old-one", std::chrono::hours(72));
+  WriteFile(archiveTwo, "old-two", std::chrono::hours(72));
+
+  auto config = MakeConfig(Logme::SIZE_LIMIT_ROTATE, 2048);
+  config->Append = true;
+  config->RetentionMaxAge = 24ULL * 60ULL * 60ULL * 1000ULL;
+  ApplyConfig(config);
+
+  ASSERT_TRUE(fs::exists(Active));
+  EXPECT_EQ(ReadFile(Active), "old-active");
+  EXPECT_FALSE(fs::exists(archiveOne));
+  EXPECT_FALSE(fs::exists(archiveTwo));
+}
+
+TEST_F(FileBackendIntegrationTest, StartupRecoveryContinuesAfterArchiveIndexGap)
+{
+  const fs::path archive4 = ArchiveDir / "app.4.log";
+
+  WriteFile(Archive1, "existing-one");
+  WriteFile(Archive3, "existing-three");
+
+  auto config = MakeConfig(Logme::SIZE_LIMIT_ROTATE, 2048);
+  ApplyConfig(config);
+
+  const std::string first(1500, 'A');
+  const std::string second(1500, 'B');
+
+  Write(first);
+  Write(second);
+
+  EXPECT_EQ(ReadFile(Archive1), "existing-one");
+  EXPECT_FALSE(fs::exists(Archive2));
+  EXPECT_EQ(ReadFile(Archive3), "existing-three");
+  ASSERT_TRUE(fs::exists(archive4));
+  EXPECT_EQ(ReadFile(archive4), first);
+  EXPECT_EQ(ReadFile(Active), second);
+}
+
+TEST_F(FileBackendIntegrationTest, RuntimeArchiveCollisionIsSkipped)
+{
+  auto config = MakeConfig(Logme::SIZE_LIMIT_ROTATE, 2048);
+  ApplyConfig(config);
+
+  WriteFile(Archive1, "external-one");
+
+  const std::string first(1500, 'A');
+  const std::string second(1500, 'B');
+
+  Write(first);
+  Write(second);
+
+  EXPECT_EQ(ReadFile(Archive1), "external-one");
+  ASSERT_TRUE(fs::exists(Archive2));
+  EXPECT_EQ(ReadFile(Archive2), first);
+  EXPECT_EQ(ReadFile(Active), second);
+}
+
 #ifdef LOGME_TEST_USE_ZLIB
 TEST_F(FileBackendIntegrationTest, GzipCompressionAppliesOnlyToCompletedArchive)
 {

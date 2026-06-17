@@ -38,6 +38,27 @@ namespace
     );
   }
 
+  void WriteFile(
+    const std::filesystem::path& path
+    , const std::string& text
+    , std::chrono::hours age = std::chrono::hours(0)
+  )
+  {
+    std::ofstream output(path, std::ios::binary);
+    ASSERT_TRUE(output.good());
+    output << text;
+    output.close();
+    ASSERT_TRUE(output.good());
+
+    std::error_code ec;
+    std::filesystem::last_write_time(
+      path
+      , std::filesystem::file_time_type::clock::now() - age
+      , ec
+    );
+    ASSERT_FALSE(ec);
+  }
+
   void RemoveIfExists(const std::filesystem::path& path)
   {
     std::error_code ec;
@@ -54,12 +75,16 @@ namespace
     std::filesystem::path Active;
     std::filesystem::path Archive1;
     std::filesystem::path Archive2;
+    std::filesystem::path Archive3;
+    std::filesystem::path Archive1Gz;
     std::string ArchivePattern;
 
     FileFixture(
       const char* name
       , Logme::SizeLimitPolicy policy
       , int maxParts
+      , bool cleanOnStart = true
+      , bool applyConfig = true
     )
       : ChannelName(name)
       , ChannelId{ChannelName.c_str()}
@@ -67,11 +92,15 @@ namespace
       , Active(Base.string() + ".log")
       , Archive1(Base.string() + ".1.log")
       , Archive2(Base.string() + ".2.log")
+      , Archive3(Base.string() + ".3.log")
+      , Archive1Gz(Base.string() + ".1.log.gz")
       , ArchivePattern(Base.string() + ".{index}.log")
     {
       RemoveIfExists(Active);
       RemoveIfExists(Archive1);
       RemoveIfExists(Archive2);
+      RemoveIfExists(Archive3);
+      RemoveIfExists(Archive1Gz);
 
       Logme::OutputFlags flags;
       flags.Value = 0;
@@ -87,18 +116,8 @@ namespace
 
       Backend = std::make_shared<Logme::FileBackend>(Channel);
 
-      auto config = std::make_shared<Logme::FileBackendConfig>();
-      config->Async = false;
-      config->Append = false;
-      config->MaxSize = 2048;
-      config->Filename = Active.string();
-      config->OnSizeLimit = policy;
-      config->MaxParts = maxParts;
-      if (policy == Logme::SIZE_LIMIT_ROTATE)
-        config->ArchiveFilename = ArchivePattern;
-
-      EXPECT_TRUE(Backend->ApplyConfig(config));
-      Channel->AddBackend(Backend);
+      if (applyConfig)
+        ApplyConfig(policy, maxParts, cleanOnStart);
     }
 
     ~FileFixture()
@@ -112,6 +131,29 @@ namespace
       RemoveIfExists(Active);
       RemoveIfExists(Archive1);
       RemoveIfExists(Archive2);
+      RemoveIfExists(Archive3);
+      RemoveIfExists(Archive1Gz);
+    }
+
+    void ApplyConfig(
+      Logme::SizeLimitPolicy policy
+      , int maxParts
+      , bool cleanOnStart = true
+    )
+    {
+      auto config = std::make_shared<Logme::FileBackendConfig>();
+      config->Async = false;
+      config->Append = false;
+      config->MaxSize = 2048;
+      config->Filename = Active.string();
+      config->OnSizeLimit = policy;
+      config->MaxParts = maxParts;
+      config->RetentionCleanOnStart = cleanOnStart;
+      if (policy == Logme::SIZE_LIMIT_ROTATE)
+        config->ArchiveFilename = ArchivePattern;
+
+      EXPECT_TRUE(Backend->ApplyConfig(config));
+      Channel->AddBackend(Backend);
     }
 
     void Write(const std::string& text)
@@ -181,4 +223,99 @@ TEST(SizeLimitPolicy, RotatePolicyAppliesMaxFilesRetention)
   ASSERT_TRUE(std::filesystem::exists(fixture.Archive2));
   EXPECT_EQ(ReadFile(fixture.Archive2), second);
   EXPECT_EQ(ReadFile(fixture.Active), third);
+}
+
+TEST(SizeLimitPolicy, RotatePolicyContinuesArchiveIndexAfterRestart)
+{
+  FileFixture fixture(
+    "rotate-restart"
+    , Logme::SIZE_LIMIT_ROTATE
+    , 0
+    , true
+    , false
+  );
+
+  WriteFile(fixture.Archive1, "existing-one", std::chrono::hours(2));
+  WriteFile(fixture.Archive2, "existing-two", std::chrono::hours(1));
+
+  fixture.ApplyConfig(Logme::SIZE_LIMIT_ROTATE, 0);
+
+  const std::string first(1500, 'A');
+  const std::string second(1500, 'B');
+
+  fixture.Write(first);
+  fixture.Write(second);
+
+  EXPECT_EQ(ReadFile(fixture.Archive1), "existing-one");
+  EXPECT_EQ(ReadFile(fixture.Archive2), "existing-two");
+  ASSERT_TRUE(std::filesystem::exists(fixture.Archive3));
+  EXPECT_EQ(ReadFile(fixture.Archive3), first);
+  EXPECT_EQ(ReadFile(fixture.Active), second);
+}
+
+TEST(SizeLimitPolicy, RotatePolicySkipsExistingCompressedArchiveName)
+{
+  FileFixture fixture(
+    "rotate-skip-gzip"
+    , Logme::SIZE_LIMIT_ROTATE
+    , 0
+    , true
+    , false
+  );
+
+  WriteFile(fixture.Archive1Gz, "existing-gzip-name");
+
+  fixture.ApplyConfig(Logme::SIZE_LIMIT_ROTATE, 0);
+
+  const std::string first(1500, 'A');
+  const std::string second(1500, 'B');
+
+  fixture.Write(first);
+  fixture.Write(second);
+
+  EXPECT_TRUE(std::filesystem::exists(fixture.Archive1Gz));
+  EXPECT_FALSE(std::filesystem::exists(fixture.Archive1));
+  ASSERT_TRUE(std::filesystem::exists(fixture.Archive2));
+  EXPECT_EQ(ReadFile(fixture.Archive2), first);
+}
+
+TEST(SizeLimitPolicy, CleanOnStartAppliesMaxFilesRetention)
+{
+  FileFixture fixture(
+    "clean-on-start"
+    , Logme::SIZE_LIMIT_ROTATE
+    , 2
+    , true
+    , false
+  );
+
+  WriteFile(fixture.Archive1, "old", std::chrono::hours(2));
+  WriteFile(fixture.Archive2, "new", std::chrono::hours(1));
+
+  fixture.ApplyConfig(Logme::SIZE_LIMIT_ROTATE, 2, true);
+
+  EXPECT_FALSE(std::filesystem::exists(fixture.Archive1));
+  ASSERT_TRUE(std::filesystem::exists(fixture.Archive2));
+  EXPECT_EQ(ReadFile(fixture.Archive2), "new");
+  EXPECT_TRUE(std::filesystem::exists(fixture.Active));
+}
+
+TEST(SizeLimitPolicy, CleanOnStartCanBeDisabled)
+{
+  FileFixture fixture(
+    "clean-on-start-disabled"
+    , Logme::SIZE_LIMIT_ROTATE
+    , 2
+    , false
+    , false
+  );
+
+  WriteFile(fixture.Archive1, "old", std::chrono::hours(2));
+  WriteFile(fixture.Archive2, "new", std::chrono::hours(1));
+
+  fixture.ApplyConfig(Logme::SIZE_LIMIT_ROTATE, 2, false);
+
+  EXPECT_TRUE(std::filesystem::exists(fixture.Archive1));
+  EXPECT_TRUE(std::filesystem::exists(fixture.Archive2));
+  EXPECT_TRUE(std::filesystem::exists(fixture.Active));
 }

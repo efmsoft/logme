@@ -1,4 +1,5 @@
 #include <cassert>
+#include <charconv>
 #include <chrono>
 #include <filesystem>
 #include <regex>
@@ -45,6 +46,29 @@ using namespace Logme;
 
 namespace
 {
+  bool TryParseUInt64(
+    const std::string& text
+    , uint64_t& value
+  )
+  {
+    if (text.empty())
+      return false;
+
+    uint64_t result = 0;
+    const char* first = text.data();
+    const char* last = text.data() + text.size();
+
+    auto parseResult = std::from_chars(first, last, result, 10);
+    if (parseResult.ec != std::errc())
+      return false;
+
+    if (parseResult.ptr != last)
+      return false;
+
+    value = result;
+    return true;
+  }
+
   std::atomic<std::uint64_t> GlobalDisplayCalls(0);
   std::atomic<std::uint64_t> GlobalAppendCalls(0);
   std::atomic<std::uint64_t> GlobalInputBytes(0);
@@ -156,11 +180,11 @@ FileBackend::FileBackend(ChannelPtr owner)
   , CurrentSize(0)
   , QueueSizeLimit(QueueSizeLimitDefault)
   , FlushAfter(FlushAfterDefault)
+  , ArchiveIndex(0)
   , Registered(false)
   , ShutdownFlag(false)
   , ShutdownCalled(owner == nullptr)
   , FlushTime(0)
-  , ArchiveIndex(0)
   , ActiveNext(nullptr)
   , ActivePrev(nullptr)
   , ActiveLinked(false)
@@ -184,6 +208,7 @@ FileBackend::FileBackend(ChannelPtr owner)
   , MaxParts(2)
   , RetentionMaxAge(0)
   , RetentionMaxTotalSize(0)
+  , RetentionCleanOnStart(true)
   , GzipCompression(false)
 {
   SetAsync(true);
@@ -551,6 +576,7 @@ bool FileBackend::ApplyConfig(BackendConfigPtr c)
   MaxParts = p->MaxParts;
   RetentionMaxAge = p->RetentionMaxAge;
   RetentionMaxTotalSize = p->RetentionMaxTotalSize;
+  RetentionCleanOnStart = p->RetentionCleanOnStart;
   GzipCompression = p->GzipCompression;
 
   if (GzipCompression)
@@ -561,7 +587,8 @@ bool FileBackend::ApplyConfig(BackendConfigPtr c)
   Day.UpdateDayBoundaries();
 
   NameTemplate = p->Filename;
-  return ChangePart();
+  RecoverArchiveIndex();
+  return ChangePart(RetentionCleanOnStart);
 }
 
 void FileBackend::WaitForShutdown()
@@ -672,7 +699,7 @@ size_t FileBackend::GetSize()
   return CurrentSize;
 }
 
-bool FileBackend::ChangePart()
+bool FileBackend::ChangePart(bool applyRetention)
 {
   FILE_CNT(GlobalChangePartCalls.fetch_add(1, std::memory_order_relaxed));
 
@@ -688,7 +715,8 @@ bool FileBackend::ChangePart()
   if (!oldName.empty() && oldName != Name)
     SubmitCompletedFile(oldName);
 
-  ApplyRetention();
+  if (applyRetention)
+    ApplyRetention();
 
   return true;
 }
@@ -1045,23 +1073,100 @@ std::string FileBackend::BuildArchiveName(uint64_t index) const
   return archive;
 }
 
+std::regex FileBackend::BuildArchiveIndexPattern() const
+{
+  const std::string indexMarker = "\x01INDEX\x02";
+
+  ProcessTemplateParam param(
+    static_cast<uint32_t>(TEMPLATE_ALL)
+    & ~static_cast<uint32_t>(TEMPLATE_DATE_AND_TIME)
+  );
+
+  std::string re = ProcessTemplate(ArchiveTemplate.c_str(), param);
+  re = ReplaceAll(re, "{index}", indexMarker);
+
+  if (!IsAbsolutePath(re))
+    re = Owner->GetOwner()->GetHomeDirectory() + re;
+
+  re = ReplaceDatetimePlaceholders(re, ".+");
+  re = ReplaceAll(re, indexMarker, "([0-9]+)");
+  re += "(\\.gz)?";
+
+  return std::regex(re);
+}
+
+bool FileBackend::ArchiveNameExists(const std::string& archive) const
+{
+  std::error_code ec;
+  if (std::filesystem::exists(archive, ec))
+    return true;
+
+  if (ec)
+    return true;
+
+  ec.clear();
+  if (std::filesystem::exists(archive + ".gz", ec))
+    return true;
+
+  return static_cast<bool>(ec);
+}
+
+uint64_t FileBackend::FindLastArchiveIndex() const
+{
+  if (ArchiveTemplate.empty())
+    return 0;
+
+  std::filesystem::path archiveSample(BuildArchiveName(0));
+  std::filesystem::path dir = archiveSample.parent_path();
+  if (dir.empty())
+    return 0;
+
+  std::error_code ec;
+  if (!std::filesystem::exists(dir, ec) || ec)
+    return 0;
+
+  std::filesystem::directory_iterator it(dir, ec);
+  if (ec)
+    return 0;
+
+  std::regex pattern = BuildArchiveIndexPattern();
+  uint64_t maxIndex = 0;
+
+  for (const auto& entry : it)
+  {
+    if (!entry.is_regular_file(ec) || ec)
+    {
+      ec.clear();
+      continue;
+    }
+
+    std::smatch match;
+    std::string pathName = entry.path().string();
+    if (!std::regex_match(pathName, match, pattern) || match.size() < 2)
+      continue;
+
+    uint64_t index = 0;
+    if (!TryParseUInt64(match[1].str(), index))
+      continue;
+
+    if (index > maxIndex)
+      maxIndex = index;
+  }
+
+  return maxIndex;
+}
+
+void FileBackend::RecoverArchiveIndex()
+{
+  ArchiveIndex = FindLastArchiveIndex();
+}
+
 std::string FileBackend::TakeArchiveName()
 {
   for (uint64_t i = ArchiveIndex + 1;; ++i)
   {
     std::string archive = BuildArchiveName(i);
-    std::error_code ec;
-    bool exists = std::filesystem::exists(archive, ec);
-    if (!exists)
-    {
-      ArchiveIndex = i;
-      return archive;
-    }
-
-    std::string compressed = archive + ".gz";
-    ec.clear();
-    exists = std::filesystem::exists(compressed, ec);
-    if (!exists)
+    if (!ArchiveNameExists(archive))
     {
       ArchiveIndex = i;
       return archive;
@@ -1076,7 +1181,22 @@ void FileBackend::ApplyRetention()
   retention.MaxAgeMs = RetentionMaxAge;
   retention.MaxTotalSize = RetentionMaxTotalSize;
 
-  CleanFiles(BuildCleanPattern(), Name, retention);
+  if (retention.IsEmpty())
+    return;
+
+  std::regex pattern = BuildCleanPattern();
+  CleanFiles(pattern, Name, retention);
+
+  if (ArchiveTemplate.empty())
+    return;
+
+  std::string archiveProbe = BuildArchiveName(0);
+  std::filesystem::path activeDir = std::filesystem::path(Name).parent_path();
+  std::filesystem::path archiveDir = std::filesystem::path(archiveProbe).parent_path();
+  if (archiveDir.empty() || archiveDir == activeDir)
+    return;
+
+  CleanFiles(pattern, archiveProbe, retention);
 }
 
 bool FileBackend::RotateSizePart(size_t add)

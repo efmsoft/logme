@@ -114,6 +114,7 @@ FileBackendConfig::FileBackendConfig()
   , MaxParts(2)
   , RetentionMaxAge(0)
   , RetentionMaxTotalSize(0)
+  , RetentionCleanOnStart(true)
   , GzipCompression(false)
 {
   Async = true;
@@ -244,6 +245,17 @@ bool FileBackendConfig::Parse(const Json::Value* po)
     {
       if (!ParseRetentionByteSize(retention["max-total-size"], "retention.max-total-size", RetentionMaxTotalSize))
         return false;
+    }
+
+    if (retention.isMember("clean-on-start"))
+    {
+      if (!retention["clean-on-start"].isBool())
+      {
+        LogmeE(CHINT, "\"retention.clean-on-start\" is not a boolean value");
+        return false;
+      }
+
+      RetentionCleanOnStart = retention["clean-on-start"].asBool();
     }
   }
 

@@ -40,6 +40,7 @@ namespace Logme
     int MaxParts;
     uint64_t RetentionMaxAge;
     uint64_t RetentionMaxTotalSize;
+    bool RetentionCleanOnStart;
     bool GzipCompression;
 
     LOGMELNK FileBackendConfig();
@@ -166,6 +167,7 @@ namespace Logme
     int MaxParts;
     uint64_t RetentionMaxAge;
     uint64_t RetentionMaxTotalSize;
+    bool RetentionCleanOnStart;
     bool GzipCompression;
     CompressionRegistrationPtr Compression;
 
@@ -282,6 +284,10 @@ namespace Logme
 
     void SubmitCompletedFile(const std::string& file);
     std::string BuildArchiveName(uint64_t index) const;
+    std::regex BuildArchiveIndexPattern() const;
+    bool ArchiveNameExists(const std::string& archive) const;
+    uint64_t FindLastArchiveIndex() const;
+    void RecoverArchiveIndex();
     std::string TakeArchiveName();
     std::regex BuildCleanPattern() const;
     void ApplyRetention();
@@ -327,7 +333,7 @@ namespace Logme
     bool WorkerFunc();
     void OnShutdown();
 
-    bool ChangePart();
+    bool ChangePart(bool applyRetention = true);
   };
 
   typedef std::shared_ptr<class FileBackend> FileBackendPtr;

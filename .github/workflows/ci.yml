@@ -182,7 +182,7 @@ jobs:
         run: |
           set -euxo pipefail
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libfmt-dev libjsoncpp-dev
+          sudo apt-get install -y --no-install-recommends libfmt-dev libjsoncpp-dev zlib1g-dev
 
       - name: Install deps (macOS)
         if: matrix.platform == 'macos'
@@ -190,7 +190,7 @@ jobs:
         run: |
           set -euxo pipefail
           brew update
-          brew install fmt jsoncpp googletest pkg-config
+          brew install fmt jsoncpp googletest pkg-config zlib
 
       - name: Install deps (Windows / vcpkg)
         if: matrix.platform == 'windows'
@@ -198,7 +198,7 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
           if (-not $env:VCPKG_INSTALLATION_ROOT) { throw "VCPKG_INSTALLATION_ROOT is not set" }
-          & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install fmt:x64-windows jsoncpp:x64-windows gtest:x64-windows
+          & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install fmt:x64-windows jsoncpp:x64-windows gtest:x64-windows zlib:x64-windows
           if ($LASTEXITCODE -ne 0) { throw "vcpkg install failed: $LASTEXITCODE" }
 
       - name: Setup MSVC dev cmd
@@ -213,8 +213,10 @@ jobs:
         run: |
           set -euxo pipefail
           gtest_arg=""
+          zlib_arg=""
           if [ "${{ matrix.platform }}" = "macos" ]; then
             gtest_arg="-DGTest_DIR=$(brew --prefix googletest)/lib/cmake/GTest"
+            zlib_arg="-DZLIB_ROOT=$(brew --prefix zlib)"
           fi
 
           cmake -S . -B "build/full-deps/${{ matrix.platform }}" \
@@ -222,9 +224,11 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_STANDARD=20 \
             -DUSE_JSONCPP=ON \
+            -DUSE_ZLIB=ON \
             -DLOGME_FMT_FORMAT=ON \
             -DLOGME_STD_FORMAT=OFF \
-            ${gtest_arg}
+            ${gtest_arg} \
+            ${zlib_arg}
 
       - name: Configure (Windows)
         if: matrix.platform == 'windows'
@@ -242,6 +246,7 @@ jobs:
             -DCMAKE_TOOLCHAIN_FILE="$toolchain" `
             -DVCPKG_TARGET_TRIPLET=x64-windows `
             -DUSE_JSONCPP=ON `
+            -DUSE_ZLIB=ON `
             -DLOGME_FMT_FORMAT=ON `
             -DLOGME_STD_FORMAT=OFF
           if ($LASTEXITCODE -ne 0) { throw "cmake configure failed: $LASTEXITCODE" }

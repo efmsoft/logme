@@ -80,6 +80,7 @@ jobs:
             build_static: ON
             build_dynamic: OFF
             use_jsoncpp: OFF
+            use_zlib: OFF
             fmt_format: OFF
             vcpkg_deps: OFF
           - artifact: static-full
@@ -87,6 +88,7 @@ jobs:
             build_static: ON
             build_dynamic: OFF
             use_jsoncpp: ON
+            use_zlib: ON
             fmt_format: ON
             vcpkg_deps: ON
           - artifact: shared-full
@@ -94,6 +96,7 @@ jobs:
             build_static: OFF
             build_dynamic: ON
             use_jsoncpp: ON
+            use_zlib: ON
             fmt_format: ON
             vcpkg_deps: ON
 
@@ -112,7 +115,7 @@ jobs:
 
           $triplet = "x64-windows-static-md-release"
           $overlay = Join-Path "${{ github.workspace }}" ".github\vcpkg-triplets"
-          & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install fmt:$triplet jsoncpp:$triplet --overlay-triplets "$overlay"
+          & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install fmt:$triplet jsoncpp:$triplet zlib:$triplet --overlay-triplets "$overlay"
           if ($LASTEXITCODE -ne 0) { throw "vcpkg install failed: $LASTEXITCODE" }
 
       - name: Configure
@@ -140,6 +143,7 @@ jobs:
             "-DLOGME_BUILD_TOOLS=OFF",
             "-DLOGME_ENABLE_INSTALL=ON",
             "-DUSE_JSONCPP=${{ matrix.use_jsoncpp }}",
+            "-DUSE_ZLIB=${{ matrix.use_zlib }}",
             "-DLOGME_FMT_FORMAT=${{ matrix.fmt_format }}",
             "-DLOGME_STD_FORMAT=OFF"
           )
@@ -328,18 +332,21 @@ jobs:
             build_static: ON
             build_dynamic: OFF
             use_jsoncpp: OFF
+            use_zlib: OFF
             fmt_format: OFF
             vcpkg_deps: OFF
           - artifact: static-full
             build_static: ON
             build_dynamic: OFF
             use_jsoncpp: ON
+            use_zlib: ON
             fmt_format: ON
             vcpkg_deps: ON
           - artifact: shared-full
             build_static: OFF
             build_dynamic: ON
             use_jsoncpp: ON
+            use_zlib: ON
             fmt_format: ON
             vcpkg_deps: ON
 
@@ -367,7 +374,7 @@ jobs:
           set -euo pipefail
           triplet="x64-linux-static-release"
           overlay="${GITHUB_WORKSPACE}/.github/vcpkg-triplets"
-          "${VCPKG_INSTALLATION_ROOT}/vcpkg" install "fmt:${triplet}" "jsoncpp:${triplet}" --overlay-triplets "$overlay"
+          "${VCPKG_INSTALLATION_ROOT}/vcpkg" install "fmt:${triplet}" "jsoncpp:${triplet}" "zlib:${triplet}" --overlay-triplets "$overlay"
 
       - name: Configure
         shell: bash
@@ -388,6 +395,7 @@ jobs:
             -DLOGME_BUILD_TOOLS=OFF
             -DLOGME_ENABLE_INSTALL=ON
             -DUSE_JSONCPP=${{ matrix.use_jsoncpp }}
+            -DUSE_ZLIB=${{ matrix.use_zlib }}
             -DLOGME_FMT_FORMAT=${{ matrix.fmt_format }}
             -DLOGME_STD_FORMAT=OFF
           )
@@ -410,7 +418,7 @@ jobs:
             fi
           done
 
-      - name: Verify no external fmt/jsoncpp shared libs are required
+      - name: Verify no external fmt/jsoncpp/zlib shared libs are required
         if: matrix.artifact == 'shared-full'
         shell: bash
         run: |
@@ -424,8 +432,8 @@ jobs:
           fi
 
           ldd "$so"
-          if ldd "$so" | grep -E 'lib(fmt|jsoncpp)\.so'; then
-            echo "liblogmed.so depends on external fmt/jsoncpp shared library"
+          if ldd "$so" | grep -E 'lib(fmt|jsoncpp|z)\.so'; then
+            echo "liblogmed.so depends on external fmt/jsoncpp/zlib shared library"
             exit 1
           fi
 

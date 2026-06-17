@@ -914,7 +914,7 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
 
     if (firstData)
     {
-      uint64_t firstWriteTime = GetTimeInMillisec64();
+      firstWriteTime = GetTimeInMillisec64();
       if (flushTime != 0 && flushTime != RIGHT_NOW)
         firstWriteTime = flushTime > FlushAfter ? flushTime - FlushAfter : firstWriteTime;
 
@@ -937,7 +937,7 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
     }
     else
     {
-      uint64_t firstWriteTime = GetTimeInMillisec64();
+      firstWriteTime = GetTimeInMillisec64();
       if (flushTime != RIGHT_NOW)
         firstWriteTime = flushTime > FlushAfter ? flushTime - FlushAfter : firstWriteTime;
 

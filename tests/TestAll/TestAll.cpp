@@ -84,10 +84,42 @@ static void TestFileBackendConfigValidation()
   {
     Json::Value config;
     config["file"] = "invalid-rotation.log";
-    config["rotation"] = "hourly";
+    config["rotation"] = "invalid-rotation";
 
     FileBackendConfig backendConfig;
     assert(!backendConfig.Parse(&config));
+  }
+
+  {
+    struct TestCase
+    {
+      const char* Value;
+      TimeRotationMode TimeRotation;
+      bool DailyRotation;
+    };
+
+    const TestCase testCases[] =
+    {
+      { "hourly", TIME_ROTATION_HOURLY, false },
+      { "daily", TIME_ROTATION_DAILY, true },
+      { "weekly", TIME_ROTATION_WEEKLY, false },
+      { "monthly", TIME_ROTATION_MONTHLY, false },
+      { "none", TIME_ROTATION_NONE, false },
+      { "off", TIME_ROTATION_NONE, false },
+      { "disabled", TIME_ROTATION_NONE, false },
+    };
+
+    for (const TestCase& testCase : testCases)
+    {
+      Json::Value config;
+      config["file"] = "valid-rotation.log";
+      config["rotation"] = testCase.Value;
+
+      FileBackendConfig backendConfig;
+      assert(backendConfig.Parse(&config));
+      assert(backendConfig.TimeRotation == testCase.TimeRotation);
+      assert(backendConfig.DailyRotation == testCase.DailyRotation);
+    }
   }
 
   {

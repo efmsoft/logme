@@ -118,6 +118,7 @@
     <ClCompile Include="..\logme\source\Control\EnvironmentControl.cpp" />
     <ClCompile Include="..\logme\source\ThreadField.cpp" />
     <ClCompile Include="..\logme\source\File\CompressionManager.cpp" />
+    <ClCompile Include="..\logme\source\File\FileArchivePolicy.cpp" />
     <ClCompile Include="..\logme\source\File\RetentionCleaner.cpp" />
 </ItemGroup>
   <ItemGroup>

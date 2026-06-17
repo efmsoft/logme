@@ -320,6 +320,9 @@
     <ClInclude Include="include\Logme\File\RetentionCleaner.h">
       <Filter>include\Logme\File</Filter>
     </ClInclude>
+    <ClInclude Include="source\File\FileArchivePolicy.h">
+      <Filter>source\File</Filter>
+    </ClInclude>
 </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Time\datetime_common.cpp">
@@ -617,6 +620,9 @@
       <Filter>source\File</Filter>
     </ClCompile>
     <ClCompile Include="source\File\CompressionManager.cpp">
+      <Filter>source\File</Filter>
+    </ClCompile>
+    <ClCompile Include="source\File\FileArchivePolicy.cpp">
       <Filter>source\File</Filter>
     </ClCompile>
     <ClCompile Include="source\File\RetentionCleaner.cpp">

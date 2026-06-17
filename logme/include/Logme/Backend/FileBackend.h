@@ -127,6 +127,8 @@ namespace Logme
   // asynchronous buffering, and cooperation with the log directory retention
   // watchdog. In comparisons with other logging libraries this covers the
   // usual rotating-file-sink and retention use cases.
+  class FileArchivePolicy;
+
   class FileBackend 
     : public MemoryTrackedBackend
     , public FileIo
@@ -149,9 +151,7 @@ namespace Logme
     uint64_t FlushAfter;
     std::string Name;
     std::string NameTemplate;
-    std::string ArchiveTemplate;
-    uint64_t ArchiveIndex;
-    std::time_t ArchiveTime;
+    std::unique_ptr<FileArchivePolicy> ArchivePolicy;
 
     std::atomic<bool> Registered;
     std::atomic<bool> ShutdownFlag;
@@ -291,17 +291,6 @@ namespace Logme
     bool IsLogOpen() const;
 
     void SubmitCompletedFile(const std::string& file);
-    std::string BuildArchiveName(uint64_t index) const;
-    std::string BuildArchiveName(
-      uint64_t index
-      , std::time_t archiveTime
-    ) const;
-    std::regex BuildArchiveIndexPattern(std::time_t archiveTime) const;
-    bool ArchiveNameExists(const std::string& archive) const;
-    uint64_t FindLastArchiveIndex(std::time_t archiveTime) const;
-    void RecoverArchiveIndex();
-    void SetArchiveTime(std::time_t archiveTime);
-    std::string TakeArchiveName(std::time_t archiveTime);
     std::regex BuildCleanPattern() const;
     void ApplyRetention();
     bool CompleteCurrentFile(

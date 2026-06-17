@@ -342,6 +342,9 @@
     <ClCompile Include="..\logme\source\File\CompressionManager.cpp">
       <Filter>File</Filter>
     </ClCompile>
+    <ClCompile Include="..\logme\source\File\FileArchivePolicy.cpp">
+      <Filter>File</Filter>
+    </ClCompile>
     <ClCompile Include="..\logme\source\File\RetentionCleaner.cpp">
       <Filter>File</Filter>
     </ClCompile>
@@ -584,6 +587,9 @@
     </ClInclude>
     <ClInclude Include="..\logme\include\Logme\File\RetentionCleaner.h">
       <Filter>..\logme\include\Logme\File</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\source\File\FileArchivePolicy.h">
+      <Filter>File</Filter>
     </ClInclude>
 </ItemGroup>
 </Project>

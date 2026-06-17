@@ -1,5 +1,4 @@
 #include <cassert>
-#include <charconv>
 #include <chrono>
 #include <ctime>
 #include <filesystem>
@@ -19,6 +18,8 @@
 #include <Logme/File/FileManager.h>
 #include <Logme/File/FileManagerFactory.h>
 #include <Logme/File/RetentionCleaner.h>
+
+#include "../File/FileArchivePolicy.h"
 #include <Logme/Logger.h>
 #include <Logme/Logme.h>
 #include <Logme/Template.h>
@@ -47,68 +48,6 @@ using namespace Logme;
 
 namespace
 {
-  bool TryParseUInt64(
-    const std::string& text
-    , uint64_t& value
-  )
-  {
-    if (text.empty())
-      return false;
-
-    uint64_t result = 0;
-    const char* first = text.data();
-    const char* last = text.data() + text.size();
-
-    auto parseResult = std::from_chars(first, last, result, 10);
-    if (parseResult.ec != std::errc())
-      return false;
-
-    if (parseResult.ptr != last)
-      return false;
-
-    value = result;
-    return true;
-  }
-
-  std::string FormatArchiveTime(
-    std::time_t value
-    , const char* format
-  )
-  {
-    struct tm tmValue {};
-#ifdef _WIN32
-    localtime_s(&tmValue, &value);
-    struct tm* localTime = &tmValue;
-#else
-    struct tm* localTime = localtime_r(&value, &tmValue);
-#endif
-
-    if (!localTime)
-      return std::string();
-
-    char buffer[32];
-    strftime(buffer, sizeof(buffer), format, localTime);
-    return buffer;
-  }
-
-  std::string ApplyArchiveTime(
-    const std::string& text
-    , std::time_t archiveTime
-  )
-  {
-    std::string result = ReplaceAll(
-      text
-      , TDATETIME
-      , FormatArchiveTime(archiveTime, "%Y-%m-%d-%H-%M-%S")
-    );
-
-    return ReplaceAll(
-      result
-      , TDATE
-      , FormatArchiveTime(archiveTime, "%Y-%m-%d")
-    );
-  }
-
   std::atomic<std::uint64_t> GlobalDisplayCalls(0);
   std::atomic<std::uint64_t> GlobalAppendCalls(0);
   std::atomic<std::uint64_t> GlobalInputBytes(0);
@@ -220,8 +159,7 @@ FileBackend::FileBackend(ChannelPtr owner)
   , CurrentSize(0)
   , QueueSizeLimit(QueueSizeLimitDefault)
   , FlushAfter(FlushAfterDefault)
-  , ArchiveIndex(0)
-  , ArchiveTime(0)
+  , ArchivePolicy(new FileArchivePolicy())
   , Registered(false)
   , ShutdownFlag(false)
   , ShutdownCalled(owner == nullptr)
@@ -531,8 +469,8 @@ std::string FileBackend::FormatDetails()
   os << (Append ? " APPEND" : " OVERWRITE");
   os << " MaxSize=" << MaxSize;
   os << " OnSizeLimit=" << (OnSizeLimit == SIZE_LIMIT_ROTATE ? "ROTATE" : "TRUNCATE");
-  if (!ArchiveTemplate.empty())
-    os << " Archive=" << ArchiveTemplate;
+  if (ArchivePolicy->IsEnabled())
+    os << " Archive=" << ArchivePolicy->GetTemplate();
   os << " DailyRotation=" << (DailyRotation ? "YES" : "NO");
   os << " MaxParts=" << MaxParts;
   if (RetentionMaxAge != 0)
@@ -612,7 +550,11 @@ bool FileBackend::ApplyConfig(BackendConfigPtr c)
   SetMaxSize(p->MaxSize);
 
   OnSizeLimit = p->OnSizeLimit;
-  ArchiveTemplate = p->ArchiveFilename;
+  ArchivePolicy->Configure(
+    p->ArchiveFilename
+    , Owner->GetOwner()->GetHomeDirectory()
+    , p->GzipCompression
+  );
   DailyRotation = p->DailyRotation;
   MaxParts = p->MaxParts;
   RetentionMaxAge = p->RetentionMaxAge;
@@ -628,7 +570,7 @@ bool FileBackend::ApplyConfig(BackendConfigPtr c)
   Day.UpdateDayBoundaries();
 
   NameTemplate = p->Filename;
-  SetArchiveTime(time(nullptr));
+  ArchivePolicy->SetTime(time(nullptr));
   return ChangePart(RetentionCleanOnStart);
 }
 
@@ -1091,158 +1033,6 @@ void FileBackend::SubmitCompletedFile(const std::string& file)
   Compression->Submit(file);
 }
 
-std::string FileBackend::BuildArchiveName(uint64_t index) const
-{
-  return BuildArchiveName(index, ArchiveTime);
-}
-
-std::string FileBackend::BuildArchiveName(
-  uint64_t index
-  , std::time_t archiveTime
-) const
-{
-  ProcessTemplateParam param(
-    static_cast<uint32_t>(TEMPLATE_ALL)
-    & ~static_cast<uint32_t>(TEMPLATE_DATE_AND_TIME)
-  );
-
-  std::string archive = ProcessTemplate(ArchiveTemplate.c_str(), param);
-  archive = ApplyArchiveTime(archive, archiveTime);
-  archive = ReplaceAll(archive, "{index}", std::to_string(index));
-
-  if (!IsAbsolutePath(archive))
-    archive = Owner->GetOwner()->GetHomeDirectory() + archive;
-
-  return archive;
-}
-
-std::regex FileBackend::BuildArchiveIndexPattern(std::time_t archiveTime) const
-{
-  const std::string indexMarker = "\x01INDEX\x02";
-
-  ProcessTemplateParam param(
-    static_cast<uint32_t>(TEMPLATE_ALL)
-    & ~static_cast<uint32_t>(TEMPLATE_DATE_AND_TIME)
-  );
-
-  std::string re = ProcessTemplate(ArchiveTemplate.c_str(), param);
-  re = ApplyArchiveTime(re, archiveTime);
-  re = ReplaceAll(re, "{index}", indexMarker);
-
-  if (!IsAbsolutePath(re))
-    re = Owner->GetOwner()->GetHomeDirectory() + re;
-
-  re = ReplaceDatetimePlaceholders(re, ".+");
-  re = ReplaceAll(re, indexMarker, "([0-9]+)");
-  re += "(\\.gz)?";
-
-  return std::regex(re);
-}
-
-bool FileBackend::ArchiveNameExists(const std::string& archive) const
-{
-  std::error_code ec;
-  if (std::filesystem::exists(archive, ec))
-    return true;
-
-  if (ec)
-    return true;
-
-  ec.clear();
-  if (std::filesystem::exists(archive + ".gz", ec))
-    return true;
-
-  return static_cast<bool>(ec);
-}
-
-uint64_t FileBackend::FindLastArchiveIndex(std::time_t archiveTime) const
-{
-  if (ArchiveTemplate.empty())
-    return 0;
-
-  std::filesystem::path archiveSample(BuildArchiveName(0, archiveTime));
-  std::filesystem::path dir = archiveSample.parent_path();
-  if (dir.empty())
-    return 0;
-
-  std::error_code ec;
-  if (!std::filesystem::exists(dir, ec) || ec)
-    return 0;
-
-  std::filesystem::directory_iterator it(dir, ec);
-  if (ec)
-    return 0;
-
-  std::regex pattern = BuildArchiveIndexPattern(archiveTime);
-  uint64_t maxIndex = 0;
-
-  for (const auto& entry : it)
-  {
-    if (!entry.is_regular_file(ec) || ec)
-    {
-      ec.clear();
-      continue;
-    }
-
-    std::smatch match;
-    std::string pathName = entry.path().string();
-    if (!std::regex_match(pathName, match, pattern) || match.size() < 2)
-      continue;
-
-    uint64_t index = 0;
-    if (!TryParseUInt64(match[1].str(), index))
-      continue;
-
-    if (index > maxIndex)
-      maxIndex = index;
-  }
-
-  return maxIndex;
-}
-
-void FileBackend::RecoverArchiveIndex()
-{
-  ArchiveIndex = FindLastArchiveIndex(ArchiveTime);
-}
-
-void FileBackend::SetArchiveTime(std::time_t archiveTime)
-{
-  if (archiveTime == 0)
-    archiveTime = time(nullptr);
-
-  if (ArchiveTemplate.empty())
-  {
-    ArchiveTime = archiveTime;
-    ArchiveIndex = 0;
-    return;
-  }
-
-  std::string oldProbe;
-  if (ArchiveTime != 0)
-    oldProbe = BuildArchiveName(0, ArchiveTime);
-
-  ArchiveTime = archiveTime;
-
-  std::string newProbe = BuildArchiveName(0, ArchiveTime);
-  if (oldProbe != newProbe)
-    RecoverArchiveIndex();
-}
-
-std::string FileBackend::TakeArchiveName(std::time_t archiveTime)
-{
-  SetArchiveTime(archiveTime);
-
-  for (uint64_t i = ArchiveIndex + 1;; ++i)
-  {
-    std::string archive = BuildArchiveName(i, ArchiveTime);
-    if (!ArchiveNameExists(archive))
-    {
-      ArchiveIndex = i;
-      return archive;
-    }
-  }
-}
-
 void FileBackend::ApplyRetention()
 {
   RetentionOptions retention;
@@ -1256,10 +1046,10 @@ void FileBackend::ApplyRetention()
   std::regex pattern = BuildCleanPattern();
   CleanFiles(pattern, Name, retention);
 
-  if (ArchiveTemplate.empty())
+  if (!ArchivePolicy->IsEnabled())
     return;
 
-  std::string archiveProbe = BuildArchiveName(0);
+  std::string archiveProbe = ArchivePolicy->BuildName(0);
   std::filesystem::path activeDir = std::filesystem::path(Name).parent_path();
   std::filesystem::path archiveDir = std::filesystem::path(archiveProbe).parent_path();
   if (archiveDir.empty() || archiveDir == activeDir)
@@ -1276,12 +1066,13 @@ bool FileBackend::CompleteCurrentFile(
   FILE_CNT(GlobalChangePartCalls.fetch_add(1, std::memory_order_relaxed));
 
   const std::string oldName = Name;
-  const std::time_t completedArchiveTime = ArchiveTime ? ArchiveTime : time(nullptr);
+  const std::time_t archiveTime = ArchivePolicy->GetTime();
+  const std::time_t completedArchiveTime = archiveTime ? archiveTime : time(nullptr);
   std::string completedName;
 
-  if (!oldName.empty() && !ArchiveTemplate.empty())
+  if (!oldName.empty() && ArchivePolicy->IsEnabled())
   {
-    completedName = TakeArchiveName(completedArchiveTime);
+    completedName = ArchivePolicy->TakeName(completedArchiveTime);
 
     CloseLog();
 
@@ -1327,10 +1118,10 @@ bool FileBackend::CompleteCurrentFile(
     return false;
   }
 
-  if (ArchiveTemplate.empty() && reason == FILE_COMPLETION_DAILY && !oldName.empty() && oldName != Name)
+  if (!ArchivePolicy->IsEnabled() && reason == FILE_COMPLETION_DAILY && !oldName.empty() && oldName != Name)
     completedName = oldName;
 
-  SetArchiveTime(time(nullptr));
+  ArchivePolicy->SetTime(time(nullptr));
 
   if (!completedName.empty())
     SubmitCompletedFile(completedName);
@@ -1360,8 +1151,8 @@ std::regex FileBackend::BuildCleanPattern() const
   };
 
   std::string re = buildPattern(NameTemplate);
-  if (!ArchiveTemplate.empty())
-    re = "(" + re + ")|(" + buildPattern(ArchiveTemplate) + ")";
+  if (ArchivePolicy->IsEnabled())
+    re = "(" + re + ")|(" + ArchivePolicy->BuildCleanPattern() + ")";
 
   if (GzipCompression)
     re = "(" + re + ")(\\.gz)?";

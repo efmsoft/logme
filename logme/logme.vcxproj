@@ -304,6 +304,7 @@
     <ClCompile Include="source\Control\Command\CmdLogs.cpp" />
     <ClCompile Include="source\File\buffered_file_io.cpp" />
     <ClCompile Include="source\File\CompressionManager.cpp" />
+    <ClCompile Include="source\File\FileArchivePolicy.cpp" />
     <ClCompile Include="source\File\RetentionCleaner.cpp" />
 </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

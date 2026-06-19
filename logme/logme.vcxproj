@@ -173,6 +173,7 @@
     <ClInclude Include="include\Logme\WindowsEventLog\WindowsEventLogManager.h" />
     <ClInclude Include="include\Logme\WindowsEventLog\WindowsEventLogManagerFactory.h" />
     <ClInclude Include="include\Logme\Channel.h" />
+    <ClInclude Include="include\Logme\Check.h" />
     <ClInclude Include="include\Logme\Colorizer.h" />
     <ClInclude Include="include\Logme\Context.h" />
     <ClInclude Include="include\Logme\Convert.h" />
@@ -180,6 +181,7 @@
     <ClInclude Include="include\Logme\EnvironmentControl.h" />
     <ClInclude Include="include\Logme\File\exe_path.h" />
     <ClInclude Include="include\Logme\File\file_io.h" />
+    <ClInclude Include="include\Logme\GlogCompat.h" />
     <ClInclude Include="include\Logme\ID.h" />
     <ClInclude Include="include\Logme\Json\RSJparser.hpp" />
     <ClInclude Include="include\Logme\Logger.h" />
@@ -225,6 +227,7 @@
     <ClCompile Include="source\Backend\SharedFileBackendConfig.cpp" />
     <ClCompile Include="source\BindAllStat.cpp" />
     <ClCompile Include="source\Channel.cpp" />
+    <ClCompile Include="source\Check.cpp" />
     <ClCompile Include="source\Colorizer.cpp" />
     <ClCompile Include="source\Config\ByteSizeValue.cpp" />
     <ClCompile Include="source\Config\Config.cpp" />

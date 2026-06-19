@@ -122,6 +122,9 @@
     <ClInclude Include="include\Logme\Channel.h">
       <Filter>include\Logme</Filter>
     </ClInclude>
+    <ClInclude Include="include\Logme\Check.h">
+      <Filter>include\Logme</Filter>
+    </ClInclude>
     <ClInclude Include="include\Logme\Colorizer.h">
       <Filter>include\Logme</Filter>
     </ClInclude>
@@ -135,6 +138,9 @@
       <Filter>include\Logme</Filter>
     </ClInclude>
     <ClInclude Include="include\Logme\EnvironmentControl.h">
+      <Filter>include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logme\GlogCompat.h">
       <Filter>include\Logme</Filter>
     </ClInclude>
     <ClInclude Include="include\Logme\ID.h">
@@ -428,6 +434,9 @@
       <Filter>source</Filter>
     </ClCompile>
     <ClCompile Include="source\Channel.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Check.cpp">
       <Filter>source</Filter>
     </ClCompile>
     <ClCompile Include="source\Colorizer.cpp">

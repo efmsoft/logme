@@ -1,6 +1,7 @@
 #include <Logme/Backend/FileBackend.h>
 #include <Logme/Logme.h>
 
+#include <atomic>
 #include <assert.h>
 #include <string.h>
 #include <thread>
@@ -8,6 +9,9 @@
 #ifdef USE_JSONCPP
 #include <json/json.h>
 #endif
+
+#define LOGME_GLOG_VLOG_LEVEL 1
+#include <Logme/GlogCompat.h>
 
 #if defined(_MSC_VER)
 #pragma warning(disable: 4459)
@@ -253,6 +257,258 @@ static void FormattedOutput()
 #endif
 }
 
+struct FlushTestBackend : public Logme::Backend
+{
+  std::atomic<int> DisplayCount;
+  std::atomic<int> FlushCount;
+
+  explicit FlushTestBackend(Logme::ChannelPtr owner)
+    : Backend(owner, "FlushTestBackend")
+    , DisplayCount(0)
+    , FlushCount(0)
+  {
+  }
+
+  void Display(Logme::Context& context) override
+  {
+    DisplayCount.fetch_add(1, std::memory_order_relaxed);
+  }
+
+  void Flush() override
+  {
+    FlushCount.fetch_add(1, std::memory_order_relaxed);
+  }
+};
+
+
+static void TestCheckAndCompatMacros()
+{
+  using namespace Logme;
+
+  LOGME_CHANNEL(CH, "check-macros");
+
+  auto ch = Instance->CreateChannel(CH);
+  ch->RemoveBackends();
+  ch->SetFilterLevel(LEVEL_DEBUG);
+
+  auto backend = std::make_shared<FlushTestBackend>(ch);
+  ch->AddBackend(backend);
+
+  int expensive = 0;
+  LogmeCheck(true) << ++expensive;
+  assert(expensive == 0);
+  assert(backend->DisplayCount.load(std::memory_order_relaxed) == 0);
+
+  LogmeCheck(false) << "native check";
+  assert(backend->DisplayCount.load(std::memory_order_relaxed) == 1);
+
+  int leftCalls = 0;
+  int rightCalls = 0;
+  auto leftValue = [&]()
+  {
+    ++leftCalls;
+    return 1;
+  };
+  auto rightValue = [&]()
+  {
+    ++rightCalls;
+    return 2;
+  };
+
+  LogmeCheckEq(leftValue(), rightValue()) << "native check eq";
+  assert(leftCalls == 1);
+  assert(rightCalls == 1);
+  assert(backend->DisplayCount.load(std::memory_order_relaxed) == 2);
+
+  int trueLeftCalls = 0;
+  int trueRightCalls = 0;
+  auto trueLeftValue = [&]()
+  {
+    ++trueLeftCalls;
+    return 7;
+  };
+  auto trueRightValue = [&]()
+  {
+    ++trueRightCalls;
+    return 7;
+  };
+
+  LogmeCheckEq(trueLeftValue(), trueRightValue()) << ++expensive;
+  assert(trueLeftCalls == 1);
+  assert(trueRightCalls == 1);
+  assert(expensive == 0);
+  assert(backend->DisplayCount.load(std::memory_order_relaxed) == 2);
+
+  int value = 7;
+  int pointerCalls = 0;
+  auto getPointer = [&]() -> int*
+  {
+    ++pointerCalls;
+    return &value;
+  };
+  assert(LogmeCheckNotNull(getPointer()) == &value);
+  assert(pointerCalls == 1);
+  assert(backend->DisplayCount.load(std::memory_order_relaxed) == 2);
+
+  int nullPointerCalls = 0;
+  auto getNullPointer = [&]() -> int*
+  {
+    ++nullPointerCalls;
+    return nullptr;
+  };
+  assert(LogmeCheckNotNull(getNullPointer()) == nullptr);
+  assert(nullPointerCalls == 1);
+  assert(backend->DisplayCount.load(std::memory_order_relaxed) == 3);
+
+  LogmePCheck(true) << ++expensive;
+  assert(expensive == 0);
+  assert(backend->DisplayCount.load(std::memory_order_relaxed) == 3);
+
+  LogmePCheck(false) << "native pcheck";
+  assert(backend->DisplayCount.load(std::memory_order_relaxed) == 4);
+
+  LogmeI_P() << "native plog";
+  assert(backend->DisplayCount.load(std::memory_order_relaxed) == 5);
+
+  int firstNExpensive = 0;
+  for (int i = 0; i < 3; ++i)
+    LogmeI_FirstN(2) << ++firstNExpensive;
+  assert(firstNExpensive == 2);
+  assert(backend->DisplayCount.load(std::memory_order_relaxed) == 7);
+
+  int everyNExpensive = 0;
+  for (int i = 0; i < 4; ++i)
+    LogmeI_EveryN(2) << ++everyNExpensive;
+  assert(everyNExpensive == 2);
+  assert(backend->DisplayCount.load(std::memory_order_relaxed) == 9);
+
+  int everyNZeroExpensive = 0;
+  LogmeI_EveryN(0) << ++everyNZeroExpensive;
+  assert(everyNZeroExpensive == 0);
+  assert(backend->DisplayCount.load(std::memory_order_relaxed) == 9);
+
+  LOG(INFO) << "compat log";
+  LOG_IF(INFO, false) << ++expensive;
+  assert(expensive == 0);
+  LOG_IF(INFO, true) << "compat log if";
+  assert(backend->DisplayCount.load(std::memory_order_relaxed) == 11);
+
+  CHECK_NE(1, 1) << "compat check";
+  assert(backend->DisplayCount.load(std::memory_order_relaxed) == 12);
+
+  int compatLeftCalls = 0;
+  int compatRightCalls = 0;
+  auto compatLeftValue = [&]()
+  {
+    ++compatLeftCalls;
+    return 1;
+  };
+  auto compatRightValue = [&]()
+  {
+    ++compatRightCalls;
+    return 2;
+  };
+
+  CHECK_EQ(compatLeftValue(), compatRightValue()) << "compat check eq";
+  assert(compatLeftCalls == 1);
+  assert(compatRightCalls == 1);
+  assert(backend->DisplayCount.load(std::memory_order_relaxed) == 13);
+
+  CHECK_EQ(5, 5) << ++expensive;
+  assert(expensive == 0);
+  assert(backend->DisplayCount.load(std::memory_order_relaxed) == 13);
+
+  PCHECK(true) << ++expensive;
+  assert(expensive == 0);
+  PCHECK(false) << "compat pcheck";
+  assert(backend->DisplayCount.load(std::memory_order_relaxed) == 14);
+
+  PLOG(ERROR) << "compat plog";
+  PLOG_IF(ERROR, false) << ++expensive;
+  assert(expensive == 0);
+  PLOG_IF(ERROR, true) << "compat plog if";
+  assert(backend->DisplayCount.load(std::memory_order_relaxed) == 16);
+
+  LOG(FATAL) << "compat fatal without handler";
+  assert(backend->DisplayCount.load(std::memory_order_relaxed) == 17);
+
+#ifndef NDEBUG
+  DLOG(INFO) << "compat dlog";
+  DLOG_IF(INFO, false) << ++expensive;
+  assert(expensive == 0);
+  DCHECK(false) << "compat dcheck";
+  assert(backend->DisplayCount.load(std::memory_order_relaxed) == 19);
+#else
+  DLOG(INFO) << ++expensive;
+  DLOG_IF(INFO, true) << ++expensive;
+  DCHECK(false) << ++expensive;
+  assert(expensive == 0);
+#endif
+
+  VLOG(2) << ++expensive;
+  assert(expensive == 0);
+  VLOG(1) << "compat vlog";
+  VLOG_IF(1, false) << ++expensive;
+  assert(expensive == 0);
+  VLOG_IF(1, true) << "compat vlog if";
+
+  int expectedCount = 19;
+#ifdef NDEBUG
+  expectedCount = 17;
+#endif
+  expectedCount += 2;
+  assert(backend->DisplayCount.load(std::memory_order_relaxed) == expectedCount);
+
+  int compatFirstNExpensive = 0;
+  for (int i = 0; i < 3; ++i)
+    LOG_FIRST_N(INFO, 2) << ++compatFirstNExpensive;
+  assert(compatFirstNExpensive == 2);
+  expectedCount += 2;
+  assert(backend->DisplayCount.load(std::memory_order_relaxed) == expectedCount);
+
+  int compatEveryNExpensive = 0;
+  for (int i = 0; i < 4; ++i)
+    LOG_EVERY_N(INFO, 2) << ++compatEveryNExpensive;
+  assert(compatEveryNExpensive == 2);
+  expectedCount += 2;
+  assert(backend->DisplayCount.load(std::memory_order_relaxed) == expectedCount);
+}
+
+static void TestFatalHandler()
+{
+  using namespace Logme;
+
+  LOGME_CHANNEL(FATAL_TEST_CH, "fatal-test");
+
+  auto ch = Instance->CreateChannel(FATAL_TEST_CH);
+  ch->RemoveBackends();
+  ch->SetFilterLevel(LEVEL_DEBUG);
+
+  auto backend = std::make_shared<FlushTestBackend>(ch);
+  ch->AddBackend(backend);
+
+  int handlerCalls = 0;
+  Instance->SetFatalHandler([&]()
+  {
+    handlerCalls++;
+    assert(backend->FlushCount.load(std::memory_order_relaxed) > 0);
+    LogmeC(FATAL_TEST_CH, "nested critical");
+  });
+
+  LogmeC(FATAL_TEST_CH, "critical with handler");
+
+  assert(handlerCalls == 1);
+  assert(backend->DisplayCount.load(std::memory_order_relaxed) == 2);
+
+  Instance->ResetFatalHandler();
+  int flushCount = backend->FlushCount.load(std::memory_order_relaxed);
+
+  LogmeC(FATAL_TEST_CH, "critical without handler");
+
+  assert(handlerCalls == 1);
+  assert(backend->FlushCount.load(std::memory_order_relaxed) == flushCount);
+}
+
 int main()
 {
 #ifdef USE_JSONCPP
@@ -272,6 +528,8 @@ int main()
   ProcReturningEnumValue();
   CppOutput();
   FormattedOutput();
+  TestFatalHandler();
+  TestCheckAndCompatMacros();
 
   return 0;
 }

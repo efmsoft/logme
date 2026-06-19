@@ -12,6 +12,7 @@
   #endif
 #endif
 
+#include <atomic>
 #include <functional>
 #include <map>
 #include <memory>
@@ -42,6 +43,7 @@ namespace Logme
   typedef std::function<bool(const std::string&, std::string&)> TControlHandler;
   typedef bool (*TCondition)();
   typedef std::function<void(const std::string&, const ChannelPtr&)> TChannelCallback;
+  typedef std::function<void()> TFatalHandler;
 
 #ifndef LOGME_DISABLE_STD_FORMAT
   struct StdFormat{};
@@ -80,6 +82,9 @@ namespace Logme
 
     std::mutex ErrorLock;
     StringPtr ErrorChannel;
+
+    TFatalHandler FatalHandler;
+    std::atomic<bool> FatalHandling;
 
     int ControlSocket;
     ControlConfig ControlCfg;
@@ -204,6 +209,27 @@ namespace Logme
     /// </summary>
     /// <returns>Thread-local structured fields, or an empty set when none is set.</returns>
     LOGMELNK ThreadFields GetThreadFields();
+
+    /// <summary>
+    /// Sets handler called after CRITICAL records are written and all pending output is flushed.
+    /// Empty handler keeps CRITICAL records as ordinary log records.
+    /// </summary>
+    LOGMELNK void SetFatalHandler(TFatalHandler handler);
+
+    /// <summary>
+    /// Clears fatal handler. CRITICAL records will not trigger termination policy.
+    /// </summary>
+    LOGMELNK void ResetFatalHandler();
+
+    /// <summary>
+    /// Returns currently configured fatal handler. Empty handler means no fatal policy.
+    /// </summary>
+    LOGMELNK TFatalHandler GetFatalHandler();
+
+    /// <summary>
+    /// Flushes all existing channels and shared output managers without deleting channel topology.
+    /// </summary>
+    LOGMELNK void FlushAll();
 
     /// <summary>
     /// Sets one structured field in current thread context. Empty field name is ignored.
@@ -767,6 +793,7 @@ namespace Logme
     void ControlHandler(int socket);
 
     void DoAutodelete(bool force);
+    void HandleFatal();
     void FreeControlSsl();
 
   public:

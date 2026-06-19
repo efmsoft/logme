@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #ifndef __cplusplus
 #include <Logme/LogmeC.h>
 #else
@@ -8,8 +10,9 @@
 #include <Logme/AnsiColorEscape.h>
 #include <Logme/ArgumentList.h>
 #include <Logme/Channel.h>
-#include <Logme/Convert.h>
+#include <Logme/Check.h>
 #include <Logme/ControlPolicy.h>
+#include <Logme/Convert.h>
 #include <Logme/EnvironmentControl.h>
 #include <Logme/Logger.h>
 #include <Logme/ObfString.h>
@@ -17,12 +20,11 @@
 #include <Logme/Stream.h>
 #include <Logme/Template.h>
 #include <Logme/ThreadChannel.h>
+#include <Logme/ThreadField.h>
 #include <Logme/ThreadName.h>
 #include <Logme/ThreadOverride.h>
-#include <Logme/ThreadField.h>
 #include <Logme/ThreadSubsystem.h>
 #include <Logme/TracePoint.h>
-#include <utility>
 
 // Performs simple encoding conversion. If you need reliable, high-quality conversion in all cases, 
 // use https://github.com/efmsoft/utf8 and the functions utf8::AnsiToUtf8 / WstringToUtf8
@@ -1385,6 +1387,199 @@
   #define fLogmeC_TPt(...)
   #define fLogmeTPt(...)
 #endif
+
+// Check and glog-style rate macros
+
+#if LOGME_ACTIVE
+
+  #define LOGME_CHECK_BINARY(checkName, operation, left, right) \
+    if (auto LOGME_JOIN(_logme_check_result_, __LINE__) = Logme::Detail::MakeCheckResult( \
+      (left) \
+      , (right) \
+      , #left \
+      , #right \
+      , #checkName \
+      , #operation \
+      , [](const auto& _logme_left_, const auto& _logme_right_) \
+      { \
+        return _logme_left_ operation _logme_right_; \
+      }); LOGME_JOIN(_logme_check_result_, __LINE__).Ok) \
+    { \
+    } \
+    else \
+      LogmeC() << LOGME_JOIN(_logme_check_result_, __LINE__).Message << ". "
+
+  /// <summary>
+  /// Writes CRITICAL check failure message when condition is false. Fatal handler policy is applied by LogmeC.
+  /// </summary>
+  #define LogmeCheck(condition) \
+    if (condition) \
+    { \
+    } \
+    else \
+      LogmeC() << "CHECK failed: " << #condition << ". "
+
+  /// <summary>Writes CRITICAL check failure when left == right is false.</summary>
+  #define LogmeCheckEq(left, right) \
+    LOGME_CHECK_BINARY(LogmeCheckEq, ==, left, right)
+
+  /// <summary>Writes CRITICAL check failure when left != right is false.</summary>
+  #define LogmeCheckNe(left, right) \
+    LOGME_CHECK_BINARY(LogmeCheckNe, !=, left, right)
+
+  /// <summary>Writes CRITICAL check failure when left < right is false.</summary>
+  #define LogmeCheckLt(left, right) \
+    LOGME_CHECK_BINARY(LogmeCheckLt, <, left, right)
+
+  /// <summary>Writes CRITICAL check failure when left <= right is false.</summary>
+  #define LogmeCheckLe(left, right) \
+    LOGME_CHECK_BINARY(LogmeCheckLe, <=, left, right)
+
+  /// <summary>Writes CRITICAL check failure when left > right is false.</summary>
+  #define LogmeCheckGt(left, right) \
+    LOGME_CHECK_BINARY(LogmeCheckGt, >, left, right)
+
+  /// <summary>Writes CRITICAL check failure when left >= right is false.</summary>
+  #define LogmeCheckGe(left, right) \
+    LOGME_CHECK_BINARY(LogmeCheckGe, >=, left, right)
+
+  /// <summary>
+  /// Returns pointer after logging CRITICAL check failure when pointer is null.
+  /// Fatal handler policy is applied by LogmeC.
+  /// </summary>
+  #define LogmeCheckNotNull(pointer) \
+    ([&]() \
+    { \
+      auto _logme_pointer_ = (pointer); \
+      if (_logme_pointer_ == nullptr) \
+        LogmeC("CHECK_NOTNULL failed: %s", #pointer); \
+      return _logme_pointer_; \
+    }())
+
+  /// <summary>Writes DEBUG log message with current system error appended.</summary>
+  #define LogmeD_P() \
+    if (std::string LOGME_JOIN(_logme_error_, __LINE__) = Logme::Detail::CaptureSystemErrorText(); false) \
+    { \
+    } \
+    else \
+      LogmeD() << "system error: " << LOGME_JOIN(_logme_error_, __LINE__) << ". "
+
+  /// <summary>Writes INFO log message with current system error appended.</summary>
+  #define LogmeI_P() \
+    if (std::string LOGME_JOIN(_logme_error_, __LINE__) = Logme::Detail::CaptureSystemErrorText(); false) \
+    { \
+    } \
+    else \
+      LogmeI() << "system error: " << LOGME_JOIN(_logme_error_, __LINE__) << ". "
+
+  /// <summary>Writes WARN log message with current system error appended.</summary>
+  #define LogmeW_P() \
+    if (std::string LOGME_JOIN(_logme_error_, __LINE__) = Logme::Detail::CaptureSystemErrorText(); false) \
+    { \
+    } \
+    else \
+      LogmeW() << "system error: " << LOGME_JOIN(_logme_error_, __LINE__) << ". "
+
+  /// <summary>Writes ERROR log message with current system error appended.</summary>
+  #define LogmeE_P() \
+    if (std::string LOGME_JOIN(_logme_error_, __LINE__) = Logme::Detail::CaptureSystemErrorText(); false) \
+    { \
+    } \
+    else \
+      LogmeE() << "system error: " << LOGME_JOIN(_logme_error_, __LINE__) << ". "
+
+  /// <summary>Writes CRITICAL log message with current system error appended.</summary>
+  #define LogmeC_P() \
+    if (std::string LOGME_JOIN(_logme_error_, __LINE__) = Logme::Detail::CaptureSystemErrorText(); false) \
+    { \
+    } \
+    else \
+      LogmeC() << "system error: " << LOGME_JOIN(_logme_error_, __LINE__) << ". "
+
+  /// <summary>
+  /// Writes CRITICAL check failure with current system error when condition is false.
+  /// Fatal handler policy is applied by LogmeC.
+  /// </summary>
+  #define LogmePCheck(condition) \
+    if (condition) \
+    { \
+    } \
+    else if (std::string LOGME_JOIN(_logme_error_, __LINE__) = Logme::Detail::CaptureSystemErrorText(); false) \
+    { \
+    } \
+    else \
+      LogmeC() << "PCHECK failed: " << #condition << ": " << LOGME_JOIN(_logme_error_, __LINE__) << ". "
+
+  #define LogmeD_FirstN(count, ...) \
+    if (static Logme::Detail::FirstNState LOGME_JOIN(_logme_first_n_, __LINE__); LOGME_JOIN(_logme_first_n_, __LINE__).ShouldLog(count)) \
+      LogmeD(__VA_ARGS__)
+
+  #define LogmeI_FirstN(count, ...) \
+    if (static Logme::Detail::FirstNState LOGME_JOIN(_logme_first_n_, __LINE__); LOGME_JOIN(_logme_first_n_, __LINE__).ShouldLog(count)) \
+      LogmeI(__VA_ARGS__)
+
+  #define LogmeW_FirstN(count, ...) \
+    if (static Logme::Detail::FirstNState LOGME_JOIN(_logme_first_n_, __LINE__); LOGME_JOIN(_logme_first_n_, __LINE__).ShouldLog(count)) \
+      LogmeW(__VA_ARGS__)
+
+  #define LogmeE_FirstN(count, ...) \
+    if (static Logme::Detail::FirstNState LOGME_JOIN(_logme_first_n_, __LINE__); LOGME_JOIN(_logme_first_n_, __LINE__).ShouldLog(count)) \
+      LogmeE(__VA_ARGS__)
+
+  #define LogmeC_FirstN(count, ...) \
+    if (static Logme::Detail::FirstNState LOGME_JOIN(_logme_first_n_, __LINE__); LOGME_JOIN(_logme_first_n_, __LINE__).ShouldLog(count)) \
+      LogmeC(__VA_ARGS__)
+
+  #define LogmeD_EveryN(count, ...) \
+    if (static Logme::Detail::EveryNState LOGME_JOIN(_logme_every_n_, __LINE__); LOGME_JOIN(_logme_every_n_, __LINE__).ShouldLog(count)) \
+      LogmeD(__VA_ARGS__)
+
+  #define LogmeI_EveryN(count, ...) \
+    if (static Logme::Detail::EveryNState LOGME_JOIN(_logme_every_n_, __LINE__); LOGME_JOIN(_logme_every_n_, __LINE__).ShouldLog(count)) \
+      LogmeI(__VA_ARGS__)
+
+  #define LogmeW_EveryN(count, ...) \
+    if (static Logme::Detail::EveryNState LOGME_JOIN(_logme_every_n_, __LINE__); LOGME_JOIN(_logme_every_n_, __LINE__).ShouldLog(count)) \
+      LogmeW(__VA_ARGS__)
+
+  #define LogmeE_EveryN(count, ...) \
+    if (static Logme::Detail::EveryNState LOGME_JOIN(_logme_every_n_, __LINE__); LOGME_JOIN(_logme_every_n_, __LINE__).ShouldLog(count)) \
+      LogmeE(__VA_ARGS__)
+
+  #define LogmeC_EveryN(count, ...) \
+    if (static Logme::Detail::EveryNState LOGME_JOIN(_logme_every_n_, __LINE__); LOGME_JOIN(_logme_every_n_, __LINE__).ShouldLog(count)) \
+      LogmeC(__VA_ARGS__)
+
+#else
+
+  #define LOGME_CHECK_BINARY(checkName, operation, left, right) if (true) { } else std::stringstream()
+  #define LogmeCheck(condition) if (true) { } else std::stringstream()
+  #define LogmeCheckEq(left, right) if (true) { } else std::stringstream()
+  #define LogmeCheckNe(left, right) if (true) { } else std::stringstream()
+  #define LogmeCheckLt(left, right) if (true) { } else std::stringstream()
+  #define LogmeCheckLe(left, right) if (true) { } else std::stringstream()
+  #define LogmeCheckGt(left, right) if (true) { } else std::stringstream()
+  #define LogmeCheckGe(left, right) if (true) { } else std::stringstream()
+  #define LogmeCheckNotNull(pointer) (pointer)
+  #define LogmeD_P() if (true) { } else std::stringstream()
+  #define LogmeI_P() if (true) { } else std::stringstream()
+  #define LogmeW_P() if (true) { } else std::stringstream()
+  #define LogmeE_P() if (true) { } else std::stringstream()
+  #define LogmeC_P() if (true) { } else std::stringstream()
+  #define LogmePCheck(condition) if (true) { } else std::stringstream()
+  #define LogmeD_FirstN(count, ...) if (true) { } else std::stringstream()
+  #define LogmeI_FirstN(count, ...) if (true) { } else std::stringstream()
+  #define LogmeW_FirstN(count, ...) if (true) { } else std::stringstream()
+  #define LogmeE_FirstN(count, ...) if (true) { } else std::stringstream()
+  #define LogmeC_FirstN(count, ...) if (true) { } else std::stringstream()
+  #define LogmeD_EveryN(count, ...) if (true) { } else std::stringstream()
+  #define LogmeI_EveryN(count, ...) if (true) { } else std::stringstream()
+  #define LogmeW_EveryN(count, ...) if (true) { } else std::stringstream()
+  #define LogmeE_EveryN(count, ...) if (true) { } else std::stringstream()
+  #define LogmeC_EveryN(count, ...) if (true) { } else std::stringstream()
+
+#endif
+
 
 #if defined(__clang__)
   #pragma clang diagnostic pop

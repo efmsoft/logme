@@ -171,6 +171,8 @@ LOGMEC_API void LogmeFlushChannel(
   const char* channel
 );
 
+LOGMEC_API void LogmeFlushAll(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -527,3 +527,10 @@ extern "C" void LogmeFlushChannel(
       backend->Flush();
   }
 }
+
+
+extern "C" void LogmeFlushAll(void)
+{
+  if (Logme::Instance)
+    Logme::Instance->FlushAll();
+}

@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <functional>
 #include <stdarg.h>
+#include <utility>
 
 #include <Logme/Backend/ConsoleBackend.h>
 #include <Logme/Backend/DebugBackend.h>
@@ -42,6 +43,7 @@ Logger::Logger()
   , BlockReportedSubsystems(true)
   , IDGenerator(1)
   , CompressionFactory(std::bind(&Logger::TestFileInUse, this, std::placeholders::_1))
+  , FatalHandling(false)
   , ControlSocket(-1)
   , ControlCfg{}
   , ControlServerPolicy(ControlPolicy::Full())
@@ -264,6 +266,84 @@ Override Logger::GetThreadOverride()
     return CurrentThreadOverride;
 
   return Override();
+}
+
+void Logger::SetFatalHandler(TFatalHandler handler)
+{
+  std::lock_guard guard(DataLock);
+  FatalHandler = std::move(handler);
+}
+
+void Logger::ResetFatalHandler()
+{
+  SetFatalHandler(TFatalHandler());
+}
+
+TFatalHandler Logger::GetFatalHandler()
+{
+  std::lock_guard guard(DataLock);
+  return FatalHandler;
+}
+
+void Logger::FlushAll()
+{
+  ChannelArray channels;
+
+  {
+    std::lock_guard guard(DataLock);
+
+    if (Default)
+      channels.push_back(Default);
+
+    channels.reserve(channels.size() + Channels.size() + ToDelete.size());
+
+    for (const auto& [name, channel] : Channels)
+    {
+      if (channel)
+        channels.push_back(channel);
+    }
+
+    for (const auto& channel : ToDelete)
+    {
+      if (channel)
+        channels.push_back(channel);
+    }
+  }
+
+  for (auto& channel : channels)
+    channel->Flush();
+
+  ConsoleFactory.Flush();
+  DebugFactory.Flush();
+  WindowsEventLogFactory.Flush();
+}
+
+void Logger::HandleFatal()
+{
+  TFatalHandler handler = GetFatalHandler();
+  if (!handler)
+    return;
+
+  if (FatalHandling.exchange(true))
+    return;
+
+  struct FatalHandlingGuard
+  {
+    std::atomic<bool>& Flag;
+
+    explicit FatalHandlingGuard(std::atomic<bool>& flag)
+      : Flag(flag)
+    {
+    }
+
+    ~FatalHandlingGuard()
+    {
+      Flag.store(false);
+    }
+  } guard(FatalHandling);
+
+  FlushAll();
+  handler();
 }
 
 void Logger::SetThreadSubsystem(const SID* sid)
@@ -1248,5 +1328,8 @@ void Logger::DoLog(Context& context, const char* format, va_list args)
 
     if (context.Output)
       *context.Output = buffer;
+
+    if (context.ErrorLevel >= Level::LEVEL_CRITICAL)
+      HandleFatal();
   }
 }

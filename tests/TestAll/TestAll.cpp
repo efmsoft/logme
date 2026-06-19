@@ -271,6 +271,7 @@ struct FlushTestBackend : public Logme::Backend
 
   void Display(Logme::Context& context) override
   {
+    (void)context;
     DisplayCount.fetch_add(1, std::memory_order_relaxed);
   }
 
@@ -349,6 +350,7 @@ static void TestCheckAndCompatMacros()
   assert(LogmeCheckNotNull(getPointer()) == &value);
   assert(pointerCalls == 1);
   assert(backend->DisplayCount.load(std::memory_order_relaxed) == 2);
+  (void)getPointer;
 
   int nullPointerCalls = 0;
   auto getNullPointer = [&]() -> int*
@@ -502,6 +504,7 @@ static void TestFatalHandler()
 
   Instance->ResetFatalHandler();
   int flushCount = backend->FlushCount.load(std::memory_order_relaxed);
+  (void)flushCount;
 
   LogmeC(FATAL_TEST_CH, "critical without handler");
 

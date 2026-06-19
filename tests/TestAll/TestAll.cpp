@@ -463,6 +463,7 @@ static void TestCheckAndCompatMacros()
 #endif
   expectedCount += 2;
   assert(backend->DisplayCount.load(std::memory_order_relaxed) == expectedCount);
+  (void)expectedCount;
 
   int compatFirstNExpensive = 0;
   for (int i = 0; i < 3; ++i)

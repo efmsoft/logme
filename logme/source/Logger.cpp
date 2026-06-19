@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cassert>
 #include <filesystem>
+#include <cstdio>
 #include <functional>
 #include <stdarg.h>
 #include <utility>
@@ -15,6 +16,7 @@
 
 #include "Control/ControlDiscovery.h"
 #include "StringHelpers.h"
+
 
 #if defined(_MSC_VER)
 #pragma warning(disable : 6255)
@@ -44,6 +46,8 @@ Logger::Logger()
   , IDGenerator(1)
   , CompressionFactory(std::bind(&Logger::TestFileInUse, this, std::placeholders::_1))
   , FatalHandling(false)
+  , CrashFileHandle(-1)
+  , CrashOutputMask(CRASH_OUTPUT_STDERR)
   , ControlSocket(-1)
   , ControlCfg{}
   , ControlServerPolicy(ControlPolicy::Full())
@@ -67,6 +71,7 @@ Logger::~Logger()
   Factory.SetStopping();
   StopControlServer();
   FreeControlSsl();
+  CloseCrashLog();
   DeleteAllChannels();
   CompressionFactory.SetStopping();
 }

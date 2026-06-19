@@ -3,6 +3,8 @@
 
 #include <atomic>
 #include <assert.h>
+#include <cstdlib>
+#include <fstream>
 #include <string.h>
 #include <thread>
 
@@ -461,7 +463,6 @@ static void TestCheckAndCompatMacros()
 #endif
   expectedCount += 2;
   assert(backend->DisplayCount.load(std::memory_order_relaxed) == expectedCount);
-   (void)expectedCount;
 
   int compatFirstNExpensive = 0;
   for (int i = 0; i < 3; ++i)
@@ -476,6 +477,58 @@ static void TestCheckAndCompatMacros()
   assert(compatEveryNExpensive == 2);
   expectedCount += 2;
   assert(backend->DisplayCount.load(std::memory_order_relaxed) == expectedCount);
+}
+
+static std::string ReadTextFile(const char* file)
+{
+  std::ifstream stream(file, std::ios::binary);
+  return std::string(
+    std::istreambuf_iterator<char>(stream),
+    std::istreambuf_iterator<char>()
+  );
+}
+
+static void TestRequire(bool condition)
+{
+  assert(condition);
+  if (!condition)
+    std::abort();
+}
+
+static void TestCrashLogging()
+{
+  using namespace Logme;
+
+  const char* file = "TestCrashLogging.log";
+  remove(file);
+
+  std::uint32_t oldMask = Instance->GetCrashOutputMask();
+  Instance->CloseCrashLog();
+  Instance->SetCrashOutputMask(CRASH_OUTPUT_NONE);
+
+  LogmeCrash("suppressed crash message %d", 1);
+  TestRequire(ReadTextFile(file).empty());
+
+  TestRequire(Instance->OpenCrashLog(file, false));
+  Instance->SetCrashOutputMask(CRASH_OUTPUT_FILE);
+
+  LogmeCrashRaw("raw crash message\n");
+  LogmeCrash("formatted crash message %d", 42);
+  LogmeCrashTo(CRASH_OUTPUT_FILE, "direct crash message %s", "file");
+  LogmeCrashRawTo(CRASH_OUTPUT_FILE, "raw direct crash message\n");
+  LogmeCrashToFile("file shortcut crash message %d", 7);
+  LogmeCrashRawToFile("raw file shortcut crash message\n");
+
+  Instance->CloseCrashLog();
+  Instance->SetCrashOutputMask(oldMask);
+
+  std::string content = ReadTextFile(file);
+  TestRequire(content.find("raw crash message") != std::string::npos);
+  TestRequire(content.find("formatted crash message 42") != std::string::npos);
+  TestRequire(content.find("direct crash message file") != std::string::npos);
+  TestRequire(content.find("raw direct crash message") != std::string::npos);
+  TestRequire(content.find("file shortcut crash message 7") != std::string::npos);
+  TestRequire(content.find("raw file shortcut crash message") != std::string::npos);
 }
 
 static void TestFatalHandler()
@@ -534,6 +587,7 @@ int main()
   CppOutput();
   FormattedOutput();
   TestFatalHandler();
+  TestCrashLogging();
   TestCheckAndCompatMacros();
 
   return 0;

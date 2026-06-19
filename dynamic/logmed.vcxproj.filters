@@ -94,6 +94,9 @@
     <Filter Include="Check.cpp">
       <UniqueIdentifier>{2517816e-7e2b-54de-8aca-c1fbe397cdfa}</UniqueIdentifier>
     </Filter>
+    <Filter Include="CrashLog.cpp">
+      <UniqueIdentifier>{3d405c44-9fb1-544e-9763-209e8bb9b656}</UniqueIdentifier>
+    </Filter>
 </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\logme\source\Backend\Backend.cpp">
@@ -357,6 +360,9 @@
     <ClCompile Include="..\logme\source\Check.cpp">
       <Filter>Check.cpp</Filter>
     </ClCompile>
+    <ClCompile Include="..\logme\source\CrashLog.cpp">
+      <Filter>CrashLog.cpp</Filter>
+    </ClCompile>
 </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\logme\source\Time\utils.h">
@@ -607,6 +613,9 @@
       <Filter>..\logme\include\Logme</Filter>
     </ClInclude>
     <ClInclude Include="..\logme\include\Logme\GlogCompat.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\CrashLog.h">
       <Filter>..\logme\include\Logme</Filter>
     </ClInclude>
 </ItemGroup>

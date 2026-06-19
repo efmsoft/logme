@@ -1,7 +1,5 @@
 #pragma once
 
-#include <utility>
-
 #ifndef __cplusplus
 #include <Logme/LogmeC.h>
 #else
@@ -11,8 +9,9 @@
 #include <Logme/ArgumentList.h>
 #include <Logme/Channel.h>
 #include <Logme/Check.h>
-#include <Logme/ControlPolicy.h>
 #include <Logme/Convert.h>
+#include <Logme/ControlPolicy.h>
+#include <Logme/CrashLog.h>
 #include <Logme/EnvironmentControl.h>
 #include <Logme/Logger.h>
 #include <Logme/ObfString.h>
@@ -20,11 +19,12 @@
 #include <Logme/Stream.h>
 #include <Logme/Template.h>
 #include <Logme/ThreadChannel.h>
-#include <Logme/ThreadField.h>
 #include <Logme/ThreadName.h>
 #include <Logme/ThreadOverride.h>
+#include <Logme/ThreadField.h>
 #include <Logme/ThreadSubsystem.h>
 #include <Logme/TracePoint.h>
+#include <utility>
 
 // Performs simple encoding conversion. If you need reliable, high-quality conversion in all cases, 
 // use https://github.com/efmsoft/utf8 and the functions utf8::AnsiToUtf8 / WstringToUtf8
@@ -111,6 +111,67 @@
 // Public logging macros accept the same optional argument set:
 //   [channel/id or ChannelPtr], [Override], [SID], format, args...
 // Override may appear before or after channel where supported by Logger overloads.
+
+/// <summary>
+/// Writes a low-level crash message using C printf-style formatting into prepared crash outputs.
+/// This bypasses channels, backends, regular formatting and runtime-control.
+/// </summary>
+#define LogmeCrash(...) \
+  Logme::Instance->CrashLog(__VA_ARGS__)
+
+/// <summary>
+/// Writes a low-level crash message using C printf-style formatting into selected crash outputs.
+/// </summary>
+#define LogmeCrashTo(mask, ...) \
+  Logme::Instance->CrashLog(mask, __VA_ARGS__)
+
+/// <summary>
+/// Writes a low-level crash message using C printf-style formatting into the prepared crash file only.
+/// </summary>
+#define LogmeCrashToFile(...) \
+  Logme::Instance->CrashLog(Logme::CRASH_OUTPUT_FILE, __VA_ARGS__)
+
+/// <summary>
+/// Writes a low-level crash message using C printf-style formatting into stderr only.
+/// </summary>
+#define LogmeCrashToStderr(...) \
+  Logme::Instance->CrashLog(Logme::CRASH_OUTPUT_STDERR, __VA_ARGS__)
+
+/// <summary>
+/// Writes a low-level crash message using C printf-style formatting into stdout only.
+/// </summary>
+#define LogmeCrashToStdout(...) \
+  Logme::Instance->CrashLog(Logme::CRASH_OUTPUT_STDOUT, __VA_ARGS__)
+
+/// <summary>
+/// Writes a string literal to prepared crash outputs without formatting.
+/// </summary>
+#define LogmeCrashRaw(text) \
+  Logme::Instance->CrashWriteLiteral(text)
+
+/// <summary>
+/// Writes a string literal to selected crash outputs without formatting.
+/// </summary>
+#define LogmeCrashRawTo(mask, text) \
+  Logme::Instance->CrashWriteLiteral(mask, text)
+
+/// <summary>
+/// Writes a string literal to the prepared crash file only without formatting.
+/// </summary>
+#define LogmeCrashRawToFile(text) \
+  Logme::Instance->CrashWriteLiteral(Logme::CRASH_OUTPUT_FILE, text)
+
+/// <summary>
+/// Writes a string literal to stderr only without formatting.
+/// </summary>
+#define LogmeCrashRawToStderr(text) \
+  Logme::Instance->CrashWriteLiteral(Logme::CRASH_OUTPUT_STDERR, text)
+
+/// <summary>
+/// Writes a string literal to stdout only without formatting.
+/// </summary>
+#define LogmeCrashRawToStdout(text) \
+  Logme::Instance->CrashWriteLiteral(Logme::CRASH_OUTPUT_STDOUT, text)
 
 /// <summary>
 /// Writes DEBUG log message (printf-style when called with a format string) or returns a stream (C++ style of output).

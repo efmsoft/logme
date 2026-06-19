@@ -332,6 +332,9 @@
     <ClInclude Include="source\File\FileTimeRotationPolicy.h">
       <Filter>source\File</Filter>
     </ClInclude>
+    <ClInclude Include="include\Logme\CrashLog.h">
+      <Filter>include\Logme</Filter>
+    </ClInclude>
 </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Time\datetime_common.cpp">
@@ -642,6 +645,9 @@
     </ClCompile>
     <ClCompile Include="source\File\RetentionCleaner.cpp">
       <Filter>source\File</Filter>
+    </ClCompile>
+    <ClCompile Include="source\CrashLog.cpp">
+      <Filter>source</Filter>
     </ClCompile>
 </ItemGroup>
 </Project>

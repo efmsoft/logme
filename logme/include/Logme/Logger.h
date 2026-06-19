@@ -23,6 +23,7 @@
 
 #include <Logme/Channel.h>
 #include <Logme/ControlPolicy.h>
+#include <Logme/CrashLog.h>
 #include <Logme/Console/ConsoleManagerFactory.h>
 #include <Logme/CritSection.h>
 #include <Logme/Debug/DebugManagerFactory.h>
@@ -85,6 +86,8 @@ namespace Logme
 
     TFatalHandler FatalHandler;
     std::atomic<bool> FatalHandling;
+    std::atomic<std::intptr_t> CrashFileHandle;
+    std::atomic<std::uint32_t> CrashOutputMask;
 
     int ControlSocket;
     ControlConfig ControlCfg;
@@ -230,6 +233,67 @@ namespace Logme
     /// Flushes all existing channels and shared output managers without deleting channel topology.
     /// </summary>
     LOGMELNK void FlushAll();
+
+    /// <summary>
+    /// Opens or replaces the low-level crash log file used by crash logging macros.
+    /// The method is intended to be called from normal application code before a crash.
+    /// </summary>
+    LOGMELNK bool OpenCrashLog(const char* file, bool append = true);
+
+    /// <summary>
+    /// Closes the low-level crash log file. Do not call this from a crash handler.
+    /// </summary>
+    LOGMELNK void CloseCrashLog();
+
+    /// <summary>
+    /// Sets low-level crash output targets. Use CrashOutput flags.
+    /// </summary>
+    LOGMELNK void SetCrashOutputMask(std::uint32_t mask);
+
+    /// <summary>
+    /// Returns currently configured low-level crash output targets.
+    /// </summary>
+    LOGMELNK std::uint32_t GetCrashOutputMask() const;
+
+    /// <summary>
+    /// Writes already prepared bytes to configured low-level crash output targets.
+    /// This method does not use channels, backends, formatting, locks or heap allocations.
+    /// </summary>
+    LOGMELNK void CrashWrite(const char* data, size_t size) noexcept;
+
+    /// <summary>
+    /// Writes already prepared bytes to selected low-level crash output targets.
+    /// This method does not use channels, backends, formatting, locks or heap allocations.
+    /// </summary>
+    LOGMELNK void CrashWrite(std::uint32_t mask, const char* data, size_t size) noexcept;
+
+    /// <summary>
+    /// Writes a string literal to configured low-level crash output targets.
+    /// </summary>
+    template <size_t N> void CrashWriteLiteral(const char (&data)[N]) noexcept
+    {
+      CrashWrite(data, N - 1);
+    }
+
+    /// <summary>
+    /// Writes a string literal to selected low-level crash output targets.
+    /// </summary>
+    template <size_t N> void CrashWriteLiteral(std::uint32_t mask, const char (&data)[N]) noexcept
+    {
+      CrashWrite(mask, data, N - 1);
+    }
+
+    /// <summary>
+    /// Formats a crash message using C printf-style formatting into a fixed stack buffer
+    /// and writes it to configured low-level crash output targets.
+    /// </summary>
+    LOGMELNK void CrashLog(const char* format, ...) noexcept;
+
+    /// <summary>
+    /// Formats a crash message using C printf-style formatting into a fixed stack buffer
+    /// and writes it to selected low-level crash output targets.
+    /// </summary>
+    LOGMELNK void CrashLog(std::uint32_t mask, const char* format, ...) noexcept;
 
     /// <summary>
     /// Sets one structured field in current thread context. Empty field name is ignored.

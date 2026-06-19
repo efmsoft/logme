@@ -23,6 +23,7 @@ It is designed for both high-load servers and simple applications, providing sel
 - 💬 **Support / feedback:** [GitHub issues](https://github.com/efmsoft/logme/issues) and [discussions](https://github.com/efmsoft/logme/discussions) are welcome.
 - 🧭 **Feature discovery map:** [docs/feature_discovery.md](docs/feature_discovery.md) maps common logging-library terms such as null sink, rate limiting, duplicate suppression, rotation, and retention to the corresponding logme mechanisms.
 - 🗂️ **File lifecycle policies:** [docs/file_backend_lifecycle.md](docs/file_backend_lifecycle.md) describes file rotation, archive naming, retention, and gzip compression.
+- 🧯 **Crash logging path:** [docs/crash_logging.md](docs/crash_logging.md) describes `LogmeCrash`, `LogmeCrashRaw`, prepared crash files, and stderr/stdout emergency output.
 
 ---
 
@@ -67,7 +68,8 @@ See the wiki pages [Performance](https://github.com/efmsoft/logme/wiki/Performan
 - **Recent-history capture**: keep the last N formatted records in memory with `RingBufferBackend` and dump them only when needed.
 - **File lifecycle policies**: size-based and time-based rotation, archive naming, retention, startup cleanup, and optional gzip compression for completed archives.
 - **Log file obfuscation**: optional obfuscation of log data written to files.
-- **Multiple APIs**: C-style macros, C++ stream-style logging, and optional `format`-based formatting.
+- **Crash logging path**: low-level `LogmeCrash` / `LogmeCrashRaw` macros for emergency output to a prepared crash file, stderr, or stdout without using the normal channel/backend pipeline.
+- **Multiple APIs**: C-style macros, C++ stream-style logging, optional `format`-based formatting, glog compatibility macros, and crash-specific macros.
 - **Cross-platform**: Windows, Linux and macOS support.
 
 ---
@@ -94,6 +96,28 @@ int main()
 This produces colored console output similar to the following:
 
 ![Output result](docs/assets/base.png)
+
+---
+
+## Crash logging path
+
+Crash logging is intentionally separate from normal logging. Ordinary `LogmeI` / `LogmeE` / `LogmeC` records go through channels, backends, formatting, runtime control, and optional asynchronous output. That is the right path for normal application code and controlled fatal conditions.
+
+For crash or signal-handler style diagnostics, logme provides a lower-level emergency path:
+
+```cpp
+Logme::Instance->OpenCrashLog("crash.log");
+Logme::Instance->SetCrashOutputMask(Logme::CRASH_OUTPUT_FILE | Logme::CRASH_OUTPUT_STDERR);
+
+LogmeCrash("fatal error: code=%d", code);
+LogmeCrashRaw("SIGABRT received\n");
+LogmeCrashToFile("file-only crash marker");
+LogmeCrashRawToStderr("stderr-only crash marker\n");
+```
+
+`LogmeCrashRaw` writes string literals without formatting. `LogmeCrash` uses C `printf`-style formatting into a fixed buffer. Neither path uses channels, backends, rotation, retention, `std::format`, C++ streams, or the async queue. The crash file must be opened before the crash; `ToFile` macros do not try to open files during an emergency.
+
+See [Crash logging](docs/crash_logging.md) for the full contract and limitations.
 
 ---
 

@@ -24,6 +24,7 @@ This page maps common logging-library terms to the actual logme mechanisms and s
 | Structured output | `OutputFlags::Format`, text/JSON/XML conversion paths, structured-output example | `logme/include/Logme/OutputFlags.h`, `logme/source/OutputFlags.cpp`, `examples/StructuredOutput`, `tools/logmefmt` | logme can emit or convert structured log records depending on configuration and build options. |
 | Thread structured fields | `ThreadFields`, `LogmeThreadFields`, `Logger::SetThreadField()` | `logme/include/Logme/ThreadField.h`, `logme/source/ThreadField.cpp`, `logme/source/Context.cpp`, `examples/StructuredOutput`, `tests/ThreadField` | Thread-local custom fields are emitted as JSON/XML properties and are ignored by plain text output. |
 | Trace points / dormant diagnostics | Trace point macros and runtime trace control | `logme/include/Logme/TracePoint.h`, `logme/source/TracePoint.cpp`, `logme/source/Control/Command/CmdTrace.cpp`, `examples/TracePoints` | Disabled trace points keep lightweight counters and can be enabled dynamically. |
+| Crash logging / signal-handler marker | Separate emergency path outside channels and backends | `logme/include/Logme/CrashLog.h`, `logme/source/CrashLog.cpp`, `logme/include/Logme/Logme.h` | `LogmeCrash` and `LogmeCrashRaw` write directly to a prepared crash file, stderr, or stdout without using normal routing, formatting, rotation, retention, or async queues. |
 
 ## Backend inventory
 
@@ -47,6 +48,7 @@ Some features are intentionally not modeled as separate backends or sink filters
 - A null backend is represented by no backends on the channel plus early checks.
 - Backend-level level filtering is not the normal routing model; logme filters at the channel level to preserve the fast path. Advanced cases can usually be modeled with channels and links, but first-class per-backend filtering is not currently available.
 - Duplicate suppression and rate limiting are call-site features, not backend filters.
+- Controlled fatal logging (`LogmeC`, checks, fatal handler, `FlushAll()`) uses the normal logging pipeline. Crash logging (`LogmeCrash`, `LogmeCrashRaw`) is a separate emergency path and intentionally bypasses channels and backends.
 - File rotation, archive naming, retention, and optional compression are part of `FileBackend` lifecycle policy rather than separate sink types.
 
 

@@ -1,6 +1,8 @@
 ## 2.4.18
 
 ### Added
+- Added a separate crash logging path with `LogmeCrash`, `LogmeCrashToFile`, `LogmeCrashToStderr`, `LogmeCrashToStdout`, `LogmeCrashRaw`, `LogmeCrashRawToFile`, `LogmeCrashRawToStderr`, and `LogmeCrashRawToStdout` for emergency output outside the normal channel/backend pipeline.
+- Added `Logme/CrashLog.h`, `CrashOutput` flags, `Logger::OpenCrashLog()`, `Logger::CloseCrashLog()`, `Logger::SetCrashOutputMask()`, `Logger::CrashWrite()`, and `Logger::CrashLog()` for preparing and writing low-level crash output to a file, stderr, or stdout.
 - Added `FileBackend` archive lifecycle policies: size-limit rotation with `on-size-limit: "rotate"`, explicit `archive` patterns, `{index}` archive parts, `{date}` / `{datetime}` archive names, and collision-safe archive-name selection.
 - Added time rotation policies for `FileBackend`: `hourly`, `daily`, `weekly`, `monthly`, plus `none` / `off` / `disabled`. The existing `daily` configuration path remains compatible.
 - Added archive retention policies for completed file archives: `retention.max-files`, `retention.max-age`, `retention.max-total-size`, and `retention.clean-on-start`. The legacy `max-parts` option remains supported as an alias for `retention.max-files`.
@@ -11,6 +13,7 @@
 - Added dedicated tests for file archive policy, file backend configuration parsing, file backend integration scenarios, lifecycle edge cases, failure handling, and hot-path rotation behavior.
 
 ### Improved
+- Documented the crash logging contract, including the difference between normal logging, controlled fatal logging, formatted crash logging, and raw crash markers.
 - Unified the file-completion path used by size rotation and time rotation, so archive naming, retention, compression, and counters are handled consistently.
 - Kept the normal file write hot path focused on append and cheap checks. Archive scanning, regex matching, retention cleanup, and compression submission remain on startup or file-completion paths.
 - Improved `FileBackend` rotation failure behavior: if archive directory creation or active-file rename fails, the backend reopens the active log in append mode and keeps logging when possible instead of risking active-log truncation.

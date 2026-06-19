@@ -359,6 +359,7 @@ static void TestCheckAndCompatMacros()
     return nullptr;
   };
   assert(LogmeCheckNotNull(getNullPointer()) == nullptr);
+  (void)getNullPointer;
   assert(nullPointerCalls == 1);
   assert(backend->DisplayCount.load(std::memory_order_relaxed) == 3);
 

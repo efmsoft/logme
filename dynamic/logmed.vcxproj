@@ -121,6 +121,7 @@
     <ClCompile Include="..\logme\source\File\FileArchivePolicy.cpp" />
     <ClCompile Include="..\logme\source\File\FileTimeRotationPolicy.cpp" />
     <ClCompile Include="..\logme\source\File\RetentionCleaner.cpp" />
+    <ClCompile Include="..\logme\source\Check.cpp" />
 </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\logme\source\Config\Helper.h" />

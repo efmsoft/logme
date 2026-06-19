@@ -91,6 +91,9 @@
     <Filter Include="ThreadField.cpp">
       <UniqueIdentifier>{5ea2e23f-2a6d-54ff-bf3e-0dda948b6d43}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Check.cpp">
+      <UniqueIdentifier>{2517816e-7e2b-54de-8aca-c1fbe397cdfa}</UniqueIdentifier>
+    </Filter>
 </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\logme\source\Backend\Backend.cpp">
@@ -351,6 +354,9 @@
     <ClCompile Include="..\logme\source\File\RetentionCleaner.cpp">
       <Filter>File</Filter>
     </ClCompile>
+    <ClCompile Include="..\logme\source\Check.cpp">
+      <Filter>Check.cpp</Filter>
+    </ClCompile>
 </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\logme\source\Time\utils.h">
@@ -596,6 +602,12 @@
     </ClInclude>
     <ClInclude Include="..\logme\source\File\FileTimeRotationPolicy.h">
       <Filter>File</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\Check.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\GlogCompat.h">
+      <Filter>..\logme\include\Logme</Filter>
     </ClInclude>
 </ItemGroup>
 </Project>

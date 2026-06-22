@@ -15,6 +15,7 @@ namespace Logme
   {
     ChannelPtr PCH;
     std::optional<std::string> PreviousName;
+    bool ForwardTransitionPrinted;
     bool Log;
 
   public:

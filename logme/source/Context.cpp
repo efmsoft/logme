@@ -630,6 +630,8 @@ void Context::InitThreadProcessID(const ChannelPtr& ch, OutputFlags flags)
         std::optional<std::string> trans;
         auto name = ch->GetThreadName(thread, info, &trans, true);
 
+        char* transitionTarget = nullptr;
+
         if (flags.ThreadTransition)
         {
           if (name == nullptr && trans.has_value() == false)
@@ -664,6 +666,7 @@ void Context::InitThreadProcessID(const ChannelPtr& ch, OutputFlags flags)
               strcpy(p, " -> ");
               p += 4;
               remaining -= 4;
+              transitionTarget = p;
             }
           }
         }
@@ -695,6 +698,9 @@ void Context::InitThreadProcessID(const ChannelPtr& ch, OutputFlags flags)
           else
             p += c;
         }
+
+        if (transitionTarget && p > transitionTarget && info.ForwardTransitionPrinted)
+          *info.ForwardTransitionPrinted = true;
       
       } while (false);
     }

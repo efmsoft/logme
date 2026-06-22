@@ -252,6 +252,345 @@ TEST(OutputFlags, ThreadID)
   EXPECT_EQ(Be->Line, str);
 }
 
+void SetTestThreadName(const char* name)
+{
+  Be->Owner->SetThreadName(GetCurrentThreadId(), name, false);
+}
+
+void SetThreadNameOutputFlags(
+  bool processID
+  , bool threadID
+  , bool threadTransition
+  , OutputFormat format = OUTPUT_TEXT
+)
+{
+  OutputFlags flags;
+  flags.Value = 0;
+  flags.ProcessID = processID;
+  flags.ThreadID = threadID;
+  flags.ThreadTransition = threadTransition;
+  flags.Format = format;
+  Be->Owner->SetFlags(flags);
+}
+
+void WriteTestThreadNameMessage(
+  Override* ovr = nullptr
+  , const char* text = "message"
+)
+{
+  ContextCache cache;
+  Context context = LOGME_CONTEXT(cache, Level::LEVEL_INFO, &CHT, &SUBSID);
+  context.Ovr = ovr;
+  context.SetText(text);
+  Be->Owner->Display(context);
+}
+
+void ExpectThreadNameMessage(const std::string& name, size_t index)
+{
+  ASSERT_LT(index, Be->History.size());
+  EXPECT_NE(Be->History[index].find(name + "] message"), std::string::npos)
+    << Be->History[index];
+  EXPECT_EQ(Be->History[index].find(" -> "), std::string::npos)
+    << Be->History[index];
+}
+
+TEST(OutputFlags, ThreadNameDoesNotPrintReturnWithoutForwardTransition)
+{
+  SetThreadNameOutputFlags(false, true, true);
+
+  SetTestThreadName("Name1");
+  Be->Clear();
+
+  {
+    ThreadName threadName(Be->Owner, "Name2");
+  }
+
+  EXPECT_TRUE(Be->History.empty());
+
+  WriteTestThreadNameMessage();
+  ASSERT_EQ(Be->History.size(), 1);
+  ExpectThreadNameMessage("Name1", 0);
+  SetTestThreadName(nullptr);
+}
+
+TEST(OutputFlags, ThreadNamePrintsReturnAfterForwardTransition)
+{
+  SetThreadNameOutputFlags(false, true, true);
+
+  SetTestThreadName("Name1");
+  Be->Clear();
+
+  {
+    ThreadName threadName(Be->Owner, "Name2");
+    WriteTestThreadNameMessage();
+  }
+
+  ASSERT_EQ(Be->History.size(), 2);
+  EXPECT_NE(Be->History[0].find("Name1 -> Name2] message"), std::string::npos);
+  EXPECT_NE(Be->History[1].find("Name2 -> Name1] ."), std::string::npos);
+  SetTestThreadName(nullptr);
+}
+
+TEST(OutputFlags, ThreadNamePrintsReturnForUnnamedThread)
+{
+  SetThreadNameOutputFlags(false, true, true);
+
+  SetTestThreadName(nullptr);
+  Be->Clear();
+
+  {
+    ThreadName threadName(Be->Owner, "Name2");
+    WriteTestThreadNameMessage();
+  }
+
+  ASSERT_EQ(Be->History.size(), 2);
+  EXPECT_NE(Be->History[0].find(" -> Name2] message"), std::string::npos)
+    << Be->History[0];
+  EXPECT_NE(Be->History[1].find("Name2 -> "), std::string::npos)
+    << Be->History[1];
+  EXPECT_NE(Be->History[1].find("] ."), std::string::npos)
+    << Be->History[1];
+}
+
+TEST(OutputFlags, ThreadNameDoesNotPrintReturnWhenTransitionsAreDisabled)
+{
+  SetThreadNameOutputFlags(false, true, false);
+
+  SetTestThreadName("Name1");
+  Be->Clear();
+
+  {
+    ThreadName threadName(Be->Owner, "Name2");
+    WriteTestThreadNameMessage();
+  }
+
+  ASSERT_EQ(Be->History.size(), 1);
+  ExpectThreadNameMessage("Name2", 0);
+
+  SetThreadNameOutputFlags(false, true, true);
+  WriteTestThreadNameMessage();
+  ASSERT_EQ(Be->History.size(), 2);
+  ExpectThreadNameMessage("Name1", 1);
+  SetTestThreadName(nullptr);
+}
+
+TEST(OutputFlags, ThreadNameDoesNotPrintReturnWhenTransitionsBecomeEnabledAfterSuppressedForwardTransition)
+{
+  SetThreadNameOutputFlags(false, true, false);
+
+  SetTestThreadName("Name1");
+  Be->Clear();
+
+  {
+    ThreadName threadName(Be->Owner, "Name2");
+    WriteTestThreadNameMessage();
+    SetThreadNameOutputFlags(false, true, true);
+  }
+
+  ASSERT_EQ(Be->History.size(), 1);
+  ExpectThreadNameMessage("Name2", 0);
+
+  WriteTestThreadNameMessage();
+  ASSERT_EQ(Be->History.size(), 2);
+  ExpectThreadNameMessage("Name1", 1);
+  SetTestThreadName(nullptr);
+}
+
+TEST(OutputFlags, ThreadNameDoesNotPrintReturnWhenChannelDoesNotOutputForwardContext)
+{
+  SetThreadNameOutputFlags(false, true, true);
+
+  SetTestThreadName("Name1");
+  Be->Clear();
+  Be->Owner->SetEnabled(false);
+
+  {
+    ThreadName threadName(Be->Owner, "Name2");
+    WriteTestThreadNameMessage();
+  }
+
+  EXPECT_TRUE(Be->History.empty());
+  Be->Owner->SetEnabled(true);
+
+  WriteTestThreadNameMessage();
+  ASSERT_EQ(Be->History.size(), 1);
+  ExpectThreadNameMessage("Name1", 0);
+  SetTestThreadName(nullptr);
+}
+
+TEST(OutputFlags, ThreadNameDoesNotPrintReturnWhenThreadIDIsDisabled)
+{
+  SetThreadNameOutputFlags(false, false, true);
+
+  SetTestThreadName("Name1");
+  Be->Clear();
+
+  {
+    ThreadName threadName(Be->Owner, "Name2");
+    WriteTestThreadNameMessage();
+  }
+
+  ASSERT_EQ(Be->History.size(), 1);
+  EXPECT_EQ(Be->History[0], "message");
+
+  SetThreadNameOutputFlags(false, true, true);
+  WriteTestThreadNameMessage();
+  ASSERT_EQ(Be->History.size(), 2);
+  ExpectThreadNameMessage("Name1", 1);
+  SetTestThreadName(nullptr);
+}
+
+TEST(OutputFlags, ThreadNameDoesNotPrintReturnWhenOnlyProcessIDIsEnabled)
+{
+  SetThreadNameOutputFlags(true, false, true);
+
+  SetTestThreadName("Name1");
+  Be->Clear();
+
+  {
+    ThreadName threadName(Be->Owner, "Name2");
+    WriteTestThreadNameMessage();
+  }
+
+  ASSERT_EQ(Be->History.size(), 1);
+  EXPECT_NE(Be->History[0].find("] message"), std::string::npos)
+    << Be->History[0];
+  EXPECT_EQ(Be->History[0].find("Name1"), std::string::npos)
+    << Be->History[0];
+  EXPECT_EQ(Be->History[0].find("Name2"), std::string::npos)
+    << Be->History[0];
+
+  SetThreadNameOutputFlags(false, true, true);
+  WriteTestThreadNameMessage();
+  ASSERT_EQ(Be->History.size(), 2);
+  ExpectThreadNameMessage("Name1", 1);
+  SetTestThreadName(nullptr);
+}
+
+TEST(OutputFlags, ThreadNameDoesNotPrintReturnWithJsonOutput)
+{
+  SetThreadNameOutputFlags(false, true, true, OUTPUT_JSON);
+
+  SetTestThreadName("Name1");
+  Be->Clear();
+
+  {
+    ThreadName threadName(Be->Owner, "Name2");
+    WriteTestThreadNameMessage();
+  }
+
+  ASSERT_EQ(Be->History.size(), 1);
+  EXPECT_NE(Be->History[0].find("\"message\":\"message\""), std::string::npos)
+    << Be->History[0];
+  EXPECT_EQ(Be->History[0].find("Name1"), std::string::npos)
+    << Be->History[0];
+  EXPECT_EQ(Be->History[0].find("Name2"), std::string::npos)
+    << Be->History[0];
+
+  SetThreadNameOutputFlags(false, true, true);
+  WriteTestThreadNameMessage();
+  ASSERT_EQ(Be->History.size(), 2);
+  ExpectThreadNameMessage("Name1", 1);
+  SetTestThreadName(nullptr);
+}
+
+TEST(OutputFlags, ThreadNameDoesNotPrintReturnWithXmlOutput)
+{
+  SetThreadNameOutputFlags(false, true, true, OUTPUT_XML);
+
+  SetTestThreadName("Name1");
+  Be->Clear();
+
+  {
+    ThreadName threadName(Be->Owner, "Name2");
+    WriteTestThreadNameMessage();
+  }
+
+  ASSERT_EQ(Be->History.size(), 1);
+  EXPECT_NE(Be->History[0].find("<message>message</message>"), std::string::npos)
+    << Be->History[0];
+  EXPECT_EQ(Be->History[0].find("Name1"), std::string::npos)
+    << Be->History[0];
+  EXPECT_EQ(Be->History[0].find("Name2"), std::string::npos)
+    << Be->History[0];
+
+  SetThreadNameOutputFlags(false, true, true);
+  WriteTestThreadNameMessage();
+  ASSERT_EQ(Be->History.size(), 2);
+  ExpectThreadNameMessage("Name1", 1);
+  SetTestThreadName(nullptr);
+}
+
+TEST(OutputFlags, ThreadNameDoesNotPrintReturnWhenOverrideRemovesTransition)
+{
+  SetThreadNameOutputFlags(false, true, true);
+
+  SetTestThreadName("Name1");
+  Be->Clear();
+
+  {
+    ThreadName threadName(Be->Owner, "Name2");
+    Override ovr;
+    ovr.Remove.ThreadTransition = true;
+    WriteTestThreadNameMessage(&ovr);
+  }
+
+  ASSERT_EQ(Be->History.size(), 1);
+  ExpectThreadNameMessage("Name2", 0);
+
+  WriteTestThreadNameMessage();
+  ASSERT_EQ(Be->History.size(), 2);
+  ExpectThreadNameMessage("Name1", 1);
+  SetTestThreadName(nullptr);
+}
+
+TEST(OutputFlags, ThreadNameDoesNotPrintReturnWhenTransitionLoggingIsDisabled)
+{
+  SetThreadNameOutputFlags(false, true, true);
+
+  SetTestThreadName("Name1");
+  Be->Clear();
+
+  {
+    ThreadName threadName(Be->Owner, "Name2", false);
+    WriteTestThreadNameMessage();
+  }
+
+  ASSERT_EQ(Be->History.size(), 1);
+  ExpectThreadNameMessage("Name2", 0);
+
+  WriteTestThreadNameMessage();
+  ASSERT_EQ(Be->History.size(), 2);
+  ExpectThreadNameMessage("Name1", 1);
+  SetTestThreadName(nullptr);
+}
+
+TEST(OutputFlags, ThreadNameTracksForwardTransitionsPerScope)
+{
+  SetThreadNameOutputFlags(false, true, true);
+
+  SetTestThreadName("Name1");
+  Be->Clear();
+
+  {
+    ThreadName outer(Be->Owner, "Name2");
+
+    {
+      ThreadName inner(Be->Owner, "Name3");
+      WriteTestThreadNameMessage();
+    }
+  }
+
+  ASSERT_EQ(Be->History.size(), 2);
+  EXPECT_NE(Be->History[0].find("Name2 -> Name3] message"), std::string::npos);
+  EXPECT_NE(Be->History[1].find("Name3 -> Name2] ."), std::string::npos);
+
+  WriteTestThreadNameMessage();
+  ASSERT_EQ(Be->History.size(), 3);
+  ExpectThreadNameMessage("Name1", 2);
+  SetTestThreadName(nullptr);
+}
+
 TEST(OutputFlags, All)
 {
   OutputFlags flags;

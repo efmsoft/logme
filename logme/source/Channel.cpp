@@ -531,15 +531,31 @@ const char* Channel::ShortenerRun(
 
 void Channel::SetThreadName(uint64_t id, const char* name, bool log)
 {
+  SetThreadName(id, name, log, nullptr);
+}
+
+void Channel::SetThreadName(
+  uint64_t id
+  , const char* name
+  , bool log
+  , bool* forwardTransitionPrinted
+)
+{
   std::lock_guard guard(DataLock);
 
   auto it = ThreadName.find(id);
   if (it != ThreadName.end())
   {
     if (log)
+    {
       it->second.Prev = it->second.Name;
+      it->second.ForwardTransitionPrinted = forwardTransitionPrinted;
+    }
     else
+    {
       it->second.Prev.reset();
+      it->second.ForwardTransitionPrinted = nullptr;
+    }
 
     if (name)
       it->second.Name = name;
@@ -552,7 +568,7 @@ void Channel::SetThreadName(uint64_t id, const char* name, bool log)
   {
     if (name)
     {
-      ThreadNameRecord r;
+      ThreadNameRecord r{};
       r.Name = name;
 
       if (log)
@@ -560,6 +576,7 @@ void Channel::SetThreadName(uint64_t id, const char* name, bool log)
         char buf[32];
         snprintf(buf, sizeof(buf), LOGME_FMT_U64_HEX_UPPER, (uint64_t)id);
         r.Prev = buf;
+        r.ForwardTransitionPrinted = forwardTransitionPrinted;
       }
 
       ThreadName[id] = r;
@@ -574,6 +591,8 @@ const char* Channel::GetThreadName(
   , bool clear
 )
 {
+  info.ForwardTransitionPrinted = nullptr;
+
   if (transition)
     transition->reset();
 
@@ -589,10 +608,17 @@ const char* Channel::GetThreadName(
     }
 
     if (transition)
+    {
       *transition = it->second.Prev;
+      if (transition->has_value())
+        info.ForwardTransitionPrinted = it->second.ForwardTransitionPrinted;
+    }
 
     if (clear)
+    {
       it->second.Prev.reset();
+      it->second.ForwardTransitionPrinted = nullptr;
+    }
 
     if (it->second.Name.has_value())
     {

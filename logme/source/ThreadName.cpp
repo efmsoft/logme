@@ -6,6 +6,7 @@ using namespace Logme;
 
 ThreadName::ThreadName(ChannelPtr pch, const char* name, bool log)
   : PCH(pch)
+  , ForwardTransitionPrinted(false)
   , Log(log)
 {
   Initialize(name);
@@ -13,6 +14,7 @@ ThreadName::ThreadName(ChannelPtr pch, const char* name, bool log)
 
 ThreadName::ThreadName(ChannelPtr pch, const std::string& name, bool log)
   : PCH(pch)
+  , ForwardTransitionPrinted(false)
   , Log(log)
 {
   Initialize(name.c_str());
@@ -23,15 +25,16 @@ ThreadName::~ThreadName()
   if (PCH)
   {
     uint64_t tid = GetCurrentThreadId();
+    bool logReturn = Log && ForwardTransitionPrinted;
     PCH->SetThreadName(
       tid
       , PreviousName.has_value()
       ? PreviousName.value().c_str()
       : nullptr
-      , Log
+      , logReturn
     );
 
-    if (Log)
+    if (logReturn)
     {
       Override ovr;
       ovr.Remove.Method = true;
@@ -63,6 +66,6 @@ void ThreadName::Initialize(const char* name)
     if (p != nullptr)
       PreviousName = p;
 
-    PCH->SetThreadName(tid, name, Log);
+    PCH->SetThreadName(tid, name, Log, &ForwardTransitionPrinted);
   }
 }

@@ -42,8 +42,12 @@ namespace Logme
   typedef std::vector<ChannelConfig> ChannelConfigArray;
   typedef std::function<bool(Context&, const char*)> TDisplayFilter;
 
+  class ThreadName;
+
   class Channel : public std::enable_shared_from_this<Channel>
   {
+    friend class ThreadName;
+
     mutable CS DataLock;
 
     class Logger* Owner;
@@ -57,6 +61,13 @@ namespace Logme
     std::atomic<bool> Active;
 
     void UpdateActive();
+
+    void SetThreadName(
+      uint64_t id
+      , const char* name
+      , bool log
+      , bool* forwardTransitionPrinted
+    );
 
     BackendArray Backends;
     std::atomic<uint64_t> AccessCount;
@@ -73,6 +84,7 @@ namespace Logme
     {
       std::optional<std::string> Name;
       std::optional<std::string> Prev;
+      bool* ForwardTransitionPrinted;
     };
     std::map<uint64_t, ThreadNameRecord> ThreadName;
 
@@ -314,6 +326,7 @@ namespace Logme
     {
       std::string Name;
       char Buffer[32]{};
+      bool* ForwardTransitionPrinted;
     };
 
     /// <summary>

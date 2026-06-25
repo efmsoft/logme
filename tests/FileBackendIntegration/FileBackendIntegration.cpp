@@ -1,6 +1,9 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
+
 #include <Logme/Backend/FileBackend.h>
+#include <Logme/File/file_io.h>
 #include <Logme/Channel.h>
 #include <Logme/Logme.h>
 
@@ -13,11 +16,60 @@
 #include <string>
 #include <thread>
 
+#if !defined(_WIN32) && !defined(__sun__)
+#include <sys/uio.h>
+#endif
+
 namespace fs = std::filesystem;
 
 namespace
 {
   std::atomic<unsigned> Counter(0);
+
+  class PartialWriteFileIo : public Logme::FileIo
+  {
+  public:
+    explicit PartialWriteFileIo(std::size_t maxWrite)
+      : MaxWrite(maxWrite)
+    {
+    }
+
+    int WriteRaw(const void* p, size_t size) override
+    {
+      size_t written = std::min(size, MaxWrite);
+      Output.append((const char*)p, written);
+      return (int)written;
+    }
+
+#if !defined(_WIN32) && !defined(__sun__)
+    int WriteRawVector(const struct iovec* iov, int iovcnt) override
+    {
+      size_t remaining = MaxWrite;
+      size_t written = 0;
+
+      for (int i = 0; i < iovcnt && remaining != 0; ++i)
+      {
+        size_t size = std::min((size_t)iov[i].iov_len, remaining);
+        Output.append((const char*)iov[i].iov_base, size);
+        written += size;
+        remaining -= size;
+      }
+
+      return (int)written;
+    }
+#endif
+
+    std::string Output;
+
+  protected:
+    std::string GetPathName(int = 0) override
+    {
+      return "partial-write-test";
+    }
+
+  private:
+    std::size_t MaxWrite;
+  };
 
   fs::path MakeTestDirectory(const char* name)
   {
@@ -221,6 +273,33 @@ namespace
     }
   };
 }
+
+TEST(FileIo, WriteAllCompletesPartialSingleBufferWrites)
+{
+  PartialWriteFileIo file(3);
+  const std::string expected = "0123456789";
+
+  EXPECT_EQ((int)expected.size(), file.WriteAll(expected.data(), expected.size()));
+  EXPECT_EQ(expected, file.Output);
+}
+
+#if !defined(_WIN32) && !defined(__sun__)
+TEST(FileIo, WriteAllVectorCompletesPartialVectorWrites)
+{
+  PartialWriteFileIo file(5);
+  char first[] = "ab";
+  char second[] = "cdef";
+  char third[] = "ghij";
+  const iovec iov[] = {
+    { (void*)first, sizeof(first) - 1 }
+    , { (void*)second, sizeof(second) - 1 }
+    , { (void*)third, sizeof(third) - 1 }
+  };
+
+  EXPECT_EQ(10, file.WriteAllVector(iov, 3));
+  EXPECT_EQ("abcdefghij", file.Output);
+}
+#endif
 
 TEST_F(FileBackendIntegrationTest, DefaultSizeLimitKeepsTruncateBehavior)
 {

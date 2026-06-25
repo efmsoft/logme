@@ -25,8 +25,10 @@ namespace Logme
     virtual bool Open(bool append, unsigned timeout = 0, const char* fileName = 0);
     virtual int Write(const void* p, size_t size);
     virtual int WriteRaw(const void* p, size_t size);
+    int WriteAll(const void* p, size_t size);
 #if !defined(_WIN32) && !defined(__sun__)
     virtual int WriteRawVector(const struct iovec* iov, int iovcnt);
+    int WriteAllVector(const struct iovec* iov, int iovcnt);
 #endif
     virtual int Read(void* p, size_t size);
     virtual long long Seek(size_t offs, int whence);

@@ -855,7 +855,7 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
     if (!ApplySizeLimit(add))
       return;
 
-    int rc = GetActiveIo().WriteRaw(text, add);
+    int rc = GetActiveIo().WriteAll(text, add);
     if (rc < 0)
     {
       FILE_CNT(GlobalWriteErrors.fetch_add(1, std::memory_order_relaxed));
@@ -1276,8 +1276,8 @@ bool FileBackend::WriteReadyData(std::vector<DataBufferPtr>& data)
         return;
 
       int rc = iovcnt == 1
-        ? FileIo::WriteRaw(iov[0].iov_base, iov[0].iov_len)
-        : FileIo::WriteRawVector(iov, (int)iovcnt);
+        ? FileIo::WriteAll(iov[0].iov_base, iov[0].iov_len)
+        : FileIo::WriteAllVector(iov, (int)iovcnt);
 
       if (rc < 0)
       {
@@ -1331,7 +1331,7 @@ bool FileBackend::WriteReadyData(std::vector<DataBufferPtr>& data)
       ));
       FILE_WRCNT(UpdateMaxCounter(GlobalWriteReadyRawMaxBytes, b->Size()));
 
-      int rc = FileIo::WriteRaw(b->Data(), b->Size());
+      int rc = FileIo::WriteAll(b->Data(), b->Size());
       if (rc < 0)
       {
         ok = false;

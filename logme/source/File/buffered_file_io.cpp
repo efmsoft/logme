@@ -169,7 +169,7 @@ int BufferedFileIo::Write(const void* p, size_t size)
 
   long long rc = Seek(0, SEEK_END);
   if (rc >= 0)
-    return WriteRaw(p, size);
+    return WriteAll(p, size);
 
   return (int)rc;
 }
@@ -188,10 +188,7 @@ int BufferedFileIo::WriteRaw(const void* p, size_t size)
 #endif
 
   if (rc != size)
-  {
     BUFFERED_IO_ERROR(fwrite);
-    return -1;
-  }
 
   return (int)rc;
 }

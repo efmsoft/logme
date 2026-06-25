@@ -266,10 +266,10 @@ void FileIo::TruncateToMaxSize(size_t maxSize)
 
     char buffer[128];
     LOGME_SPRINTF_S(buffer, sizeof(buffer), "--- dropped %u characters\n", (unsigned)(readPos + n));
-    if (WriteRaw(buffer, (int)strlen(buffer)) < 0)
+    if (WriteAll(buffer, strlen(buffer)) < 0)
       return;
 
-    if (WriteRaw(p, size_t(readSize) - n) < 0)
+    if (WriteAll(p, size_t(readSize) - n) < 0)
       return;
 
     long long nbytes = Seek(0, SEEK_CUR);
@@ -293,7 +293,7 @@ int FileIo::Write(const void* p, size_t size)
   long long rc = Seek(0, SEEK_END);
   if (rc >= 0)
   {
-    return WriteRaw(p, size);
+    return WriteAll(p, size);
   }
 
   return (int) rc;
@@ -304,11 +304,43 @@ int FileIo::WriteRaw(const void* p, size_t size)
   std::lock_guard guard(IoLock);
   assert(File != -1);
 
-  int rc = _write(File, p, (unsigned int) size);
+  int rc = -1;
+  do
+  {
+    rc = _write(File, p, (unsigned int) size);
+  } while (rc < 0 && errno == EINTR);
+
   if (rc < 0)
     IO_ERROR(write());
 
   return rc;
+}
+
+int FileIo::WriteAll(const void* p, size_t size)
+{
+  std::lock_guard guard(IoLock);
+
+  const char* data = (const char*)p;
+  size_t written = 0;
+
+  while (written < size)
+  {
+    int rc = WriteRaw(data + written, size - written);
+    if (rc < 0)
+      return -1;
+
+    if (rc == 0)
+    {
+      Error = EIO;
+      std::string name = GetPathName();
+      LogmeE(CHINT, "FileIo(%s): write() returned zero", name.c_str());
+      return -1;
+    }
+
+    written += (size_t)rc;
+  }
+
+  return (int)written;
 }
 
 #if !defined(_WIN32) && !defined(__sun__)
@@ -317,11 +349,85 @@ int FileIo::WriteRawVector(const struct iovec* iov, int iovcnt)
   std::lock_guard guard(IoLock);
   assert(File != -1);
 
-  int rc = (int)writev(File, iov, iovcnt);
+  int rc = -1;
+  do
+  {
+    rc = (int)writev(File, iov, iovcnt);
+  } while (rc < 0 && errno == EINTR);
+
   if (rc < 0)
     IO_ERROR(writev());
 
   return rc;
+}
+
+int FileIo::WriteAllVector(const struct iovec* iov, int iovcnt)
+{
+  std::lock_guard guard(IoLock);
+
+  int index = 0;
+  size_t offset = 0;
+  size_t written = 0;
+
+  while (index < iovcnt)
+  {
+    while (index < iovcnt && iov[index].iov_len == 0)
+      ++index;
+
+    if (index == iovcnt)
+      break;
+
+    if (offset != 0)
+    {
+      const char* data = (const char*)iov[index].iov_base + offset;
+      size_t size = iov[index].iov_len - offset;
+
+      int rc = WriteAll(data, size);
+      if (rc < 0)
+        return -1;
+
+      written += (size_t)rc;
+      ++index;
+      offset = 0;
+      continue;
+    }
+
+    int rc = WriteRawVector(iov + index, iovcnt - index);
+    if (rc < 0)
+      return -1;
+
+    if (rc == 0)
+    {
+      Error = EIO;
+      std::string name = GetPathName();
+      LogmeE(CHINT, "FileIo(%s): writev() returned zero", name.c_str());
+      return -1;
+    }
+
+    written += (size_t)rc;
+    size_t remaining = (size_t)rc;
+
+    while (remaining != 0)
+    {
+      size_t size = iov[index].iov_len - offset;
+      if (remaining < size)
+      {
+        offset += remaining;
+        remaining = 0;
+      }
+      else
+      {
+        remaining -= size;
+        ++index;
+        offset = 0;
+
+        while (index < iovcnt && iov[index].iov_len == 0)
+          ++index;
+      }
+    }
+  }
+
+  return (int)written;
 }
 #endif
 

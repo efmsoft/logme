@@ -27,6 +27,7 @@ if(GTEST)
 
     add_subdirectory(CallbackBackend)
     add_subdirectory(ChannelRedirect)
+    add_subdirectory(ChannelOutputLock)
     add_subdirectory(ConsoleBackend)
     add_subdirectory(Collapse)
     add_subdirectory(FastFormat)

@@ -270,6 +270,12 @@ namespace Logme
     LOGMELNK void Flush();
 
     /// <summary>
+    /// Locks channel output until the returned guard is destroyed.
+    /// </summary>
+    /// <returns>Guard that holds the channel data lock.</returns>
+    LOGMELNK const CS::AutoLock LockOutput();
+
+    /// <summary>
     /// Returns channel data lock.
     /// </summary>
     /// <returns>Internal channel lock used by advanced integration code.</returns>

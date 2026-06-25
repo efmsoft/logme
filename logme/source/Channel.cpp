@@ -40,6 +40,11 @@ const ID& Channel::GetID() const
   return ChannelID;
 }
 
+const CS::AutoLock Channel::LockOutput()
+{
+  return DataLock.Lock();
+}
+
 CS& Channel::GetDataLock()
 {
   return DataLock;

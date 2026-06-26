@@ -48,6 +48,7 @@ FileIo::FileIo()
   , Error(0)
   , NeedUnlock(false)
   , WriteTimeAtOpen(0)
+  , SuppressPathNotFoundOpenError(false)
 {
 }
 
@@ -59,6 +60,28 @@ FileIo::~FileIo()
 bool FileIo::IsOpen() const
 {
   return File != -1;
+}
+
+bool FileIo::OpenIgnoringPathNotFound(bool append, unsigned timeout, const char* fileName)
+{
+  std::lock_guard guard(IoLock);
+  bool oldSuppressPathNotFoundOpenError = SuppressPathNotFoundOpenError;
+  SuppressPathNotFoundOpenError = true;
+
+  bool opened = Open(append, timeout, fileName);
+  SuppressPathNotFoundOpenError = oldSuppressPathNotFoundOpenError;
+  return opened;
+}
+
+int FileIo::GetError()
+{
+  std::lock_guard guard(IoLock);
+  return Error;
+}
+
+bool FileIo::IsPathNotFoundError()
+{
+  return GetError() == ENOENT;
 }
 
 void FileIo::Flush()
@@ -118,19 +141,33 @@ bool FileIo::Open(bool append, unsigned timeout, const char* fileName)
   for (uint64_t start = GetTimeInMillisec64();; Sleep(1))
   {
 #ifdef _WIN32
-    _sopen_s(&File, fileName, mode | _O_NOINHERIT, _SH_DENYWR, _S_IREAD | _S_IWRITE);
+    Error = _sopen_s(
+      &File
+      , fileName
+      , mode | _O_NOINHERIT
+      , _SH_DENYWR
+      , _S_IREAD | _S_IWRITE
+    );
+
+    if (Error != 0)
+      File = -1;
 #else
     const int pmode = S_IROTH | S_IWOTH | S_IWGRP | S_IRGRP | S_IWUSR | S_IRUSR;
     File = open(fileName, mode, pmode);
+    Error = File < 0 ? errno : 0;
 #endif
-    Error = errno;
 
     if (File < 0)
     {
       uint64_t t = GetTimeInMillisec64();
       if (t < start || t - start >= timeout)
       {
-        IO_ERROR(open);
+        if (!SuppressPathNotFoundOpenError || Error != ENOENT)
+        {
+          std::string name = GetPathName();
+          LogmeE(CHINT, "FileIo(%s): open failed: %s", name.c_str(), ERRNO_STR(Error));
+        }
+
         return false;
       }
       continue;

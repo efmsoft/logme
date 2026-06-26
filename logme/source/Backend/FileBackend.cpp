@@ -635,21 +635,42 @@ bool FileBackend::CreateLog(const char* v)
   Name.clear();
 
   Name = name;
-  
-  auto dir = std::filesystem::path(Name).parent_path();
-  if (!dir.empty())
-  {
-    std::error_code ec;
-    std::filesystem::create_directories(dir, ec);
 
-    if (ec)
+  bool opened = GetActiveIo().OpenIgnoringPathNotFound(Append);
+  if (!opened && GetActiveIo().IsPathNotFoundError())
+  {
+    auto dir = std::filesystem::path(Name).parent_path();
+    if (!dir.empty())
     {
-      FILE_CNT(GlobalCreateLogFailures.fetch_add(1, std::memory_order_relaxed));
-      return false;
+      std::error_code ec;
+      std::filesystem::create_directories(dir, ec);
+
+      if (ec)
+      {
+        LogmeE(
+          CHINT
+          , "FileBackend(%s): create_directories() failed: %s"
+          , Name.c_str()
+          , ec.message().c_str()
+        );
+        FILE_CNT(GlobalCreateLogFailures.fetch_add(1, std::memory_order_relaxed));
+        return false;
+      }
+
+      opened = GetActiveIo().Open(Append);
+    }
+    else
+    {
+      LogmeE(
+        CHINT
+        , "FileBackend(%s): open failed: %s"
+        , Name.c_str()
+        , ERRNO_STR(GetActiveIo().GetError())
+      );
     }
   }
 
-  if (!GetActiveIo().Open(Append))
+  if (!opened)
   {
     FILE_CNT(GlobalCreateLogFailures.fetch_add(1, std::memory_order_relaxed));
     return false;

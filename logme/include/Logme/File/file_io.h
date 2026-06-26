@@ -23,6 +23,9 @@ namespace Logme
     virtual void Close();
     virtual void Flush();
     virtual bool Open(bool append, unsigned timeout = 0, const char* fileName = 0);
+    bool OpenIgnoringPathNotFound(bool append, unsigned timeout = 0, const char* fileName = 0);
+    int GetError();
+    bool IsPathNotFoundError();
     virtual int Write(const void* p, size_t size);
     virtual int WriteRaw(const void* p, size_t size);
     int WriteAll(const void* p, size_t size);
@@ -48,5 +51,6 @@ namespace Logme
     int Error;
     bool NeedUnlock;
     time_t WriteTimeAtOpen;
+    bool SuppressPathNotFoundOpenError;
   };
 }

@@ -301,6 +301,27 @@ TEST(FileIo, WriteAllVectorCompletesPartialVectorWrites)
 }
 #endif
 
+TEST_F(FileBackendIntegrationTest, CreateLogCreatesMissingDirectoryAfterOpenFailure)
+{
+  fs::path file = Dir / "missing" / "nested" / "active.log";
+
+  ASSERT_FALSE(fs::exists(file.parent_path()));
+  ASSERT_TRUE(Backend->CreateLog(file.string().c_str()));
+  EXPECT_TRUE(fs::exists(file));
+}
+
+#ifndef _WIN32
+TEST_F(FileBackendIntegrationTest, CreateLogDoesNotTreatNonDirectoryParentAsMissingDirectory)
+{
+  fs::path parent = Dir / "not-a-directory";
+  fs::path file = parent / "active.log";
+
+  WriteFile(parent, "not-a-directory");
+  EXPECT_FALSE(Backend->CreateLog(file.string().c_str()));
+  EXPECT_TRUE(fs::is_regular_file(parent));
+}
+#endif
+
 TEST_F(FileBackendIntegrationTest, DefaultSizeLimitKeepsTruncateBehavior)
 {
   auto config = MakeConfig(Logme::SIZE_LIMIT_TRUNCATE, 2048);

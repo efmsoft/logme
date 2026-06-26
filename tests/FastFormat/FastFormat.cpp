@@ -7,9 +7,12 @@
 #include <Logme/Logme.h>
 
 #include <cstdarg>
+#include <cstdint>
 #include <cstring>
+#include <limits>
 #include <memory>
 #include <string>
+#include <vector>
 
 Logme::ID CHT{ "fast_format" };
 std::shared_ptr<TestBackend> Be;
@@ -48,6 +51,91 @@ static void ExpectReady(const Logme::ContextCache& cache)
   );
 }
 
+static bool FormatFast(
+  Logme::ContextCache& cache
+  , char* buffer
+  , size_t bufferSize
+  , const char* format
+  , size_t* outputSize
+  , va_list args
+)
+{
+  Logme::Context context(cache, Logme::LEVEL_INFO, &CHT, nullptr);
+
+  return Logme::TryFastFormat(
+    context
+    , buffer
+    , bufferSize
+    , format
+    , args
+    , outputSize
+  );
+}
+
+static void ExpectCacheHitFitsBufferHint(
+  Logme::ContextCache& cache
+  , const char* format
+  , const char* expected
+  , ...
+)
+{
+  char warmup[128]{};
+  size_t warmupSize = 0;
+
+  va_list args;
+  va_start(args, expected);
+  bool rc = FormatFast(
+    cache
+    , warmup
+    , sizeof(warmup)
+    , format
+    , &warmupSize
+    , args
+  );
+  va_end(args);
+
+  ASSERT_TRUE(rc);
+  ASSERT_STREQ(warmup, expected);
+  ASSERT_EQ(warmupSize, std::strlen(expected));
+  ASSERT_NE(cache.Ffe.BufferSizeHint, 0);
+  ASSERT_GE(
+    cache.Ffe.BufferSizeHint
+    , std::strlen(expected) + 2
+  );
+
+  std::vector<char> cached(cache.Ffe.BufferSizeHint);
+  size_t cachedSize = 0;
+
+  va_start(args, expected);
+  rc = FormatFast(
+    cache
+    , cached.data()
+    , cached.size() - 1
+    , format
+    , &cachedSize
+    , args
+  );
+  va_end(args);
+
+  EXPECT_TRUE(rc);
+  EXPECT_STREQ(cached.data(), expected);
+  EXPECT_EQ(cachedSize, std::strlen(expected));
+}
+
+static void ExpectLoggerCacheHitOutput(
+  void (*logProc)()
+  , const char* expected
+)
+{
+  Be->Clear();
+  logProc();
+  EXPECT_EQ(Be->Line, expected);
+
+  Be->Clear();
+  logProc();
+  EXPECT_EQ(Be->Line, expected);
+}
+
 static void LogBoundedThenString(int fd, const char* file)
 {
   LogmeI(CHT, "fd=%d file=%s", fd, file);
@@ -56,6 +144,48 @@ static void LogBoundedThenString(int fd, const char* file)
 static void LogStringThenBounded(const char* file, int fd)
 {
   LogmeI(CHT, "file=%s fd=%d", file, fd);
+}
+
+static void LogLiteralAtBufferHintBoundary()
+{
+  LogmeI(CHT, "Starting H1 protocol connection");
+}
+
+static void LogSignedAtBufferHintBoundary()
+{
+  LogmeI(
+    CHT
+    , "01234567890123456789%d"
+    , std::numeric_limits<int>::min()
+  );
+}
+
+static void LogIntegerAtBufferHintBoundary()
+{
+  LogmeI(
+    CHT
+    , "01234567890123456789%i"
+    , std::numeric_limits<int>::min()
+  );
+}
+
+static void LogUnsignedAtBufferHintBoundary()
+{
+  LogmeI(
+    CHT
+    , "012345678901234567890%u"
+    , std::numeric_limits<unsigned int>::max()
+  );
+}
+
+static void LogTwoBoundedAtBufferHintBoundary()
+{
+  LogmeI(
+    CHT
+    , "1234%d5678%u90"
+    , std::numeric_limits<int>::min()
+    , std::numeric_limits<unsigned int>::max()
+  );
 }
 
 TEST(FastFormat, LiteralUsesFastPathAndBufferSizeHint)
@@ -295,6 +425,117 @@ TEST(FastFormat, LoggerCacheHitDoesNotTruncateBoundedThenString)
   Be->Clear();
   LogBoundedThenString(4, file);
   EXPECT_EQ(Be->Line, std::string("fd=4 file=") + file);
+}
+
+TEST(FastFormat, CacheHitBufferHintReservesLoggerAndTerminatorForLiteral)
+{
+  Logme::ContextCache cache;
+
+  ExpectCacheHitFitsBufferHint(
+    cache
+    , "1234567890123456789012345678901"
+    , "1234567890123456789012345678901"
+  );
+}
+
+TEST(FastFormat, CacheHitBufferHintReservesLoggerAndTerminatorForSignedDecimal)
+{
+  Logme::ContextCache cache;
+
+  ExpectCacheHitFitsBufferHint(
+    cache
+    , "01234567890123456789%d"
+    , "01234567890123456789-2147483648"
+    , std::numeric_limits<int>::min()
+  );
+}
+
+TEST(FastFormat, CacheHitBufferHintReservesLoggerAndTerminatorForInteger)
+{
+  Logme::ContextCache cache;
+
+  ExpectCacheHitFitsBufferHint(
+    cache
+    , "01234567890123456789%i"
+    , "01234567890123456789-2147483648"
+    , std::numeric_limits<int>::min()
+  );
+}
+
+TEST(FastFormat, CacheHitBufferHintReservesLoggerAndTerminatorForUnsigned)
+{
+  Logme::ContextCache cache;
+
+  ExpectCacheHitFitsBufferHint(
+    cache
+    , "012345678901234567890%u"
+    , "0123456789012345678904294967295"
+    , std::numeric_limits<unsigned int>::max()
+  );
+}
+
+TEST(FastFormat, CacheHitBufferHintReservesLoggerAndTerminatorForPointer)
+{
+  const size_t pointerSize = 2 + sizeof(uintptr_t) * 2;
+  ASSERT_LE(pointerSize, 31u);
+
+  const std::string prefix(31 - pointerSize, 'p');
+  const std::string format = prefix + "%p";
+  const std::string expected =
+    prefix + "0x" + std::string(sizeof(uintptr_t) * 2, 'f');
+
+  Logme::ContextCache cache;
+  void* pointer = reinterpret_cast<void*>(
+    std::numeric_limits<uintptr_t>::max()
+  );
+
+  ExpectCacheHitFitsBufferHint(
+    cache
+    , format.c_str()
+    , expected.c_str()
+    , pointer
+  );
+}
+
+TEST(FastFormat, CacheHitBufferHintReservesLoggerAndTerminatorForTwoBoundedSpecifiers)
+{
+  Logme::ContextCache cache;
+
+  ExpectCacheHitFitsBufferHint(
+    cache
+    , "1234%d5678%u90"
+    , "1234-21474836485678429496729590"
+    , std::numeric_limits<int>::min()
+    , std::numeric_limits<unsigned int>::max()
+  );
+}
+
+TEST(FastFormat, LoggerCacheHitDoesNotTruncateBoundedFormatsAtBufferHintBoundary)
+{
+  Logme::OutputFlags flags;
+  flags.Value = 0;
+  Be->Owner->SetFlags(flags);
+
+  ExpectLoggerCacheHitOutput(
+    LogLiteralAtBufferHintBoundary
+    , "Starting H1 protocol connection"
+  );
+  ExpectLoggerCacheHitOutput(
+    LogSignedAtBufferHintBoundary
+    , "01234567890123456789-2147483648"
+  );
+  ExpectLoggerCacheHitOutput(
+    LogIntegerAtBufferHintBoundary
+    , "01234567890123456789-2147483648"
+  );
+  ExpectLoggerCacheHitOutput(
+    LogUnsignedAtBufferHintBoundary
+    , "0123456789012345678904294967295"
+  );
+  ExpectLoggerCacheHitOutput(
+    LogTwoBoundedAtBufferHintBoundary
+    , "1234-21474836485678429496729590"
+  );
 }
 
 TEST(FastFormat, LoggerCacheHitDoesNotTruncateStringThenBounded)

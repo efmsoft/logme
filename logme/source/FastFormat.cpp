@@ -490,7 +490,7 @@ namespace
     {
       entry.Kind1 = FastFormatKind::LITERAL;
       entry.Part0Len = (uint16_t)formatLen;
-      entry.BufferSizeHint = AlignBufferSizeHint(formatLen + 1);
+      entry.BufferSizeHint = AlignBufferSizeHint(formatLen + 2);
       FAST_FORMAT_STAT(AnalyzeNoPercent);
       FAST_FORMAT_STAT(DetectedLiteral);
       return entry;
@@ -523,7 +523,7 @@ namespace
         + (size_t)entry.Part2Len
         + maxArg1
         + maxArg2
-        + 1;
+        + 2;
 
       entry.BufferSizeHint = AlignBufferSizeHint(maxSize);
     }

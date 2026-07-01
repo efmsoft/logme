@@ -6,6 +6,7 @@
 #include <sstream>
 
 #include <Logme/Logme.h>
+#include <Logme/Utils.h>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -358,6 +359,8 @@ namespace Logme
 #ifdef _WIN32
   void ControlDiscovery::WorkerFunc()
   {
+    RenameThread(uint64_t(-1), "Logme::ControlDiscovery");
+
     while (!Stopped)
     {
       PipeSecurity security;
@@ -400,6 +403,8 @@ namespace Logme
 #else
   void ControlDiscovery::WorkerFunc()
   {
+    RenameThread(uint64_t(-1), "LogCtrlDiscover");
+
     int server = socket(AF_UNIX, SOCK_STREAM, 0);
     if (server < 0)
       return;

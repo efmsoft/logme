@@ -113,7 +113,7 @@ jobs:
 
   windows:
     name: Windows / msvc / ${{ matrix.config }} / stdformat-${{ matrix.stdformat }}
-    runs-on: windows-latest
+    runs-on: windows-2022
     strategy:
       fail-fast: false
       matrix:
@@ -169,7 +169,7 @@ jobs:
             platform: macos
             cxx: clang++
           - name: Windows / msvc
-            os: windows-latest
+            os: windows-2022
             platform: windows
 
     steps:
@@ -282,7 +282,7 @@ jobs:
 
   windows_msbuild_sln:
     name: Windows / MSBuild (repo .sln) / ${{ matrix.config }}
-    runs-on: windows-latest
+    runs-on: windows-2022
     strategy:
       fail-fast: false
       matrix:
@@ -340,7 +340,7 @@ jobs:
 
   windows_x86:
     name: Windows / msvc / Release / x86 (warnings-as-errors)
-    runs-on: windows-latest
+    runs-on: windows-2022
 
     steps:
       - uses: actions/checkout@v4

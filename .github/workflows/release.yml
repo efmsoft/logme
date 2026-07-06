@@ -69,7 +69,7 @@ jobs:
 
   windows-msvc-x64:
     name: windows-msvc-x64-${{ matrix.artifact }}
-    runs-on: windows-latest
+    runs-on: windows-2022
     needs: prepare-release-notes
     strategy:
       fail-fast: false

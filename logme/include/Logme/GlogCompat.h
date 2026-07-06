@@ -11,6 +11,14 @@
 #define LOGME_GLOG_CAT_INNER(left, right) left##right
 #define LOGME_GLOG_CAT(left, right) LOGME_GLOG_CAT_INNER(left, right)
 
+#ifdef _MSC_VER
+  #define LOGME_GLOG_IF(condition) \
+    __pragma(warning(suppress: 4127)) \
+    if (condition)
+#else
+  #define LOGME_GLOG_IF(condition) if (condition)
+#endif
+
 #define LOGME_GLOG_LOG_INFO() LogmeI()
 #define LOGME_GLOG_LOG_WARNING() LogmeW()
 #define LOGME_GLOG_LOG_ERROR() LogmeE()
@@ -75,13 +83,13 @@
 
 #define VLOG_IS_ON(verboseLevel) ((verboseLevel) <= LOGME_GLOG_VLOG_LEVEL)
 #define VLOG(verboseLevel) \
-  if (!VLOG_IS_ON(verboseLevel)) \
+  LOGME_GLOG_IF(!VLOG_IS_ON(verboseLevel)) \
   { \
   } \
   else \
     LogmeI()
 #define VLOG_IF(verboseLevel, condition) \
-  if (!(condition) || !VLOG_IS_ON(verboseLevel)) \
+  LOGME_GLOG_IF(!(condition) || !VLOG_IS_ON(verboseLevel)) \
   { \
   } \
   else \

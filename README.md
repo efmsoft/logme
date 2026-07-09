@@ -41,16 +41,27 @@ For the design background, see the logging articles at [tips.efmsoft.com](https:
 
 Performance is one of logme's main design goals, especially when logging is disabled, filtered out, or routed to asynchronous output. The separate [logbench](https://github.com/efmsoft/logbench) repository contains a reproducible benchmark suite and an article with charts and methodology.
 
-Recent throughput results, measured as completed cycles during the same benchmark interval:
+Recent throughput results for the `fmt-build` configuration with an integer payload are shown below. The benchmark measures completed cycles during the same run interval, so higher values are better.
 
 | Library | null | file | console | file+console |
 |---|---:|---:|---:|---:|
-| logme (c) | 1,121,998,419 | 153,752,170 | 325,518 | 359,772 |
-| logme (cpp-stream) | 1,053,074,266 | 24,290,646 | 335,276 | 364,349 |
-| logme (std::format) | 1,082,512,863 | 90,255,191 | 362,369 | 365,770 |
-| spdlog | 244,991,156 | 118,546,708 | 368,944 | 355,449 |
-| quill | 1,568,610 | 1,357,532 | 191,531 | 200,378 |
-| easylogging++ | 25,597,177 | 1,656,726 | 356,948 | 277,846 |
+| logme (fmt) | 551,473,152 | 13,931,520 | 33,792 | 33,792 |
+| logme (c) | 402,649,088 | 21,961,728 | 33,792 | 34,816 |
+| logme (cpp) | 334,684,160 | 1,848,320 | 31,744 | 31,744 |
+| spdlog (fmt) | 39,310,336 | 7,476,224 | 31,744 | 30,720 |
+| plog (cpp) | 3,149,824 | 275,456 | 25,600 | 26,624 |
+| plog (c) | 3,103,744 | 274,432 | 26,624 | 26,624 |
+| easylogging++ (cpp) | 1,803,264 | 125,952 | 31,744 | 22,528 |
+| boost.log (cpp) | 1,774,592 | 1,422,336 | 24,576 | 22,528 |
+| g3log (c) | 1,323,008 | 1,324,032 | 25,600 | 24,576 |
+| g3log (cpp) | 1,204,224 | 1,244,160 | 24,576 | 26,624 |
+| quill (fmt) | 45,056 | 45,056 | 17,408 | 18,432 |
+
+These results show the strongest advantage in the hot paths where logging is disabled or routed to file output. In the null scenario, all logme frontends lead the table by a wide margin: the format API completes more than 551 million cycles, the C API more than 402 million cycles, and the C++ stream API more than 334 million cycles in the same interval. The nearest non-logme result in that scenario is spdlog at about 39 million cycles.
+
+For file output, logme also leads among the measured libraries: the C API completes about 21.9 million cycles and the format API about 13.9 million cycles, ahead of spdlog at about 7.5 million cycles. The C++ stream API is slower than the other logme frontends for file output, but still remains competitive with the next group of asynchronous and structured logging libraries.
+
+Console and file+console results are much closer because terminal output becomes the dominant bottleneck. In those scenarios, the benchmark mainly shows that logme stays in the leading group and does not add a large extra cost on top of the slow output device.
 
 The result is not based on a single trick. logme combines early filtering, call-site context caching, low-cost disabled paths, multiple formatting APIs, asynchronous file output, and runtime routing designed to avoid doing unnecessary work in hot paths.
 

@@ -1,3 +1,9 @@
+## 2.4.20
+
+### Improved
+
+- Fix FileManager deadlock during async backend recreation
+
 ## 2.4.19
 
 ### Improved

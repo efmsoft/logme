@@ -11,7 +11,7 @@ ConsoleManagerFactory::~ConsoleManagerFactory()
   Instance.reset();
 }
 
-void ConsoleManagerFactory::Add(const ConsoleBackendPtr& backend, bool startWorker)
+std::shared_ptr<ConsoleManager> ConsoleManagerFactory::Add(const ConsoleBackendPtr& backend, bool startWorker)
 {
   std::unique_lock guard(Lock);
 
@@ -25,6 +25,7 @@ void ConsoleManagerFactory::Add(const ConsoleBackendPtr& backend, bool startWork
     Instance = std::make_shared<ConsoleManager>();
 
   Instance->AddBackend(backend, startWorker);
+  return Instance;
 }
 
 void ConsoleManagerFactory::Remove(ConsoleBackend* backend)

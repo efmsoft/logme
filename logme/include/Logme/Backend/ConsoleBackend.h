@@ -13,6 +13,8 @@
 
 namespace Logme
 {
+  class ConsoleManager;
+
   enum class ConsoleOverflowPolicy
   {
     BLOCK,
@@ -58,6 +60,9 @@ namespace Logme
     std::atomic<bool> Registered;
     std::atomic<bool> ShutdownFlag;
     std::atomic<bool> ShutdownCalled;
+    std::atomic<bool> WorkerRequested;
+    mutable std::mutex RegistrationLock;
+    std::atomic<std::shared_ptr<ConsoleManager>> Manager;
 
   public:
     LOGMELNK ConsoleBackend(ChannelPtr owner);
@@ -86,6 +91,9 @@ namespace Logme
 
   private:
     class ConsoleManagerFactory& GetFactory() const;
+    std::shared_ptr<ConsoleManager> GetManager() const;
+    static std::mutex& GetOutputLock();
+    static void WriteTextUnlocked(FILE* stream, const char* text, size_t len, const char* escape);
     void RegisterIfNeeded(bool startWorker);
     void OnShutdown();
 

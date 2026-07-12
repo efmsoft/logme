@@ -16,17 +16,17 @@ std::atomic<ConsoleOverflowPolicy> ConsoleManager::OverflowPolicy { ConsoleOverf
 ConsoleManager::ConsoleManager()
   : StopRequested(false)
   , Reschedule(false)
+  , WorkerRunning(false)
   , Processing(false)
   , QueuedRecords(0)
   , QueuedBytes(0)
+  , NotFullWaiters(0)
+  , IdleWaiters(0)
 #if CONSOLE_ENABLE_COUNTERS
   , Counters{}
 #endif
   , RedirectStdoutChecked(false)
   , RedirectStderrChecked(false)
-#ifdef _WIN32
-  , ThreadID(0)
-#endif
 {
   Buffer.reserve(256 * 1024);
 }
@@ -120,12 +120,25 @@ void ConsoleManager::StartWorkerLocked()
     return;
 
   if (!ManagerThread.joinable())
-    ManagerThread = std::thread(&ConsoleManager::ManagementThread, this);
+  {
+    WorkerRunning.store(true, std::memory_order_relaxed);
+
+    try
+    {
+      ManagerThread = std::thread(&ConsoleManager::ManagementThread, this);
+    }
+    catch (...)
+    {
+      WorkerRunning.store(false, std::memory_order_relaxed);
+      throw;
+    }
+  }
 }
 
 bool ConsoleManager::RemoveBackend(ConsoleBackend* backend)
 {
   bool empty = false;
+  bool notifyWorker = false;
 
   {
     std::lock_guard lock(Lock);
@@ -142,14 +155,15 @@ bool ConsoleManager::RemoveBackend(ConsoleBackend* backend)
     {
       StopRequested.store(true, std::memory_order_relaxed);
       Reschedule = true;
+      notifyWorker = true;
     }
+
+    NotifyNotFullLocked();
+    NotifyIdleLocked();
   }
 
-  if (empty)
-  {
-    CV.notify_all();
-    NotFull.notify_all();
-  }
+  if (notifyWorker)
+    CV.notify_one();
 
   return empty;
 }
@@ -233,80 +247,89 @@ bool ConsoleManager::PushRecord(
   header.Reserved = 0;
   header.ErrorLevel = level;
 
-  std::unique_lock lock(Lock);
-
-  auto hasSpace = [this, recordSize]()
+  for (;;)
   {
-    return HasSpace(recordSize);
-  };
+    bool drainPending = false;
+    bool notifyWorker = false;
 
-  if (!hasSpace())
-  {
-    if (forceBlock)
     {
-      CONSOLE_CNT(Counters.BlockedCalls++);
-      while (!hasSpace() && !Stopping() && WorkerAvailable())
+      std::unique_lock lock(Lock);
+
+      if (!HasSpace(recordSize))
       {
-        NotFull.wait_for(
-          lock
-          , std::chrono::milliseconds(100)
-        );
-      }
+        ConsoleOverflowPolicy policy = forceBlock
+          ? ConsoleOverflowPolicy::BLOCK
+          : OverflowPolicy.load(std::memory_order_relaxed);
 
-      if (!hasSpace())
-        DrainPending(lock);
-    }
-    else
-    {
-      switch (OverflowPolicy.load(std::memory_order_relaxed))
-      {
-        case ConsoleOverflowPolicy::BLOCK:
-          CONSOLE_CNT(Counters.BlockedCalls++);
-          while (!hasSpace() && !Stopping() && WorkerAvailable())
-          {
-            NotFull.wait_for(
-              lock
-              , std::chrono::milliseconds(100)
-            );
-          }
+        switch (policy)
+        {
+          case ConsoleOverflowPolicy::BLOCK:
+            CONSOLE_CNT(Counters.BlockedCalls++);
+            while (!HasSpace(recordSize) && !Stopping() && WorkerAvailableFastLocked())
+            {
+              WaitForSpaceLocked(lock);
 
-          if (!hasSpace())
-            DrainPending(lock);
-          break;
+              if (!HasSpace(recordSize) && !Stopping() && !WorkerAvailableSlowLocked())
+                break;
+            }
 
-        case ConsoleOverflowPolicy::DROP_NEW:
-          CONSOLE_CNT(Counters.DroppedRecords++);
-          CONSOLE_CNT(Counters.DroppedBytes += recordSize);
-          return true;
+            if (!HasSpace(recordSize))
+            {
+              drainPending = true;
+              break;
+            }
+            break;
 
-        case ConsoleOverflowPolicy::DROP_OLDEST:
-          if (!DropOldest(recordSize))
-          {
+          case ConsoleOverflowPolicy::DROP_NEW:
             CONSOLE_CNT(Counters.DroppedRecords++);
             CONSOLE_CNT(Counters.DroppedBytes += recordSize);
             return true;
-          }
-          break;
+
+          case ConsoleOverflowPolicy::DROP_OLDEST:
+            if (!DropOldest(recordSize))
+            {
+              CONSOLE_CNT(Counters.DroppedRecords++);
+              CONSOLE_CNT(Counters.DroppedBytes += recordSize);
+              return true;
+            }
+            break;
+        }
+      }
+
+      if (!drainPending)
+      {
+        const bool wasEmpty = Buffer.empty();
+        size_t oldSize = Buffer.size();
+        Buffer.resize(oldSize + recordSize);
+        memcpy(Buffer.data() + oldSize, &header, sizeof(header));
+        memcpy(Buffer.data() + oldSize + sizeof(header), text, len);
+
+        QueuedRecords++;
+        QueuedBytes += recordSize;
+        CONSOLE_CNT(Counters.QueuedRecords = QueuedRecords);
+        CONSOLE_CNT(Counters.QueuedBytes = QueuedBytes);
+        CONSOLE_CNT(Counters.MaxQueuedRecords = std::max<uint64_t>(Counters.MaxQueuedRecords, QueuedRecords));
+        CONSOLE_CNT(Counters.MaxQueuedBytes = std::max<uint64_t>(Counters.MaxQueuedBytes, QueuedBytes));
+
+        if (wasEmpty && !Processing)
+        {
+          Reschedule = true;
+          notifyWorker = true;
+        }
       }
     }
+
+    if (drainPending)
+    {
+      DrainPending();
+      continue;
+    }
+
+    if (notifyWorker)
+      CV.notify_one();
+
+    return true;
   }
-
-  size_t oldSize = Buffer.size();
-  Buffer.resize(oldSize + recordSize);
-  memcpy(Buffer.data() + oldSize, &header, sizeof(header));
-  memcpy(Buffer.data() + oldSize + sizeof(header), text, len);
-
-  QueuedRecords++;
-  QueuedBytes += recordSize;
-  CONSOLE_CNT(Counters.QueuedRecords = QueuedRecords);
-  CONSOLE_CNT(Counters.QueuedBytes = QueuedBytes);
-  CONSOLE_CNT(Counters.MaxQueuedRecords = std::max<uint64_t>(Counters.MaxQueuedRecords, QueuedRecords));
-  CONSOLE_CNT(Counters.MaxQueuedBytes = std::max<uint64_t>(Counters.MaxQueuedBytes, QueuedBytes));
-
-  Reschedule = true;
-  lock.unlock();
-  CV.notify_one();
-  return true;
 }
 
 FileBackendPtr ConsoleManager::GetRedirectBackend(
@@ -406,28 +429,49 @@ void ConsoleManager::Flush()
   FileBackendPtr stdoutBackend;
   FileBackendPtr stderrBackend;
 
+  for (;;)
   {
-    std::unique_lock lock(Lock);
-    CV.notify_one();
+    bool drainPending = false;
 
-    while (Processing && WorkerAvailable())
     {
-      NotFull.wait_for(
-        lock
-        , std::chrono::milliseconds(100)
-      );
+      std::unique_lock lock(Lock);
+
+      if (Processing && WorkerAvailableFastLocked())
+      {
+        WaitForIdleLocked(lock);
+
+        if (Processing && !WorkerAvailableSlowLocked())
+        {
+          Processing = false;
+          NotifyNotFullLocked();
+          NotifyIdleLocked();
+        }
+
+        continue;
+      }
+
+      if (Processing)
+      {
+        Processing = false;
+        NotifyNotFullLocked();
+        NotifyIdleLocked();
+        continue;
+      }
+
+      if (!Buffer.empty())
+      {
+        drainPending = true;
+      }
+      else
+      {
+        stdoutBackend = RedirectStdout;
+        stderrBackend = RedirectStderr;
+        break;
+      }
     }
 
-    if (Processing && !WorkerAvailable())
-    {
-      Processing = false;
-      NotFull.notify_all();
-    }
-
-    DrainPending(lock);
-
-    stdoutBackend = RedirectStdout;
-    stderrBackend = RedirectStderr;
+    if (drainPending)
+      DrainPending();
   }
 
   if (stdoutBackend)
@@ -445,7 +489,8 @@ bool ConsoleManager::Empty() const
 
 void ConsoleManager::NotifySettingsChanged()
 {
-  NotFull.notify_all();
+  std::lock_guard lock(Lock);
+  NotifyNotFullLocked();
 }
 
 void ConsoleManager::SetQueueLimits(size_t maxRecords, size_t maxBytes)
@@ -476,78 +521,122 @@ bool ConsoleManager::Stopping() const
 
 #ifdef _WIN32
 #include <windows.h>
-
-static bool ThreadExists(uint64_t threadId)
-{
-  HANDLE hThread = OpenThread(THREAD_QUERY_LIMITED_INFORMATION, FALSE, static_cast<DWORD>(threadId));
-  if (!hThread)
-    return false;
-
-  DWORD exitCode = 0;
-  BOOL ok = GetExitCodeThread(hThread, &exitCode);
-  CloseHandle(hThread);
-
-  if (!ok)
-    return false;
-
-  return exitCode == STILL_ACTIVE;
-}
 #endif
 
-bool ConsoleManager::WorkerAvailable() const
+bool ConsoleManager::WorkerAvailableFastLocked() const
 {
+  return ManagerThread.joinable()
+    && WorkerRunning.load(std::memory_order_relaxed)
+    && !Stopping();
+}
+
+bool ConsoleManager::WorkerAvailableSlowLocked()
+{
+  if (!ManagerThread.joinable())
+    return false;
+
 #ifdef _WIN32
-  return ThreadID != 0 && ThreadExists(ThreadID);
+  HANDLE threadHandle = static_cast<HANDLE>(ManagerThread.native_handle());
+  if (!threadHandle)
+    return false;
+
+  DWORD waitResult = WaitForSingleObject(threadHandle, 0);
+  return waitResult == WAIT_TIMEOUT;
 #else
-  return ManagerThread.joinable() && !Stopping();
+  return WorkerAvailableFastLocked();
 #endif
 }
 
-void ConsoleManager::DrainPending(std::unique_lock<std::mutex>& lock)
+void ConsoleManager::WaitForSpaceLocked(std::unique_lock<std::mutex>& lock)
 {
-  while (!Buffer.empty())
+  NotFullWaiters++;
+  NotFull.wait_for(
+    lock
+    , std::chrono::milliseconds(100)
+  );
+  NotFullWaiters--;
+}
+
+void ConsoleManager::WaitForIdleLocked(std::unique_lock<std::mutex>& lock)
+{
+  IdleWaiters++;
+  Idle.wait_for(
+    lock
+    , std::chrono::milliseconds(100)
+  );
+  IdleWaiters--;
+}
+
+void ConsoleManager::NotifyNotFullLocked()
+{
+  if (NotFullWaiters != 0)
+    NotFull.notify_all();
+}
+
+void ConsoleManager::NotifyIdleLocked()
+{
+  if (IdleWaiters != 0)
+    Idle.notify_all();
+}
+
+void ConsoleManager::DrainPending()
+{
+  for (;;)
   {
     std::vector<unsigned char> buffer;
 
-    buffer.swap(Buffer);
-    Processing = true;
-    QueuedRecords = 0;
-    QueuedBytes = 0;
-    CONSOLE_CNT(Counters.QueuedRecords = 0);
-    CONSOLE_CNT(Counters.QueuedBytes = 0);
-    NotFull.notify_all();
+    {
+      std::lock_guard lock(Lock);
 
-    lock.unlock();
+      if (Buffer.empty())
+        break;
+
+      buffer.swap(Buffer);
+      Processing = true;
+      QueuedRecords = 0;
+      QueuedBytes = 0;
+      CONSOLE_CNT(Counters.QueuedRecords = 0);
+      CONSOLE_CNT(Counters.QueuedBytes = 0);
+      NotifyNotFullLocked();
+    }
+
     ProcessBuffer(buffer);
-    lock.lock();
 
-    Processing = false;
-    NotFull.notify_all();
+    {
+      std::lock_guard lock(Lock);
+      Processing = false;
+      NotifyIdleLocked();
+    }
   }
 }
 
 void ConsoleManager::SetStopping()
 {
-  if (true)
+  bool notifyWorker = false;
+
   {
     std::lock_guard<std::mutex> lock(Lock);
 
     StopRequested.store(true, std::memory_order_relaxed);
     Reschedule = true;
-  }
-
-  CV.notify_all();
-  NotFull.notify_all();
+    notifyWorker = true;
 
 #ifdef _WIN32
-  if (ThreadExists(ThreadID) == false)
-  {
-    for (const auto& backend : Backends)
-      backend->OnShutdown();
+    if (!WorkerAvailableSlowLocked())
+    {
+      for (const auto& backend : Backends)
+        backend->OnShutdown();
 
-    Backends.clear();
-  }
+      Backends.clear();
+    }
 #endif
+
+    NotifyNotFullLocked();
+    NotifyIdleLocked();
+  }
+
+  if (notifyWorker)
+    CV.notify_one();
 }
 
 void ConsoleManager::Notify(ConsoleBackend* backend)
@@ -559,16 +648,7 @@ void ConsoleManager::Notify(ConsoleBackend* backend)
     Reschedule = true;
   }
 
-  CV.notify_all();
-}
-
-static void FlushPlainBatch(FILE*& batchStream, std::string& batch)
-{
-  if (!batch.empty() && batchStream)
-    ConsoleBackend::WriteText(batchStream, batch.data(), batch.size(), nullptr);
-
-  batch.clear();
-  batchStream = nullptr;
+  CV.notify_one();
 }
 
 void ConsoleManager::ProcessBuffer(std::vector<unsigned char>& buffer)
@@ -577,6 +657,16 @@ void ConsoleManager::ProcessBuffer(std::vector<unsigned char>& buffer)
   const unsigned char* end = pos + buffer.size();
   FILE* batchStream = nullptr;
   std::string batch;
+  std::unique_lock<std::mutex> outputLock(ConsoleBackend::GetOutputLock());
+
+  auto flushPlainBatch = [&batchStream, &batch]()
+  {
+    if (!batch.empty() && batchStream)
+      ConsoleBackend::WriteTextUnlocked(batchStream, batch.data(), batch.size(), nullptr);
+
+    batch.clear();
+    batchStream = nullptr;
+  };
 
   while (pos < end)
   {
@@ -603,30 +693,26 @@ void ConsoleManager::ProcessBuffer(std::vector<unsigned char>& buffer)
     if (!highlight && !hasAnsi)
     {
       if (batchStream != stream)
-        FlushPlainBatch(batchStream, batch);
+        flushPlainBatch();
 
       batchStream = stream;
       batch.append(text, header->TextSize);
     }
     else
     {
-      FlushPlainBatch(batchStream, batch);
-      ConsoleBackend::WriteText(stream, text, header->TextSize, escape);
+      flushPlainBatch();
+      ConsoleBackend::WriteTextUnlocked(stream, text, header->TextSize, escape);
     }
 
     pos += header->Size;
   }
 
-  FlushPlainBatch(batchStream, batch);
+  flushPlainBatch();
 }
 
 void ConsoleManager::ManagementThread()
 {
   RenameThread(uint64_t(-1), "ConsoleManager::ManagementThread");
-
-#ifdef _WIN32
-  ThreadID = GetCurrentThreadId();
-#endif
 
   for (;;)
   {
@@ -645,7 +731,7 @@ void ConsoleManager::ManagementThread()
       QueuedBytes = 0;
       CONSOLE_CNT(Counters.QueuedRecords = 0);
       CONSOLE_CNT(Counters.QueuedBytes = 0);
-      NotFull.notify_all();
+      NotifyNotFullLocked();
     }
 
     if (!buffer.empty())
@@ -654,7 +740,7 @@ void ConsoleManager::ManagementThread()
     {
       std::lock_guard<std::mutex> lock(Lock);
       Processing = false;
-      NotFull.notify_all();
+      NotifyIdleLocked();
     }
 
     if (stopping)
@@ -667,7 +753,12 @@ void ConsoleManager::ManagementThread()
     }
   }
 
-#ifdef _WIN32
-  ThreadID = 0;
-#endif
+  {
+    std::lock_guard<std::mutex> lock(Lock);
+    WorkerRunning.store(false, std::memory_order_relaxed);
+    Processing = false;
+    NotifyNotFullLocked();
+    NotifyIdleLocked();
+  }
 }
+

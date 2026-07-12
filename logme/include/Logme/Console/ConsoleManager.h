@@ -54,15 +54,19 @@ namespace Logme
     std::atomic<bool> StopRequested;
     bool Reschedule;
     std::thread ManagerThread;
+    std::atomic<bool> WorkerRunning;
 
     mutable std::mutex Lock;
     std::condition_variable CV;
     std::condition_variable NotFull;
+    std::condition_variable Idle;
     std::set<ConsoleBackend*> Backends;
     std::vector<unsigned char> Buffer;
     bool Processing;
     size_t QueuedRecords;
     size_t QueuedBytes;
+    size_t NotFullWaiters;
+    size_t IdleWaiters;
     static std::atomic<size_t> MaxRecords;
     static std::atomic<size_t> MaxBytes;
     static std::atomic<ConsoleOverflowPolicy> OverflowPolicy;
@@ -76,10 +80,6 @@ namespace Logme
     bool RedirectStderrChecked;
     std::string RedirectStdoutName;
     std::string RedirectStderrName;
-
-#ifdef _WIN32
-    uint64_t ThreadID;
-#endif
 
   public:
     ConsoleManager();
@@ -133,8 +133,13 @@ namespace Logme
       , bool forceBlock
     );
     bool DropOldest(size_t recordSize);
-    bool WorkerAvailable() const;
-    void DrainPending(std::unique_lock<std::mutex>& lock);
+    bool WorkerAvailableFastLocked() const;
+    bool WorkerAvailableSlowLocked();
+    void WaitForSpaceLocked(std::unique_lock<std::mutex>& lock);
+    void WaitForIdleLocked(std::unique_lock<std::mutex>& lock);
+    void NotifyNotFullLocked();
+    void NotifyIdleLocked();
+    void DrainPending();
     FileBackendPtr GetRedirectBackend(
       const ChannelPtr& owner
       , ConsoleTarget target

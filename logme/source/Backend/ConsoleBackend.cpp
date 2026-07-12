@@ -18,6 +18,7 @@ ConsoleBackend::ConsoleBackend(ChannelPtr owner)
   , Registered(false)
   , ShutdownFlag(false)
   , ShutdownCalled(owner == nullptr)
+  , WorkerRequested(false)
 {
   if (owner)
   {
@@ -99,22 +100,43 @@ void ConsoleBackend::Freeze()
   ShutdownFlag.store(true, std::memory_order_relaxed);
   Backend::Freeze();
 
-  if (Registered.exchange(false, std::memory_order_relaxed))
+  if (Registered.exchange(false, std::memory_order_acq_rel))
+  {
     GetFactory().Remove(this);
+    Manager.store(
+      std::shared_ptr<ConsoleManager>()
+      , std::memory_order_release
+    );
+    WorkerRequested.store(false, std::memory_order_release);
+  }
   else
-    GetFactory().Flush();
+  {
+    std::shared_ptr<ConsoleManager> manager = GetManager();
+    if (manager)
+      manager->Flush();
+    else
+      GetFactory().Flush();
+  }
 }
 
 bool ConsoleBackend::IsIdle() const
 {
-  GetFactory().Flush();
+  std::shared_ptr<ConsoleManager> manager = GetManager();
+  if (manager)
+    manager->Flush();
+  else
+    GetFactory().Flush();
 
   return ShutdownFlag.load(std::memory_order_relaxed) || Registered.load(std::memory_order_relaxed) == false;
 }
 
 void ConsoleBackend::Flush()
 {
-  GetFactory().Flush();
+  std::shared_ptr<ConsoleManager> manager = GetManager();
+  if (manager)
+    manager->Flush();
+  else
+    GetFactory().Flush();
 }
 
 const char* ConsoleBackend::GetEscapeSequence(Level level)
@@ -278,13 +300,21 @@ static void PrintWithoutAnsi(
     fwrite(out.data(), 1, out.size(), stream);
 }
 
-void ConsoleBackend::WriteText(FILE* stream, const char* text, size_t len, const char* escape)
+static std::mutex& GetConsoleOutputLock()
+{
+  static std::mutex ConsoleOutputLock;
+  return ConsoleOutputLock;
+}
+
+std::mutex& ConsoleBackend::GetOutputLock()
+{
+  return GetConsoleOutputLock();
+}
+
+void ConsoleBackend::WriteTextUnlocked(FILE* stream, const char* text, size_t len, const char* escape)
 {
   if (!text || len == 0)
     return;
-
-  static std::mutex ConsoleOutputLock;
-  std::lock_guard guard(ConsoleOutputLock);
 
   const bool hasAnsi = (memchr(text, '\x1b', len) != nullptr);
   const bool isTty = Colorizer::IsTTY(stream);
@@ -316,20 +346,62 @@ void ConsoleBackend::WriteText(FILE* stream, const char* text, size_t len, const
   }
 }
 
+void ConsoleBackend::WriteText(FILE* stream, const char* text, size_t len, const char* escape)
+{
+  if (!text || len == 0)
+    return;
+
+  std::lock_guard guard(GetOutputLock());
+  WriteTextUnlocked(stream, text, len, escape);
+}
+
 ConsoleManagerFactory& ConsoleBackend::GetFactory() const
 {
   auto logger = Owner->GetOwner();
   return logger->GetConsoleManagerFactory();
 }
 
+std::shared_ptr<ConsoleManager> ConsoleBackend::GetManager() const
+{
+  return Manager.load(std::memory_order_acquire);
+}
+
 void ConsoleBackend::RegisterIfNeeded(bool startWorker)
 {
-  if (Registered.load(std::memory_order_relaxed))
+  if (Registered.load(std::memory_order_acquire))
+  {
+    if (startWorker && !WorkerRequested.exchange(true, std::memory_order_acq_rel))
+    {
+      std::shared_ptr<ConsoleManager> manager = GetManager();
+      if (manager)
+        manager->StartWorker();
+    }
+
     return;
+  }
+
+  std::lock_guard lock(RegistrationLock);
+
+  if (Registered.load(std::memory_order_acquire))
+  {
+    if (startWorker && !WorkerRequested.exchange(true, std::memory_order_acq_rel))
+    {
+      std::shared_ptr<ConsoleManager> manager = GetManager();
+      if (manager)
+        manager->StartWorker();
+    }
+
+    return;
+  }
 
   ConsoleBackendPtr self = std::static_pointer_cast<ConsoleBackend>(shared_from_this());
-  GetFactory().Add(self, startWorker);
-  Registered.store(true, std::memory_order_relaxed);
+  std::shared_ptr<ConsoleManager> manager = GetFactory().Add(self, startWorker);
+  Manager.store(
+    manager
+    , std::memory_order_release
+  );
+  WorkerRequested.store(startWorker, std::memory_order_release);
+  Registered.store(true, std::memory_order_release);
 }
 
 void ConsoleBackend::Display(Context& context)
@@ -359,15 +431,22 @@ void ConsoleBackend::Display(Context& context)
 
   const bool isTty = Colorizer::IsTTY(stream);
 
-  if (!isTty && GetFactory().AppendRedirected(Owner, target, buffer, static_cast<size_t>(nc)))
+  if (!isTty)
   {
     RegisterIfNeeded(false);
-    return;
+
+    std::shared_ptr<ConsoleManager> manager = GetManager();
+    if (manager && manager->AppendRedirected(Owner, target, buffer, static_cast<size_t>(nc)))
+      return;
   }
 
   RegisterIfNeeded(true);
 
-  GetFactory().Push(
+  std::shared_ptr<ConsoleManager> manager = GetManager();
+  if (!manager || manager->Stopping())
+    return;
+
+  manager->Push(
     target
     , context.ErrorLevel
     , flags.Highlight

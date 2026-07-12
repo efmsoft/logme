@@ -16,7 +16,7 @@ namespace Logme
     ConsoleManagerFactory();
     ~ConsoleManagerFactory();
 
-    void Add(const ConsoleBackendPtr& backend, bool startWorker = true);
+    std::shared_ptr<ConsoleManager> Add(const ConsoleBackendPtr& backend, bool startWorker = true);
     void Remove(ConsoleBackend* backend);
     bool Push(
       ConsoleTarget target

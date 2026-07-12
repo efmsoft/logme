@@ -62,7 +62,11 @@ namespace Logme
     std::atomic<bool> ShutdownCalled;
     std::atomic<bool> WorkerRequested;
     mutable std::mutex RegistrationLock;
+#if defined(__cpp_lib_atomic_shared_ptr)
     std::atomic<std::shared_ptr<ConsoleManager>> Manager;
+#else
+    std::shared_ptr<ConsoleManager> Manager;
+#endif
 
   public:
     LOGMELNK ConsoleBackend(ChannelPtr owner);
@@ -92,6 +96,7 @@ namespace Logme
   private:
     class ConsoleManagerFactory& GetFactory() const;
     std::shared_ptr<ConsoleManager> GetManager() const;
+    void SetManager(const std::shared_ptr<ConsoleManager>& manager);
     static std::mutex& GetOutputLock();
     static void WriteTextUnlocked(FILE* stream, const char* text, size_t len, const char* escape);
     void RegisterIfNeeded(bool startWorker);

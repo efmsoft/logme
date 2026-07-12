@@ -103,10 +103,7 @@ void ConsoleBackend::Freeze()
   if (Registered.exchange(false, std::memory_order_acq_rel))
   {
     GetFactory().Remove(this);
-    Manager.store(
-      std::shared_ptr<ConsoleManager>()
-      , std::memory_order_release
-    );
+    SetManager(std::shared_ptr<ConsoleManager>());
     WorkerRequested.store(false, std::memory_order_release);
   }
   else
@@ -363,7 +360,20 @@ ConsoleManagerFactory& ConsoleBackend::GetFactory() const
 
 std::shared_ptr<ConsoleManager> ConsoleBackend::GetManager() const
 {
+#if defined(__cpp_lib_atomic_shared_ptr)
   return Manager.load(std::memory_order_acquire);
+#else
+  return std::atomic_load_explicit(&Manager, std::memory_order_acquire);
+#endif
+}
+
+void ConsoleBackend::SetManager(const std::shared_ptr<ConsoleManager>& manager)
+{
+#if defined(__cpp_lib_atomic_shared_ptr)
+  Manager.store(manager, std::memory_order_release);
+#else
+  std::atomic_store_explicit(&Manager, manager, std::memory_order_release);
+#endif
 }
 
 void ConsoleBackend::RegisterIfNeeded(bool startWorker)
@@ -396,10 +406,7 @@ void ConsoleBackend::RegisterIfNeeded(bool startWorker)
 
   ConsoleBackendPtr self = std::static_pointer_cast<ConsoleBackend>(shared_from_this());
   std::shared_ptr<ConsoleManager> manager = GetFactory().Add(self, startWorker);
-  Manager.store(
-    manager
-    , std::memory_order_release
-  );
+  SetManager(manager);
   WorkerRequested.store(startWorker, std::memory_order_release);
   Registered.store(true, std::memory_order_release);
 }

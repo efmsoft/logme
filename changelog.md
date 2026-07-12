@@ -1,3 +1,15 @@
+## 2.4.19
+
+### Improved
+- Optimized asynchronous console dispatch by keeping a direct `ConsoleManager` reference in `ConsoleBackend` and routing queued or redirected output through the registered manager instead of repeatedly entering `ConsoleManagerFactory` on hot paths.
+- Reduced async console worker-state overhead by adding a cheap `WorkerRunning` fast path and using the existing `std::thread` native handle only for slow worker-availability checks on Windows, removing repeated `OpenThread` / `CloseHandle` calls.
+- Improved console queue coordination with separate space and idle wait paths, waiter tracking, and conditional `NotFull` / `Idle` notifications so condition variables are not broadcast when no thread is waiting.
+- Reduced unnecessary worker wakeups by using `notify_one()` for console manager scheduling and notifying the worker only when the queue transitions from empty to pending work.
+- Improved console buffer processing by holding the shared console output lock once per processed buffer and writing accumulated plain-text batches through an unlocked output helper, reducing repeated lock/unlock operations.
+- Improved blocking, flush, drain, and shutdown coordination so pending console records can be drained synchronously when the worker is unavailable while normal asynchronous processing continues through the worker when it is running.
+- Improved async console backend registration and worker startup coordination, including the case where redirected non-TTY output registers a backend before console worker processing is required.
+- Updated the README throughput benchmark table and performance notes with the current `fmt-build` integer-payload results and clarified that higher completed-cycle counts are better.
+
 ## 2.4.18
 
 ### Added

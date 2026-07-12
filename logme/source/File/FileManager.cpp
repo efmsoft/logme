@@ -511,9 +511,7 @@ FileManager::FileManager()
 FileManager::~FileManager()
 {
   SetStopping();
-
-  if (ManagerThread.joinable()) 
-    ManagerThread.join();
+  WaitForStop();
 
   for (const auto& backend : Backends)
   {
@@ -837,7 +835,13 @@ void FileManager::AddBackend(const FileBackendPtr& backend)
 
 bool FileManager::Stopping() const
 {
-  return StopRequested;
+  return StopRequested.load(std::memory_order_relaxed);
+}
+
+void FileManager::WaitForStop()
+{
+  if (ManagerThread.joinable())
+    ManagerThread.join();
 }
 
 #ifdef _WIN32
@@ -870,7 +874,7 @@ void FileManager::SetStopping()
   {
     std::lock_guard<std::mutex> lock(Lock);
     
-    StopRequested = true;
+    StopRequested.store(true, std::memory_order_relaxed);
     Reschedule = true;
 
 #ifdef _WIN32
@@ -1092,7 +1096,7 @@ void FileManager::ManagementThread()
 
   std::unique_lock lock(Lock);
 
-  while (StopRequested == false)
+  while (StopRequested.load(std::memory_order_relaxed) == false)
   {
     FILE_CNT(GlobalManagementLoops.fetch_add(1, std::memory_order_relaxed));
 
@@ -1114,7 +1118,9 @@ void FileManager::ManagementThread()
       FILE_CNT(GlobalWaitCalls.fetch_add(1, std::memory_order_relaxed));
       FILE_CNT(GlobalIdleWaitCalls.fetch_add(1, std::memory_order_relaxed));
       
-      CV.wait(lock, [&] { return StopRequested || Reschedule; });
+      CV.wait(lock, [&] {
+        return StopRequested.load(std::memory_order_relaxed) || Reschedule;
+      });
       
       FILE_CNT(GlobalWaitWakeups.fetch_add(1, std::memory_order_relaxed));
       if (Reschedule)
@@ -1146,13 +1152,14 @@ void FileManager::ManagementThread()
           CV.wait_for(
             lock
             , std::chrono::milliseconds(remaining), [&] {
-              return StopRequested || Reschedule;
+              return StopRequested.load(std::memory_order_relaxed)
+                || Reschedule;
             }
           );
           FILE_CNT(GlobalWaitWakeups.fetch_add(1, std::memory_order_relaxed));
           if (Reschedule)
             FILE_CNT(GlobalTimedWaitReschedules.fetch_add(1, std::memory_order_relaxed));
-          else if (StopRequested == false)
+          else if (StopRequested.load(std::memory_order_relaxed) == false)
             FILE_CNT(GlobalTimedWaitTimeouts.fetch_add(1, std::memory_order_relaxed));
 
           Reschedule = false;
@@ -1210,7 +1217,7 @@ void FileManager::ManagementThread()
       lock.lock();
       RemoveBackendLocked(nextToRun);
       if (Backends.empty())
-        StopRequested = true;
+        StopRequested.store(true, std::memory_order_relaxed);
       lock.unlock();
 
       nextToRun->OnShutdown();

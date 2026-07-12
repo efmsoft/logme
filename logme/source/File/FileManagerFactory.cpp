@@ -10,18 +10,39 @@ FileManagerFactory::FileManagerFactory()
 
 FileManagerFactory::~FileManagerFactory()
 {
-  Instance.reset();
+  std::shared_ptr<FileManager> instance;
+
+  {
+    std::unique_lock guard(Lock);
+    Instance.swap(instance);
+  }
+
+  if (instance)
+  {
+    instance->SetStopping();
+    instance->WaitForStop();
+  }
 }
 
 void FileManagerFactory::Add(const FileBackendPtr& backend)
 {
-  std::unique_lock guard(Lock);
+  std::shared_ptr<FileManager> stoppedInstance;
 
-  if (Instance && Instance->Stopping())
   {
-    std::shared_ptr<FileManager> instance;
-    Instance.swap(instance);
+    std::unique_lock guard(Lock);
+
+    if (Instance && Instance->Stopping())
+      Instance.swap(stoppedInstance);
   }
+
+  if (stoppedInstance)
+  {
+    stoppedInstance->SetStopping();
+    stoppedInstance->WaitForStop();
+    stoppedInstance.reset();
+  }
+
+  std::unique_lock guard(Lock);
 
   if (Instance == nullptr)
     Instance = std::make_shared<FileManager>();

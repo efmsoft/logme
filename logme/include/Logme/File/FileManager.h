@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <condition_variable>
 #include <mutex>
 #include <stdint.h>
@@ -68,7 +69,7 @@ namespace Logme
 
   class FileManager
   {
-    bool StopRequested;
+    std::atomic<bool> StopRequested;
     bool Reschedule;
     std::thread ManagerThread;
 
@@ -118,6 +119,9 @@ namespace Logme
     void ClearDataBufferCache();
 
   private:
+    friend class FileManagerFactory;
+
+    void WaitForStop();
     void LinkBackendFront(FileBackend* backend);
     void LinkBackendBack(FileBackend* backend);
     void LinkBackendBefore(FileBackend* backend, FileBackend* before);

@@ -24,6 +24,7 @@ It is designed for both high-load servers and simple applications, providing sel
 - 🧭 **Feature discovery map:** [docs/feature_discovery.md](docs/feature_discovery.md) maps common logging-library terms such as null sink, rate limiting, duplicate suppression, rotation, and retention to the corresponding logme mechanisms.
 - 🗂️ **File lifecycle policies:** [docs/file_backend_lifecycle.md](docs/file_backend_lifecycle.md) describes file rotation, archive naming, retention, and gzip compression.
 - 🧯 **Crash logging path:** [docs/crash_logging.md](docs/crash_logging.md) describes `LogmeCrash`, `LogmeCrashRaw`, prepared crash files, and stderr/stdout emergency output.
+- 🔎 **Log-source profiling:** [docs/log_statistics.md](docs/log_statistics.md) explains how to use `logstat` to find high-volume or high-frequency log statements and inspect asynchronous file-backend batching, errors, and queue drops.
 
 ---
 

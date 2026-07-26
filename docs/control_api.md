@@ -292,6 +292,10 @@ most log records and message text. It is intended for production diagnostics whe
 logging appears in a CPU or I/O profile and disabling all logging would remove the
 information needed to diagnose the application.
 
+For the complete diagnostic workflow, metric interpretation, asynchronous file
+analysis and disabled-path performance contract, see
+[On-demand log-source profiling](log_statistics.md).
+
 Collection is disabled by default. Start a fresh interval, reproduce the workload,
 and then inspect the results:
 

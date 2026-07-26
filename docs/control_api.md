@@ -284,3 +284,111 @@ LOGMEWEB-DOWNLOAD-B64    file-size
 The download response is intended for `logmeweb` and is also capped by the
 server to avoid transferring unexpectedly huge files through the control
 interface.
+
+## Log-site statistics (`logstat`)
+
+`logstat` is an on-demand profiler for identifying source locations that generate
+most log records and message text. It is intended for production diagnostics when
+logging appears in a CPU or I/O profile and disabling all logging would remove the
+information needed to diagnose the application.
+
+Collection is disabled by default. Start a fresh interval, reproduce the workload,
+and then inspect the results:
+
+```text
+logmectl -p 7791 logstat start
+logmectl -p 7791 logstat top --sort bytes --limit 30
+logmectl -p 7791 logstat top --sort records --limit 30
+logmectl -p 7791 logstat channels --sort bytes
+logmectl -p 7791 logstat outputs --backend FileBackend --sort bytes --limit 30
+logmectl -p 7791 logstat backends --sort bytes
+logmectl -p 7791 logstat files --sort written-bytes --limit 30
+logmectl -p 7791 logstat stop
+```
+
+Supported commands:
+
+```text
+logstat start
+logstat stop
+logstat status
+logstat reset
+logstat top [--sort bytes|records] [--limit count]
+logstat channels [--sort bytes|records] [--limit count]
+logstat outputs [--sort bytes|records] [--limit count] [--backend type]
+logstat backends [--sort bytes|records] [--limit count] [--backend type]
+logstat files [--sort written-bytes|batches|errors|dropped-bytes] [--limit count]
+```
+
+`start` resets previous counters before collection becomes active. `stop` disables
+collection and preserves the latest result. `reset` clears counters and restarts the
+measurement interval without changing whether collection is active.
+
+The top-site report contains:
+
+- source file, function and line;
+- log level and first observed format string;
+- accepted source channel before links and backend fan-out;
+- record count and records per second;
+- message bytes, KiB per second, average size and maximum size;
+- share of the selected sort metric.
+
+The channel report aggregates the same record and message-byte counters by accepted
+source channel.
+
+The output report attributes each source location to the destination channel and
+built-in backend that accepted the formatted record. `output-bytes` includes channel
+prefixes, output formatting and link/backend fan-out. For `FileBackend`, synchronous
+writes are counted after a successful write and asynchronous writes after the data is
+accepted by the file queue. With file obfuscation enabled, the encrypted record size
+is counted. The backend report aggregates these counters by destination channel and
+backend type. Use `--backend FileBackend` to isolate file output:
+
+```text
+logstat outputs --backend FileBackend --sort bytes --limit 30
+```
+
+The file runtime report shows what happened after records entered an asynchronous
+`FileBackend` queue. It reports accepted records and bytes, worker batches and write
+operations, batch sizes, bytes confirmed by successful file-write calls, failed write
+operations and input bytes, and records rejected because the queue could not accept
+more data. Typical use:
+
+```text
+logstat files --sort written-bytes --limit 30
+logstat files --sort batches --limit 30
+logstat files --sort errors --limit 30
+logstat files --sort dropped-bytes --limit 30
+```
+
+The file counters use the same `start`/`stop` interval as source-site counters. Data
+that remains queued when `stop` is issued appears as accepted but not yet written. To
+measure a completed interval, flush the application logs before stopping collection.
+Successful byte counts are exact for completed `WriteAll`/`WriteAllVector` calls. On a
+low-level partial-write failure, failed input bytes describe the affected input batch
+and may be larger than the number of bytes that were not physically written.
+
+`CallbackBackend` records calls but reports zero output bytes because Logme cannot
+know what the application callback does with the context. Native C logging macros
+have their own static statistics cache at each expansion site and are separated by
+source file, function and line in the same way as C++ macros. Direct calls to the
+`LogmeWrite*` functions without a `LogmeCContextCache` remain grouped by the common
+C API context; the standard C macros use the site-aware functions automatically.
+
+`format json logstat ...` returns the standard JSON envelope and includes the report
+in `data.text`.
+
+### Disabled-path cost
+
+The profiler performs no site registration, counter updates, locking, allocation or
+time queries while collection is disabled. For a record that has already passed the
+normal Logme filters and formatting path, the source-site path adds one relaxed atomic
+pointer load and a normally predicted null branch. Each built-in backend that accepts
+the record adds one relaxed atomic pointer load and a normally predicted null branch.
+The asynchronous file worker adds one relaxed active-profiler check per ready batch;
+queue-drop accounting is reached only on the exceptional append-failure path. Calls
+rejected by the existing early level/channel precheck do not reach the source-site
+check or any backend statistics check.
+
+The control policy field `AllowLogStatistics` can disable `logstat` independently.
+It is enabled by the built-in Full, Safe and Diagnostic policies.

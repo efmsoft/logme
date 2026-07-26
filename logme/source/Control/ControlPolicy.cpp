@@ -15,6 +15,7 @@ ControlPolicy::ControlPolicy()
   , AllowLevelChanges(true)
   , AllowFlagChanges(true)
   , AllowTraceChanges(true)
+  , AllowLogStatistics(true)
   , AllowSubsystemChanges(true)
 {
 }
@@ -35,6 +36,7 @@ ControlPolicy ControlPolicy::Full()
   policy.AllowLevelChanges = true;
   policy.AllowFlagChanges = true;
   policy.AllowTraceChanges = true;
+  policy.AllowLogStatistics = true;
   policy.AllowSubsystemChanges = true;
 
   return policy;
@@ -56,6 +58,7 @@ ControlPolicy ControlPolicy::Safe()
   policy.AllowLevelChanges = true;
   policy.AllowFlagChanges = true;
   policy.AllowTraceChanges = true;
+  policy.AllowLogStatistics = true;
   policy.AllowSubsystemChanges = true;
 
   return policy;

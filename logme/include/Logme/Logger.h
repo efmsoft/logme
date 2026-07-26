@@ -32,6 +32,7 @@
 #include <Logme/File/DirectorySizeWatchdog.h>
 #include <Logme/File/FileManagerFactory.h>
 #include <Logme/Obfuscate.h>
+#include <Logme/LogStatistics.h>
 #include <Logme/Stream.h>
 #include <Logme/ThreadField.h>
 #include <Logme/Utils.h>
@@ -39,6 +40,7 @@
 namespace Logme
 {
   struct TracePoint;
+  class LogStatisticsCollector;
 
   typedef std::shared_ptr<std::string> StringPtr;
   typedef std::function<bool(const std::string&, std::string&)> TControlHandler;
@@ -60,6 +62,7 @@ namespace Logme
   {
     CS DataLock;
     CS TracePointLock;
+    std::mutex LogStatisticsControlLock;
 
     ChannelMap Channels;
     ChannelPtr Default;
@@ -127,6 +130,8 @@ namespace Logme
     bool Obfuscate;
 
     TracePoint* TracePoints;
+    std::unique_ptr<LogStatisticsCollector> LogStatistics;
+    std::atomic<LogStatisticsCollector*> ActiveLogStatistics;
 
   public:
     TCondition Condition;
@@ -720,6 +725,105 @@ namespace Logme
     /// <param name="pattern">Wildcard pattern. Empty pattern matches all trace points.</param>
     LOGMELNK std::string DumpTracePoints(const std::string& pattern);
 
+    /// <summary>
+    /// Starts a new on-demand log-site statistics collection session.
+    /// Existing counters are reset before the session becomes active.
+    /// </summary>
+    LOGMELNK void StartLogStatistics();
+
+    /// <summary>
+    /// Stops log-site statistics collection while preserving the last snapshot.
+    /// </summary>
+    LOGMELNK void StopLogStatistics();
+
+    /// <summary>
+    /// Resets collected log-site statistics. Active collection remains active.
+    /// </summary>
+    LOGMELNK void ResetLogStatistics();
+
+    /// <summary>
+    /// Returns true while log-site statistics collection is enabled.
+    /// </summary>
+    LOGMELNK bool IsLogStatisticsActive() const;
+
+    LogStatisticsCollector* GetActiveLogStatisticsFast() const
+    {
+      return ActiveLogStatistics.load(std::memory_order_relaxed);
+    }
+
+    LOGMELNK void RecordLogBackendOutput(
+      Context& context
+      , Channel* channel
+      , Backend* backend
+      , size_t outputBytes
+    );
+
+    LOGMELNK void RecordFileBackendQueueDrop(
+      Channel* channel
+      , Backend* backend
+      , size_t outputBytes
+    );
+
+    LOGMELNK void RecordFileBackendWrite(
+      Channel* channel
+      , Backend* backend
+      , size_t batchBuffers
+      , size_t batchBytes
+      , size_t writeOperations
+      , size_t writtenBuffers
+      , size_t writtenBytes
+      , size_t failedWriteOperations
+      , size_t failedBuffers
+      , size_t failedBytes
+    );
+
+    /// <summary>
+    /// Returns current log-site statistics session status.
+    /// </summary>
+    LOGMELNK std::string DumpLogStatisticsStatus();
+
+    /// <summary>
+    /// Returns top log sites sorted by message bytes or record count.
+    /// </summary>
+    LOGMELNK std::string DumpLogStatisticsTop(
+      LogStatisticsSort sort
+      , size_t limit
+    );
+
+    /// <summary>
+    /// Returns aggregated channel statistics for the current session.
+    /// </summary>
+    LOGMELNK std::string DumpLogStatisticsChannels(
+      LogStatisticsSort sort
+      , size_t limit
+    );
+
+    /// <summary>
+    /// Returns top log sites split by destination channel and backend.
+    /// </summary>
+    LOGMELNK std::string DumpLogStatisticsOutputs(
+      LogStatisticsSort sort
+      , size_t limit
+      , const std::string& backendType = std::string()
+    );
+
+    /// <summary>
+    /// Returns aggregated destination channel/backend statistics.
+    /// </summary>
+    LOGMELNK std::string DumpLogStatisticsBackends(
+      LogStatisticsSort sort
+      , size_t limit
+      , const std::string& backendType = std::string()
+    );
+
+    /// <summary>
+    /// Returns asynchronous FileBackend queue and worker statistics.
+    /// </summary>
+    LOGMELNK std::string DumpLogStatisticsFileBackends(
+      LogFileStatisticsSort sort
+      , size_t limit
+    );
+
     LOGMELNK void DeleteAllChannels();
 
     /// <summary>
@@ -878,6 +982,8 @@ namespace Logme
     static bool CommandLevel(StringArray& arr, std::string& response);
 
     static bool CommandTrace(StringArray& arr, std::string& response);
+
+    static bool CommandLogStatistics(StringArray& arr, std::string& response);
 
     static bool CommandOverview(StringArray& arr, std::string& response);
 

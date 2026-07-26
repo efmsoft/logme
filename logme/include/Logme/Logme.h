@@ -14,6 +14,7 @@
 #include <Logme/CrashLog.h>
 #include <Logme/EnvironmentControl.h>
 #include <Logme/Logger.h>
+#include <Logme/LogStatistics.h>
 #include <Logme/ObfString.h>
 #include <Logme/Procedure.h>
 #include <Logme/Stream.h>

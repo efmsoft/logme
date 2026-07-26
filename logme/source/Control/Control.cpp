@@ -264,6 +264,15 @@ namespace
       return false;
     }
 
+    if (c == "logstat")
+    {
+      if (policy.AllowLogStatistics)
+        return true;
+
+      reason = "logstat command is disabled";
+      return false;
+    }
+
     if (c == "subsystem")
     {
       if (policy.AllowSubsystemChanges)
@@ -1352,6 +1361,12 @@ std::string Logger::Control(
       if (c == "trace")
       {
         if (Logger::CommandTrace(items, response))
+          return response;
+      }
+
+      if (c == "logstat")
+      {
+        if (Logger::CommandLogStatistics(items, response))
           return response;
       }
 

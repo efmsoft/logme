@@ -35,7 +35,18 @@ void SharedFileBackend::Display(Context& context)
 
     int nc;
     const char* buffer = context.Apply(Owner, Owner->GetFlags(), nc);
-    Write(buffer, nc);
+    int written = Write(buffer, nc);
+
+    Logger* logger = Owner->GetOwner();
+    if (written > 0 && logger->GetActiveLogStatisticsFast() != nullptr)
+    {
+      logger->RecordLogBackendOutput(
+        context
+        , Owner.get()
+        , this
+        , static_cast<size_t>(written)
+      );
+    }
 
     CloseLog();
   }

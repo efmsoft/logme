@@ -1,4 +1,5 @@
 #include <cassert>
+#include <atomic>
 
 #include <Logme/Backend/Backend.h>
 
@@ -15,9 +16,15 @@
 
 using namespace Logme;
 
+namespace
+{
+  std::atomic<uint64_t> NextBackendStatisticsId(1);
+}
+
 Backend::Backend(ChannelPtr owner, const char* type)
   : Owner(owner)
   , Type(type)
+  , StatisticsId(NextBackendStatisticsId.fetch_add(1, std::memory_order_relaxed))
   , Freezed(false)
   , Async(false)
 {
@@ -30,6 +37,11 @@ Backend::~Backend()
 const char* Backend::GetType() const
 {
   return Type;
+}
+
+uint64_t Backend::GetStatisticsId() const
+{
+  return StatisticsId;
 }
 
 void Backend::Freeze()

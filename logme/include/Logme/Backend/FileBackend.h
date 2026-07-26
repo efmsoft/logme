@@ -22,6 +22,9 @@
 
 namespace Logme
 {
+  class LogStatisticsCollector;
+  struct BackendRuntimeStatistics;
+
   enum SizeLimitPolicy
   {
     SIZE_LIMIT_TRUNCATE,
@@ -205,6 +208,8 @@ namespace Logme
     NonceGen Nonce;
     std::unique_ptr<BufferedFileIo> BufferedIo;
     std::vector<DataBufferPtr> ReadyData;
+    std::atomic<BackendRuntimeStatistics*> RuntimeStatistics;
+    std::atomic<uint64_t> RuntimeStatisticsGeneration;
   
   public:
     enum 
@@ -295,7 +300,7 @@ namespace Logme
   
   protected:
     LOGMELNK void Display(Context& context) override;
-    void AppendStringInternal(const char* text, size_t len);
+    size_t AppendStringInternal(const char* text, size_t len);
 
   private:
     class FileManagerFactory& GetFactory() const;
@@ -314,8 +319,8 @@ namespace Logme
     );
     bool ApplySizeLimit(size_t add);
     void Truncate();
-    void AppendObfuscated(const char* text, size_t add);
-    void AppendOutputData(const char* text, size_t add);
+    size_t AppendObfuscated(const char* text, size_t add);
+    size_t AppendOutputData(const char* text, size_t add);
     enum class FlushRequestSource
     {
       UNKNOWN,
@@ -350,6 +355,7 @@ namespace Logme
 
 
     friend class FileManager;
+    friend class LogStatisticsCollector;
     bool WorkerFunc();
     void OnShutdown();
 

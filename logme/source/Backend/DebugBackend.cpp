@@ -92,17 +92,32 @@ void DebugBackend::Display(Context& context)
   if (!GetAsync() || ShutdownFlag.load(std::memory_order_relaxed))
   {
     bool flushed = false;
+    bool output = false;
 
     if (!ShutdownFlag.load(std::memory_order_relaxed))
       flushed = GetFactory().PushAndFlush(buffer, static_cast<size_t>(nc));
+
+    output = flushed;
 
     if (!flushed)
     {
 #ifdef _WIN32
       WriteDebugText(buffer);
+      output = true;
 #else
       (void)buffer;
 #endif
+    }
+
+    Logger* logger = Owner->GetOwner();
+    if (output && nc > 0 && logger->GetActiveLogStatisticsFast() != nullptr)
+    {
+      logger->RecordLogBackendOutput(
+        context
+        , Owner.get()
+        , this
+        , static_cast<size_t>(nc)
+      );
     }
 
     return;
@@ -110,13 +125,26 @@ void DebugBackend::Display(Context& context)
 
   RegisterIfNeeded();
 
-  if (!GetFactory().Push(buffer, static_cast<size_t>(nc)))
+  bool output = GetFactory().Push(buffer, static_cast<size_t>(nc));
+  if (!output)
   {
 #ifdef _WIN32
     WriteDebugText(buffer);
+    output = true;
 #else
     (void)buffer;
 #endif
+  }
+
+  Logger* logger = Owner->GetOwner();
+  if (output && nc > 0 && logger->GetActiveLogStatisticsFast() != nullptr)
+  {
+    logger->RecordLogBackendOutput(
+      context
+      , Owner.get()
+      , this
+      , static_cast<size_t>(nc)
+    );
   }
 }
 

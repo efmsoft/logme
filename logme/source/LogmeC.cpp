@@ -9,12 +9,16 @@
 #include <Logme/Override.h>
 #include <Logme/SID.h>
 
+#include "LogStatisticsInternal.h"
+
 #include <mutex>
 #include <string>
 #include <string.h>
 
 namespace
 {
+  Logme::ContextCache CContextCache;
+
   Logme::Level ToCppLevel(LogmeLevel level)
   {
     switch (level)
@@ -131,7 +135,8 @@ namespace
   }
 
   void DoWriteV(
-    LogmeLevel level
+    LogmeCContextCache* statisticsCache
+    , LogmeLevel level
     , const char* channel
     , const char* subsystem
     , Logme::Override* overrideData
@@ -154,9 +159,8 @@ namespace
     Logme::ID channelStorage{ nullptr };
     Logme::SID subsystemStorage{ 0 };
 
-    static Logme::ContextCache cache;
     Logme::Context context(
-      cache
+      CContextCache
       , ToCppLevel(level)
       , BuildChannel(channel, channelStorage)
       , BuildSubsystem(subsystem, subsystemStorage)
@@ -169,12 +173,23 @@ namespace
     if (overrideData)
       context.Ovr = overrideData;
 
+    context.AppendContext = statisticsCache;
     Logme::Instance->DoLog(context, format, args);
   }
 }
 
-extern "C" void LogmeWriteV(
-  LogmeLevel level
+uintptr_t* Logme::GetCLogStatisticsCache(Context& context)
+{
+  if (&context.Cache != &CContextCache || context.AppendContext == nullptr)
+    return nullptr;
+
+  auto* cache = static_cast<LogmeCContextCache*>(context.AppendContext);
+  return &cache->StatisticsGeneration;
+}
+
+extern "C" void LogmeWriteSiteV(
+  LogmeCContextCache* cache
+  , LogmeLevel level
   , const char* channel
   , const char* subsystem
   , const char* function
@@ -192,10 +207,148 @@ extern "C" void LogmeWriteV(
 
   auto overrideData = Logme::Instance->GetThreadOverride();
   DoWriteV(
-    level
+    cache
+    , level
     , channel
     , subsystem
     , &overrideData
+    , function
+    , file
+    , line
+    , format
+    , args
+  );
+}
+
+extern "C" void LogmeWriteSiteOverrideV(
+  LogmeCContextCache* cache
+  , LogmeLevel level
+  , const char* channel
+  , const char* subsystem
+  , LogmeCOverride* overrideData
+  , const char* function
+  , const char* file
+  , int line
+  , const char* format
+  , va_list args
+)
+{
+  if (overrideData == nullptr)
+  {
+    LogmeWriteSiteV(
+      cache
+      , level
+      , channel
+      , subsystem
+      , function
+      , file
+      , line
+      , format
+      , args
+    );
+
+    return;
+  }
+
+  std::lock_guard guard(OverrideLock);
+
+  Logme::Override cppOverride;
+  CopyToCppOverride(*overrideData, cppOverride);
+
+  DoWriteV(
+    cache
+    , level
+    , channel
+    , subsystem
+    , &cppOverride
+    , function
+    , file
+    , line
+    , format
+    , args
+  );
+
+  CopyFromCppOverride(cppOverride, *overrideData);
+}
+
+extern "C" void LogmeWriteSite(
+  LogmeCContextCache* cache
+  , LogmeLevel level
+  , const char* channel
+  , const char* subsystem
+  , const char* function
+  , const char* file
+  , int line
+  , const char* format
+  , ...
+)
+{
+  va_list args;
+  va_start(args, format);
+
+  LogmeWriteSiteV(
+    cache
+    , level
+    , channel
+    , subsystem
+    , function
+    , file
+    , line
+    , format
+    , args
+  );
+
+  va_end(args);
+}
+
+extern "C" void LogmeWriteSiteOverride(
+  LogmeCContextCache* cache
+  , LogmeLevel level
+  , const char* channel
+  , const char* subsystem
+  , LogmeCOverride* overrideData
+  , const char* function
+  , const char* file
+  , int line
+  , const char* format
+  , ...
+)
+{
+  va_list args;
+  va_start(args, format);
+
+  LogmeWriteSiteOverrideV(
+    cache
+    , level
+    , channel
+    , subsystem
+    , overrideData
+    , function
+    , file
+    , line
+    , format
+    , args
+  );
+
+  va_end(args);
+}
+
+extern "C" void LogmeWriteV(
+  LogmeLevel level
+  , const char* channel
+  , const char* subsystem
+  , const char* function
+  , const char* file
+  , int line
+  , const char* format
+  , va_list args
+)
+{
+  LogmeWriteSiteV(
+    nullptr
+    , level
+    , channel
+    , subsystem
     , function
     , file
     , line
@@ -216,40 +369,18 @@ extern "C" void LogmeWriteOverrideV(
   , va_list args
 )
 {
-  if (overrideData == nullptr)
-  {
-    LogmeWriteV(
-      level
-      , channel
-      , subsystem
-      , function
-      , file
-      , line
-      , format
-      , args
-    );
-
-    return;
-  }
-
-  std::lock_guard guard(OverrideLock);
-
-  Logme::Override cppOverride;
-  CopyToCppOverride(*overrideData, cppOverride);
-
-  DoWriteV(
-    level
+  LogmeWriteSiteOverrideV(
+    nullptr
+    , level
     , channel
     , subsystem
-    , &cppOverride
+    , overrideData
     , function
     , file
     , line
     , format
     , args
   );
-
-  CopyFromCppOverride(cppOverride, *overrideData);
 }
 
 extern "C" void LogmeWrite(

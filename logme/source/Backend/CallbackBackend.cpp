@@ -1,4 +1,7 @@
 #include <Logme/Backend/CallbackBackend.h>
+#include <Logme/Channel.h>
+#include <Logme/Context.h>
+#include <Logme/Logger.h>
 
 using namespace Logme;
 
@@ -66,4 +69,8 @@ void CallbackBackend::Display(Context& context)
     return;
 
   Callback(context, Owner, UserData);
+
+  Logger* logger = Owner->GetOwner();
+  if (logger->GetActiveLogStatisticsFast() != nullptr)
+    logger->RecordLogBackendOutput(context, Owner.get(), this, 0);
 }

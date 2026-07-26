@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <vector>
 
@@ -46,6 +47,7 @@ namespace Logme
   {
     ChannelPtr Owner;
     const char* Type;
+    uint64_t StatisticsId;
     bool Freezed;
     bool Async;
 
@@ -85,6 +87,7 @@ namespace Logme
     LOGMELNK virtual bool IsAsyncActive() const;
 
     LOGMELNK const char* GetType() const;
+    LOGMELNK uint64_t GetStatisticsId() const;
 
     /// <summary>
     /// Creates built-in backend by type id.

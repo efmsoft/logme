@@ -433,6 +433,18 @@ void ConsoleBackend::Display(Context& context)
   if (!GetAsync() || ShutdownFlag.load(std::memory_order_relaxed))
   {
     WriteText(stream, buffer, static_cast<size_t>(nc), escape);
+
+    Logger* logger = Owner->GetOwner();
+    if (nc > 0 && logger->GetActiveLogStatisticsFast() != nullptr)
+    {
+      logger->RecordLogBackendOutput(
+        context
+        , Owner.get()
+        , this
+        , static_cast<size_t>(nc)
+      );
+    }
+
     return;
   }
 
@@ -444,7 +456,20 @@ void ConsoleBackend::Display(Context& context)
 
     std::shared_ptr<ConsoleManager> manager = GetManager();
     if (manager && manager->AppendRedirected(Owner, target, buffer, static_cast<size_t>(nc)))
+    {
+      Logger* logger = Owner->GetOwner();
+      if (nc > 0 && logger->GetActiveLogStatisticsFast() != nullptr)
+      {
+        logger->RecordLogBackendOutput(
+          context
+          , Owner.get()
+          , this
+          , static_cast<size_t>(nc)
+        );
+      }
+
       return;
+    }
   }
 
   RegisterIfNeeded(true);
@@ -453,13 +478,24 @@ void ConsoleBackend::Display(Context& context)
   if (!manager || manager->Stopping())
     return;
 
-  manager->Push(
+  bool accepted = manager->Push(
     target
     , context.ErrorLevel
     , flags.Highlight
     , buffer
     , static_cast<size_t>(nc)
   );
+
+  Logger* logger = Owner->GetOwner();
+  if (accepted && nc > 0 && logger->GetActiveLogStatisticsFast() != nullptr)
+  {
+    logger->RecordLogBackendOutput(
+      context
+      , Owner.get()
+      , this
+      , static_cast<size_t>(nc)
+    );
+  }
 }
 
 void ConsoleBackend::OnShutdown()

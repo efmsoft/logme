@@ -187,6 +187,7 @@
     <ClInclude Include="include\Logme\Json\RSJparser.hpp" />
     <ClInclude Include="include\Logme\Logger.h" />
     <ClInclude Include="include\Logme\Logme.h" />
+    <ClInclude Include="include\Logme\LogStatistics.h" />
     <ClInclude Include="include\Logme\MemoryUsageTracker.h" />
     <ClInclude Include="include\Logme\Module.h" />
     <ClInclude Include="include\Logme\OutputFlags.h" />
@@ -204,6 +205,7 @@
     <ClInclude Include="source\Control\CommandDescriptor.h" />
     <ClInclude Include="source\Control\CommandRegistrar.h" />
     <ClInclude Include="source\Control\Json.h" />
+    <ClInclude Include="source\LogStatisticsInternal.h" />
     <ClInclude Include="source\StringHelpers.h" />
     <ClInclude Include="source\Time\utils.h" />
   </ItemGroup>
@@ -249,6 +251,7 @@
     <ClCompile Include="source\Control\Command\CmdHelp.cpp" />
     <ClCompile Include="source\Control\Command\CmdLevel.cpp" />
     <ClCompile Include="source\Control\Command\CmdList.cpp" />
+    <ClCompile Include="source\Control\Command\CmdLogStatistics.cpp" />
     <ClCompile Include="source\Control\Command\CmdSubsystem.cpp" />
     <ClCompile Include="source\Control\Command\CmdTrace.cpp" />
     <ClCompile Include="source\Control\Control.cpp" />
@@ -265,6 +268,7 @@
     <ClCompile Include="source\File\file_io.cpp" />
     <ClCompile Include="source\Json\Loader.cpp" />
     <ClCompile Include="source\Logger.cpp" />
+    <ClCompile Include="source\LogStatistics.cpp" />
     <ClCompile Include="source\Module.cpp" />
     <ClCompile Include="source\MemoryUsageTracker.cpp" />
     <ClCompile Include="source\Obfuscate.cpp" />

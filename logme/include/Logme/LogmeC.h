@@ -49,7 +49,64 @@ typedef struct LogmeCOverride
   const LogmeCShortenerPair* Shortener;
 } LogmeCOverride;
 
+typedef struct LogmeCContextCache
+{
+  uintptr_t StatisticsGeneration;
+  uintptr_t Statistics;
+} LogmeCContextCache;
+
 #define LOGME_C_OVERRIDE_INIT { { 0 }, { 0 }, -1, 0, 0, 0, NULL }
+#define LOGME_C_CONTEXT_CACHE_INIT { 0, 0 }
+
+LOGMEC_API void LogmeWriteSiteV(
+  LogmeCContextCache* cache
+  , LogmeLevel level
+  , const char* channel
+  , const char* subsystem
+  , const char* function
+  , const char* file
+  , int line
+  , const char* format
+  , va_list args
+);
+
+LOGMEC_API void LogmeWriteSiteOverrideV(
+  LogmeCContextCache* cache
+  , LogmeLevel level
+  , const char* channel
+  , const char* subsystem
+  , LogmeCOverride* overrideData
+  , const char* function
+  , const char* file
+  , int line
+  , const char* format
+  , va_list args
+);
+
+LOGMEC_API void LogmeWriteSite(
+  LogmeCContextCache* cache
+  , LogmeLevel level
+  , const char* channel
+  , const char* subsystem
+  , const char* function
+  , const char* file
+  , int line
+  , const char* format
+  , ...
+);
+
+LOGMEC_API void LogmeWriteSiteOverride(
+  LogmeCContextCache* cache
+  , LogmeLevel level
+  , const char* channel
+  , const char* subsystem
+  , LogmeCOverride* overrideData
+  , const char* function
+  , const char* file
+  , int line
+  , const char* format
+  , ...
+);
 
 LOGMEC_API void LogmeWriteV(
   LogmeLevel level
@@ -196,101 +253,127 @@ LOGMEC_API void LogmeFlushAll(void);
 
 #if LOGME_ACTIVE
   #if defined(_MSC_VER)
-    #define LogmeD(...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), NULL, NULL, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeI(...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_INFO), NULL, NULL, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeW(...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_WARN), NULL, NULL, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeE(...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_ERROR), NULL, NULL, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeC(...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), NULL, NULL, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
+    #define LOGME_C_WRITE(level, channel, subsystem, ...) \
+      do \
+      { \
+        static LogmeCContextCache _logmeContextCache = LOGME_C_CONTEXT_CACHE_INIT; \
+        LogmeWriteSite(&_logmeContextCache, level, channel, subsystem, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__); \
+      } while (0)
 
-    #define LogmeD_Ch(channel, ...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), channel, NULL, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeI_Ch(channel, ...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_INFO), channel, NULL, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeW_Ch(channel, ...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_WARN), channel, NULL, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeE_Ch(channel, ...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_ERROR), channel, NULL, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeC_Ch(channel, ...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), channel, NULL, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
+    #define LOGME_C_WRITE_OVERRIDE(level, channel, subsystem, overrideData, ...) \
+      do \
+      { \
+        static LogmeCContextCache _logmeContextCache = LOGME_C_CONTEXT_CACHE_INIT; \
+        LogmeWriteSiteOverride(&_logmeContextCache, level, channel, subsystem, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__); \
+      } while (0)
+    #define LogmeD(...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), NULL, NULL, ## __VA_ARGS__)
+    #define LogmeI(...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_INFO), NULL, NULL, ## __VA_ARGS__)
+    #define LogmeW(...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_WARN), NULL, NULL, ## __VA_ARGS__)
+    #define LogmeE(...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_ERROR), NULL, NULL, ## __VA_ARGS__)
+    #define LogmeC(...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), NULL, NULL, ## __VA_ARGS__)
 
-    #define LogmeD_Sid(subsystem, ...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), NULL, subsystem, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeI_Sid(subsystem, ...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_INFO), NULL, subsystem, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeW_Sid(subsystem, ...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_WARN), NULL, subsystem, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeE_Sid(subsystem, ...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_ERROR), NULL, subsystem, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeC_Sid(subsystem, ...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), NULL, subsystem, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
+    #define LogmeD_Ch(channel, ...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), channel, NULL, ## __VA_ARGS__)
+    #define LogmeI_Ch(channel, ...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_INFO), channel, NULL, ## __VA_ARGS__)
+    #define LogmeW_Ch(channel, ...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_WARN), channel, NULL, ## __VA_ARGS__)
+    #define LogmeE_Ch(channel, ...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_ERROR), channel, NULL, ## __VA_ARGS__)
+    #define LogmeC_Ch(channel, ...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), channel, NULL, ## __VA_ARGS__)
 
-    #define LogmeD_ChSid(channel, subsystem, ...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), channel, subsystem, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeI_ChSid(channel, subsystem, ...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_INFO), channel, subsystem, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeW_ChSid(channel, subsystem, ...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_WARN), channel, subsystem, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeE_ChSid(channel, subsystem, ...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_ERROR), channel, subsystem, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeC_ChSid(channel, subsystem, ...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), channel, subsystem, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
+    #define LogmeD_Sid(subsystem, ...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), NULL, subsystem, ## __VA_ARGS__)
+    #define LogmeI_Sid(subsystem, ...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_INFO), NULL, subsystem, ## __VA_ARGS__)
+    #define LogmeW_Sid(subsystem, ...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_WARN), NULL, subsystem, ## __VA_ARGS__)
+    #define LogmeE_Sid(subsystem, ...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_ERROR), NULL, subsystem, ## __VA_ARGS__)
+    #define LogmeC_Sid(subsystem, ...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), NULL, subsystem, ## __VA_ARGS__)
 
-    #define LogmeD_Ovr(overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), NULL, NULL, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeI_Ovr(overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_INFO), NULL, NULL, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeW_Ovr(overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_WARN), NULL, NULL, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeE_Ovr(overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_ERROR), NULL, NULL, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeC_Ovr(overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), NULL, NULL, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
+    #define LogmeD_ChSid(channel, subsystem, ...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), channel, subsystem, ## __VA_ARGS__)
+    #define LogmeI_ChSid(channel, subsystem, ...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_INFO), channel, subsystem, ## __VA_ARGS__)
+    #define LogmeW_ChSid(channel, subsystem, ...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_WARN), channel, subsystem, ## __VA_ARGS__)
+    #define LogmeE_ChSid(channel, subsystem, ...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_ERROR), channel, subsystem, ## __VA_ARGS__)
+    #define LogmeC_ChSid(channel, subsystem, ...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), channel, subsystem, ## __VA_ARGS__)
 
-    #define LogmeD_ChOvr(channel, overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), channel, NULL, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeI_ChOvr(channel, overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_INFO), channel, NULL, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeW_ChOvr(channel, overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_WARN), channel, NULL, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeE_ChOvr(channel, overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_ERROR), channel, NULL, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeC_ChOvr(channel, overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), channel, NULL, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
+    #define LogmeD_Ovr(overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), NULL, NULL, overrideData, ## __VA_ARGS__)
+    #define LogmeI_Ovr(overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_INFO), NULL, NULL, overrideData, ## __VA_ARGS__)
+    #define LogmeW_Ovr(overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_WARN), NULL, NULL, overrideData, ## __VA_ARGS__)
+    #define LogmeE_Ovr(overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_ERROR), NULL, NULL, overrideData, ## __VA_ARGS__)
+    #define LogmeC_Ovr(overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), NULL, NULL, overrideData, ## __VA_ARGS__)
 
-    #define LogmeD_SidOvr(subsystem, overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), NULL, subsystem, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeI_SidOvr(subsystem, overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_INFO), NULL, subsystem, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeW_SidOvr(subsystem, overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_WARN), NULL, subsystem, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeE_SidOvr(subsystem, overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_ERROR), NULL, subsystem, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeC_SidOvr(subsystem, overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), NULL, subsystem, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
+    #define LogmeD_ChOvr(channel, overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), channel, NULL, overrideData, ## __VA_ARGS__)
+    #define LogmeI_ChOvr(channel, overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_INFO), channel, NULL, overrideData, ## __VA_ARGS__)
+    #define LogmeW_ChOvr(channel, overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_WARN), channel, NULL, overrideData, ## __VA_ARGS__)
+    #define LogmeE_ChOvr(channel, overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_ERROR), channel, NULL, overrideData, ## __VA_ARGS__)
+    #define LogmeC_ChOvr(channel, overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), channel, NULL, overrideData, ## __VA_ARGS__)
 
-    #define LogmeD_ChSidOvr(channel, subsystem, overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), channel, subsystem, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeI_ChSidOvr(channel, subsystem, overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_INFO), channel, subsystem, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeW_ChSidOvr(channel, subsystem, overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_WARN), channel, subsystem, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeE_ChSidOvr(channel, subsystem, overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_ERROR), channel, subsystem, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
-    #define LogmeC_ChSidOvr(channel, subsystem, overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), channel, subsystem, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__, ## __VA_ARGS__)
+    #define LogmeD_SidOvr(subsystem, overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), NULL, subsystem, overrideData, ## __VA_ARGS__)
+    #define LogmeI_SidOvr(subsystem, overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_INFO), NULL, subsystem, overrideData, ## __VA_ARGS__)
+    #define LogmeW_SidOvr(subsystem, overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_WARN), NULL, subsystem, overrideData, ## __VA_ARGS__)
+    #define LogmeE_SidOvr(subsystem, overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_ERROR), NULL, subsystem, overrideData, ## __VA_ARGS__)
+    #define LogmeC_SidOvr(subsystem, overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), NULL, subsystem, overrideData, ## __VA_ARGS__)
+
+    #define LogmeD_ChSidOvr(channel, subsystem, overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), channel, subsystem, overrideData, ## __VA_ARGS__)
+    #define LogmeI_ChSidOvr(channel, subsystem, overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_INFO), channel, subsystem, overrideData, ## __VA_ARGS__)
+    #define LogmeW_ChSidOvr(channel, subsystem, overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_WARN), channel, subsystem, overrideData, ## __VA_ARGS__)
+    #define LogmeE_ChSidOvr(channel, subsystem, overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_ERROR), channel, subsystem, overrideData, ## __VA_ARGS__)
+    #define LogmeC_ChSidOvr(channel, subsystem, overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), channel, subsystem, overrideData, ## __VA_ARGS__)
   #else
-    #define LogmeD(...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), NULL, NULL, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeI(...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_INFO), NULL, NULL, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeW(...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_WARN), NULL, NULL, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeE(...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_ERROR), NULL, NULL, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeC(...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), NULL, NULL, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
+    #define LOGME_C_WRITE(level, channel, subsystem, ...) \
+      do \
+      { \
+        static LogmeCContextCache _logmeContextCache = LOGME_C_CONTEXT_CACHE_INIT; \
+        LogmeWriteSite(&_logmeContextCache, level, channel, subsystem, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__); \
+      } while (0)
 
-    #define LogmeD_Ch(channel, ...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), channel, NULL, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeI_Ch(channel, ...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_INFO), channel, NULL, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeW_Ch(channel, ...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_WARN), channel, NULL, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeE_Ch(channel, ...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_ERROR), channel, NULL, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeC_Ch(channel, ...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), channel, NULL, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
+    #define LOGME_C_WRITE_OVERRIDE(level, channel, subsystem, overrideData, ...) \
+      do \
+      { \
+        static LogmeCContextCache _logmeContextCache = LOGME_C_CONTEXT_CACHE_INIT; \
+        LogmeWriteSiteOverride(&_logmeContextCache, level, channel, subsystem, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__); \
+      } while (0)
+    #define LogmeD(...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), NULL, NULL __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeI(...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_INFO), NULL, NULL __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeW(...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_WARN), NULL, NULL __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeE(...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_ERROR), NULL, NULL __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeC(...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), NULL, NULL __VA_OPT__(,) __VA_ARGS__)
 
-    #define LogmeD_Sid(subsystem, ...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), NULL, subsystem, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeI_Sid(subsystem, ...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_INFO), NULL, subsystem, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeW_Sid(subsystem, ...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_WARN), NULL, subsystem, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeE_Sid(subsystem, ...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_ERROR), NULL, subsystem, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeC_Sid(subsystem, ...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), NULL, subsystem, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeD_Ch(channel, ...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), channel, NULL __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeI_Ch(channel, ...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_INFO), channel, NULL __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeW_Ch(channel, ...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_WARN), channel, NULL __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeE_Ch(channel, ...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_ERROR), channel, NULL __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeC_Ch(channel, ...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), channel, NULL __VA_OPT__(,) __VA_ARGS__)
 
-    #define LogmeD_ChSid(channel, subsystem, ...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), channel, subsystem, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeI_ChSid(channel, subsystem, ...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_INFO), channel, subsystem, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeW_ChSid(channel, subsystem, ...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_WARN), channel, subsystem, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeE_ChSid(channel, subsystem, ...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_ERROR), channel, subsystem, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeC_ChSid(channel, subsystem, ...) LogmeWrite(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), channel, subsystem, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeD_Sid(subsystem, ...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), NULL, subsystem __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeI_Sid(subsystem, ...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_INFO), NULL, subsystem __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeW_Sid(subsystem, ...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_WARN), NULL, subsystem __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeE_Sid(subsystem, ...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_ERROR), NULL, subsystem __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeC_Sid(subsystem, ...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), NULL, subsystem __VA_OPT__(,) __VA_ARGS__)
 
-    #define LogmeD_Ovr(overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), NULL, NULL, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeI_Ovr(overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_INFO), NULL, NULL, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeW_Ovr(overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_WARN), NULL, NULL, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeE_Ovr(overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_ERROR), NULL, NULL, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeC_Ovr(overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), NULL, NULL, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeD_ChSid(channel, subsystem, ...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), channel, subsystem __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeI_ChSid(channel, subsystem, ...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_INFO), channel, subsystem __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeW_ChSid(channel, subsystem, ...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_WARN), channel, subsystem __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeE_ChSid(channel, subsystem, ...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_ERROR), channel, subsystem __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeC_ChSid(channel, subsystem, ...) LOGME_C_WRITE(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), channel, subsystem __VA_OPT__(,) __VA_ARGS__)
 
-    #define LogmeD_ChOvr(channel, overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), channel, NULL, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeI_ChOvr(channel, overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_INFO), channel, NULL, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeW_ChOvr(channel, overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_WARN), channel, NULL, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeE_ChOvr(channel, overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_ERROR), channel, NULL, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeC_ChOvr(channel, overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), channel, NULL, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeD_Ovr(overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), NULL, NULL, overrideData __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeI_Ovr(overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_INFO), NULL, NULL, overrideData __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeW_Ovr(overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_WARN), NULL, NULL, overrideData __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeE_Ovr(overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_ERROR), NULL, NULL, overrideData __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeC_Ovr(overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), NULL, NULL, overrideData __VA_OPT__(,) __VA_ARGS__)
 
-    #define LogmeD_SidOvr(subsystem, overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), NULL, subsystem, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeI_SidOvr(subsystem, overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_INFO), NULL, subsystem, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeW_SidOvr(subsystem, overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_WARN), NULL, subsystem, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeE_SidOvr(subsystem, overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_ERROR), NULL, subsystem, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeC_SidOvr(subsystem, overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), NULL, subsystem, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeD_ChOvr(channel, overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), channel, NULL, overrideData __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeI_ChOvr(channel, overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_INFO), channel, NULL, overrideData __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeW_ChOvr(channel, overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_WARN), channel, NULL, overrideData __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeE_ChOvr(channel, overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_ERROR), channel, NULL, overrideData __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeC_ChOvr(channel, overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), channel, NULL, overrideData __VA_OPT__(,) __VA_ARGS__)
 
-    #define LogmeD_ChSidOvr(channel, subsystem, overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), channel, subsystem, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeI_ChSidOvr(channel, subsystem, overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_INFO), channel, subsystem, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeW_ChSidOvr(channel, subsystem, overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_WARN), channel, subsystem, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeE_ChSidOvr(channel, subsystem, overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_ERROR), channel, subsystem, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-    #define LogmeC_ChSidOvr(channel, subsystem, overrideData, ...) LogmeWriteOverride(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), channel, subsystem, overrideData, LOGME_C_FUNCTION, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeD_SidOvr(subsystem, overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), NULL, subsystem, overrideData __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeI_SidOvr(subsystem, overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_INFO), NULL, subsystem, overrideData __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeW_SidOvr(subsystem, overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_WARN), NULL, subsystem, overrideData __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeE_SidOvr(subsystem, overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_ERROR), NULL, subsystem, overrideData __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeC_SidOvr(subsystem, overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), NULL, subsystem, overrideData __VA_OPT__(,) __VA_ARGS__)
+
+    #define LogmeD_ChSidOvr(channel, subsystem, overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_DEBUG), channel, subsystem, overrideData __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeI_ChSidOvr(channel, subsystem, overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_INFO), channel, subsystem, overrideData __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeW_ChSidOvr(channel, subsystem, overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_WARN), channel, subsystem, overrideData __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeE_ChSidOvr(channel, subsystem, overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_ERROR), channel, subsystem, overrideData __VA_OPT__(,) __VA_ARGS__)
+    #define LogmeC_ChSidOvr(channel, subsystem, overrideData, ...) LOGME_C_WRITE_OVERRIDE(LOGME_C_ENUM_VALUE(LEVEL_CRITICAL), channel, subsystem, overrideData __VA_OPT__(,) __VA_ARGS__)
   #endif
 
   #define LogmeD_If(condition, ...) do { if (condition) { LogmeD(__VA_ARGS__); } } while (0)

@@ -152,6 +152,9 @@
     <ClInclude Include="include\Logme\Logme.h">
       <Filter>include\Logme</Filter>
     </ClInclude>
+    <ClInclude Include="include\Logme\LogStatistics.h">
+      <Filter>include\Logme</Filter>
+    </ClInclude>
     <ClInclude Include="include\Logme\MemoryUsageTracker.h">
       <Filter>include\Logme</Filter>
     </ClInclude>
@@ -193,6 +196,9 @@
     </ClInclude>
     <ClInclude Include="source\Control\CommandRegistrar.h">
       <Filter>source\Control</Filter>
+    </ClInclude>
+    <ClInclude Include="source\LogStatisticsInternal.h">
+      <Filter>source</Filter>
     </ClInclude>
     <ClInclude Include="source\StringHelpers.h">
       <Filter>source</Filter>
@@ -460,6 +466,9 @@
     <ClCompile Include="source\Logger.cpp">
       <Filter>source</Filter>
     </ClCompile>
+    <ClCompile Include="source\LogStatistics.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
     <ClCompile Include="source\Module.cpp">
       <Filter>source</Filter>
     </ClCompile>
@@ -572,6 +581,9 @@
       <Filter>source\Control\Command</Filter>
     </ClCompile>
     <ClCompile Include="source\Control\Command\CmdTrace.cpp">
+      <Filter>source\Control\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Control\Command\CmdLogStatistics.cpp">
       <Filter>source\Control\Command</Filter>
     </ClCompile>
       <ClCompile Include="source\Dump.cpp">

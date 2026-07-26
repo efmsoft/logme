@@ -69,6 +69,7 @@
     <ClCompile Include="..\logme\source\File\file_io.cpp" />
     <ClCompile Include="..\logme\source\Json\Loader.cpp" />
     <ClCompile Include="..\logme\source\Logger.cpp" />
+    <ClCompile Include="..\logme\source\LogStatistics.cpp" />
     <ClCompile Include="..\logme\source\Module.cpp" />
     <ClCompile Include="..\logme\source\MemoryUsageTracker.cpp" />
     <ClCompile Include="..\logme\source\Obfuscate.cpp" />
@@ -101,6 +102,7 @@
     <ClCompile Include="..\logme\source\Console\ConsoleManagerFactory.cpp" />
     <ClCompile Include="..\logme\source\File\handle_path.cpp" />
     <ClCompile Include="..\logme\source\Control\Command\CmdTrace.cpp" />
+    <ClCompile Include="..\logme\source\Control\Command\CmdLogStatistics.cpp" />
     <ClCompile Include="..\logme\source\LogmeC.cpp" />
     <ClCompile Include="..\logme\source\TracePoint.cpp" />
     <ClCompile Include="..\logme\source\Control\Command\CmdOverview.cpp" />
@@ -132,7 +134,9 @@
     <ClInclude Include="..\logme\source\Control\CommandDescriptor.h" />
     <ClInclude Include="..\logme\source\Control\CommandRegistrar.h" />
     <ClInclude Include="..\logme\source\Control\Json.h" />
+    <ClInclude Include="..\logme\source\LogStatisticsInternal.h" />
     <ClInclude Include="..\logme\source\StringHelpers.h" />
+    <ClInclude Include="..\logme\include\Logme\LogStatistics.h" />
     <ClInclude Include="..\logme\source\Time\utils.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

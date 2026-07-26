@@ -5,6 +5,7 @@
 
 #include <Logme/Backend/RingBufferBackend.h>
 #include <Logme/Channel.h>
+#include <Logme/Logger.h>
 #include <Logme/MemoryUsageTracker.h>
 
 using namespace Logme;
@@ -103,5 +104,16 @@ void RingBufferBackend::Display(Logme::Context& context)
   const char* str = context.Apply(Owner, flags, nc);
 
   Append(str, nc);
+
+  Logger* logger = Owner->GetOwner();
+  if (nc > 0 && logger->GetActiveLogStatisticsFast() != nullptr)
+  {
+    logger->RecordLogBackendOutput(
+      context
+      , Owner.get()
+      , this
+      , static_cast<size_t>(nc)
+    );
+  }
 }
 

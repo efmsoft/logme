@@ -29,6 +29,7 @@ namespace Logme
     bool AllowLevelChanges;
     bool AllowFlagChanges;
     bool AllowTraceChanges;
+    bool AllowLogStatistics;
     bool AllowSubsystemChanges;
 
     LOGMELNK ControlPolicy();

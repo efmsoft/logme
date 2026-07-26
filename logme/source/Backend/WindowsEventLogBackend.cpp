@@ -163,6 +163,17 @@ void WindowsEventLogBackend::Display(Context& context)
       );
     }
 
+    Logger* logger = Owner->GetOwner();
+    if (nc > 0 && logger->GetActiveLogStatisticsFast() != nullptr)
+    {
+      logger->RecordLogBackendOutput(
+        context
+        , Owner.get()
+        , this
+        , static_cast<size_t>(nc)
+      );
+    }
+
     return;
   }
 
@@ -175,6 +186,17 @@ void WindowsEventLogBackend::Display(Context& context)
       , EventId
       , Category
       , buffer
+      , static_cast<size_t>(nc)
+    );
+  }
+
+  Logger* logger = Owner->GetOwner();
+  if (nc > 0 && logger->GetActiveLogStatisticsFast() != nullptr)
+  {
+    logger->RecordLogBackendOutput(
+      context
+      , Owner.get()
+      , this
       , static_cast<size_t>(nc)
     );
   }

@@ -195,6 +195,8 @@ FileBackend::FileBackend(ChannelPtr owner)
   , RetentionMaxTotalSize(0)
   , RetentionCleanOnStart(true)
   , GzipCompression(false)
+  , RuntimeStatistics(nullptr)
+  , RuntimeStatisticsGeneration(0)
 {
   SetAsync(true);
   NonceGenInit(&Nonce);
@@ -763,7 +765,11 @@ void FileBackend::Display(Context& context)
 
   int nc;
   const char* buffer = context.Apply(Owner, Owner->GetFlags(), nc);
-  AppendStringInternal(buffer, nc);
+  size_t outputBytes = AppendStringInternal(buffer, nc);
+
+  Logger* logger = Owner->GetOwner();
+  if (outputBytes != 0 && logger->GetActiveLogStatisticsFast() != nullptr)
+    logger->RecordLogBackendOutput(context, Owner.get(), this, outputBytes);
 }
 
 bool FileBackend::ApplySizeLimit(size_t add)
@@ -819,28 +825,25 @@ void FileBackend::AppendString(const char* text, size_t len)
 
   if (GetAsync())
     RegisterAsync();
-  AppendStringInternal(text, len);
+  (void)AppendStringInternal(text, len);
 }
 
-void FileBackend::AppendStringInternal(const char* text, size_t len)
+size_t FileBackend::AppendStringInternal(const char* text, size_t len)
 {
-  if (text)
-  {
-    if (len == (size_t)-1)
-      len = strlen(text);
+  if (text == nullptr)
+    return 0;
 
-    AppendObfuscated(text, len);
-  }
+  if (len == (size_t)-1)
+    len = strlen(text);
+
+  return AppendObfuscated(text, len);
 }
 
-void FileBackend::AppendObfuscated(const char* text, size_t add)
+size_t FileBackend::AppendObfuscated(const char* text, size_t add)
 {
   auto key = Owner->GetOwner()->GetObfuscationKey();
   if (key == nullptr)
-  {
-    AppendOutputData(text, add);
-    return;
-  }
+    return AppendOutputData(text, add);
 
   auto output = ObfCalcRecordSize(add);
   if (output < 4ULL * 1024)
@@ -848,24 +851,26 @@ void FileBackend::AppendObfuscated(const char* text, size_t add)
     size_t size = 0;
     uint8_t buffer[4ULL * 1024];
     if (ObfEncryptRecord(key, &Nonce, (const uint8_t*)text, add, buffer, sizeof(buffer), &size))
-      AppendOutputData((const char*)buffer, size);
+      return AppendOutputData((const char*)buffer, size);
   }
   else
   {
     size_t size = 0;
     std::vector<uint8_t> buffer(output);
     if (ObfEncryptRecord(key, &Nonce, (const uint8_t*)text, add, buffer.data(), buffer.size(), &size))
-      AppendOutputData((const char*)buffer.data(), size);
+      return AppendOutputData((const char*)buffer.data(), size);
   }
+
+  return 0;
 }
 
-void FileBackend::AppendOutputData(const char* text, size_t add)
+size_t FileBackend::AppendOutputData(const char* text, size_t add)
 {
   if (ShutdownFlag.load(std::memory_order_relaxed))
-    return;
+    return 0;
 
   if (add == 0)
-    return;
+    return 0;
 
   if (!GetAsync())
   {
@@ -874,19 +879,19 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
 
     std::lock_guard guard(IoLock);
     if (!ApplySizeLimit(add))
-      return;
+      return 0;
 
     int rc = GetActiveIo().WriteAll(text, add);
     if (rc < 0)
     {
       FILE_CNT(GlobalWriteErrors.fetch_add(1, std::memory_order_relaxed));
-      return;
+      return 0;
     }
 
     CurrentSize += (size_t)rc;
     FILE_CNT(GlobalWrittenBytes.fetch_add((size_t)rc, std::memory_order_relaxed));
     FILE_CNT(GlobalOutputBytes.fetch_add((size_t)rc, std::memory_order_relaxed));
-    return;
+    return static_cast<size_t>(rc);
   }
 
   bool needSignal = false;
@@ -901,7 +906,13 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
       : firstWriteTime;
 
   if (Queue.Append(text, add, firstWriteTime, needSignal, firstData) == false)
-    return;
+  {
+    Logger* logger = Owner->GetOwner();
+    if (logger->GetActiveLogStatisticsFast() != nullptr)
+      logger->RecordFileBackendQueueDrop(Owner.get(), this, add);
+
+    return 0;
+  }
 
   (void)needSignal;
 
@@ -945,7 +956,7 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
     if (flushTime != RIGHT_NOW)
       RequestFlush(RIGHT_NOW, source);
 
-    return;
+    return add;
   }
 
   if (firstData)
@@ -965,6 +976,8 @@ void FileBackend::AppendOutputData(const char* text, size_t add)
       Queue.SetCurrentFirstWriteTime(firstWriteTime);
     }
   }
+
+  return add;
 }
 
 void FileBackend::RequestFlush(
@@ -1259,6 +1272,16 @@ bool FileBackend::WriteReadyData(std::vector<DataBufferPtr>& data)
   for (auto& b : data)
     bytes += b ? b->Size() : 0;
 
+  Logger* logger = Owner->GetOwner();
+  const bool collectStatistics =
+    logger->GetActiveLogStatisticsFast() != nullptr;
+  size_t writeOperations = 0;
+  size_t writtenBuffers = 0;
+  size_t writtenBytes = 0;
+  size_t failedWriteOperations = 0;
+  size_t failedBuffers = 0;
+  size_t failedBytes = 0;
+
   FILE_CNT(GlobalWriteBatches.fetch_add(1, std::memory_order_relaxed));
   FILE_CNT(GlobalWriteBatchBytes.fetch_add(bytes, std::memory_order_relaxed));
   FILE_WRCNT(UpdateMaxCounter(GlobalWriteReadyMaxBuffers, data.size()));
@@ -1282,6 +1305,11 @@ bool FileBackend::WriteReadyData(std::vector<DataBufferPtr>& data)
     if (!ApplySizeLimit(bytes))
     {
       ok = false;
+      if (collectStatistics)
+      {
+        failedBuffers = data.size();
+        failedBytes = bytes;
+      }
     }
     else
     {
@@ -1296,6 +1324,15 @@ bool FileBackend::WriteReadyData(std::vector<DataBufferPtr>& data)
       if (iovcnt == 0)
         return;
 
+      size_t inputBytes = 0;
+      if (collectStatistics)
+      {
+        for (size_t i = 0; i < iovcnt; ++i)
+          inputBytes += iov[i].iov_len;
+
+        ++writeOperations;
+      }
+
       int rc = iovcnt == 1
         ? FileIo::WriteAll(iov[0].iov_base, iov[0].iov_len)
         : FileIo::WriteAllVector(iov, (int)iovcnt);
@@ -1303,10 +1340,21 @@ bool FileBackend::WriteReadyData(std::vector<DataBufferPtr>& data)
       if (rc < 0)
       {
         ok = false;
+        if (collectStatistics)
+        {
+          ++failedWriteOperations;
+          failedBuffers += iovcnt;
+          failedBytes += inputBytes;
+        }
       }
       else
       {
         CurrentSize += (size_t)rc;
+        if (collectStatistics)
+        {
+          writtenBuffers += iovcnt;
+          writtenBytes += static_cast<size_t>(rc);
+        }
       }
 
       iovcnt = 0;
@@ -1352,14 +1400,28 @@ bool FileBackend::WriteReadyData(std::vector<DataBufferPtr>& data)
       ));
       FILE_WRCNT(UpdateMaxCounter(GlobalWriteReadyRawMaxBytes, b->Size()));
 
+      if (collectStatistics)
+        ++writeOperations;
+
       int rc = FileIo::WriteAll(b->Data(), b->Size());
       if (rc < 0)
       {
         ok = false;
+        if (collectStatistics)
+        {
+          ++failedWriteOperations;
+          ++failedBuffers;
+          failedBytes += b->Size();
+        }
       }
       else
       {
         CurrentSize += (size_t)rc;
+        if (collectStatistics)
+        {
+          ++writtenBuffers;
+          writtenBytes += static_cast<size_t>(rc);
+        }
       }
     }
 #endif
@@ -1377,6 +1439,22 @@ bool FileBackend::WriteReadyData(std::vector<DataBufferPtr>& data)
   else
   {
     FILE_CNT(GlobalWriteErrors.fetch_add(1, std::memory_order_relaxed));
+  }
+
+  if (collectStatistics)
+  {
+    logger->RecordFileBackendWrite(
+      Owner.get()
+      , this
+      , data.size()
+      , bytes
+      , writeOperations
+      , writtenBuffers
+      , writtenBytes
+      , failedWriteOperations
+      , failedBuffers
+      , failedBytes
+    );
   }
 
   if (bytes != 0)

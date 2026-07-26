@@ -227,6 +227,7 @@
     <ClCompile Include="..\logme\source\DayChangeDetector.cpp" />
     <ClCompile Include="..\logme\source\Environment.cpp" />
     <ClCompile Include="..\logme\source\Logger.cpp" />
+    <ClCompile Include="..\logme\source\LogStatistics.cpp" />
     <ClCompile Include="..\logme\source\Module.cpp" />
     <ClCompile Include="..\logme\source\MemoryUsageTracker.cpp" />
     <ClCompile Include="..\logme\source\Obfuscate.cpp" />
@@ -309,6 +310,9 @@
     <ClCompile Include="..\logme\source\Control\Command\CmdTrace.cpp">
       <Filter>Control\Command</Filter>
     </ClCompile>
+    <ClCompile Include="..\logme\source\Control\Command\CmdLogStatistics.cpp">
+      <Filter>Control\Command</Filter>
+    </ClCompile>
     <ClCompile Include="..\logme\source\LogmeC.cpp">
       <Filter>LogmeC.cpp</Filter>
     </ClCompile>
@@ -380,6 +384,7 @@
     <ClInclude Include="..\logme\source\Control\Json.h">
       <Filter>Control</Filter>
     </ClInclude>
+    <ClInclude Include="..\logme\source\LogStatisticsInternal.h" />
     <ClInclude Include="..\logme\source\StringHelpers.h" />
       <ClInclude Include="..\logme\include\Logme\AllStatI.h">
       <Filter>..\logme\include\Logme</Filter>
@@ -454,6 +459,9 @@
       <Filter>..\logme\include\Logme</Filter>
     </ClInclude>
     <ClInclude Include="..\logme\include\Logme\Logme.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\LogStatistics.h">
       <Filter>..\logme\include\Logme</Filter>
     </ClInclude>
     <ClInclude Include="..\logme\include\Logme\Module.h">

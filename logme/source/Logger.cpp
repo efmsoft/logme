@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdio>
+#include <cstring>
 #include <filesystem>
 #include <functional>
 #include <stdarg.h>
@@ -15,6 +16,7 @@
 #include <Logme/Utils.h>
 
 #include "Control/ControlDiscovery.h"
+#include "LogStatisticsInternal.h"
 #include "StringHelpers.h"
 
 
@@ -57,6 +59,8 @@ Logger::Logger()
   , EnableVTMode(false)
   , Obfuscate(false)
   , TracePoints(nullptr)
+  , LogStatistics(nullptr)
+  , ActiveLogStatistics(nullptr)
   , Condition(&Logger::DefaultCondition)
 {
   CreateDefaultChannelLayout();
@@ -66,6 +70,7 @@ Logger::Logger()
 
 Logger::~Logger()
 {
+  StopLogStatistics();
   ConsoleFactory.SetStopping();
   WindowsEventLogFactory.SetStopping();
   Factory.SetStopping();
@@ -1298,6 +1303,28 @@ void Logger::DoLog(Context& context, const char* format, va_list args)
     {
       if (context.ApplyCollapse() == false)
         return;
+    }
+
+    LogStatisticsCollector* statistics = ActiveLogStatistics.load(
+      std::memory_order_relaxed
+    );
+
+    if (statistics != nullptr)
+    {
+      std::atomic_thread_fence(std::memory_order_acquire);
+      statistics->Enter();
+
+      if (ActiveLogStatistics.load(std::memory_order_acquire) == statistics)
+      {
+        statistics->Record(
+          context
+          , ch
+          , format
+          , context.TempBufferSize
+        );
+      }
+
+      statistics->Leave();
     }
 
     ch->Display(context);

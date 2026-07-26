@@ -20,6 +20,7 @@ namespace Logme
   typedef const char* (*PfnAppend)(struct Context& context);
 
   class Channel;
+  struct LogSiteStatistics;
   typedef std::shared_ptr<Channel> ChannelPtr;
 
   enum class ContextCacheState : uint8_t
@@ -33,10 +34,14 @@ namespace Logme
   {
     std::atomic<ContextCacheState> State;
     FastFormatEntry Ffe;
+    std::atomic<uint64_t> StatisticsGeneration;
+    std::atomic<LogSiteStatistics*> Statistics;
 
     ContextCache()
       : State(ContextCacheState::EMPTY)
       , Ffe{}
+      , StatisticsGeneration(0)
+      , Statistics(nullptr)
     {
     }  
   };

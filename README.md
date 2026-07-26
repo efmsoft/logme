@@ -77,6 +77,7 @@ See the wiki pages [Performance](https://github.com/efmsoft/logme/wiki/Performan
 - **Flexible verbosity control**: fine-grained filtering using log levels (Debug / Info / Warn / Error), subsystems, trace points, and channel state.
 - **Multiple backends per channel**: console, debugger, file, shared file, buffer, ring buffer, callback, and Windows Event Log destinations.
 - **Recent-history capture**: keep the last N formatted records in memory with `RingBufferBackend` and dump them only when needed.
+- **On-demand log-site profiling**: use `logstat` through `logmectl` to identify source locations and channels producing the most records or message bytes without disabling production logging.
 - **File lifecycle policies**: size-based and time-based rotation, archive naming, retention, startup cleanup, and optional gzip compression for completed archives.
 - **Log file obfuscation**: optional obfuscation of log data written to files.
 - **Crash logging path**: low-level `LogmeCrash` / `LogmeCrashRaw` macros for emergency output to a prepared crash file, stderr, or stdout without using the normal channel/backend pipeline.

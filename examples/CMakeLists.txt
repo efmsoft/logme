@@ -18,6 +18,8 @@ add_subdirectory(StructuredOutput)
 add_subdirectory(CApi)
 add_subdirectory(TypicalUsage)
 add_subdirectory(CallbackBackend)
+add_subdirectory(LogStatisticsProfiling)
+
 if (MSVC)
   add_subdirectory(WindowsEventLogBackend)
 endif()

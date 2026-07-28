@@ -88,14 +88,13 @@ namespace Logme
       return ch->GetActive();
     }
 
-    template<typename SecondLazy, typename ThirdLazy>
+    template<typename SecondLazy>
     inline bool WouldLogArguments(
       Logger* logger
       , const Level level
       , const SID* defaultSubsystem
       , const ChannelPtr& ch
       , const SecondLazy& second
-      , const ThirdLazy&
     )
     {
       using SecondType = PrecheckLazyResult<SecondLazy>;
@@ -113,34 +112,25 @@ namespace Logme
       }
     }
 
-    template<typename SecondLazy, typename ThirdLazy>
+    template<typename SecondLazy>
     inline bool WouldLogArguments(
       Logger* logger
       , const Level level
       , const SID* defaultSubsystem
       , Override&
       , const SecondLazy& second
-      , const ThirdLazy& third
     )
     {
       using SecondType = PrecheckLazyResult<SecondLazy>;
-      using ThirdType = PrecheckLazyResult<ThirdLazy>;
 
       if constexpr (std::is_same_v<SecondType, ChannelPtr>)
       {
         return second.WithValue([&](const ChannelPtr& ch)
         {
-          if constexpr (std::is_same_v<ThirdType, SID>)
-          {
-            return third.WithValue([&](const SID& sid)
-            {
-              return WouldLog(logger, level, defaultSubsystem, ch, &sid);
-            });
-          }
-          else
-          {
-            return WouldLog(logger, level, defaultSubsystem, ch);
-          }
+          // The following argument may be a parameter-pack expansion. Do not
+          // inspect it in the preprocessor; final SID filtering is performed
+          // by Channel::Display.
+          return WouldLog(logger, level, defaultSubsystem, ch);
         });
       }
       else
@@ -152,7 +142,6 @@ namespace Logme
     template<
       typename First
       , typename SecondLazy
-      , typename ThirdLazy
       , std::enable_if_t<
            !std::is_same_v<PrecheckDecay<First>, ChannelPtr>
         && !std::is_same_v<PrecheckDecay<First>, Override>
@@ -165,7 +154,6 @@ namespace Logme
       , const SID*
       , First&&
       , const SecondLazy&
-      , const ThirdLazy&
     )
     {
       return true;
@@ -211,7 +199,6 @@ namespace Logme
 
   #define LOGME_PRECHECK_FIRST(...) Logme::Detail::PrecheckEmptyArg{}
   #define LOGME_PRECHECK_SECOND(...) Logme::Detail::PrecheckEmptyArg{}
-  #define LOGME_PRECHECK_THIRD(...) Logme::Detail::PrecheckEmptyArg{}
 
 #else
 
@@ -225,10 +212,6 @@ namespace Logme
 
   #define LOGME_PRECHECK_SECOND_IMPL(first, second, ...) second
 
-  #define LOGME_PRECHECK_THIRD(...) \
-    LOGME_PRECHECK_THIRD_IMPL(__VA_OPT__(__VA_ARGS__,) Logme::Detail::PrecheckEmptyArg{}, Logme::Detail::PrecheckEmptyArg{}, Logme::Detail::PrecheckEmptyArg{})
-
-  #define LOGME_PRECHECK_THIRD_IMPL(first, second, third, ...) third
 
 #endif
 
@@ -247,7 +230,6 @@ namespace Logme
     , (defaultSubsystem) \
     , LOGME_PRECHECK_FIRST(__VA_ARGS__) \
     , LOGME_PRECHECK_LAZY(LOGME_PRECHECK_SECOND(__VA_ARGS__)) \
-    , LOGME_PRECHECK_LAZY(LOGME_PRECHECK_THIRD(__VA_ARGS__)) \
   )
 
 #define LOGME_WOULD_LOG_CHANNEL_ARGS(logger, level, defaultSubsystem, channel, ...) \

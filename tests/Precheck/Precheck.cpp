@@ -1,7 +1,9 @@
 #include <Common/TestBackend.h>
 
 #include <atomic>
+#include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -24,6 +26,18 @@ static int CountedValue()
   CodeCounter++;
   return 77;
 }
+
+#ifndef LOGME_DISABLE_STD_FORMAT
+template<typename... Args>
+static void LogForwardedError(
+  const Logme::ID& id
+  , const std::string& format
+  , Args&&... args
+)
+{
+  fLogmeE(id, format.c_str(), std::forward<Args>(args)..., "suffix");
+}
+#endif
 
 static Logme::ChannelPtr MakeChannel(const char* name, bool active)
 {
@@ -183,7 +197,7 @@ TEST(Precheck, ExplicitSubsystemOverridesLocalSubsystemDuringPrecheck)
   Logme::Instance->ClearSubsystemLevels();
 }
 
-TEST(Precheck, ExplicitSubsystemIsDetectedAfterOverrideAndChannel)
+TEST(Precheck, OverrideAndChannelDefersExplicitSubsystemToDisplay)
 {
   auto ch = MakeChannel("precheck_override_channel_subsystem", true);
   ch->AddBackend(Be);
@@ -198,7 +212,7 @@ TEST(Precheck, ExplicitSubsystemIsDetectedAfterOverrideAndChannel)
 
   LogmeI(ovr, ch, cloud, "%s", CountedText());
 
-  EXPECT_EQ(ArgCounter, 0);
+  EXPECT_EQ(ArgCounter, 1);
   EXPECT_TRUE(Be->History.empty());
 
   Logme::Instance->ClearSubsystemLevels();
@@ -348,6 +362,21 @@ TEST(Precheck, SubsystemLevelSnapshotsSupportConcurrentUpdates)
 
   EXPECT_EQ(failures.load(std::memory_order_relaxed), 0);
 }
+
+#ifndef LOGME_DISABLE_STD_FORMAT
+TEST(Precheck, StdFormatSupportsForwardedParameterPack)
+{
+  auto ch = MakeChannel("precheck_forwarded_pack", true);
+  ch->AddBackend(Be);
+
+  Be->Clear();
+
+  LogForwardedError(ch->GetID(), "value={} {}", 42);
+
+  ASSERT_EQ(Be->History.size(), 1u);
+  EXPECT_NE(Be->History[0].find("value=42 suffix"), std::string::npos);
+}
+#endif
 
 #ifndef LOGME_DISABLE_STD_FORMAT
 TEST(Precheck, StdFormatDoWithIdSkipsPreparationCodeWhenInactive)

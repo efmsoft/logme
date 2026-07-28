@@ -16,30 +16,31 @@ namespace Logme
     {
     };
 
-    template<typename F>
+    template<typename ResultType, typename F>
     class PrecheckLazyArg
     {
     public:
-      using Result = decltype(std::declval<const F&>()());
+      using Result = ResultType;
 
       explicit PrecheckLazyArg(F function)
         : Function(std::move(function))
       {
       }
 
-      decltype(auto) Get() const
+      template<typename Callback>
+      decltype(auto) WithValue(Callback&& callback) const
       {
-        return Function();
+        return Function(std::forward<Callback>(callback));
       }
 
     private:
       F Function;
     };
 
-    template<typename F>
+    template<typename ResultType, typename F>
     inline auto MakePrecheckLazyArg(F&& function)
     {
-      return PrecheckLazyArg<std::decay_t<F>>(std::forward<F>(function));
+      return PrecheckLazyArg<ResultType, std::decay_t<F>>(std::forward<F>(function));
     }
 
     template<typename T>
@@ -101,8 +102,10 @@ namespace Logme
 
       if constexpr (std::is_same_v<SecondType, SID>)
       {
-        const SID& sid = second.Get();
-        return WouldLog(logger, level, defaultSubsystem, ch, &sid);
+        return second.WithValue([&](const SID& sid)
+        {
+          return WouldLog(logger, level, defaultSubsystem, ch, &sid);
+        });
       }
 
       return WouldLog(logger, level, defaultSubsystem, ch);
@@ -123,15 +126,18 @@ namespace Logme
 
       if constexpr (std::is_same_v<SecondType, ChannelPtr>)
       {
-        const ChannelPtr& ch = second.Get();
-
-        if constexpr (std::is_same_v<ThirdType, SID>)
+        return second.WithValue([&](const ChannelPtr& ch)
         {
-          const SID& sid = third.Get();
-          return WouldLog(logger, level, defaultSubsystem, ch, &sid);
-        }
+          if constexpr (std::is_same_v<ThirdType, SID>)
+          {
+            return third.WithValue([&](const SID& sid)
+            {
+              return WouldLog(logger, level, defaultSubsystem, ch, &sid);
+            });
+          }
 
-        return WouldLog(logger, level, defaultSubsystem, ch);
+          return WouldLog(logger, level, defaultSubsystem, ch);
+        });
       }
 
       return true;
@@ -172,8 +178,10 @@ namespace Logme
 
       if constexpr (std::is_same_v<FirstType, SID>)
       {
-        const SID& sid = first.Get();
-        return WouldLog(logger, level, defaultSubsystem, ch, &sid);
+        return first.WithValue([&](const SID& sid)
+        {
+          return WouldLog(logger, level, defaultSubsystem, ch, &sid);
+        });
       }
 
       return WouldLog(logger, level, defaultSubsystem, ch);
@@ -217,7 +225,12 @@ namespace Logme
 #endif
 
 #define LOGME_PRECHECK_LAZY(expression) \
-  Logme::Detail::MakePrecheckLazyArg([&]() -> decltype(auto) { return (expression); })
+  Logme::Detail::MakePrecheckLazyArg<decltype((expression))>( \
+    [&](auto&& callback) -> decltype(auto) \
+    { \
+      return std::forward<decltype(callback)>(callback)((expression)); \
+    } \
+  )
 
 #define LOGME_WOULD_LOG_ARGS(logger, level, defaultSubsystem, ...) \
   Logme::Detail::WouldLogArguments( \

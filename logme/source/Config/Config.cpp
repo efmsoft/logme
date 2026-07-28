@@ -114,12 +114,14 @@ bool Logger::LoadConfiguration(
   std::list<std::string> subsystems;
   std::list<std::string> blockedSubsystems;
   std::list<std::string> allowedSubsystems;
+  std::list<std::pair<std::string, Level>> subsystemLevels;
   if (!ParseSubsystems(
         config
         , blockReported
         , subsystems
         , blockedSubsystems
         , allowedSubsystems
+        , subsystemLevels
       ))
   {
     SetConfigurationError(error, "subsystem configuration parsing failed");
@@ -137,6 +139,7 @@ bool Logger::LoadConfiguration(
   ReplaceChannels(arr);
 
   ClearSubsystemFilters();
+  ClearSubsystemLevels();
   BlockReportedSubsystems = blockReported;
 
   for (auto& s : blockedSubsystems)
@@ -144,6 +147,9 @@ bool Logger::LoadConfiguration(
 
   for (auto& s : allowedSubsystems)
     AddAllowedSubsystem(SID::Build(s));
+
+  for (const auto& subsystemLevel : subsystemLevels)
+    SetSubsystemLevel(SID::Build(subsystemLevel.first), subsystemLevel.second);
 
   for (auto& s : subsystems)
   {

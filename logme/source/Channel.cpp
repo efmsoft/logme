@@ -107,6 +107,12 @@ bool Channel::IsLinked() const
 
 bool Channel::IsOutputActive(const Context& context) const
 {
+  if (
+       context.Subsystem.Name != 0
+    && Owner->HasSubsystemLevelOverrides()
+  )
+    return Active.load(std::memory_order_relaxed);
+
   if (context.ErrorLevel < LevelFilter.load(std::memory_order_relaxed))
     return false;
 
@@ -158,7 +164,12 @@ void Channel::Display(Context& context)
     DataLock.lock();
   }
 
-  if (context.ErrorLevel < LevelFilter)
+  Level filterLevel = LevelFilter.load(std::memory_order_relaxed);
+  Level subsystemLevel;
+  if (Owner->GetSubsystemLevel(context.Subsystem, subsystemLevel))
+    filterLevel = subsystemLevel;
+
+  if (context.ErrorLevel < filterLevel)
   {
     DataLock.unlock();
     return;

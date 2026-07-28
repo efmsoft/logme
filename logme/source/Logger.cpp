@@ -44,6 +44,7 @@ namespace
 
 Logger::Logger()
   : HomeDirectoryWatchDog(HomeDirectory, std::bind(&Logger::TestFileInUse, this, std::placeholders::_1))
+  , ActiveSubsystemLevelSnapshot(nullptr)
   , BlockReportedSubsystems(true)
   , IDGenerator(1)
   , CompressionFactory(std::bind(&Logger::TestFileInUse, this, std::placeholders::_1))
@@ -358,7 +359,7 @@ void Logger::HandleFatal()
 
 void Logger::SetThreadSubsystem(const SID* sid)
 {
-  if (sid == nullptr)
+  if (sid == nullptr || sid->Name == 0)
   {
     HasThreadSubsystem = false;
     CurrentThreadSubsystem = SID{};
@@ -683,6 +684,110 @@ void Logger::ClearSubsystemFilters()
   Subsystems.clear();
 }
 
+void Logger::PublishSubsystemLevelSnapshot()
+{
+  if (SubsystemLevels.empty())
+  {
+    ActiveSubsystemLevelSnapshot.store(nullptr, std::memory_order_release);
+    return;
+  }
+
+  auto snapshot = std::make_unique<SubsystemLevelSnapshot>();
+  snapshot->Levels = SubsystemLevels;
+
+  const auto* active = snapshot.get();
+  SubsystemLevelSnapshots.push_back(std::move(snapshot));
+  ActiveSubsystemLevelSnapshot.store(active, std::memory_order_release);
+}
+
+void Logger::SetSubsystemLevel(const SID& sid, Level level)
+{
+  if (ShutdownCalled || sid.Name == 0)
+    return;
+
+  std::lock_guard guard(DataLock);
+
+  auto it = std::lower_bound(
+    SubsystemLevels.begin()
+    , SubsystemLevels.end()
+    , sid.Name
+    , [](const SubsystemLevel& item, uint64_t subsystem)
+      {
+        return item.Subsystem < subsystem;
+      }
+  );
+
+  if (it != SubsystemLevels.end() && it->Subsystem == sid.Name)
+    it->FilterLevel = level;
+  else
+    SubsystemLevels.insert(it, SubsystemLevel{sid.Name, level});
+
+  PublishSubsystemLevelSnapshot();
+}
+
+bool Logger::GetSubsystemLevel(const SID& sid, Level& level)
+{
+  if (sid.Name == 0)
+    return false;
+
+  const auto* snapshot =
+    ActiveSubsystemLevelSnapshot.load(std::memory_order_acquire);
+  if (snapshot == nullptr)
+    return false;
+
+  auto it = std::lower_bound(
+    snapshot->Levels.begin()
+    , snapshot->Levels.end()
+    , sid.Name
+    , [](const SubsystemLevel& item, uint64_t subsystem)
+      {
+        return item.Subsystem < subsystem;
+      }
+  );
+
+  if (it == snapshot->Levels.end() || it->Subsystem != sid.Name)
+    return false;
+
+  level = it->FilterLevel;
+  return true;
+}
+
+void Logger::RemoveSubsystemLevel(const SID& sid)
+{
+  if (sid.Name == 0)
+    return;
+
+  std::lock_guard guard(DataLock);
+
+  auto it = std::lower_bound(
+    SubsystemLevels.begin()
+    , SubsystemLevels.end()
+    , sid.Name
+    , [](const SubsystemLevel& item, uint64_t subsystem)
+      {
+        return item.Subsystem < subsystem;
+      }
+  );
+
+  if (it == SubsystemLevels.end() || it->Subsystem != sid.Name)
+    return;
+
+  SubsystemLevels.erase(it);
+  PublishSubsystemLevelSnapshot();
+}
+
+void Logger::ClearSubsystemLevels()
+{
+  std::lock_guard guard(DataLock);
+  SubsystemLevels.clear();
+  PublishSubsystemLevelSnapshot();
+}
+
+bool Logger::HasSubsystemLevelOverrides() const
+{
+  return ActiveSubsystemLevelSnapshot.load(std::memory_order_acquire) != nullptr;
+}
+
 void Logger::SetBlockReportedSubsystems(bool block)
 {
   if (ShutdownCalled)
@@ -920,7 +1025,15 @@ void Logger::Log(
   if (ShutdownCalled)
     return;
 
-  if (ch && context.ErrorLevel < Level::LEVEL_ERROR && ch->IsOutputActive(context) == false)
+  if (
+       ch
+    && context.ErrorLevel < Level::LEVEL_ERROR
+    && !(
+         HasSubsystemLevelOverrides()
+      && (context.Subsystem.Name != 0 || IsSubsystemDefinedForCurrentThread())
+    )
+    && ch->IsOutputActive(context) == false
+  )
     return;
 
   Context& context2 = *(Context*)&context;
@@ -973,7 +1086,15 @@ void Logger::Log(
   if (ShutdownCalled)
     return;
 
-  if (ch && context.ErrorLevel < Level::LEVEL_ERROR && ch->IsOutputActive(context) == false)
+  if (
+       ch
+    && context.ErrorLevel < Level::LEVEL_ERROR
+    && !(
+         HasSubsystemLevelOverrides()
+      && (context.Subsystem.Name != 0 || IsSubsystemDefinedForCurrentThread())
+    )
+    && ch->IsOutputActive(context) == false
+  )
     return;
 
   Context& context2 = *(Context*)&context;
@@ -1024,7 +1145,15 @@ void Logger::Log(
   if (ShutdownCalled)
     return;
 
-  if (ch && context.ErrorLevel < Level::LEVEL_ERROR && ch->IsOutputActive(context) == false)
+  if (
+       ch
+    && context.ErrorLevel < Level::LEVEL_ERROR
+    && !(
+         HasSubsystemLevelOverrides()
+      && (context.Subsystem.Name != 0 || IsSubsystemDefinedForCurrentThread())
+    )
+    && ch->IsOutputActive(context) == false
+  )
     return;
 
   Context& context2 = *(Context*)&context;
@@ -1117,7 +1246,15 @@ void Logger::Log(
   if (ShutdownCalled)
     return;
 
-  if (ch && context.ErrorLevel < Level::LEVEL_ERROR && ch->IsOutputActive(context) == false)
+  if (
+       ch
+    && context.ErrorLevel < Level::LEVEL_ERROR
+    && !(
+         HasSubsystemLevelOverrides()
+      && (context.Subsystem.Name != 0 || IsSubsystemDefinedForCurrentThread())
+    )
+    && ch->IsOutputActive(context) == false
+  )
     return;
 
   Context& context2 = *(Context*)&context;

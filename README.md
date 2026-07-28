@@ -147,7 +147,7 @@ For most applications, logme is configured via a JSON configuration file, which 
 
 This lets you adjust logging behavior at runtime or between runs without recompiling.
 
-For details and examples, see the project [Wiki](https://github.com/efmsoft/logme/wiki/Configuration-JSON). File rotation, archive, retention, and compression options are summarized in [File backend lifecycle policies](docs/file_backend_lifecycle.md).
+For details and examples, see the project [Wiki](https://github.com/efmsoft/logme/wiki/Configuration-JSON). File rotation, archive, retention, and compression options are summarized in [File backend lifecycle policies](docs/file_backend_lifecycle.md). Subsystem allow/block rules and per-subsystem levels are documented in [Subsystem filtering and level overrides](docs/subsystem_filtering.md).
 
 ---
 
@@ -241,7 +241,9 @@ Multiple backends can be attached to the same channel.
 ### Subsystem
 
 A **subsystem** is an optional identifier that provides an additional level of classification inside a channel.
-Subsystems allow grouping and filtering messages within the same channel, making it possible to enable or disable logging for specific functional parts of a component without affecting the entire channel.
+Subsystems allow grouping and filtering messages within the same channel, making it possible to enable or disable logging for specific functional parts of a component without affecting the entire channel. A named subsystem can also have its own optional level override. When present, that override replaces the level of each channel receiving the record; when absent, the channel level is used.
+
+For example, a channel can remain at `INFO` while a noisy `CLOUD` subsystem is restricted to `WARN`, or a diagnostic `DSL` subsystem is temporarily opened to `DEBUG`. Blocked and allowed subsystem filters still take priority over level overrides. See [Subsystem filtering and level overrides](docs/subsystem_filtering.md).
 
 ### Link (redirect)
 

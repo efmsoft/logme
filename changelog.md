@@ -1,7 +1,14 @@
 ## 2.4.20
 
+### Added
+
+- Added optional per-subsystem level overrides. A named subsystem level replaces the level of each channel receiving the record, allowing both targeted `DEBUG` diagnostics and stricter subsystem-specific thresholds such as `WARN`.
+- Added `Logger::SetSubsystemLevel()`, `GetSubsystemLevel()`, `RemoveSubsystemLevel()`, and `ClearSubsystemLevels()` runtime APIs.
+- Added JSON configuration through `subsystems.levels` and runtime control commands `subsystem --set-level`, `--remove-level`, and `--clear-levels`.
+
 ### Improved
 
+- Subsystem level reads use atomically published immutable snapshots and do not lock the logging hot path.
 - Fix FileManager deadlock during async backend recreation
 
 ## 2.4.19

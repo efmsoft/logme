@@ -73,6 +73,23 @@ namespace Logme
     std::vector<uint64_t> BlockedSubsystems;
     std::vector<uint64_t> AllowedSubsystems;
 
+    struct SubsystemLevel
+    {
+      uint64_t Subsystem;
+      Level FilterLevel;
+    };
+
+    struct SubsystemLevelSnapshot
+    {
+      std::vector<SubsystemLevel> Levels;
+    };
+
+    std::vector<SubsystemLevel> SubsystemLevels;
+    std::vector<std::unique_ptr<SubsystemLevelSnapshot>> SubsystemLevelSnapshots;
+    std::atomic<const SubsystemLevelSnapshot*> ActiveSubsystemLevelSnapshot;
+
+    void PublishSubsystemLevelSnapshot();
+
     bool BlockReportedSubsystems;
     std::vector<uint64_t> Subsystems;
 
@@ -353,6 +370,27 @@ namespace Logme
 
     /// <summary>Clears both blocked and allowed subsystem lists.</summary>
     LOGMELNK void ClearSubsystemFilters();
+
+    /// <summary>
+    /// Sets a level override for a named subsystem. Empty SID is ignored.
+    /// The override replaces the level of each channel receiving the record.
+    /// </summary>
+    LOGMELNK void SetSubsystemLevel(const SID& sid, Level level);
+
+    /// <summary>
+    /// Returns the configured level override for a named subsystem.
+    /// </summary>
+    /// <returns>true when an override is configured.</returns>
+    LOGMELNK bool GetSubsystemLevel(const SID& sid, Level& level);
+
+    /// <summary>Removes the level override for a named subsystem.</summary>
+    LOGMELNK void RemoveSubsystemLevel(const SID& sid);
+
+    /// <summary>Clears all subsystem level overrides.</summary>
+    LOGMELNK void ClearSubsystemLevels();
+
+    /// <summary>Returns true when at least one subsystem level override is configured.</summary>
+    LOGMELNK bool HasSubsystemLevelOverrides() const;
 
     /// <summary>
     /// Deprecated. Adds subsystem id to the legacy reported subsystem list.

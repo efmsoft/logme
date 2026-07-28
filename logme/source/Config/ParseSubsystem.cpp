@@ -40,12 +40,65 @@ static bool ParseSubsystemList(
   return true;
 }
 
+
+static bool ParseSubsystemLevels(
+  const Json::Value& root
+  , std::list<std::pair<std::string, Level>>& levels
+)
+{
+  if (!root.isMember("levels"))
+    return true;
+
+  const auto& configuredLevels = root["levels"];
+  if (!configuredLevels.isObject())
+  {
+    LogmeE(CHINT, "\"subsystems[\"levels\"]\" is not an object");
+    return false;
+  }
+
+  for (const std::string& name : configuredLevels.getMemberNames())
+  {
+    if (name.empty())
+    {
+      LogmeE(CHINT, "\"subsystems[\"levels\"]\" contains an empty subsystem name");
+      return false;
+    }
+
+    const auto& value = configuredLevels[name];
+    if (!value.isString())
+    {
+      LogmeE(
+        CHINT
+        , "\"subsystems[\"levels\"][\"%s\"]\" is not a string"
+        , name.c_str()
+      );
+      return false;
+    }
+
+    int parsedLevel = 0;
+    if (!LevelFromName(value.asString(), parsedLevel))
+    {
+      LogmeE(
+        CHINT
+        , "\"subsystems[\"levels\"][\"%s\"]\" value is not supported"
+        , name.c_str()
+      );
+      return false;
+    }
+
+    levels.emplace_back(name, static_cast<Level>(parsedLevel));
+  }
+
+  return true;
+}
+
 bool ParseSubsystems(
   const Json::Value& root
   , bool& blockListed
   , std::list<std::string>& arr
   , std::list<std::string>& blocked
   , std::list<std::string>& allowed
+  , std::list<std::pair<std::string, Level>>& levels
 )
 {
   blockListed = true;
@@ -79,6 +132,9 @@ bool ParseSubsystems(
     return false;
 
   if (!ParseSubsystemList(c, "list", arr))
+    return false;
+
+  if (!ParseSubsystemLevels(c, levels))
     return false;
 
   return true;

@@ -1481,6 +1481,43 @@ std::string Logger::Control(
         out += std::to_string(value);
       };
 
+      auto JsonBoolField = [&](std::string& out, const char* name, bool value, bool& first)
+      {
+        if (!first)
+          out += ',';
+        first = false;
+        out += '"';
+        out += name;
+        out += "\":";
+        out += value ? "true" : "false";
+      };
+
+      auto JsonStringMapField = [&](
+        std::string& out
+        , const char* name
+        , const std::vector<std::pair<std::string, std::string>>& values
+        , bool& first
+      )
+      {
+        if (!first)
+          out += ',';
+        first = false;
+        out += '"';
+        out += name;
+        out += "\":{";
+        for (size_t i = 0; i < values.size(); ++i)
+        {
+          if (i)
+            out += ',';
+          out += '"';
+          out += JsonEscape(values[i].first);
+          out += "\":\"";
+          out += JsonEscape(values[i].second);
+          out += '"';
+        }
+        out += '}';
+      };
+
       auto JsonStringArrayField = [&](std::string& out, const char* name, const std::vector<std::string>& values, bool& first)
       {
         if (!first)
@@ -1516,18 +1553,32 @@ std::string Logger::Control(
 
           bool hasBlocked = false;
           bool hasAllowed = false;
+          bool hasLevels = false;
           std::vector<std::string> blocked;
           std::vector<std::string> allowed;
+          std::vector<std::pair<std::string, std::string>> levels;
 
-          for (size_t i = 0; i < lines.size(); ++i)
+          enum class SubsystemSection
           {
-            std::string line = lines[i];
+            None
+            , Blocked
+            , Allowed
+            , Levels
+          };
+
+          SubsystemSection section = SubsystemSection::None;
+          for (auto& rawLine : lines)
+          {
+            std::string line = rawLine;
             Trim(line);
+            if (line.empty())
+              continue;
 
             if (line == "Blocked subsystems: none")
             {
               hasBlocked = true;
               blocked.clear();
+              section = SubsystemSection::None;
               continue;
             }
 
@@ -1535,39 +1586,86 @@ std::string Logger::Control(
             {
               hasAllowed = true;
               allowed.clear();
+              section = SubsystemSection::None;
               continue;
             }
 
-            if (line == "Blocked subsystems:" || line == "Allowed subsystems:")
+            if (line == "Subsystem levels: none")
             {
-              bool isBlocked = (line == "Blocked subsystems:");
-              if (isBlocked)
-              {
-                hasBlocked = true;
-                blocked.clear();
-              }
-              else
-              {
-                hasAllowed = true;
-                allowed.clear();
-              }
+              hasLevels = true;
+              levels.clear();
+              section = SubsystemSection::None;
+              continue;
+            }
 
-              for (size_t j = i + 1; j < lines.size(); ++j)
+            if (line == "Blocked subsystems:")
+            {
+              hasBlocked = true;
+              blocked.clear();
+              section = SubsystemSection::Blocked;
+              continue;
+            }
+
+            if (line == "Allowed subsystems:")
+            {
+              hasAllowed = true;
+              allowed.clear();
+              section = SubsystemSection::Allowed;
+              continue;
+            }
+
+            if (line == "Subsystem levels:")
+            {
+              hasLevels = true;
+              levels.clear();
+              section = SubsystemSection::Levels;
+              continue;
+            }
+
+            if (line.rfind("Blocked: ", 0) == 0)
+            {
+              JsonBoolField(data, "blocked", line.substr(9) == "true", dataFirst);
+              section = SubsystemSection::None;
+              continue;
+            }
+
+            if (line.rfind("Allowed: ", 0) == 0)
+            {
+              JsonBoolField(data, "allowed", line.substr(9) == "true", dataFirst);
+              section = SubsystemSection::None;
+              continue;
+            }
+
+            if (line.rfind("Level: ", 0) == 0)
+            {
+              JsonStringField(data, "level", line.substr(7), dataFirst);
+              section = SubsystemSection::None;
+              continue;
+            }
+
+            if (section == SubsystemSection::Blocked)
+            {
+              blocked.push_back(line);
+              continue;
+            }
+
+            if (section == SubsystemSection::Allowed)
+            {
+              allowed.push_back(line);
+              continue;
+            }
+
+            if (section == SubsystemSection::Levels)
+            {
+              size_t separator = line.find(':');
+              if (separator != std::string::npos)
               {
-                std::string s = lines[j];
-                Trim(s);
-                if (s.empty())
-                  continue;
-                if (s == "Blocked subsystems:" || s == "Allowed subsystems:" || s == "Blocked subsystems: none" || s == "Allowed subsystems: none")
-                {
-                  i = j - 1;
-                  break;
-                }
-                if (isBlocked)
-                  blocked.push_back(s);
-                else
-                  allowed.push_back(s);
-                i = j;
+                std::string name = line.substr(0, separator);
+                std::string level = line.substr(separator + 1);
+                Trim(name);
+                Trim(level);
+                if (!name.empty() && !level.empty())
+                  levels.emplace_back(name, level);
               }
             }
           }
@@ -1576,6 +1674,8 @@ std::string Logger::Control(
             JsonStringArrayField(data, "blockedSubsystems", blocked, dataFirst);
           if (hasAllowed)
             JsonStringArrayField(data, "allowedSubsystems", allowed, dataFirst);
+          if (hasLevels)
+            JsonStringMapField(data, "subsystemLevels", levels, dataFirst);
         }
         else if (cmdName == "list")
         {

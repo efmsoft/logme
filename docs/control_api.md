@@ -98,12 +98,22 @@ Only fields documented below are guaranteed. New fields may be added in the futu
 
 ### `subsystem`
 
+The command manages subsystem allow/block filters and optional per-subsystem
+level overrides.
+
 Text example:
 
 ```text
-Blocked subsystems: none
-Allowed subsystems: none
+Blocked subsystems:
+  CLOUD
+Allowed subsystems:
+  DSL
+Subsystem levels:
+  CLOUD: WARN
+  DSL: DEBUG
 ```
+
+If a section is empty, it is printed as `none`.
 
 JSON:
 
@@ -112,8 +122,12 @@ JSON:
   "ok": true,
   "error": null,
   "data": {
-    "blockedSubsystems": ["noise"],
-    "allowedSubsystems": ["core", "net"]
+    "blockedSubsystems": ["CLOUD"],
+    "allowedSubsystems": ["DSL"],
+    "subsystemLevels": {
+      "CLOUD": "WARN",
+      "DSL": "DEBUG"
+    }
   }
 }
 ```
@@ -122,12 +136,25 @@ Fields:
 
 - `blockedSubsystems` (array of strings)
 - `allowedSubsystems` (array of strings)
+- `subsystemLevels` (object mapping subsystem names to level names)
 
-When no subsystems are blocked or allowed, the corresponding array is `[]`.
+When no entries are configured, arrays are `[]` and `subsystemLevels` is `{}`.
 
 The blocked list has priority. When the allowed list is not empty, only listed
 subsystems are logged, unless they are also blocked. Messages without a
-subsystem are not affected by subsystem filtering.
+subsystem are not affected by subsystem allow/block filtering.
+
+A level override applies only to a named subsystem. It replaces the level of
+each channel receiving the record; it does not combine with the channel level.
+This allows both less restrictive and more restrictive policies:
+
+```text
+channel pe = INFO, subsystem DSL = DEBUG
+channel pe = INFO, subsystem CLOUD = WARN
+```
+
+If a named subsystem has no override, the level of the current channel is used.
+Channel active state and subsystem blocked/allowed filters still take priority.
 
 Supported text commands:
 
@@ -137,11 +164,44 @@ subsystem --block name
 subsystem --unblock name
 subsystem --allow name
 subsystem --disallow name
+subsystem --set-level name level
+subsystem --remove-level name
+subsystem --clear-levels
 subsystem --clear-blocked
 subsystem --clear-allowed
 subsystem --clear
 subsystem --check name
 ```
+
+`--set-level` accepts the same level names as channel level configuration.
+`--clear` clears blocked, allowed, and level-override entries.
+
+Example:
+
+```text
+subsystem --set-level DSL DEBUG
+subsystem --set-level CLOUD WARN
+subsystem --remove-level DSL
+subsystem --clear-levels
+```
+
+`subsystem --check name` reports the effective subsystem configuration:
+
+```text
+Blocked: false
+Allowed: true
+Level: DEBUG
+```
+
+When no level override exists, the final line is:
+
+```text
+Level: channel default
+```
+
+In JSON mode the check result uses `blocked` and `allowed` booleans and a
+`level` string. The `level` value is either the configured level name or
+`"channel default"`.
 
 ### `list`
 

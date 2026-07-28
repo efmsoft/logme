@@ -5,6 +5,7 @@
 #include <list>
 #include <stdint.h>
 #include <string>
+#include <utility>
 
 #include <Logme/Logme.h>
 
@@ -52,6 +53,7 @@ bool ParseSubsystems(
   , std::list<std::string>& arr
   , std::list<std::string>& blocked
   , std::list<std::string>& allowed
+  , std::list<std::pair<std::string, Logme::Level>>& levels
 );
 
 uint64_t SmartValue(

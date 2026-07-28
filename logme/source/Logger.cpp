@@ -45,6 +45,8 @@ namespace
 Logger::Logger()
   : HomeDirectoryWatchDog(HomeDirectory, std::bind(&Logger::TestFileInUse, this, std::placeholders::_1))
   , ActiveSubsystemLevelSnapshot(nullptr)
+  , SubsystemLevelSnapshotReclamation(false)
+  , SubsystemLevelSnapshotReaders(0)
   , BlockReportedSubsystems(true)
   , IDGenerator(1)
   , CompressionFactory(std::bind(&Logger::TestFileInUse, this, std::placeholders::_1))
@@ -684,20 +686,92 @@ void Logger::ClearSubsystemFilters()
   Subsystems.clear();
 }
 
+const Logger::SubsystemLevelSnapshot* Logger::AcquireSubsystemLevelSnapshot(
+  bool& readerAcquired
+)
+{
+  readerAcquired = false;
+
+  if (
+    ActiveSubsystemLevelSnapshot.load(std::memory_order_acquire) == nullptr
+  )
+  {
+    return nullptr;
+  }
+
+  for (;;)
+  {
+    while (SubsystemLevelSnapshotReclamation.load())
+      std::this_thread::yield();
+
+    SubsystemLevelSnapshotReaders.fetch_add(1);
+
+    if (SubsystemLevelSnapshotReclamation.load() == false)
+    {
+      readerAcquired = true;
+      return ActiveSubsystemLevelSnapshot.load(std::memory_order_acquire);
+    }
+
+    SubsystemLevelSnapshotReaders.fetch_sub(1);
+  }
+}
+
+void Logger::ReleaseSubsystemLevelSnapshot()
+{
+  SubsystemLevelSnapshotReaders.fetch_sub(1);
+}
+
 void Logger::PublishSubsystemLevelSnapshot()
 {
   if (SubsystemLevels.empty())
   {
     ActiveSubsystemLevelSnapshot.store(nullptr, std::memory_order_release);
+  }
+  else
+  {
+    auto snapshot = std::make_unique<SubsystemLevelSnapshot>();
+    snapshot->Levels = SubsystemLevels;
+
+    const auto* active = snapshot.get();
+    SubsystemLevelSnapshots.push_back(std::move(snapshot));
+    ActiveSubsystemLevelSnapshot.store(active, std::memory_order_release);
+  }
+
+  ReclaimSubsystemLevelSnapshots();
+}
+
+void Logger::ReclaimSubsystemLevelSnapshots()
+{
+  if (
+    SubsystemLevelSnapshots.size()
+    <= SUBSYSTEM_LEVEL_SNAPSHOT_LIMIT
+  )
+  {
     return;
   }
 
-  auto snapshot = std::make_unique<SubsystemLevelSnapshot>();
-  snapshot->Levels = SubsystemLevels;
+  SubsystemLevelSnapshotReclamation.store(true);
 
-  const auto* active = snapshot.get();
-  SubsystemLevelSnapshots.push_back(std::move(snapshot));
-  ActiveSubsystemLevelSnapshot.store(active, std::memory_order_release);
+  while (SubsystemLevelSnapshotReaders.load() != 0)
+  {
+    std::this_thread::yield();
+  }
+
+  const auto* active =
+    ActiveSubsystemLevelSnapshot.load(std::memory_order_acquire);
+
+  if (active == nullptr)
+  {
+    SubsystemLevelSnapshots.clear();
+  }
+  else
+  {
+    auto activeSnapshot = std::move(SubsystemLevelSnapshots.back());
+    SubsystemLevelSnapshots.clear();
+    SubsystemLevelSnapshots.push_back(std::move(activeSnapshot));
+  }
+
+  SubsystemLevelSnapshotReclamation.store(false);
 }
 
 void Logger::SetSubsystemLevel(const SID& sid, Level level)
@@ -730,26 +804,33 @@ bool Logger::GetSubsystemLevel(const SID& sid, Level& level)
   if (sid.Name == 0)
     return false;
 
-  const auto* snapshot =
-    ActiveSubsystemLevelSnapshot.load(std::memory_order_acquire);
-  if (snapshot == nullptr)
-    return false;
+  bool readerAcquired = false;
+  const auto* snapshot = AcquireSubsystemLevelSnapshot(readerAcquired);
+  bool found = false;
 
-  auto it = std::lower_bound(
-    snapshot->Levels.begin()
-    , snapshot->Levels.end()
-    , sid.Name
-    , [](const SubsystemLevel& item, uint64_t subsystem)
-      {
-        return item.Subsystem < subsystem;
-      }
-  );
+  if (snapshot != nullptr)
+  {
+    auto it = std::lower_bound(
+      snapshot->Levels.begin()
+      , snapshot->Levels.end()
+      , sid.Name
+      , [](const SubsystemLevel& item, uint64_t subsystem)
+        {
+          return item.Subsystem < subsystem;
+        }
+    );
 
-  if (it == snapshot->Levels.end() || it->Subsystem != sid.Name)
-    return false;
+    if (it != snapshot->Levels.end() && it->Subsystem == sid.Name)
+    {
+      level = it->FilterLevel;
+      found = true;
+    }
+  }
 
-  level = it->FilterLevel;
-  return true;
+  if (readerAcquired)
+    ReleaseSubsystemLevelSnapshot();
+
+  return found;
 }
 
 void Logger::RemoveSubsystemLevel(const SID& sid)

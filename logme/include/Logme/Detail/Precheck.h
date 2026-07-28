@@ -99,9 +99,12 @@ namespace Logme
 
       if (explicitSubsystem != nullptr)
       {
-        Level subsystemLevel;
-        if (logger->GetSubsystemLevel(*explicitSubsystem, subsystemLevel))
-          return level >= subsystemLevel && ch->GetActive();
+        if (explicitSubsystem->Name != 0)
+        {
+          Level subsystemLevel;
+          if (logger->GetSubsystemLevel(*explicitSubsystem, subsystemLevel))
+            return level >= subsystemLevel && ch->GetActive();
+        }
       }
       else if (logger->HasSubsystemLevelOverrides())
       {

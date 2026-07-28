@@ -13,6 +13,7 @@
 #endif
 
 #include <atomic>
+#include <cstddef>
 #include <functional>
 #include <map>
 #include <memory>
@@ -84,11 +85,20 @@ namespace Logme
       std::vector<SubsystemLevel> Levels;
     };
 
+    static constexpr std::size_t SUBSYSTEM_LEVEL_SNAPSHOT_LIMIT = 64;
+
     std::vector<SubsystemLevel> SubsystemLevels;
     std::vector<std::unique_ptr<SubsystemLevelSnapshot>> SubsystemLevelSnapshots;
     std::atomic<const SubsystemLevelSnapshot*> ActiveSubsystemLevelSnapshot;
+    std::atomic<bool> SubsystemLevelSnapshotReclamation;
+    std::atomic<std::uint32_t> SubsystemLevelSnapshotReaders;
 
+    const SubsystemLevelSnapshot* AcquireSubsystemLevelSnapshot(
+      bool& readerAcquired
+    );
+    void ReleaseSubsystemLevelSnapshot();
     void PublishSubsystemLevelSnapshot();
+    void ReclaimSubsystemLevelSnapshots();
 
     bool BlockReportedSubsystems;
     std::vector<uint64_t> Subsystems;
@@ -519,6 +529,49 @@ namespace Logme
 
       std::string out = LOGME_VFORMAT(fmt, LOGME_MAKE_FORMAT_ARGS(args...));
       Log(context, ch, "%s", out.c_str());
+    }
+
+    template<typename... Args>
+    void Log(
+      const Context& context
+      , const StdFormat*
+      , const ID& id
+      , const SID& sid
+      , const char* fmt
+      , Args&&... args
+    )
+    {
+      if (ShutdownCalled)
+        return;
+
+      std::string out = LOGME_VFORMAT(fmt, LOGME_MAKE_FORMAT_ARGS(args...));
+      Log(context, id, sid, "%s", out.c_str());
+    }
+
+    template<typename... Args>
+    void Log(
+      const Context& context
+      , const StdFormat*
+      , const ChannelPtr& ch
+      , const SID& sid
+      , const char* fmt
+      , Args&&... args
+    )
+    {
+      if (ShutdownCalled)
+        return;
+
+      if (
+           ch
+        && context.ErrorLevel < Level::LEVEL_ERROR
+        && ch->IsOutputActive(context) == false
+      )
+      {
+        return;
+      }
+
+      std::string out = LOGME_VFORMAT(fmt, LOGME_MAKE_FORMAT_ARGS(args...));
+      Log(context, ch, sid, "%s", out.c_str());
     }
 #endif
     LOGMELNK void Log(const Context& context, const ID& id, const char* format, ...);

@@ -276,6 +276,35 @@ TEST(Precheck, ExplicitSubsystemOverridesLocalSubsystemDuringDisplay)
   Logme::Instance->ClearSubsystemLevels();
 }
 
+TEST(Precheck, ExplicitEmptySubsystemUsesChannelLevelWithoutFallback)
+{
+  auto ch = MakeChannel("precheck_explicit_empty_subsystem", true);
+  ch->AddBackend(Be);
+  ch->SetFilterLevel(Logme::LEVEL_INFO);
+
+  const Logme::SID local = Logme::SID::Build("LOCAL");
+  const Logme::SID thread = Logme::SID::Build("THREAD");
+  const Logme::SID empty{0};
+  Logme::Instance->SetSubsystemLevel(local, Logme::LEVEL_WARN);
+  Logme::Instance->SetSubsystemLevel(thread, Logme::LEVEL_WARN);
+  Logme::Instance->SetThreadSubsystem(&thread);
+
+  ArgCounter = 0;
+  Be->Clear();
+
+  {
+    const Logme::SID SUBSID = local;
+    LogmeI(ch, empty, "%s", CountedText());
+  }
+
+  EXPECT_EQ(ArgCounter, 1);
+  ASSERT_EQ(Be->History.size(), 1u);
+  EXPECT_NE(Be->History[0].find("counted"), std::string::npos);
+
+  Logme::Instance->SetThreadSubsystem(&SUBSID);
+  Logme::Instance->ClearSubsystemLevels();
+}
+
 TEST(Precheck, OverrideAndChannelUsesExplicitSubsystemInPrecheck)
 {
   auto ch = MakeChannel("precheck_override_channel_subsystem", true);
@@ -440,6 +469,11 @@ TEST(Precheck, SubsystemLevelSnapshotsSupportConcurrentUpdates)
     reader.join();
 
   EXPECT_EQ(failures.load(std::memory_order_relaxed), 0);
+
+  logger.SetSubsystemLevel(dsl, Logme::LEVEL_INFO);
+  Logme::Level level = Logme::LEVEL_CRITICAL;
+  ASSERT_TRUE(logger.GetSubsystemLevel(dsl, level));
+  EXPECT_EQ(level, Logme::LEVEL_INFO);
 }
 
 #ifndef LOGME_DISABLE_STD_FORMAT
@@ -458,16 +492,40 @@ TEST(Precheck, StdFormatCompilesAllForwardedArgumentLayouts)
     LogForwardedError(ch->GetID(), "id value={} {}", 42);
 
     LogForwardedStdAfterChannel(ch, "channel value={}", 43);
-    LogForwardedLegacyAfterChannel(ch, sid, "channel sid value=%d", 44);
+    LogForwardedStdAfterChannel(ch, sid, "channel sid value={}", 44);
+    LogForwardedLegacyAfterChannel(ch, sid, "channel sid value=%d", 45);
 
-    LogForwardedAfterOverrideAndChannel(ovr, ch, "override channel value={}", 45);
-    LogForwardedAfterOverrideAndChannel(ovr, ch, sid, "override channel sid value={}", 46);
+    fLogmeI(ch->GetID(), sid, "id sid");
+    fLogmeI(ch->GetID(), sid, "id sid value={}", 46);
+    fLogmeI(ch, sid, "channel sid");
+    fLogmeI(ch, sid, "channel sid values={} {}", 47, 48);
 
-    LogForwardedAfterOverride(ovr, ch, "override packed channel value={}", 47);
-    LogForwardedAfterOverride(ovr, ch, sid, "override packed channel sid value={}", 48);
+    LogForwardedAfterOverrideAndChannel(ovr, ch, "override channel value={}", 49);
+    LogForwardedAfterOverrideAndChannel(ovr, ch, sid, "override channel sid value={}", 50);
+
+    LogForwardedAfterOverride(ovr, ch, "override packed channel value={}", 51);
+    LogForwardedAfterOverride(ovr, ch, sid, "override packed channel sid value={}", 52);
   }
 
   SUCCEED();
+}
+
+TEST(Precheck, StdFormatSupportsIdAndChannelSubsystemOverloads)
+{
+  auto ch = MakeChannel("precheck_std_format_sid_overloads", true);
+  ch->AddBackend(Be);
+  ch->SetFilterLevel(Logme::LEVEL_INFO);
+
+  const Logme::SID sid = Logme::SID::Build("FORMAT");
+
+  Be->Clear();
+
+  fLogmeI(ch->GetID(), sid, "id sid value={}", 11);
+  fLogmeI(ch, sid, "channel sid value={}", 12);
+
+  ASSERT_EQ(Be->History.size(), 2u);
+  EXPECT_NE(Be->History[0].find("id sid value=11"), std::string::npos);
+  EXPECT_NE(Be->History[1].find("channel sid value=12"), std::string::npos);
 }
 
 TEST(Precheck, ForwardedPackAfterFormatDoesNotAffectSubsystemPrecheck)

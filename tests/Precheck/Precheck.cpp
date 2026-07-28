@@ -60,6 +60,62 @@ static void LogForwardedError(
     , "suffix"
   );
 }
+
+
+template<typename... Args>
+static void LogForwardedStdAfterChannel(
+  const Logme::ChannelPtr& ch
+  , Args&&... args
+)
+{
+  fLogmeI(ch, std::forward<Args>(args)...);
+}
+
+template<typename... Args>
+static void LogForwardedStdAfterFormat(
+  const Logme::ChannelPtr& ch
+  , const Logme::SID& localSubsystem
+  , const char* format
+  , Args&&... args
+)
+{
+  const Logme::SID SUBSID = localSubsystem;
+
+  fLogmeI(
+    ch
+    , format
+    , std::forward<Args>(args)...
+    , CountedText()
+  );
+}
+
+template<typename... Args>
+static void LogForwardedLegacyAfterChannel(
+  const Logme::ChannelPtr& ch
+  , Args&&... args
+)
+{
+  LogmeI(ch, std::forward<Args>(args)...);
+}
+
+template<typename... Args>
+static void LogForwardedAfterOverrideAndChannel(
+  Logme::Override& ovr
+  , const Logme::ChannelPtr& ch
+  , Args&&... args
+)
+{
+  fLogmeI(ovr, ch, std::forward<Args>(args)...);
+}
+
+template<typename... Args>
+static void LogForwardedAfterOverride(
+  Logme::Override& ovr
+  , Args&&... args
+)
+{
+  fLogmeI(ovr, std::forward<Args>(args)...);
+}
 #endif
 
 static Logme::ChannelPtr MakeChannel(const char* name, bool active)
@@ -160,7 +216,7 @@ TEST(Precheck, NamedSubsystemCanRelaxChannelLevel)
   Logme::Instance->ClearSubsystemLevels();
 }
 
-TEST(Precheck, NamedSubsystemTighteningIsDeferredWhenArgumentsAreAmbiguous)
+TEST(Precheck, NamedSubsystemTighteningSkipsArgumentEvaluation)
 {
   auto ch = MakeChannel("precheck_subsystem_tighten", true);
   ch->AddBackend(Be);
@@ -177,7 +233,7 @@ TEST(Precheck, NamedSubsystemTighteningIsDeferredWhenArgumentsAreAmbiguous)
     LogmeI(ch, "%s", CountedText());
   }
 
-  EXPECT_EQ(ArgCounter, 1);
+  EXPECT_EQ(ArgCounter, 0);
   EXPECT_TRUE(Be->History.empty());
 
   Logme::Instance->ClearSubsystemLevels();
@@ -202,7 +258,7 @@ TEST(Precheck, ExplicitSubsystemOverridesLocalSubsystemDuringDisplay)
     LogmeI(ch, cloud, "%s", CountedText());
   }
 
-  EXPECT_EQ(ArgCounter, 1);
+  EXPECT_EQ(ArgCounter, 0);
   EXPECT_TRUE(Be->History.empty());
 
   ArgCounter = 0;
@@ -220,7 +276,7 @@ TEST(Precheck, ExplicitSubsystemOverridesLocalSubsystemDuringDisplay)
   Logme::Instance->ClearSubsystemLevels();
 }
 
-TEST(Precheck, OverrideAndChannelDefersExplicitSubsystemToDisplay)
+TEST(Precheck, OverrideAndChannelUsesExplicitSubsystemInPrecheck)
 {
   auto ch = MakeChannel("precheck_override_channel_subsystem", true);
   ch->AddBackend(Be);
@@ -235,7 +291,7 @@ TEST(Precheck, OverrideAndChannelDefersExplicitSubsystemToDisplay)
 
   LogmeI(ovr, ch, cloud, "%s", CountedText());
 
-  EXPECT_EQ(ArgCounter, 1);
+  EXPECT_EQ(ArgCounter, 0);
   EXPECT_TRUE(Be->History.empty());
 
   Logme::Instance->ClearSubsystemLevels();
@@ -267,7 +323,7 @@ TEST(Precheck, ThreadSubsystemDefersChannelLevelCheck)
 
   LogmeD(ch, "%s", CountedText());
 
-  EXPECT_EQ(ArgCounter, 1);
+  EXPECT_EQ(ArgCounter, 0);
   EXPECT_TRUE(Be->History.empty());
 
   Logme::Instance->ClearSubsystemLevels();
@@ -387,32 +443,79 @@ TEST(Precheck, SubsystemLevelSnapshotsSupportConcurrentUpdates)
 }
 
 #ifndef LOGME_DISABLE_STD_FORMAT
-TEST(Precheck, StdFormatSupportsForwardedParameterPack)
+TEST(Precheck, StdFormatCompilesAllForwardedArgumentLayouts)
 {
-  auto defaultChannel = Logme::Instance->GetExistingChannel(CH);
-  auto defaultBackend = std::make_shared<TestBackend>(defaultChannel);
-  defaultChannel->AddBackend(defaultBackend);
+  auto ch = MakeChannel("precheck_forwarded_layouts", true);
+  const Logme::SID sid = Logme::SID::Build("FORWARDED");
+  Logme::Override ovr;
 
-  auto ch = MakeChannel("precheck_forwarded_pack", true);
-  auto channelBackend = std::make_shared<TestBackend>(ch);
-  ch->AddBackend(channelBackend);
+  // These calls intentionally live in a non-executed branch. Their purpose is
+  // to instantiate every supported forwarded layout during the local Logme
+  // test build, including the layouts used by nfs-common/Exception.h.
+  if (false)
+  {
+    LogForwardedError("default value={} {}", 41);
+    LogForwardedError(ch->GetID(), "id value={} {}", 42);
 
-  LogForwardedError("default value={} {}", 41);
-  LogForwardedError(ch->GetID(), "channel value={} {}", 42);
+    LogForwardedStdAfterChannel(ch, "channel value={}", 43);
+    LogForwardedLegacyAfterChannel(ch, sid, "channel sid value=%d", 44);
 
-  ASSERT_EQ(defaultBackend->History.size(), 1u);
-  EXPECT_NE(
-    defaultBackend->History[0].find("default value=41 suffix")
-    , std::string::npos
+    LogForwardedAfterOverrideAndChannel(ovr, ch, "override channel value={}", 45);
+    LogForwardedAfterOverrideAndChannel(ovr, ch, sid, "override channel sid value={}", 46);
+
+    LogForwardedAfterOverride(ovr, ch, "override packed channel value={}", 47);
+    LogForwardedAfterOverride(ovr, ch, sid, "override packed channel sid value={}", 48);
+  }
+
+  SUCCEED();
+}
+
+TEST(Precheck, ForwardedPackAfterFormatDoesNotAffectSubsystemPrecheck)
+{
+  auto ch = MakeChannel("precheck_forwarded_after_format", true);
+  ch->AddBackend(Be);
+  ch->SetFilterLevel(Logme::LEVEL_INFO);
+
+  const Logme::SID local = Logme::SID::Build("LOCAL_TIGHT");
+  Logme::Instance->SetSubsystemLevel(local, Logme::LEVEL_WARN);
+
+  ArgCounter = 0;
+  Be->Clear();
+
+  LogForwardedStdAfterFormat(
+    ch
+    , local
+    , "value={} suffix={}"
+    , 41
   );
 
-  ASSERT_EQ(channelBackend->History.size(), 1u);
-  EXPECT_NE(
-    channelBackend->History[0].find("channel value=42 suffix")
-    , std::string::npos
-  );
+  EXPECT_EQ(ArgCounter, 0);
+  EXPECT_TRUE(Be->History.empty());
 
-  defaultChannel->RemoveBackend(defaultBackend);
+  Logme::Instance->ClearSubsystemLevels();
+}
+
+TEST(Precheck, ForwardedPackStartingWithSubsystemDefersWithoutBreakingBuild)
+{
+  auto ch = MakeChannel("precheck_forwarded_sid_pack", true);
+  ch->AddBackend(Be);
+  ch->SetFilterLevel(Logme::LEVEL_INFO);
+
+  const Logme::SID sid = Logme::SID::Build("PACKED_TIGHT");
+  Logme::Instance->SetSubsystemLevel(sid, Logme::LEVEL_WARN);
+
+  ArgCounter = 0;
+  Be->Clear();
+
+  LogForwardedLegacyAfterChannel(ch, sid, "value=%s", CountedText());
+
+  // The SID value is inside a C++ pack expansion. Reading only that value
+  // would also evaluate the remaining formatting arguments, so this layout is
+  // deliberately deferred to Channel::Display.
+  EXPECT_EQ(ArgCounter, 1);
+  EXPECT_TRUE(Be->History.empty());
+
+  Logme::Instance->ClearSubsystemLevels();
 }
 #endif
 

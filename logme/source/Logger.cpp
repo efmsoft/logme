@@ -1167,17 +1167,6 @@ void Logger::Log(
   if (ShutdownCalled)
     return;
 
-  if (
-       ch
-    && context.ErrorLevel < Level::LEVEL_ERROR
-    && !(
-         HasSubsystemLevelOverrides()
-      && (context.Subsystem.Name != 0 || IsSubsystemDefinedForCurrentThread())
-    )
-    && ch->IsOutputActive(context) == false
-  )
-    return;
-
   Context& context2 = *(Context*)&context;
   context2.Ch = ch.get();
   context2.Subsystem = sid;

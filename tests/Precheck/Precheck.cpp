@@ -528,6 +528,80 @@ TEST(Precheck, StdFormatSupportsIdAndChannelSubsystemOverloads)
   EXPECT_NE(Be->History[1].find("channel sid value=12"), std::string::npos);
 }
 
+TEST(Precheck, StdFormatExplicitSubsystemCanRelaxChannelLevel)
+{
+  auto ch = MakeChannel("precheck_std_format_explicit_relax", true);
+  ch->AddBackend(Be);
+  ch->SetFilterLevel(Logme::LEVEL_INFO);
+
+  const Logme::SID sid = Logme::SID::Build("FORMAT_EXPLICIT_RELAX");
+  Logme::Instance->SetSubsystemLevel(sid, Logme::LEVEL_DEBUG);
+
+  Logme::Override ovr;
+  ArgCounter = 0;
+  Be->Clear();
+
+  fLogmeD(ch, sid, "channel explicit={}", CountedText());
+  fLogmeD(ovr, ch, sid, "override channel explicit={}", CountedText());
+
+  EXPECT_EQ(ArgCounter, 2);
+  ASSERT_EQ(Be->History.size(), 2u);
+  EXPECT_NE(Be->History[0].find("channel explicit=counted"), std::string::npos);
+  EXPECT_NE(Be->History[1].find("override channel explicit=counted"), std::string::npos);
+
+  Logme::Instance->ClearSubsystemLevels();
+}
+
+TEST(Precheck, StdFormatThreadSubsystemCanRelaxChannelLevel)
+{
+  auto ch = MakeChannel("precheck_std_format_thread_relax", true);
+  ch->AddBackend(Be);
+  ch->SetFilterLevel(Logme::LEVEL_INFO);
+
+  const Logme::SID sid = Logme::SID::Build("FORMAT_THREAD_RELAX");
+  Logme::Instance->SetSubsystemLevel(sid, Logme::LEVEL_DEBUG);
+  Logme::Instance->SetThreadSubsystem(&sid);
+
+  Logme::Override ovr;
+  ArgCounter = 0;
+  Be->Clear();
+
+  fLogmeD(ch, "channel thread={}", CountedText());
+  fLogmeD(ovr, ch, "override channel thread={}", CountedText());
+  fLogmeD(ch, ovr, "channel override thread={}", CountedText());
+
+  EXPECT_EQ(ArgCounter, 3);
+  ASSERT_EQ(Be->History.size(), 3u);
+  EXPECT_NE(Be->History[0].find("channel thread=counted"), std::string::npos);
+  EXPECT_NE(Be->History[1].find("override channel thread=counted"), std::string::npos);
+  EXPECT_NE(Be->History[2].find("channel override thread=counted"), std::string::npos);
+
+  Logme::Instance->SetThreadSubsystem(&SUBSID);
+  Logme::Instance->ClearSubsystemLevels();
+}
+
+TEST(Precheck, StdFormatExplicitTighteningSkipsArgumentEvaluation)
+{
+  auto ch = MakeChannel("precheck_std_format_explicit_tighten", true);
+  ch->AddBackend(Be);
+  ch->SetFilterLevel(Logme::LEVEL_INFO);
+
+  const Logme::SID sid = Logme::SID::Build("FORMAT_EXPLICIT_TIGHTEN");
+  Logme::Instance->SetSubsystemLevel(sid, Logme::LEVEL_WARN);
+
+  Logme::Override ovr;
+  ArgCounter = 0;
+  Be->Clear();
+
+  fLogmeI(ch, sid, "channel explicit={}", CountedText());
+  fLogmeI(ovr, ch, sid, "override channel explicit={}", CountedText());
+
+  EXPECT_EQ(ArgCounter, 0);
+  EXPECT_TRUE(Be->History.empty());
+
+  Logme::Instance->ClearSubsystemLevels();
+}
+
 TEST(Precheck, ForwardedPackAfterFormatDoesNotAffectSubsystemPrecheck)
 {
   auto ch = MakeChannel("precheck_forwarded_after_format", true);

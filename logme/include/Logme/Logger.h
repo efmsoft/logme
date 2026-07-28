@@ -100,6 +100,35 @@ namespace Logme
     void PublishSubsystemLevelSnapshot();
     void ReclaimSubsystemLevelSnapshots();
 
+#ifndef LOGME_DISABLE_STD_FORMAT
+    bool ShouldSkipStdFormat(
+      const Context& context
+      , const ChannelPtr& ch
+    )
+    {
+      if (
+           !ch
+        || context.ErrorLevel >= Level::LEVEL_ERROR
+      )
+      {
+        return false;
+      }
+
+      if (
+           HasSubsystemLevelOverrides()
+        && (
+             context.Subsystem.Name != 0
+          || IsSubsystemDefinedForCurrentThread()
+        )
+      )
+      {
+        return false;
+      }
+
+      return ch->IsOutputActive(context) == false;
+    }
+#endif
+
     bool BlockReportedSubsystems;
     std::vector<uint64_t> Subsystems;
 
@@ -524,7 +553,7 @@ namespace Logme
       if (ShutdownCalled)
         return;
 
-      if (ch && context.ErrorLevel < Level::LEVEL_ERROR && ch->IsOutputActive(context) == false)
+      if (ShouldSkipStdFormat(context, ch))
         return;
 
       std::string out = LOGME_VFORMAT(fmt, LOGME_MAKE_FORMAT_ARGS(args...));
@@ -560,15 +589,6 @@ namespace Logme
     {
       if (ShutdownCalled)
         return;
-
-      if (
-           ch
-        && context.ErrorLevel < Level::LEVEL_ERROR
-        && ch->IsOutputActive(context) == false
-      )
-      {
-        return;
-      }
 
       std::string out = LOGME_VFORMAT(fmt, LOGME_MAKE_FORMAT_ARGS(args...));
       Log(context, ch, sid, "%s", out.c_str());
@@ -618,7 +638,7 @@ namespace Logme
       if (ShutdownCalled)
         return;
 
-      if (ch && context.ErrorLevel < Level::LEVEL_ERROR && ch->IsOutputActive(context) == false)
+      if (ShouldSkipStdFormat(context, ch))
         return;
 
       std::string out = LOGME_VFORMAT(fmt, LOGME_MAKE_FORMAT_ARGS(args...));
@@ -641,9 +661,6 @@ namespace Logme
       if (ShutdownCalled)
         return;
 
-      if (ch && context.ErrorLevel < Level::LEVEL_ERROR && ch->IsOutputActive(context) == false)
-        return;
-
       std::string out = LOGME_VFORMAT(fmt, LOGME_MAKE_FORMAT_ARGS(args...));
       Log(context, ovr, ch, sid, "%s", out.c_str());
     }
@@ -664,7 +681,7 @@ namespace Logme
       if (ShutdownCalled)
         return;
 
-      if (ch && context.ErrorLevel < Level::LEVEL_ERROR && ch->IsOutputActive(context) == false)
+      if (ShouldSkipStdFormat(context, ch))
         return;
 
       std::string out = LOGME_VFORMAT(fmt, LOGME_MAKE_FORMAT_ARGS(args...));

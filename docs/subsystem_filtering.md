@@ -159,10 +159,16 @@ existing channel-only fast path is retained.
 Per-subsystem levels are intended as a precise diagnostic control and are
 expected to be configured for a small number of subsystems.
 
-When no level overrides exist, the hot path avoids table lookup and locking.
-When overrides exist, only records with a named subsystem require the final
-lookup. The logger atomically publishes an immutable, sorted snapshot of the
-configured levels. Readers perform one atomic pointer load and a lock-free
-lookup; runtime updates allocate and publish a new snapshot under the logger
-lock. Previous snapshots remain valid until the logger is destroyed, so readers
-never require reference counting or reclamation synchronization.
+When no level overrides exist, the hot path avoids table lookup, reader
+registration, and locking. When overrides exist, only records with a named
+subsystem require the final lookup. The logger atomically publishes an
+immutable, sorted snapshot of the configured levels. Readers briefly register
+with an atomic reader counter while traversing the active snapshot; they do not
+take the logger lock.
+
+Runtime updates allocate and publish a new snapshot under the logger lock. The
+logger retains at most 64 published generations during normal operation. When
+that limit is exceeded, the updating thread temporarily prevents new snapshot
+readers from entering, waits for current readers to finish, and releases all
+obsolete generations while preserving the active snapshot. Reclamation is
+therefore bounded and cannot invalidate a snapshot that is still being read.

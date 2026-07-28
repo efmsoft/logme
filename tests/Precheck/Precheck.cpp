@@ -28,6 +28,24 @@ static int CountedValue()
 }
 
 #ifndef LOGME_DISABLE_STD_FORMAT
+static std::string BuildForwardedFormat(const std::string& format)
+{
+  return format;
+}
+
+template<typename... Args>
+static void LogForwardedError(
+  const std::string& format
+  , Args&&... args
+)
+{
+  fLogmeE(
+    BuildForwardedFormat(format).c_str()
+    , std::forward<Args>(args)...
+    , "suffix"
+  );
+}
+
 template<typename... Args>
 static void LogForwardedError(
   const Logme::ID& id
@@ -35,7 +53,12 @@ static void LogForwardedError(
   , Args&&... args
 )
 {
-  fLogmeE(id, format.c_str(), std::forward<Args>(args)..., "suffix");
+  fLogmeE(
+    id
+    , BuildForwardedFormat(format).c_str()
+    , std::forward<Args>(args)...
+    , "suffix"
+  );
 }
 #endif
 
@@ -137,7 +160,7 @@ TEST(Precheck, NamedSubsystemCanRelaxChannelLevel)
   Logme::Instance->ClearSubsystemLevels();
 }
 
-TEST(Precheck, NamedSubsystemCanTightenChannelLevel)
+TEST(Precheck, NamedSubsystemTighteningIsDeferredWhenArgumentsAreAmbiguous)
 {
   auto ch = MakeChannel("precheck_subsystem_tighten", true);
   ch->AddBackend(Be);
@@ -154,13 +177,13 @@ TEST(Precheck, NamedSubsystemCanTightenChannelLevel)
     LogmeI(ch, "%s", CountedText());
   }
 
-  EXPECT_EQ(ArgCounter, 0);
+  EXPECT_EQ(ArgCounter, 1);
   EXPECT_TRUE(Be->History.empty());
 
   Logme::Instance->ClearSubsystemLevels();
 }
 
-TEST(Precheck, ExplicitSubsystemOverridesLocalSubsystemDuringPrecheck)
+TEST(Precheck, ExplicitSubsystemOverridesLocalSubsystemDuringDisplay)
 {
   auto ch = MakeChannel("precheck_explicit_subsystem", true);
   ch->AddBackend(Be);
@@ -179,7 +202,7 @@ TEST(Precheck, ExplicitSubsystemOverridesLocalSubsystemDuringPrecheck)
     LogmeI(ch, cloud, "%s", CountedText());
   }
 
-  EXPECT_EQ(ArgCounter, 0);
+  EXPECT_EQ(ArgCounter, 1);
   EXPECT_TRUE(Be->History.empty());
 
   ArgCounter = 0;
@@ -244,7 +267,7 @@ TEST(Precheck, ThreadSubsystemDefersChannelLevelCheck)
 
   LogmeD(ch, "%s", CountedText());
 
-  EXPECT_EQ(ArgCounter, 0);
+  EXPECT_EQ(ArgCounter, 1);
   EXPECT_TRUE(Be->History.empty());
 
   Logme::Instance->ClearSubsystemLevels();
@@ -366,15 +389,30 @@ TEST(Precheck, SubsystemLevelSnapshotsSupportConcurrentUpdates)
 #ifndef LOGME_DISABLE_STD_FORMAT
 TEST(Precheck, StdFormatSupportsForwardedParameterPack)
 {
+  auto defaultChannel = Logme::Instance->GetExistingChannel(CH);
+  auto defaultBackend = std::make_shared<TestBackend>(defaultChannel);
+  defaultChannel->AddBackend(defaultBackend);
+
   auto ch = MakeChannel("precheck_forwarded_pack", true);
-  ch->AddBackend(Be);
+  auto channelBackend = std::make_shared<TestBackend>(ch);
+  ch->AddBackend(channelBackend);
 
-  Be->Clear();
+  LogForwardedError("default value={} {}", 41);
+  LogForwardedError(ch->GetID(), "channel value={} {}", 42);
 
-  LogForwardedError(ch->GetID(), "value={} {}", 42);
+  ASSERT_EQ(defaultBackend->History.size(), 1u);
+  EXPECT_NE(
+    defaultBackend->History[0].find("default value=41 suffix")
+    , std::string::npos
+  );
 
-  ASSERT_EQ(Be->History.size(), 1u);
-  EXPECT_NE(Be->History[0].find("value=42 suffix"), std::string::npos);
+  ASSERT_EQ(channelBackend->History.size(), 1u);
+  EXPECT_NE(
+    channelBackend->History[0].find("channel value=42 suffix")
+    , std::string::npos
+  );
+
+  defaultChannel->RemoveBackend(defaultBackend);
 }
 #endif
 

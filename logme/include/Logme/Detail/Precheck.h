@@ -16,38 +16,8 @@ namespace Logme
     {
     };
 
-    template<typename ResultType, typename F>
-    class PrecheckLazyArg
-    {
-    public:
-      using Result = ResultType;
-
-      explicit PrecheckLazyArg(F function)
-        : Function(std::move(function))
-      {
-      }
-
-      template<typename Callback>
-      decltype(auto) WithValue(Callback&& callback) const
-      {
-        return Function(std::forward<Callback>(callback));
-      }
-
-    private:
-      F Function;
-    };
-
-    template<typename ResultType, typename F>
-    inline auto MakePrecheckLazyArg(F&& function)
-    {
-      return PrecheckLazyArg<ResultType, std::decay_t<F>>(std::forward<F>(function));
-    }
-
     template<typename T>
     using PrecheckDecay = std::remove_cv_t<std::remove_reference_t<T>>;
-
-    template<typename LazyArg>
-    using PrecheckLazyResult = PrecheckDecay<typename LazyArg::Result>;
 
     inline bool WouldLog(
       Logger* logger
@@ -88,60 +58,54 @@ namespace Logme
       return ch->GetActive();
     }
 
-    template<typename SecondLazy>
+    inline bool WouldLogWithUnknownSubsystem(
+      Logger* logger
+      , const Level level
+      , const ChannelPtr& ch
+    )
+    {
+      if (level >= Level::LEVEL_ERROR && logger->GetErrorChannel() != nullptr)
+        return true;
+
+      if (!ch || !ch->GetActive())
+        return false;
+
+      // A following macro argument may be an explicit SID or a variadic
+      // template parameter-pack expansion. Applying the channel or lexical
+      // subsystem level here could reject a message whose explicit SID has a
+      // more permissive override. Defer final filtering to Channel::Display.
+      if (logger->HasSubsystemLevelOverrides())
+        return true;
+
+      return level >= ch->GetFilterLevel();
+    }
+
     inline bool WouldLogArguments(
       Logger* logger
       , const Level level
       , const SID* defaultSubsystem
       , const ChannelPtr& ch
-      , const SecondLazy& second
     )
     {
-      using SecondType = PrecheckLazyResult<SecondLazy>;
-
-      if constexpr (std::is_same_v<SecondType, SID>)
-      {
-        return second.WithValue([&](const SID& sid)
-        {
-          return WouldLog(logger, level, defaultSubsystem, ch, &sid);
-        });
-      }
-      else
-      {
-        return WouldLog(logger, level, defaultSubsystem, ch);
-      }
+      (void)defaultSubsystem;
+      return WouldLogWithUnknownSubsystem(logger, level, ch);
     }
 
-    template<typename SecondLazy>
     inline bool WouldLogArguments(
-      Logger* logger
-      , const Level level
-      , const SID* defaultSubsystem
+      Logger*
+      , const Level
+      , const SID*
       , Override&
-      , const SecondLazy& second
     )
     {
-      using SecondType = PrecheckLazyResult<SecondLazy>;
-
-      if constexpr (std::is_same_v<SecondType, ChannelPtr>)
-      {
-        return second.WithValue([&](const ChannelPtr& ch)
-        {
-          // The following argument may be a parameter-pack expansion. Do not
-          // inspect it in the preprocessor; final SID filtering is performed
-          // by Channel::Display.
-          return WouldLog(logger, level, defaultSubsystem, ch);
-        });
-      }
-      else
-      {
-        return true;
-      }
+      // Inspecting following macro arguments is unsafe because they may be
+      // produced by a variadic template parameter-pack expansion. The final
+      // channel and subsystem filtering is performed by Channel::Display.
+      return true;
     }
 
     template<
       typename First
-      , typename SecondLazy
       , std::enable_if_t<
            !std::is_same_v<PrecheckDecay<First>, ChannelPtr>
         && !std::is_same_v<PrecheckDecay<First>, Override>
@@ -153,34 +117,20 @@ namespace Logme
       , const Level
       , const SID*
       , First&&
-      , const SecondLazy&
     )
     {
       return true;
     }
 
-    template<typename FirstLazy>
     inline bool WouldLogChannelArguments(
       Logger* logger
       , const Level level
       , const SID* defaultSubsystem
       , const ChannelPtr& ch
-      , const FirstLazy& first
     )
     {
-      using FirstType = PrecheckLazyResult<FirstLazy>;
-
-      if constexpr (std::is_same_v<FirstType, SID>)
-      {
-        return first.WithValue([&](const SID& sid)
-        {
-          return WouldLog(logger, level, defaultSubsystem, ch, &sid);
-        });
-      }
-      else
-      {
-        return WouldLog(logger, level, defaultSubsystem, ch);
-      }
+      (void)defaultSubsystem;
+      return WouldLogWithUnknownSubsystem(logger, level, ch);
     }
 
     inline const ChannelPtr& ResolveDoChannel(Logger*, const ChannelPtr& ch)
@@ -198,7 +148,6 @@ namespace Logme
 #if defined(__INTELLISENSE__) || (defined(_MSC_VER) && defined(_MSVC_TRADITIONAL) && _MSVC_TRADITIONAL && !(defined(__CLION_IDE__) || defined(__JETBRAINS_IDE__)))
 
   #define LOGME_PRECHECK_FIRST(...) Logme::Detail::PrecheckEmptyArg{}
-  #define LOGME_PRECHECK_SECOND(...) Logme::Detail::PrecheckEmptyArg{}
 
 #else
 
@@ -207,21 +156,8 @@ namespace Logme
 
   #define LOGME_PRECHECK_FIRST_IMPL(first, ...) first
 
-  #define LOGME_PRECHECK_SECOND(...) \
-    LOGME_PRECHECK_SECOND_IMPL(__VA_OPT__(__VA_ARGS__,) Logme::Detail::PrecheckEmptyArg{}, Logme::Detail::PrecheckEmptyArg{}, Logme::Detail::PrecheckEmptyArg{})
-
-  #define LOGME_PRECHECK_SECOND_IMPL(first, second, ...) second
-
 
 #endif
-
-#define LOGME_PRECHECK_LAZY(expression) \
-  Logme::Detail::MakePrecheckLazyArg<decltype((expression))>( \
-    [&](auto&& callback) -> decltype(auto) \
-    { \
-      return std::forward<decltype(callback)>(callback)((expression)); \
-    } \
-  )
 
 #define LOGME_WOULD_LOG_ARGS(logger, level, defaultSubsystem, ...) \
   Logme::Detail::WouldLogArguments( \
@@ -229,7 +165,6 @@ namespace Logme
     , (level) \
     , (defaultSubsystem) \
     , LOGME_PRECHECK_FIRST(__VA_ARGS__) \
-    , LOGME_PRECHECK_LAZY(LOGME_PRECHECK_SECOND(__VA_ARGS__)) \
   )
 
 #define LOGME_WOULD_LOG_CHANNEL_ARGS(logger, level, defaultSubsystem, channel, ...) \
@@ -238,5 +173,4 @@ namespace Logme
     , (level) \
     , (defaultSubsystem) \
     , (channel) \
-    , LOGME_PRECHECK_LAZY(LOGME_PRECHECK_FIRST(__VA_ARGS__)) \
   )

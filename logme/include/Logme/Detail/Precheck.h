@@ -107,8 +107,10 @@ namespace Logme
           return WouldLog(logger, level, defaultSubsystem, ch, &sid);
         });
       }
-
-      return WouldLog(logger, level, defaultSubsystem, ch);
+      else
+      {
+        return WouldLog(logger, level, defaultSubsystem, ch);
+      }
     }
 
     template<typename SecondLazy, typename ThirdLazy>
@@ -135,12 +137,16 @@ namespace Logme
               return WouldLog(logger, level, defaultSubsystem, ch, &sid);
             });
           }
-
-          return WouldLog(logger, level, defaultSubsystem, ch);
+          else
+          {
+            return WouldLog(logger, level, defaultSubsystem, ch);
+          }
         });
       }
-
-      return true;
+      else
+      {
+        return true;
+      }
     }
 
     template<
@@ -183,8 +189,10 @@ namespace Logme
           return WouldLog(logger, level, defaultSubsystem, ch, &sid);
         });
       }
-
-      return WouldLog(logger, level, defaultSubsystem, ch);
+      else
+      {
+        return WouldLog(logger, level, defaultSubsystem, ch);
+      }
     }
 
     inline const ChannelPtr& ResolveDoChannel(Logger*, const ChannelPtr& ch)

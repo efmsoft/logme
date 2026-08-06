@@ -631,7 +631,6 @@ void Logger::StopControlServer()
     ControlDiscoveryServer.reset();
   }
 
-  if (ControlSocket != -1)
   {
     std::lock_guard guard(DataLock);
 
@@ -653,9 +652,6 @@ void Logger::StopControlServer()
       controlInterface
       , controlPort
     );
-
-    shutdown(socketToClose, SD_RECEIVE);
-    closesocket(socketToClose);
   }
 
   if (thread)
@@ -665,6 +661,9 @@ void Logger::StopControlServer()
 
     thread.reset();
   }
+
+  if (socketToClose != -1)
+    closesocket(socketToClose);
 }
 
 void Logger::FreeControlSsl()
@@ -857,7 +856,11 @@ bool Logger::StartControlServer(
     }
   }
 
-  ListenerThread = std::make_shared<std::thread>(&Logger::ControlListener, this);
+  ListenerThread = std::make_shared<std::thread>(
+    &Logger::ControlListener
+    , this
+    , ControlSocket
+  );
   return true;
 }
 
@@ -867,7 +870,7 @@ void Logger::SetControlServerPolicy(const ControlPolicy& policy)
   ControlServerPolicy = policy;
 }
 
-void Logger::ControlListener()
+void Logger::ControlListener(int listenSocket)
 {
   RenameThread(uint64_t(-1), "LogCtrlListener");
 
@@ -878,13 +881,13 @@ void Logger::ControlListener()
   for (;;)
   {
     // Listen for new connection
-    int accept_sock = (int)accept(ControlSocket, nullptr, nullptr);
+    int accept_sock = (int)accept(listenSocket, nullptr, nullptr);
     if (accept_sock == -1)
       break;
 
     {
       std::lock_guard guard(DataLock);
-      if (ControlSocket == -1)
+      if (ControlSocket != listenSocket)
       {
         closesocket(accept_sock);
         break;

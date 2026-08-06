@@ -1065,7 +1065,7 @@ namespace Logme
     bool CreateChannels(ChannelConfigArray& arr);
     void ReplaceChannels(ChannelConfigArray& arr);
 
-    void ControlListener();
+    void ControlListener(int listenSocket);
     void ControlHandler(int socket);
 
     void DoAutodelete(bool force);

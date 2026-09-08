@@ -525,6 +525,7 @@ namespace Logme
     LOGMELNK Stream Log(const Context& context, const SID& sid, Override& ovr); // @3
     LOGMELNK Stream Log(const Context& context, const ID& id); // @4
     LOGMELNK Stream Log(const Context& context, const ChannelPtr& ch); // @5
+    LOGMELNK Stream Log(const Context& context, const SID& sid); // @12
     LOGMELNK Stream Log(const Context& context, const ID& id, const SID& sid); // @6
     LOGMELNK Stream Log(const Context& context, const ChannelPtr& ch, const SID& sid); // @7
     LOGMELNK Stream Log(const Context& context, Override& ovr, const ID& id);
@@ -593,12 +594,23 @@ namespace Logme
       std::string out = LOGME_VFORMAT(fmt, LOGME_MAKE_FORMAT_ARGS(args...));
       Log(context, ch, sid, "%s", out.c_str());
     }
+
+    template<typename... Args>
+    void Log(const Context& context, const StdFormat*, const SID& sid, const char* fmt, Args&&... args)
+    {
+      if (ShutdownCalled)
+        return;
+
+      std::string out = LOGME_VFORMAT(fmt, LOGME_MAKE_FORMAT_ARGS(args...));
+      Log(context, sid, "%s", out.c_str());
+    }
 #endif
     LOGMELNK void Log(const Context& context, const ID& id, const char* format, ...);
     LOGMELNK void Log(const Context& context, const ChannelPtr& ch, const char* format, ...);
-    
+
     LOGMELNK void Log(const Context& context, const ID& id,  const SID& sid, const char* format, ...);
     LOGMELNK void Log(const Context& context, const ChannelPtr& ch, const SID& sid, const char* format, ...);
+    LOGMELNK void Log(const Context& context, const SID& sid, const char* format, ...);
 
 #ifndef LOGME_DISABLE_STD_FORMAT
     template<typename... Args>

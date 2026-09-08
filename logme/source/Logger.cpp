@@ -984,6 +984,18 @@ Stream Logger::Log(const Context& context, const ChannelPtr& ch) // @5
   return Stream(shared_from_this(), context2, ovr);
 }
 
+Stream Logger::Log(const Context& context, const SID& sid) // @12
+{
+  Context& context2 = *(Context*)&context;
+  context2.Subsystem = sid;
+
+  OverridePtr ovr = std::make_shared<Override>(GetThreadOverride());
+  context2.Ovr = ovr.get();
+  ApplyThreadChannel(context2);
+
+  return Stream(shared_from_this(), context2, ovr);
+}
+
 Stream Logger::Log(const Context& context, const ID& id, const SID& sid) // @6
 {
   Context& context2 = *(Context*)&context;
@@ -1272,6 +1284,26 @@ void Logger::Log(const Context& context, const ChannelPtr& ch, const SID& sid, c
 
   auto ovr = GetThreadOverride();
   context2.Ovr = &ovr;
+
+  va_list args;
+  va_start(args, format);
+
+  DoLog(context2, format, args);
+
+  va_end(args);
+}
+
+void Logger::Log(const Context& context, const SID& sid, const char* format, ...)
+{
+  if (ShutdownCalled)
+    return;
+
+  Context& context2 = *(Context*)&context;
+  context2.Subsystem = sid;
+
+  auto ovr = GetThreadOverride();
+  context2.Ovr = &ovr;
+  ApplyThreadChannel(context2);
 
   va_list args;
   va_start(args, format);

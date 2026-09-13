@@ -668,6 +668,16 @@ namespace Logme
     }
 
     template<typename... Args>
+    void Log(const Context& context, const StdFormat*, const ID& id, const SID& sid, Override& ovr, const char* fmt, Args&&... args)
+    {
+      if (ShutdownCalled)
+        return;
+
+      std::string out = LOGME_VFORMAT(fmt, LOGME_MAKE_FORMAT_ARGS(args...));
+      Log(context, id, sid, ovr, "%s", out.c_str());
+    }
+
+    template<typename... Args>
     void Log(const Context& context, const StdFormat*, Override& ovr, const ChannelPtr& ch, const SID& sid, const char* fmt, Args&&... args)
     {
       if (ShutdownCalled)
@@ -704,6 +714,7 @@ namespace Logme
     LOGMELNK void Log(const Context& context, Override& ovr, const ChannelPtr& ch, const char* format, ...);
     LOGMELNK void Log(const Context& context, const ID& id, Override& ovr, const char* format, ...);
     LOGMELNK void Log(const Context& context, Override& ovr, const ID& id, const SID& sid, const char* format, ...);
+    LOGMELNK void Log(const Context& context, const ID& id, const SID& sid, Override& ovr, const char* format, ...);
     LOGMELNK void Log(const Context& context, Override& ovr, const ChannelPtr& ch, const SID& sid, const char* format, ...);
     LOGMELNK void Log(const Context& context, const ChannelPtr& ch, Override& ovr, const char* format, ...);
 

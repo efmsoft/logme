@@ -1169,6 +1169,31 @@ void Logger::Log(
 
 void Logger::Log(
   const Context& context
+  , const ID& id
+  , const SID& sid
+  , Override& ovr
+  , const char* format
+  , ...
+)
+{
+  if (ShutdownCalled)
+    return;
+
+  Context& context2 = *(Context*)&context;
+  context2.Channel = &id;
+  context2.Subsystem = sid;
+  context2.Ovr = &ovr;
+
+  va_list args;
+  va_start(args, format);
+
+  DoLog(context2, format, args);
+
+  va_end(args);
+}
+
+void Logger::Log(
+  const Context& context
   , Override& ovr
   , const ChannelPtr& ch
   , const SID& sid

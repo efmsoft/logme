@@ -574,11 +574,22 @@ void Channel::SetThreadName(
     }
 
     if (name)
+    {
       it->second.Name = name;
-    else if (log == false)
-      ThreadName.erase(it);
-    else 
+    }
+    else
+    {
+      // Leave the (now empty) record in place instead of erasing it: the
+      // very common LogmeThreadName(...) pattern re-enters the same tid's
+      // scope repeatedly (pooled worker threads), and erasing here only to
+      // reinsert (with a snprintf + two string allocations, see the "not
+      // found" branch below) on the next entry turned every such scope into
+      // an insert/erase cycle even when nothing was ever logged through it.
+      // GetThreadName still lazily erases a record once both Name and Prev
+      // are empty, so a thread that never reuses this tid doesn't linger
+      // forever.
       it->second.Name.reset();
+    }
   }
   else
   {

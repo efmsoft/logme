@@ -79,6 +79,7 @@ namespace Logme
     CS ShortenerLock;
     const ShortenerPair* ShortenerList;
     std::map<std::string, std::string> ShortenerMap;
+    std::atomic<bool> ShortenerActive;
 
     struct ThreadNameRecord
     {
@@ -86,7 +87,7 @@ namespace Logme
       std::optional<std::string> Prev;
       bool* ForwardTransitionPrinted;
     };
-    std::map<uint64_t, ThreadNameRecord> ThreadName;
+    std::unordered_map<uint64_t, ThreadNameRecord> ThreadName;
 
     TDisplayFilter DisplayFilter;
 

@@ -27,6 +27,7 @@ Channel::Channel(
   , AccessCount(0)
   , LoggedBytes(0)
   , ShortenerList(nullptr)
+  , ShortenerActive(false)
 {
 }
 
@@ -419,6 +420,7 @@ void Channel::SetShortenerPair(const ShortenerPair* pair)
 {
   std::lock_guard guard(ShortenerLock);
   ShortenerList = pair;
+  ShortenerActive.store(ShortenerList != nullptr || !ShortenerMap.empty(), std::memory_order_release);
 }
 
 void Channel::ShortenerAdd(const char* what, const char* replace_on)
@@ -437,6 +439,8 @@ void Channel::ShortenerAdd(const char* what, const char* replace_on)
   {
     ShortenerMap[what] = replace_on;
   }
+
+  ShortenerActive.store(ShortenerList != nullptr || !ShortenerMap.empty(), std::memory_order_release);
 }
 
 const char* Channel::ShortenerPairRun(
@@ -503,6 +507,12 @@ const char* Channel::ShortenerRun(
   , ShortenerContext& context
 )
 {
+  // Method shortening runs on essentially every log record (Method is filled
+  // by __FUNCTION__ and flags.Method defaults to true), while shortener rules
+  // are rarely configured. Skip the lock entirely in that common case.
+  if (!ShortenerActive.load(std::memory_order_acquire))
+    return value;
+
   std::lock_guard guard(ShortenerLock);
 
   if (ShortenerList)

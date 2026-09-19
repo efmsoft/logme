@@ -8,6 +8,7 @@ ThreadName::ThreadName(ChannelPtr pch, const char* name, bool log)
   : PCH(pch)
   , ForwardTransitionPrinted(false)
   , Log(log)
+  , Skip(false)
 {
   Initialize(name);
 }
@@ -16,13 +17,23 @@ ThreadName::ThreadName(ChannelPtr pch, const std::string& name, bool log)
   : PCH(pch)
   , ForwardTransitionPrinted(false)
   , Log(log)
+  , Skip(false)
 {
   Initialize(name.c_str());
 }
 
 ThreadName::~ThreadName()
 {
-  if (PCH)
+  // Skip is set in Initialize() when the channel was inactive at
+  // construction time -- ordinary LogmeI/LogmeW/... calls already precheck
+  // Channel::GetActive() before doing any work (LOGME_WOULD_LOG_ARGS), but
+  // this RAII pair didn't, so it paid the full DataLock+ThreadName-map cost
+  // even for connections routed to a permanently-disabled channel (e.g.
+  // BufferedLogger's shared "null channel" when debug logging is off --
+  // VTune, 2026-09). If GetActive() flips mid-scope this just means a
+  // thread label is missing around that transition -- cosmetic, not a
+  // correctness issue.
+  if (PCH && !Skip)
   {
     uint64_t tid = GetCurrentThreadId();
     bool logReturn = Log && ForwardTransitionPrinted;
@@ -57,7 +68,7 @@ ThreadName::~ThreadName()
 
 void ThreadName::Initialize(const char* name)
 {
-  if (PCH)
+  if (PCH && PCH->GetActive())
   {
     uint64_t tid = GetCurrentThreadId();
 
@@ -67,5 +78,9 @@ void ThreadName::Initialize(const char* name)
       PreviousName = p;
 
     PCH->SetThreadName(tid, name, Log, &ForwardTransitionPrinted);
+  }
+  else
+  {
+    Skip = true;
   }
 }

@@ -640,7 +640,18 @@ const char* Channel::GetThreadName(
   {
     if (it->second.Name.has_value() == false && it->second.Prev.has_value() == false)
     {
-      ThreadName.erase(it);
+      // Only reap on a consuming read (clear=true, the real per-log-line
+      // path in Context::InitThreadProcessID). ThreadName::Initialize
+      // peeks here first with clear=false on every LogmeThreadName(...)
+      // scope -- erasing unconditionally undid the whole point of
+      // SetThreadName()'s "leave the empty record in place" comment above:
+      // a pooled worker thread re-entering this same tid would still find
+      // nothing here, take the expensive "not found" insert path again,
+      // and reproduce the exact insert/erase cycle that fix was meant to
+      // remove (VTune, 2026-09).
+      if (clear)
+        ThreadName.erase(it);
+
       return nullptr;
     }
 

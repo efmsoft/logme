@@ -17,6 +17,7 @@ namespace Logme
     std::optional<std::string> PreviousName;
     bool ForwardTransitionPrinted;
     bool Log;
+    bool Skip;
 
   public:
     LOGMELNK ThreadName(ChannelPtr pch, const char* name, bool log = true);

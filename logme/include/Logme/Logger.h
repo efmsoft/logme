@@ -1137,3 +1137,22 @@ namespace Logme
 #endif
 }
 
+// Default gate every log macro consults before doing any argument
+// preparation/formatting -- equivalent to calling Logme::Instance->Condition()
+// directly, which is what every macro did before this existed. Deliberately
+// declared OUTSIDE namespace Logme and called unqualified by the macros
+// (never as Logme::LoggerCondition()): a qualified call can never be
+// shadowed by a class member, since qualified name lookup only ever
+// considers the named namespace, not the caller's enclosing scope. A class
+// that declares its own non-static member named LoggerCondition hides this
+// global one via ordinary C++ member lookup (checked before any enclosing
+// scope) for any log macro invoked from that class's own methods, with no
+// change for callers that don't opt in -- the same mechanism this codebase
+// already uses to let CH/SUBSID resolve to a class member instead of the
+// global default (see Logme/ID.h, Logme/SID.h). See
+// tests/LoggerConditionOverride and examples/LoggerConditionOverride.
+inline bool LoggerCondition()
+{
+  return Logme::Instance->Condition();
+}
+

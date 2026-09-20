@@ -38,6 +38,10 @@ Passing `ChannelPtr` as the first argument to `LogmeI/LogmeW/LogmeE/LogmeD` allo
 
 The `LogmeX_Do(...)` and `fLogmeX_Do(...)` helpers go one step further: they can delay custom preparation code until Logme already knows that the record will be emitted.
 
+### Per-class precheck override
+
+Every logging macro checks the unqualified, global `LoggerCondition()`, which by default just calls `Logme::Instance->Condition()`. A class can declare its own non-static `LoggerCondition()` member to replace that check for its own methods only -- ordinary C++ member lookup hides the global default, at zero extra runtime cost and with no effect on any other code. See `examples/LoggerConditionOverride`.
+
 ### Thread context helpers
 
 `LogmeThreadChannel` (and the analogous helper for overrides) can set the default channel/override for the current thread.

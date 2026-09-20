@@ -179,7 +179,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeD(...) \
-  Logme_If(Logme::Instance->Condition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_DEBUG, &SUBSID, ## __VA_ARGS__), Logme::Instance, Logme::Level::LEVEL_DEBUG, ## __VA_ARGS__)
+  Logme_If(LoggerCondition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_DEBUG, &SUBSID, ## __VA_ARGS__), Logme::Instance, Logme::Level::LEVEL_DEBUG, ## __VA_ARGS__)
 
 /// <summary>
 /// Writes DEBUG log message when condition is true (printf-style when called with a format string) or returns a stream (C++ style of output).
@@ -194,7 +194,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeI(...) \
-  Logme_If(Logme::Instance->Condition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_INFO, &SUBSID, ## __VA_ARGS__), Logme::Instance, Logme::Level::LEVEL_INFO, ## __VA_ARGS__)
+  Logme_If(LoggerCondition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_INFO, &SUBSID, ## __VA_ARGS__), Logme::Instance, Logme::Level::LEVEL_INFO, ## __VA_ARGS__)
 
 /// <summary>
 /// Writes INFO log message when condition is true (printf-style when called with a format string) or returns a stream (C++ style of output).
@@ -209,7 +209,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeW(...) \
-  Logme_If(Logme::Instance->Condition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_WARN, &SUBSID, ## __VA_ARGS__), Logme::Instance, Logme::Level::LEVEL_WARN, ## __VA_ARGS__)
+  Logme_If(LoggerCondition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_WARN, &SUBSID, ## __VA_ARGS__), Logme::Instance, Logme::Level::LEVEL_WARN, ## __VA_ARGS__)
 
 /// <summary>
 /// Writes WARN log message when condition is true (printf-style when called with a format string) or returns a stream (C++ style of output).
@@ -224,11 +224,11 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeE(...) \
-  Logme_If(Logme::Instance->Condition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_ERROR, &SUBSID, ## __VA_ARGS__), Logme::Instance, Logme::Level::LEVEL_ERROR, ## __VA_ARGS__)
+  Logme_If(LoggerCondition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_ERROR, &SUBSID, ## __VA_ARGS__), Logme::Instance, Logme::Level::LEVEL_ERROR, ## __VA_ARGS__)
 
 #ifdef _MSC_VER
   #define Logme_CollapseAt(level, limit, ...) \
-    if (static Logme::CollapseContextCache LOGME_JOIN(_logme_ctx_, __LINE__)(limit); Logme::Instance->Condition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), level, &SUBSID, ## __VA_ARGS__)) \
+    if (static Logme::CollapseContextCache LOGME_JOIN(_logme_ctx_, __LINE__)(limit); LoggerCondition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), level, &SUBSID, ## __VA_ARGS__)) \
       Logme::Detail::DispatchCollapse( \
         Logme::Instance \
         , LOGME_JOIN(_logme_ctx_, __LINE__) \
@@ -241,7 +241,7 @@
         , ## __VA_ARGS__ \
       )
   #define Logme_CollapseIgnoreAt(level, ignoreRegex, limit, ...) \
-    if (static Logme::CollapseContextCache LOGME_JOIN(_logme_ctx_, __LINE__)(ignoreRegex, limit); Logme::Instance->Condition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), level, &SUBSID, ## __VA_ARGS__)) \
+    if (static Logme::CollapseContextCache LOGME_JOIN(_logme_ctx_, __LINE__)(ignoreRegex, limit); LoggerCondition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), level, &SUBSID, ## __VA_ARGS__)) \
       Logme::Detail::DispatchCollapse( \
         Logme::Instance \
         , LOGME_JOIN(_logme_ctx_, __LINE__) \
@@ -254,7 +254,7 @@
         , ## __VA_ARGS__ \
       )
   #define Logme_CollapseEveryAt(level, intervalMs, ...) \
-    if (static Logme::CollapseContextCache LOGME_JOIN(_logme_ctx_, __LINE__)(Logme::CollapseEveryTag(), intervalMs); Logme::Instance->Condition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), level, &SUBSID, ## __VA_ARGS__)) \
+    if (static Logme::CollapseContextCache LOGME_JOIN(_logme_ctx_, __LINE__)(Logme::CollapseEveryTag(), intervalMs); LoggerCondition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), level, &SUBSID, ## __VA_ARGS__)) \
       Logme::Detail::DispatchCollapse( \
         Logme::Instance \
         , LOGME_JOIN(_logme_ctx_, __LINE__) \
@@ -267,7 +267,7 @@
         , ## __VA_ARGS__ \
       )
   #define Logme_CollapseIgnoreEveryAt(level, ignoreRegex, intervalMs, ...) \
-    if (static Logme::CollapseContextCache LOGME_JOIN(_logme_ctx_, __LINE__)(ignoreRegex, Logme::CollapseEveryTag(), intervalMs); Logme::Instance->Condition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), level, &SUBSID, ## __VA_ARGS__)) \
+    if (static Logme::CollapseContextCache LOGME_JOIN(_logme_ctx_, __LINE__)(ignoreRegex, Logme::CollapseEveryTag(), intervalMs); LoggerCondition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), level, &SUBSID, ## __VA_ARGS__)) \
       Logme::Detail::DispatchCollapse( \
         Logme::Instance \
         , LOGME_JOIN(_logme_ctx_, __LINE__) \
@@ -281,7 +281,7 @@
       )
 #else
   #define Logme_CollapseAt(level, limit, ...) \
-    if (static Logme::CollapseContextCache LOGME_JOIN(_logme_ctx_, __LINE__)(limit); Logme::Instance->Condition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), level, &SUBSID, __VA_ARGS__)) \
+    if (static Logme::CollapseContextCache LOGME_JOIN(_logme_ctx_, __LINE__)(limit); LoggerCondition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), level, &SUBSID, __VA_ARGS__)) \
       Logme::Detail::DispatchCollapse( \
         Logme::Instance \
         , LOGME_JOIN(_logme_ctx_, __LINE__) \
@@ -294,7 +294,7 @@
         , __VA_ARGS__ \
       )
   #define Logme_CollapseIgnoreAt(level, ignoreRegex, limit, ...) \
-    if (static Logme::CollapseContextCache LOGME_JOIN(_logme_ctx_, __LINE__)(ignoreRegex, limit); Logme::Instance->Condition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), level, &SUBSID, __VA_ARGS__)) \
+    if (static Logme::CollapseContextCache LOGME_JOIN(_logme_ctx_, __LINE__)(ignoreRegex, limit); LoggerCondition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), level, &SUBSID, __VA_ARGS__)) \
       Logme::Detail::DispatchCollapse( \
         Logme::Instance \
         , LOGME_JOIN(_logme_ctx_, __LINE__) \
@@ -307,7 +307,7 @@
         , __VA_ARGS__ \
       )
   #define Logme_CollapseEveryAt(level, intervalMs, ...) \
-    if (static Logme::CollapseContextCache LOGME_JOIN(_logme_ctx_, __LINE__)(Logme::CollapseEveryTag(), intervalMs); Logme::Instance->Condition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), level, &SUBSID, __VA_ARGS__)) \
+    if (static Logme::CollapseContextCache LOGME_JOIN(_logme_ctx_, __LINE__)(Logme::CollapseEveryTag(), intervalMs); LoggerCondition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), level, &SUBSID, __VA_ARGS__)) \
       Logme::Detail::DispatchCollapse( \
         Logme::Instance \
         , LOGME_JOIN(_logme_ctx_, __LINE__) \
@@ -320,7 +320,7 @@
         , __VA_ARGS__ \
       )
   #define Logme_CollapseIgnoreEveryAt(level, ignoreRegex, intervalMs, ...) \
-    if (static Logme::CollapseContextCache LOGME_JOIN(_logme_ctx_, __LINE__)(ignoreRegex, Logme::CollapseEveryTag(), intervalMs); Logme::Instance->Condition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), level, &SUBSID, __VA_ARGS__)) \
+    if (static Logme::CollapseContextCache LOGME_JOIN(_logme_ctx_, __LINE__)(ignoreRegex, Logme::CollapseEveryTag(), intervalMs); LoggerCondition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), level, &SUBSID, __VA_ARGS__)) \
       Logme::Detail::DispatchCollapse( \
         Logme::Instance \
         , LOGME_JOIN(_logme_ctx_, __LINE__) \
@@ -517,7 +517,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeC(...) \
-  Logme_If(Logme::Instance->Condition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_CRITICAL, &SUBSID, ## __VA_ARGS__), Logme::Instance, Logme::Level::LEVEL_CRITICAL, ## __VA_ARGS__)
+  Logme_If(LoggerCondition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_CRITICAL, &SUBSID, ## __VA_ARGS__), Logme::Instance, Logme::Level::LEVEL_CRITICAL, ## __VA_ARGS__)
 
 /// <summary>
 /// Writes CRITICAL log message when condition is true (printf-style when called with a format string) or returns a stream (C++ style of output).
@@ -533,7 +533,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeDg(...) \
-  Logme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, ## __VA_ARGS__)
+  Logme_Ifg(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, ## __VA_ARGS__)
 
 /// <summary>
 /// Writes DEBUG log message using global CH/SUBSID when condition is true (printf-style when called with a format string) or returns a stream (C++ style of output).
@@ -550,7 +550,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeIg(...) \
-  Logme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, ## __VA_ARGS__)
+  Logme_Ifg(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_INFO, ## __VA_ARGS__)
 
 /// <summary>
 /// Writes INFO log message using global CH/SUBSID when condition is true (printf-style when called with a format string) or returns a stream (C++ style of output).
@@ -567,7 +567,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeWg(...) \
-  Logme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, ## __VA_ARGS__)
+  Logme_Ifg(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_WARN, ## __VA_ARGS__)
 
 /// <summary>
 /// Writes WARN log message using global CH/SUBSID when condition is true (printf-style when called with a format string) or returns a stream (C++ style of output).
@@ -584,7 +584,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeEg(...) \
-  Logme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, ## __VA_ARGS__)
+  Logme_Ifg(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_ERROR, ## __VA_ARGS__)
 
 /// <summary>
 /// Writes ERROR log message using global CH/SUBSID when condition is true (printf-style when called with a format string) or returns a stream (C++ style of output).
@@ -601,7 +601,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeCg(...) \
-  Logme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, ## __VA_ARGS__)
+  Logme_Ifg(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, ## __VA_ARGS__)
 
 /// <summary>
 /// Writes CRITICAL log message using global CH/SUBSID when condition is true (printf-style when called with a format string) or returns a stream (C++ style of output).
@@ -617,7 +617,7 @@
   do \
   { \
     auto&& _logme_ch_ = (ch); \
-    if (Logme::Instance->Condition()) \
+    if (LoggerCondition()) \
     { \
       const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); \
       if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_DEBUG, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) \
@@ -631,7 +631,7 @@
   do \
   { \
     auto&& _logme_ch_ = (ch); \
-    if (Logme::Instance->Condition()) \
+    if (LoggerCondition()) \
     { \
       const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); \
       if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_INFO, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) \
@@ -645,7 +645,7 @@
   do \
   { \
     auto&& _logme_ch_ = (ch); \
-    if (Logme::Instance->Condition()) \
+    if (LoggerCondition()) \
     { \
       const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); \
       if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_WARN, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) \
@@ -659,7 +659,7 @@
   do \
   { \
     auto&& _logme_ch_ = (ch); \
-    if (Logme::Instance->Condition()) \
+    if (LoggerCondition()) \
     { \
       const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); \
       if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_ERROR, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) \
@@ -673,7 +673,7 @@
   do \
   { \
     auto&& _logme_ch_ = (ch); \
-    if (Logme::Instance->Condition()) \
+    if (LoggerCondition()) \
     { \
       const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); \
       if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_CRITICAL, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) \
@@ -689,35 +689,35 @@
 /// <param name="ch">Channel id or channel pointer.</param>
 /// <param name="code">Code executed before writing the message.</param>
 /// <param name="...">Format and format arguments.</param>
-#define LogmeD_Do(ch, code, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_DEBUG, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) { code; static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::Dispatch(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_DEBUG, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, _logme_ch_, ## __VA_ARGS__); } } } while (0)
+#define LogmeD_Do(ch, code, ...) do { auto&& _logme_ch_ = (ch); if (LoggerCondition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_DEBUG, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) { code; static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::Dispatch(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_DEBUG, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, _logme_ch_, ## __VA_ARGS__); } } } while (0)
 /// <summary>
 /// Executes code and writes INFO message using printf-style formatting only when the selected channel would log this level.
 /// </summary>
 /// <param name="ch">Channel id or channel pointer.</param>
 /// <param name="code">Code executed before writing the message.</param>
 /// <param name="...">Format and format arguments.</param>
-#define LogmeI_Do(ch, code, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_INFO, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) { code; static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::Dispatch(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_INFO, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, _logme_ch_, ## __VA_ARGS__); } } } while (0)
+#define LogmeI_Do(ch, code, ...) do { auto&& _logme_ch_ = (ch); if (LoggerCondition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_INFO, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) { code; static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::Dispatch(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_INFO, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, _logme_ch_, ## __VA_ARGS__); } } } while (0)
 /// <summary>
 /// Executes code and writes WARN message using printf-style formatting only when the selected channel would log this level.
 /// </summary>
 /// <param name="ch">Channel id or channel pointer.</param>
 /// <param name="code">Code executed before writing the message.</param>
 /// <param name="...">Format and format arguments.</param>
-#define LogmeW_Do(ch, code, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_WARN, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) { code; static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::Dispatch(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_WARN, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, _logme_ch_, ## __VA_ARGS__); } } } while (0)
+#define LogmeW_Do(ch, code, ...) do { auto&& _logme_ch_ = (ch); if (LoggerCondition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_WARN, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) { code; static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::Dispatch(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_WARN, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, _logme_ch_, ## __VA_ARGS__); } } } while (0)
 /// <summary>
 /// Executes code and writes ERROR message using printf-style formatting only when the selected channel would log this level.
 /// </summary>
 /// <param name="ch">Channel id or channel pointer.</param>
 /// <param name="code">Code executed before writing the message.</param>
 /// <param name="...">Format and format arguments.</param>
-#define LogmeE_Do(ch, code, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_ERROR, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) { code; static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::Dispatch(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_ERROR, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, _logme_ch_, ## __VA_ARGS__); } } } while (0)
+#define LogmeE_Do(ch, code, ...) do { auto&& _logme_ch_ = (ch); if (LoggerCondition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_ERROR, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) { code; static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::Dispatch(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_ERROR, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, _logme_ch_, ## __VA_ARGS__); } } } while (0)
 /// <summary>
 /// Executes code and writes CRITICAL message using printf-style formatting only when the selected channel would log this level.
 /// </summary>
 /// <param name="ch">Channel id or channel pointer.</param>
 /// <param name="code">Code executed before writing the message.</param>
 /// <param name="...">Format and format arguments.</param>
-#define LogmeC_Do(ch, code, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_CRITICAL, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) { code; static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::Dispatch(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_CRITICAL, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, _logme_ch_, ## __VA_ARGS__); } } } while (0)
+#define LogmeC_Do(ch, code, ...) do { auto&& _logme_ch_ = (ch); if (LoggerCondition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_CRITICAL, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) { code; static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::Dispatch(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_CRITICAL, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, _logme_ch_, ## __VA_ARGS__); } } } while (0)
 #define LogmeD_Do1(ch, code, ...) LogmeD_Do(ch, code, ## __VA_ARGS__)
 #define LogmeI_Do1(ch, code, ...) LogmeI_Do(ch, code, ## __VA_ARGS__)
 #define LogmeW_Do1(ch, code, ...) LogmeW_Do(ch, code, ## __VA_ARGS__)
@@ -740,14 +740,14 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeD_Once(...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
+  Logme_If(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
 #else
 /// <summary>
 /// Writes DEBUG log message once per call site (printf-style when called with a format string) or returns a stream (C++ style of output).
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeD_Once(...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, LOGMEP_ONCE_OVR() LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme_If(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, LOGMEP_ONCE_OVR() LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 
 #ifdef _MSC_VER
@@ -756,14 +756,14 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeI_Once(...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
+  Logme_If(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_INFO, LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
 #else
 /// <summary>
 /// Writes INFO log message once per call site (printf-style when called with a format string) or returns a stream (C++ style of output).
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeI_Once(...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, LOGMEP_ONCE_OVR() LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme_If(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_INFO, LOGMEP_ONCE_OVR() LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 
 #ifdef _MSC_VER
@@ -772,14 +772,14 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeW_Once(...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
+  Logme_If(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_WARN, LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
 #else
 /// <summary>
 /// Writes WARN log message once per call site (printf-style when called with a format string) or returns a stream (C++ style of output).
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeW_Once(...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, LOGMEP_ONCE_OVR() LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme_If(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_WARN, LOGMEP_ONCE_OVR() LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 
 #ifdef _MSC_VER
@@ -788,14 +788,14 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeE_Once(...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
+  Logme_If(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_ERROR, LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
 #else
 /// <summary>
 /// Writes ERROR log message once per call site (printf-style when called with a format string) or returns a stream (C++ style of output).
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeE_Once(...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, LOGMEP_ONCE_OVR() LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme_If(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_ERROR, LOGMEP_ONCE_OVR() LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 
 #ifdef _MSC_VER
@@ -804,14 +804,14 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeC_Once(...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
+  Logme_If(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
 #else
 /// <summary>
 /// Writes CRITICAL log message once per call site (printf-style when called with a format string) or returns a stream (C++ style of output).
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeC_Once(...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, LOGMEP_ONCE_OVR() LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme_If(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, LOGMEP_ONCE_OVR() LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 
 // Log with interval (rate-limited)
@@ -823,7 +823,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeD_Every(ms, ...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
+  Logme_If(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
 #else
 /// <summary>
 /// Writes DEBUG log message at most once per interval per call site (printf-style when called with a format string) or returns a stream (C++ style of output).
@@ -831,7 +831,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeD_Every(ms, ...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, LOGMEP_RATE_OVR(ms) LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme_If(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, LOGMEP_RATE_OVR(ms) LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 
 #ifdef _MSC_VER
@@ -841,7 +841,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeI_Every(ms, ...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
+  Logme_If(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_INFO, LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
 #else
 /// <summary>
 /// Writes INFO log message at most once per interval per call site (printf-style when called with a format string) or returns a stream (C++ style of output).
@@ -849,7 +849,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeI_Every(ms, ...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, LOGMEP_RATE_OVR(ms) LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme_If(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_INFO, LOGMEP_RATE_OVR(ms) LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 
 #ifdef _MSC_VER
@@ -859,7 +859,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeW_Every(ms, ...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
+  Logme_If(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_WARN, LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
 #else
 /// <summary>
 /// Writes WARN log message at most once per interval per call site (printf-style when called with a format string) or returns a stream (C++ style of output).
@@ -867,7 +867,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeW_Every(ms, ...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, LOGMEP_RATE_OVR(ms) LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme_If(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_WARN, LOGMEP_RATE_OVR(ms) LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 
 #ifdef _MSC_VER
@@ -877,7 +877,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeE_Every(ms, ...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
+  Logme_If(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_ERROR, LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
 #else
 /// <summary>
 /// Writes ERROR log message at most once per interval per call site (printf-style when called with a format string) or returns a stream (C++ style of output).
@@ -885,7 +885,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeE_Every(ms, ...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, LOGMEP_RATE_OVR(ms) LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme_If(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_ERROR, LOGMEP_RATE_OVR(ms) LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 
 #ifdef _MSC_VER
@@ -895,7 +895,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeC_Every(ms, ...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
+  Logme_If(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
 #else
 /// <summary>
 /// Writes CRITICAL log message at most once per interval per call site (printf-style when called with a format string) or returns a stream (C++ style of output).
@@ -903,7 +903,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, etc.</param>
 #define LogmeC_Every(ms, ...) \
-  Logme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, LOGMEP_RATE_OVR(ms) LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
+  Logme_If(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, LOGMEP_RATE_OVR(ms) LOGMEP_NONEMPTY(__VA_ARGS__) __VA_ARGS__)
 #endif
 
 // std::format
@@ -974,7 +974,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeD(...) \
-  fLogme_If(Logme::Instance->Condition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_DEBUG, &SUBSID, ## __VA_ARGS__), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), ## __VA_ARGS__)
+  fLogme_If(LoggerCondition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_DEBUG, &SUBSID, ## __VA_ARGS__), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes DEBUG message using std::format-style formatting when condition is true.
@@ -989,7 +989,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeI(...) \
-  fLogme_If(Logme::Instance->Condition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_INFO, &SUBSID, ## __VA_ARGS__), Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), ## __VA_ARGS__)
+  fLogme_If(LoggerCondition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_INFO, &SUBSID, ## __VA_ARGS__), Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes INFO message using std::format-style formatting when condition is true.
@@ -1004,7 +1004,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeW(...) \
-  fLogme_If(Logme::Instance->Condition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_WARN, &SUBSID, ## __VA_ARGS__), Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), ## __VA_ARGS__)
+  fLogme_If(LoggerCondition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_WARN, &SUBSID, ## __VA_ARGS__), Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes WARN message using std::format-style formatting when condition is true.
@@ -1019,7 +1019,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeE(...) \
-  fLogme_If(Logme::Instance->Condition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_ERROR, &SUBSID, ## __VA_ARGS__), Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), ## __VA_ARGS__)
+  fLogme_If(LoggerCondition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_ERROR, &SUBSID, ## __VA_ARGS__), Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes ERROR message using std::format-style formatting when condition is true.
@@ -1034,7 +1034,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeC(...) \
-  fLogme_If(Logme::Instance->Condition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_CRITICAL, &SUBSID, ## __VA_ARGS__), Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), ## __VA_ARGS__)
+  fLogme_If(LoggerCondition() && LOGME_WOULD_LOG_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_CRITICAL, &SUBSID, ## __VA_ARGS__), Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes CRITICAL message using std::format-style formatting when condition is true.
@@ -1050,7 +1050,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeDg(...) \
-  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), ## __VA_ARGS__)
+  fLogme_Ifg(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes DEBUG message using std::format-style formatting and global CH/SUBSID when condition is true.
@@ -1067,7 +1067,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeIg(...) \
-  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), ## __VA_ARGS__)
+  fLogme_Ifg(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes INFO message using std::format-style formatting and global CH/SUBSID when condition is true.
@@ -1084,7 +1084,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeWg(...) \
-  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), ## __VA_ARGS__)
+  fLogme_Ifg(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes WARN message using std::format-style formatting and global CH/SUBSID when condition is true.
@@ -1101,7 +1101,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, override, subsystem id, format and format arguments.</param>
 #define fLogmeEg(...) \
-  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), ## __VA_ARGS__)
+  fLogme_Ifg(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes ERROR message using std::format-style formatting and global CH/SUBSID when condition is true.
@@ -1117,35 +1117,35 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeD_Once(...) \
-  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
+  fLogme_If(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes INFO message using std::format-style formatting once per call site.
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeI_Once(...) \
-  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
+  fLogme_If(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes WARN message using std::format-style formatting once per call site.
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeW_Once(...) \
-  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
+  fLogme_If(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes ERROR message using std::format-style formatting once per call site.
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeE_Once(...) \
-  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
+  fLogme_If(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes CRITICAL message using std::format-style formatting once per call site.
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeC_Once(...) \
-  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
+  fLogme_If(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes DEBUG message using std::format-style formatting and global CH/SUBSID once per call site.
@@ -1153,7 +1153,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeDg_Once(...) \
-  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
+  fLogme_Ifg(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes INFO message using std::format-style formatting and global CH/SUBSID once per call site.
@@ -1161,7 +1161,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeIg_Once(...) \
-  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
+  fLogme_Ifg(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes WARN message using std::format-style formatting and global CH/SUBSID once per call site.
@@ -1169,7 +1169,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeWg_Once(...) \
-  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
+  fLogme_Ifg(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes ERROR message using std::format-style formatting and global CH/SUBSID once per call site.
@@ -1177,7 +1177,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeEg_Once(...) \
-  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
+  fLogme_Ifg(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes CRITICAL message using std::format-style formatting and global CH/SUBSID once per call site.
@@ -1185,7 +1185,7 @@
 /// </summary>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeCg_Once(...) \
-  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
+  fLogme_Ifg(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), LOGMEP_ONCE_OVR(), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes DEBUG message using std::format-style formatting at most once per interval per call site.
@@ -1193,7 +1193,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeD_Every(ms, ...) \
-  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
+  fLogme_If(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes INFO message using std::format-style formatting at most once per interval per call site.
@@ -1201,7 +1201,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeI_Every(ms, ...) \
-  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
+  fLogme_If(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes WARN message using std::format-style formatting at most once per interval per call site.
@@ -1209,7 +1209,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeW_Every(ms, ...) \
-  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
+  fLogme_If(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes ERROR message using std::format-style formatting at most once per interval per call site.
@@ -1217,7 +1217,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeE_Every(ms, ...) \
-  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
+  fLogme_If(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes CRITICAL message using std::format-style formatting at most once per interval per call site.
@@ -1225,7 +1225,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeC_Every(ms, ...) \
-  fLogme_If(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
+  fLogme_If(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes DEBUG message using std::format-style formatting and global CH/SUBSID at most once per interval per call site.
@@ -1234,7 +1234,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeDg_Every(ms, ...) \
-  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
+  fLogme_Ifg(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_DEBUG, Logme::GetStdFormat(), LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes INFO message using std::format-style formatting and global CH/SUBSID at most once per interval per call site.
@@ -1243,7 +1243,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeIg_Every(ms, ...) \
-  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
+  fLogme_Ifg(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_INFO, Logme::GetStdFormat(), LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes WARN message using std::format-style formatting and global CH/SUBSID at most once per interval per call site.
@@ -1252,7 +1252,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeWg_Every(ms, ...) \
-  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
+  fLogme_Ifg(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_WARN, Logme::GetStdFormat(), LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes ERROR message using std::format-style formatting and global CH/SUBSID at most once per interval per call site.
@@ -1261,7 +1261,7 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeEg_Every(ms, ...) \
-  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
+  fLogme_Ifg(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_ERROR, Logme::GetStdFormat(), LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
 
 /// <summary>
 /// Writes CRITICAL message using std::format-style formatting and global CH/SUBSID at most once per interval per call site.
@@ -1270,49 +1270,49 @@
 /// <param name="ms">Minimum interval in milliseconds.</param>
 /// <param name="...">Optional arguments: channel/id, subsystem id, format and format arguments.</param>
 #define fLogmeCg_Every(ms, ...) \
-  fLogme_Ifg(Logme::Instance->Condition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
+  fLogme_Ifg(LoggerCondition(), Logme::Instance, Logme::Level::LEVEL_CRITICAL, Logme::GetStdFormat(), LOGMEP_RATE_OVR(ms), ## __VA_ARGS__)
 
 
-#define fLogmeD_Do0(ch, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_DEBUG, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) { LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_DEBUG, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)
-#define fLogmeI_Do0(ch, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_INFO, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) { LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_INFO, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)
-#define fLogmeW_Do0(ch, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_WARN, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) { LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_WARN, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)
-#define fLogmeE_Do0(ch, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_ERROR, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) { LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_ERROR, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)
-#define fLogmeC_Do0(ch, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_CRITICAL, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) { LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_CRITICAL, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)
+#define fLogmeD_Do0(ch, ...) do { auto&& _logme_ch_ = (ch); if (LoggerCondition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_DEBUG, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) { LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_DEBUG, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)
+#define fLogmeI_Do0(ch, ...) do { auto&& _logme_ch_ = (ch); if (LoggerCondition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_INFO, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) { LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_INFO, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)
+#define fLogmeW_Do0(ch, ...) do { auto&& _logme_ch_ = (ch); if (LoggerCondition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_WARN, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) { LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_WARN, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)
+#define fLogmeE_Do0(ch, ...) do { auto&& _logme_ch_ = (ch); if (LoggerCondition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_ERROR, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) { LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_ERROR, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)
+#define fLogmeC_Do0(ch, ...) do { auto&& _logme_ch_ = (ch); if (LoggerCondition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_CRITICAL, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) { LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_CRITICAL, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)
 /// <summary>
 /// Executes code and writes DEBUG message using std::format-style formatting only when the selected channel would log this level.
 /// </summary>
 /// <param name="ch">Channel id or channel pointer.</param>
 /// <param name="code">Code executed before writing the message.</param>
 /// <param name="...">Format and format arguments.</param>
-#define fLogmeD_Do(ch, code, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_DEBUG, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) { code; LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_DEBUG, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)
+#define fLogmeD_Do(ch, code, ...) do { auto&& _logme_ch_ = (ch); if (LoggerCondition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_DEBUG, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) { code; LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_DEBUG, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)
 /// <summary>
 /// Executes code and writes INFO message using std::format-style formatting only when the selected channel would log this level.
 /// </summary>
 /// <param name="ch">Channel id or channel pointer.</param>
 /// <param name="code">Code executed before writing the message.</param>
 /// <param name="...">Format and format arguments.</param>
-#define fLogmeI_Do(ch, code, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_INFO, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) { code; LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_INFO, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)
+#define fLogmeI_Do(ch, code, ...) do { auto&& _logme_ch_ = (ch); if (LoggerCondition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_INFO, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) { code; LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_INFO, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)
 /// <summary>
 /// Executes code and writes WARN message using std::format-style formatting only when the selected channel would log this level.
 /// </summary>
 /// <param name="ch">Channel id or channel pointer.</param>
 /// <param name="code">Code executed before writing the message.</param>
 /// <param name="...">Format and format arguments.</param>
-#define fLogmeW_Do(ch, code, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_WARN, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) { code; LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_WARN, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)
+#define fLogmeW_Do(ch, code, ...) do { auto&& _logme_ch_ = (ch); if (LoggerCondition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_WARN, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) { code; LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_WARN, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)
 /// <summary>
 /// Executes code and writes ERROR message using std::format-style formatting only when the selected channel would log this level.
 /// </summary>
 /// <param name="ch">Channel id or channel pointer.</param>
 /// <param name="code">Code executed before writing the message.</param>
 /// <param name="...">Format and format arguments.</param>
-#define fLogmeE_Do(ch, code, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_ERROR, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) { code; LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_ERROR, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)
+#define fLogmeE_Do(ch, code, ...) do { auto&& _logme_ch_ = (ch); if (LoggerCondition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_ERROR, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) { code; LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_ERROR, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)
 /// <summary>
 /// Executes code and writes CRITICAL message using std::format-style formatting only when the selected channel would log this level.
 /// </summary>
 /// <param name="ch">Channel id or channel pointer.</param>
 /// <param name="code">Code executed before writing the message.</param>
 /// <param name="...">Format and format arguments.</param>
-#define fLogmeC_Do(ch, code, ...) do { auto&& _logme_ch_ = (ch); if (Logme::Instance->Condition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_CRITICAL, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) { code; LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_CRITICAL, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)
+#define fLogmeC_Do(ch, code, ...) do { auto&& _logme_ch_ = (ch); if (LoggerCondition()) { const auto& _logme_resolved_ch_ = Logme::Detail::ResolveDoChannel(Logme::Instance.get(), _logme_ch_); if (LOGME_WOULD_LOG_CHANNEL_ARGS(Logme::Instance.get(), Logme::Level::LEVEL_CRITICAL, &SUBSID, _logme_resolved_ch_, ## __VA_ARGS__)) { code; LOGME_PRAGMA_PUSH LOGME_PRAGMA_IGNORE_VARARGS static Logme::ContextCache LOGME_JOIN(_logme_ctx_, __LINE__); Logme::Detail::DispatchStdFormat(Logme::Instance, LOGME_JOIN(_logme_ctx_, __LINE__), Logme::Level::LEVEL_CRITICAL, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, Logme::GetStdFormat(), _logme_ch_, ## __VA_ARGS__); LOGME_PRAGMA_POP } } } while (0)
 #define fLogmeD_Do1(ch, code, ...) fLogmeD_Do(ch, code, ## __VA_ARGS__)
 #define fLogmeI_Do1(ch, code, ...) fLogmeI_Do(ch, code, ## __VA_ARGS__)
 #define fLogmeW_Do1(ch, code, ...) fLogmeW_Do(ch, code, ## __VA_ARGS__)
@@ -1374,7 +1374,7 @@
       tracePoint.Hit(); \
       if (!tracePoint.Registered) \
         Logme::Detail::RegisterTracePointOnce(tracePoint); \
-      if (tracePoint.Enabled && Logme::Instance->Condition()) \
+      if (tracePoint.Enabled && LoggerCondition()) \
       { \
         static Logme::ContextCache contextCache; \
         dispatch(Logme::Instance, contextCache, level, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__, ## __VA_ARGS__); \
@@ -1388,7 +1388,7 @@
       tracePoint.Hit(); \
       if (!tracePoint.Registered) \
         Logme::Detail::RegisterTracePointOnce(tracePoint); \
-      if (tracePoint.Enabled && Logme::Instance->Condition()) \
+      if (tracePoint.Enabled && LoggerCondition()) \
       { \
         static Logme::ContextCache contextCache; \
         dispatch(Logme::Instance, contextCache, level, &CH, &SUBSID, __FUNCTION__, __FILE__, __LINE__ __VA_OPT__(, __VA_ARGS__)); \

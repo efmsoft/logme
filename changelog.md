@@ -1,3 +1,14 @@
+## 2.4.21
+
+### Added
+
+- Added `LoggerCondition()`, the free-function precheck gate every `LogmeD/LogmeI/LogmeW/LogmeE/...` macro now calls instead of `Logme::Instance->Condition()` directly. Deliberately declared outside `namespace Logme` and called unqualified by the macros, so a class can declare its own non-static member of the same name to replace the check for its own methods only -- ordinary C++ member lookup hides the global default at compile time, at no extra runtime cost, and with no effect on callers that don't opt in. A qualified `Logme::LoggerCondition()` call could never be shadowed this way. This mirrors the existing `CH`/`SUBSID` resolution mechanism.
+- Added `examples/LoggerConditionOverride` and `tests/LoggerConditionOverride`.
+
+### Improved
+
+- No behavior change for existing code: `LoggerCondition()`'s default body is `Logme::Instance->Condition()`, identical to what every macro called before this existed.
+
 ## 2.4.20
 
 ### Added

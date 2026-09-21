@@ -1,3 +1,11 @@
+## 2.4.22
+
+### Added
+
+- Added `LogmeThreadCondition(condition)`, `Logme::ThreadCondition`, and `Logger::SetThreadLogCondition()`/`GetThreadLogCondition()`/`IsLogConditionDefinedForCurrentThread()`. Folds a thread-scoped condition into the global `LoggerCondition()` default (`Logme::Instance->Condition() && Logme::Instance->GetThreadLogCondition()`), for code with no per-object state of its own to cache a `LoggerCondition()` member override on -- e.g. a shared, parsed rule/DSL tree walked on behalf of many different requests. Scoped and nests like `LogmeThreadChannel`/`LogmeThreadSubsystem`. A class that declares its own `LoggerCondition()` member is unaffected: its override already fully replaces the global default this lives in.
+- Added `Logger::IsSubsystemBlocked(const SID&)`, a standalone query against the same blocked/allowed subsystem lists `DoLog()` consults on every record reporting under a given subsystem. Lets code that reports a fixed subsystem for a whole stretch of work (`LogmeThreadSubsystem`) check once, before that stretch starts, whether every call in it will be dropped anyway -- combined with `LogmeThreadCondition`, that stretch can skip channel resolution and argument preparation entirely instead of reaching this check on every individual call.
+- Added `examples/ThreadLogCondition` and `tests/ThreadLogCondition`.
+
 ## 2.4.21
 
 ### Added

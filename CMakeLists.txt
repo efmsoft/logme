@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-project(logme VERSION 2.4.21)
+project(logme VERSION 2.4.22)
 
 # Select which logme library target examples/tools/tests should link against.
 # Priority:

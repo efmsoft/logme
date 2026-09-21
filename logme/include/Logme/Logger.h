@@ -263,6 +263,34 @@ namespace Logme
     LOGMELNK SID GetDefaultSubsystem();
 
     /// <summary>
+    /// Sets or clears a cheap, thread-scoped override of LoggerCondition()'s
+    /// default answer. Meant for code that has no per-object state of its
+    /// own to cache a LoggerCondition() member override on (e.g. a
+    /// stateless, shared DSL/rule tree walked on behalf of many different
+    /// requests) but knows, at the point it enters a stretch of work on
+    /// this thread, that every LogmeD/LogmeI/LogmeW/LogmeE call made until
+    /// that stretch ends can be skipped -- e.g. because the specific
+    /// subsystem all of them report under is administratively disabled, or
+    /// because the request this thread is currently serving already
+    /// decided its own logging is off. See LogmeThreadCondition in
+    /// Logme.h.
+    /// </summary>
+    /// <param name="condition">Value used by this thread, or nullptr to clear it.</param>
+    LOGMELNK void SetThreadLogCondition(const bool* condition);
+
+    /// <summary>
+    /// Checks whether current thread has its own log condition.
+    /// </summary>
+    /// <returns>true if SetThreadLogCondition assigned a condition for the current thread.</returns>
+    LOGMELNK bool IsLogConditionDefinedForCurrentThread();
+
+    /// <summary>
+    /// Returns the current thread's log condition.
+    /// </summary>
+    /// <returns>Thread-local condition when set; true (no restriction) otherwise.</returns>
+    LOGMELNK bool GetThreadLogCondition();
+
+    /// <summary>
     /// Sets or clears structured fields for current thread.
     /// </summary>
     /// <param name="fields">Fields copied into thread-local context, or nullptr to clear them.</param>
@@ -409,6 +437,20 @@ namespace Logme
 
     /// <summary>Clears both blocked and allowed subsystem lists.</summary>
     LOGMELNK void ClearSubsystemFilters();
+
+    /// <summary>
+    /// Checks the same blocked/allowed subsystem lists DoLog() consults for
+    /// every record reporting under `sid`, as a standalone query. Meant for
+    /// code that reports a fixed subsystem for a whole stretch of work
+    /// (e.g. via LogmeThreadSubsystem) and wants to decide once, before
+    /// that stretch starts, whether every log call in it will end up
+    /// dropped here anyway -- so it can skip them earlier (see
+    /// LogmeThreadCondition) instead of paying for channel resolution and
+    /// argument preparation only to be blocked at this last-resort check.
+    /// </summary>
+    /// <param name="sid">Subsystem id to check; an empty SID is never blocked.</param>
+    /// <returns>true if a record reporting under `sid` would be dropped by the blocked/allowed subsystem lists.</returns>
+    LOGMELNK bool IsSubsystemBlocked(const SID& sid);
 
     /// <summary>
     /// Sets a level override for a named subsystem. Empty SID is ignored.
@@ -1151,8 +1193,19 @@ namespace Logme
 // already uses to let CH/SUBSID resolve to a class member instead of the
 // global default (see Logme/ID.h, Logme/SID.h). See
 // tests/LoggerConditionOverride and examples/LoggerConditionOverride.
+//
+// Also consults GetThreadLogCondition() (see LogmeThreadCondition in
+// Logme.h): a member override handles code with per-object state to cache
+// its own answer on, but a stateless/shared tree (e.g. parsed DSL rules
+// walked on behalf of many different requests) has no such object -- it
+// can only communicate "skip logging for this stretch" the same way
+// LogmeThreadSubsystem communicates a subsystem, as a thread-local, right
+// before entering that stretch. Short-circuits via && either way, so a
+// class that does override LoggerCondition() never pays for this thread
+// check at all -- its own answer already fully replaces the global one.
+// See tests/ThreadLogCondition and examples/ThreadLogCondition.
 inline bool LoggerCondition()
 {
-  return Logme::Instance->Condition();
+  return Logme::Instance->Condition() && Logme::Instance->GetThreadLogCondition();
 }
 

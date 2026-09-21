@@ -40,6 +40,9 @@ namespace
 
   thread_local bool HasThreadSubsystem = false;
   thread_local SID CurrentThreadSubsystem;
+
+  thread_local bool HasThreadLogCondition = false;
+  thread_local bool CurrentThreadLogCondition = true;
 }
 
 Logger::Logger()
@@ -392,6 +395,30 @@ void Logger::ApplyThreadSubsystem(Context& context)
     context.Subsystem = CurrentThreadSubsystem;
 }
 
+void Logger::SetThreadLogCondition(const bool* condition)
+{
+  if (condition == nullptr)
+  {
+    HasThreadLogCondition = false;
+    CurrentThreadLogCondition = true;
+  }
+  else
+  {
+    CurrentThreadLogCondition = *condition;
+    HasThreadLogCondition = true;
+  }
+}
+
+bool Logger::IsLogConditionDefinedForCurrentThread()
+{
+  return HasThreadLogCondition;
+}
+
+bool Logger::GetThreadLogCondition()
+{
+  return !HasThreadLogCondition || CurrentThreadLogCondition;
+}
+
 void Logger::SetThreadChannel(const ID* id)
 {
   if (id == nullptr)
@@ -684,6 +711,25 @@ void Logger::ClearSubsystemFilters()
   BlockedSubsystems.clear();
   AllowedSubsystems.clear();
   Subsystems.clear();
+}
+
+bool Logger::IsSubsystemBlocked(const SID& sid)
+{
+  if (sid.Name == 0)
+    return false;
+
+  std::lock_guard guard(DataLock);
+
+  if (std::binary_search(BlockedSubsystems.begin(), BlockedSubsystems.end(), sid.Name))
+    return true;
+
+  if (!AllowedSubsystems.empty()
+    && !std::binary_search(AllowedSubsystems.begin(), AllowedSubsystems.end(), sid.Name))
+  {
+    return true;
+  }
+
+  return false;
 }
 
 const Logger::SubsystemLevelSnapshot* Logger::AcquireSubsystemLevelSnapshot(

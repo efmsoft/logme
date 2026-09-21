@@ -20,6 +20,7 @@
 #include <Logme/Stream.h>
 #include <Logme/Template.h>
 #include <Logme/ThreadChannel.h>
+#include <Logme/ThreadCondition.h>
 #include <Logme/ThreadName.h>
 #include <Logme/ThreadOverride.h>
 #include <Logme/ThreadField.h>
@@ -1690,5 +1691,24 @@
 /// <summary>Returns true when the current thread has an explicitly assigned subsystem.</summary>
 #define LogmeThreadSubsystemDefined() \
   Logme::Instance->IsSubsystemDefinedForCurrentThread()
+
+// Thread log condition
+
+/// <summary>
+/// Adds `condition` to the gate every LogmeD/LogmeI/LogmeW/LogmeE call
+/// consults for the current scope (see LoggerCondition() in Logger.h) --
+/// for code with no per-object state of its own to cache a
+/// LoggerCondition() member override on (e.g. a stateless/shared DSL/rule
+/// tree walked on behalf of many different requests), letting it declare
+/// once, at the point it enters that code, that the entire stretch of log
+/// calls made until the scope ends can be skipped.
+/// </summary>
+/// <param name="condition">Extra condition every log call in this scope is gated by.</param>
+#define LogmeThreadCondition(condition) \
+  Logme::ThreadCondition _logme_thread_condition(Logme::Instance, condition)
+
+/// <summary>Returns true when the current thread has an explicitly assigned log condition.</summary>
+#define LogmeThreadConditionDefined() \
+  Logme::Instance->IsLogConditionDefinedForCurrentThread()
 
 #endif

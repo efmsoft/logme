@@ -125,6 +125,7 @@
     <ClCompile Include="..\logme\source\File\RetentionCleaner.cpp" />
     <ClCompile Include="..\logme\source\Check.cpp" />
     <ClCompile Include="..\logme\source\CrashLog.cpp" />
+    <ClCompile Include="..\logme\source\ThreadCondition.cpp" />
 </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\logme\source\Config\Helper.h" />

@@ -316,6 +316,7 @@
     <ClCompile Include="source\File\FileArchivePolicy.cpp" />
     <ClCompile Include="source\File\FileTimeRotationPolicy.cpp" />
     <ClCompile Include="source\File\RetentionCleaner.cpp" />
+    <ClCompile Include="source\ThreadCondition.cpp" />
 </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

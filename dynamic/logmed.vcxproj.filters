@@ -97,6 +97,9 @@
     <Filter Include="CrashLog.cpp">
       <UniqueIdentifier>{3d405c44-9fb1-544e-9763-209e8bb9b656}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ThreadCondition.cpp">
+      <UniqueIdentifier>{4d064100-ad5e-54e4-b17a-8714ca79c2c6}</UniqueIdentifier>
+    </Filter>
 </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\logme\source\Backend\Backend.cpp">
@@ -367,6 +370,9 @@
     <ClCompile Include="..\logme\source\CrashLog.cpp">
       <Filter>CrashLog.cpp</Filter>
     </ClCompile>
+    <ClCompile Include="..\logme\source\ThreadCondition.cpp">
+      <Filter>ThreadCondition.cpp</Filter>
+    </ClCompile>
 </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\logme\source\Time\utils.h">
@@ -624,6 +630,9 @@
       <Filter>..\logme\include\Logme</Filter>
     </ClInclude>
     <ClInclude Include="..\logme\include\Logme\CrashLog.h">
+      <Filter>..\logme\include\Logme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\logme\include\Logme\ThreadCondition.h">
       <Filter>..\logme\include\Logme</Filter>
     </ClInclude>
 </ItemGroup>

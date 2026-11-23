@@ -93,6 +93,7 @@ void Logger::Shutdown()
   {
     Instance->StopControlServer();
     Instance->DeleteAllChannels();
+    Instance->Factory.Shutdown();
   }
 
   ShutdownCalled = true;

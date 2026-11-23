@@ -10,6 +10,11 @@ FileManagerFactory::FileManagerFactory()
 
 FileManagerFactory::~FileManagerFactory()
 {
+  Shutdown();
+}
+
+void FileManagerFactory::Shutdown()
+{
   std::shared_ptr<FileManager> instance;
 
   {

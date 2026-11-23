@@ -28,6 +28,12 @@ ConsoleBackend::ConsoleBackend(ChannelPtr owner)
   }
 }
 
+static void FlushOutputStreams()
+{
+  fflush(stdout);
+  fflush(stderr);
+}
+
 ConsoleBackend::~ConsoleBackend()
 {
   Freeze();
@@ -114,6 +120,8 @@ void ConsoleBackend::Freeze()
     else
       GetFactory().Flush();
   }
+
+  FlushOutputStreams();
 }
 
 bool ConsoleBackend::IsIdle() const
@@ -134,6 +142,8 @@ void ConsoleBackend::Flush()
     manager->Flush();
   else
     GetFactory().Flush();
+
+  FlushOutputStreams();
 }
 
 const char* ConsoleBackend::GetEscapeSequence(Level level)

@@ -28,6 +28,7 @@ namespace Logme
 
     bool TestFileInUse(const std::string& file);
     void SetStopping();
+    void Shutdown();
 
     DataBufferPtr TakeDataBuffer(
       MemoryUsageTracker* memoryTracker

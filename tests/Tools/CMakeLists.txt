@@ -16,6 +16,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 
 include(GoogleTest)
 gtest_discover_tests(${PROJECT_NAME}
+  DISCOVERY_TIMEOUT ${LOGME_GTEST_DISCOVERY_TIMEOUT}
   PROPERTIES RUN_SERIAL TRUE
 )
 set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Tests")

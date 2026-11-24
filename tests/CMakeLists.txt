@@ -3,6 +3,12 @@ message("CMAKE_CXX_COMPILER_VERSION = ${CMAKE_CXX_COMPILER_VERSION}")
 
 include_directories(${CMAKE_SOURCE_DIR}/tests)
 
+# gtest_discover_tests() runs every freshly linked test executable during the
+# build to list its tests. CMake allows 5 seconds for that by default, which a
+# busy Windows CI runner sometimes exceeds just starting a new executable, and
+# then the whole build fails. The tests pass this value as DISCOVERY_TIMEOUT.
+set(LOGME_GTEST_DISCOVERY_TIMEOUT 60)
+
 set(GTEST true)
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "5.0.0")

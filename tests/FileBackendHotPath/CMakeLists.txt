@@ -30,5 +30,5 @@ if(WIN32 AND CMAKE_VERSION VERSION_GREATER_EQUAL "3.21")
 endif()
 
 include(GoogleTest)
-gtest_discover_tests(${PROJECT_NAME})
+gtest_discover_tests(${PROJECT_NAME} DISCOVERY_TIMEOUT ${LOGME_GTEST_DISCOVERY_TIMEOUT})
 set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Tests")

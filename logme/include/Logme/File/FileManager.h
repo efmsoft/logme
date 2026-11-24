@@ -71,6 +71,7 @@ namespace Logme
   {
     std::atomic<bool> StopRequested;
     bool Reschedule;
+    bool LoopFinished;
     std::thread ManagerThread;
 
     std::mutex Lock;
@@ -121,7 +122,11 @@ namespace Logme
   private:
     friend class FileManagerFactory;
 
+    void Stop();
     void WaitForStop();
+    void WaitForStop(unsigned timeoutMs);
+    std::vector<FileBackendPtr> DetachBackendsLocked();
+    static void ShutdownBackends(const std::vector<FileBackendPtr>& backends);
     void LinkBackendFront(FileBackend* backend);
     void LinkBackendBack(FileBackend* backend);
     void LinkBackendBefore(FileBackend* backend, FileBackend* before);

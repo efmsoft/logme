@@ -498,6 +498,7 @@ void FileManager::TrimDataBufferCacheOverLimitLocked(
 FileManager::FileManager()
   : StopRequested(false)
   , Reschedule(false)
+  , LoopFinished(false)
   , ActiveBackendsNext(nullptr)
   , ActiveBackendsPrev(nullptr)
   , CurrentEarliestTime(0)
@@ -510,19 +511,8 @@ FileManager::FileManager()
 
 FileManager::~FileManager()
 {
-  SetStopping();
+  Stop();
   WaitForStop();
-
-  for (const auto& backend : Backends)
-  {
-    DeactivateBackend(backend.get());
-    backend->Registered.store(false, std::memory_order_relaxed);
-    backend->FlushTime.store(0, std::memory_order_relaxed);
-    FILE_CNT(GlobalBackendShutdowns.fetch_add(1, std::memory_order_relaxed));
-    backend->OnShutdown();
-  }
-
-  Backends.clear();
 
   if (!DataBufferCache.empty())
   {
@@ -840,8 +830,20 @@ bool FileManager::Stopping() const
 
 void FileManager::WaitForStop()
 {
-  if (ManagerThread.joinable())
-    ManagerThread.join();
+  if (!ManagerThread.joinable())
+    return;
+
+  // The C runtime keeps the module with this thread's code loaded while the
+  // thread runs and releases it when the thread exits. If that was the last
+  // reference to a DLL with logme, the DLL is unloaded on this very thread and
+  // its static destructors end up here. Joining ourselves would throw.
+  if (ManagerThread.get_id() == std::this_thread::get_id())
+  {
+    ManagerThread.detach();
+    return;
+  }
+
+  ManagerThread.join();
 }
 
 #ifdef _WIN32
@@ -888,16 +890,7 @@ void FileManager::SetStopping()
       // we created no longer exists at that point. Therefore, we simply remove 
       // all backends from the list to drop our references to FileBackend, 
       // allowing them to be destroyed properly.
-      for (const auto& backend : Backends)
-      {
-        DeactivateBackend(backend.get());
-        backend->Registered.store(false, std::memory_order_relaxed);
-        backend->FlushTime.store(0, std::memory_order_relaxed);
-      }
-
-      shutdownBackends = std::move(Backends);
-      ActiveBackendsNext = nullptr;
-      ActiveBackendsPrev = nullptr;
+      shutdownBackends = DetachBackendsLocked();
     }
 #endif
   }
@@ -905,9 +898,89 @@ void FileManager::SetStopping()
   CV.notify_all();
 
 #ifdef _WIN32
-  for (const auto& backend : shutdownBackends)
-    backend->OnShutdown();
+  ShutdownBackends(shutdownBackends);
 #endif
+}
+
+void FileManager::Stop()
+{
+  SetStopping();
+
+  std::vector<FileBackendPtr> backends;
+
+  {
+    std::unique_lock lock(Lock);
+
+    // Wait for the management loop to finish rather than for the thread to
+    // exit. On Windows a thread cannot exit while another thread holds the
+    // loader lock, so joining here would hang a caller in DllMain or in the
+    // global destructors of a DLL being unloaded.
+    while (!LoopFinished && ManagerThread.joinable())
+    {
+#ifdef _WIN32
+      // During ExitProcess the system may already have killed the thread.
+      // SetStopping() has written its backends out in that case.
+      if (ThreadExists(ThreadID) == false)
+        break;
+#endif
+      CV.wait_for(lock, std::chrono::milliseconds(50));
+    }
+
+    backends = DetachBackendsLocked();
+  }
+
+  // The loop no longer touches the backends, so the rest of the queued data
+  // is written here, in the caller's thread.
+  ShutdownBackends(backends);
+}
+
+void FileManager::WaitForStop(unsigned timeoutMs)
+{
+  if (!ManagerThread.joinable())
+    return;
+
+#ifdef _WIN32
+  // Called after Stop(): the thread only has to exit. If the caller holds the
+  // loader lock it cannot, so let it exit on its own later instead of hanging.
+  if (ManagerThread.get_id() != std::this_thread::get_id())
+  {
+    HANDLE thread = static_cast<HANDLE>(ManagerThread.native_handle());
+    if (WaitForSingleObject(thread, timeoutMs) != WAIT_OBJECT_0)
+    {
+      ManagerThread.detach();
+      return;
+    }
+  }
+#else
+  (void)timeoutMs;
+#endif
+
+  WaitForStop();
+}
+
+std::vector<FileBackendPtr> FileManager::DetachBackendsLocked()
+{
+  for (const auto& backend : Backends)
+  {
+    DeactivateBackend(backend.get());
+    backend->Registered.store(false, std::memory_order_relaxed);
+    backend->FlushTime.store(0, std::memory_order_relaxed);
+  }
+
+  std::vector<FileBackendPtr> backends;
+  backends.swap(Backends);
+  ActiveBackendsNext = nullptr;
+  ActiveBackendsPrev = nullptr;
+  return backends;
+}
+
+void FileManager::ShutdownBackends(const std::vector<FileBackendPtr>& backends)
+{
+  for (const auto& backend : backends)
+  {
+    FILE_CNT(GlobalBackendShutdowns.fetch_add(1, std::memory_order_relaxed));
+    backend->OnShutdown();
+  }
 }
 
 void FileManager::LinkBackendFront(FileBackend* backend)
@@ -1235,4 +1308,9 @@ void FileManager::ManagementThread()
         ActivateBackend(nextToRun.get(), flushTime);
     }
   }
+
+  // Set under Lock: once Stop() sees the flag, this thread no longer touches
+  // the object, so it may be destroyed before the thread has exited.
+  LoopFinished = true;
+  CV.notify_all();
 }

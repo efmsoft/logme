@@ -4,6 +4,14 @@
 
 using namespace Logme;
 
+namespace
+{
+  // How long Shutdown() lets the file manager thread exit after its loop has
+  // finished. It normally takes microseconds; the wait only runs out when the
+  // caller holds the Windows loader lock and the thread cannot exit yet.
+  constexpr unsigned SHUTDOWN_JOIN_TIMEOUT_MS = 200;
+}
+
 FileManagerFactory::FileManagerFactory()
 {
 }
@@ -24,8 +32,10 @@ void FileManagerFactory::Shutdown()
 
   if (instance)
   {
-    instance->SetStopping();
-    instance->WaitForStop();
+    // Writes all queued data before returning, then joins the thread, or
+    // detaches it if it cannot exit in time.
+    instance->Stop();
+    instance->WaitForStop(SHUTDOWN_JOIN_TIMEOUT_MS);
   }
 }
 

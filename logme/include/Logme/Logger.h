@@ -205,6 +205,10 @@ namespace Logme
 
     /// <summary>
     /// Stops global logger instance and disables further logging calls.
+    /// Blocks until all queued file output has been written, so the process
+    /// may be terminated right after it returns. The file manager thread is
+    /// joined as well; if it cannot exit within 200 ms (on Windows, when the
+    /// caller holds the loader lock, e.g. in DllMain), it is detached instead.
     /// </summary>
     LOGMELNK static void Shutdown();
 

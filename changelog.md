@@ -6,6 +6,13 @@
 - Added `Logger::IsSubsystemBlocked(const SID&)`, a standalone query against the same blocked/allowed subsystem lists `DoLog()` consults on every record reporting under a given subsystem. Lets code that reports a fixed subsystem for a whole stretch of work (`LogmeThreadSubsystem`) check once, before that stretch starts, whether every call in it will be dropped anyway -- combined with `LogmeThreadCondition`, that stretch can skip channel resolution and argument preparation entirely instead of reaching this check on every individual call.
 - Added `examples/ThreadLogCondition` and `tests/ThreadLogCondition`.
 
+### Fixed
+
+- `Logger::Shutdown()` now writes all queued file output before it returns. Previously it only requested a flush, so the tail of the log could be lost when the process was terminated right after `Shutdown()` (for example a Windows service after `SERVICE_STOPPED`) or exited while logme lived in a DLL.
+- `Logger::Shutdown()` no longer hangs when called with the Windows loader lock held (`DllMain`, global destructors of a DLL being unloaded). It waits for the file manager loop instead of the thread exit, writes the remaining data itself, and detaches the thread if it cannot exit within 200 ms.
+- Fixed a crash (`std::system_error: resource deadlock would occur`) when a DLL with logme was unloaded on the file manager thread itself. The C runtime keeps that DLL loaded while the thread runs, so a `FreeLibrary` issued before the thread exited ran the static destructors on it, and they tried to join it.
+- `ConsoleBackend::Flush()` and `Freeze()` also flush the C runtime `stdout`/`stderr` buffers.
+
 ## 2.4.21
 
 ### Added
